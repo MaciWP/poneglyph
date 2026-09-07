@@ -1,1 +1,6 @@
-# Exact reviewed synthetic-fixture fingerprints are recorded after the clean root commit.
+# Three exact occurrences of the reviewed truncated synthetic JWT header.
+# These detector fixtures have no usable payload or signature.
+# Do not broaden these exceptions to files, rules, paths, or later commits.
+48b5e1d364c89ed830eb6fecbe418eae97b0c228:.claude/hooks/__tests__/security-gate-functions.test.ts:generic-api-key:64
+48b5e1d364c89ed830eb6fecbe418eae97b0c228:.claude/hooks/__tests__/security-gate.test.ts:generic-api-key:157
+48b5e1d364c89ed830eb6fecbe418eae97b0c228:.claude/hooks/security-gate.ts:generic-api-key:52

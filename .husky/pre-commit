@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Resolve from the shared hook, not from the target repository's package.json.
+exec bun "$(dirname "$0")/../.claude/scripts/pre-commit.ts"

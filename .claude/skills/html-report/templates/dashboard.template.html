@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{TITLE}} — Dashboard</title>
+<!-- ============================================================
+     html-report DASHBOARD template (v7/v8 design, dark-first)
+     Masthead (serif italic title) + KPI-card row + health panels +
+     findings + recommendation. Color = información (shadcn/Raycast lang).
+     Self-contained EXCEPT the one Google-Fonts <link> (Geist + Newsreader
+     + Geist Mono). Generator fills {{PLACEHOLDERS}} — see comments.
+     Motion = ONE page fade (no per-element pops). Dark-first + print-light.
+============================================================ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0c; --panel: #0f0f12; --panel-2: #15151a;
+    --line: #26262c; --line-soft: #1c1c22;
+    --ink: #edecf0; --ink-2: #a4a3ad; --ink-3: #6c6b76;
+    --accent: #6ee7d3;
+    --good: #5ec98f; --mid: #d6c267; --warn: #e0a35e; --bad: #e8716f;
+    --blocker: #e8716f; --major: #e0a35e; --minor: #d6c267; --nit: #7d7d87;
+    --track: rgba(255,255,255,.06);
+    --serif: "Newsreader", Georgia, "Times New Roman", serif;
+    --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "Geist Mono", ui-monospace, "SF Mono", Consolas, monospace;
+    --maxw: 1120px;
+  }
+  *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body {
+    font-family: var(--sans); background: var(--bg); color: var(--ink);
+    line-height: 1.6; font-size: .9375rem;
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+    padding: clamp(2rem, 5vw, 4rem) clamp(1.25rem, 5vw, 2.5rem) 3.5rem;
+  }
+  .wrap { max-width: var(--maxw); margin: 0 auto; }
+  .lbl { font-family: var(--mono); font-size: .6875rem; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-3); }
+  .num { font-variant-numeric: tabular-nums; }
+  @media (prefers-reduced-motion: no-preference) {
+    body { animation: pagefade .45s ease-out both; }
+    @keyframes pagefade { from { opacity: 0; } }
+  }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: clamp(1.4rem, 3vw, 2rem); }
+
+  .top { display: flex; align-items: center; gap: 1rem; padding-bottom: 1.3rem; border-bottom: 1px solid var(--line); margin-bottom: 2.4rem; flex-wrap: wrap; }
+  .top .lbl.brand { color: var(--accent); }
+  .top .sep { color: var(--ink-3); }
+  .top time { margin-left: auto; font-family: var(--mono); font-size: .75rem; color: var(--ink-3); }
+  .masthead { margin-bottom: 2.2rem; }
+  .verdict { display: inline-flex; align-items: center; gap: .5rem; font-family: var(--mono); font-size: .6875rem; letter-spacing: .12em; text-transform: uppercase; color: var(--minor); margin-bottom: 1rem; }
+  .verdict.v-ok { color: var(--good); } .verdict.v-major { color: var(--major); } .verdict.v-blocker { color: var(--blocker); }
+  .verdict .pip { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  h1.title { font-family: var(--serif); font-weight: 500; font-size: clamp(2.3rem, 5.5vw, 3.6rem); line-height: 1.03; letter-spacing: -.015em; }
+  h1.title em { font-style: italic; color: var(--ink-2); font-weight: 400; }
+  .lede { margin-top: 1rem; font-family: var(--serif); font-size: clamp(1.05rem, 2vw, 1.3rem); line-height: 1.5; color: var(--ink-2); max-width: 46ch; }
+
+  .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: .9rem; margin-bottom: 1.25rem; }
+  .kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 1.05rem 1.15rem 1.15rem; display: flex; flex-direction: column; gap: .55rem; min-width: 0; }
+  .kpi-k { font-family: var(--mono); font-size: .625rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); display: flex; align-items: center; gap: .4rem; }
+  .kpi-k .pip { width: 6px; height: 6px; border-radius: 50%; background: var(--bad); }
+  .kpi-val { display: flex; align-items: baseline; gap: .25rem; }
+  .kpi-v { font-family: var(--sans); font-weight: 600; font-size: 1.95rem; line-height: 1; letter-spacing: -.01em; }
+  .kpi-v.good { color: var(--good); } .kpi-v.bad { color: var(--bad); } .kpi-v.mid { color: var(--mid); } .kpi-v.warn { color: var(--warn); }
+  .kpi-u { font-family: var(--mono); font-size: .8rem; color: var(--ink-3); }
+  .kpi-sub { font-size: .72rem; color: var(--ink-3); margin-top: auto; }
+  .kpi-bar { height: 5px; border-radius: 999px; background: var(--track); overflow: hidden; margin-top: auto; }
+  .kpi-bar i { display: block; height: 100%; border-radius: 999px; }
+  .kpi-bar i.good { background: var(--good); } .kpi-bar i.bad { background: var(--bad); } .kpi-bar i.mid { background: var(--mid); } .kpi-bar i.warn { background: var(--warn); }
+  .kpi-sevbar { display: flex; height: 5px; border-radius: 999px; overflow: hidden; background: var(--track); margin-top: auto; }
+  .kpi-sevbar i { height: 100%; }
+  .kpi-sevbar i.b { background: var(--blocker); } .kpi-sevbar i.m { background: var(--major); } .kpi-sevbar i.n { background: var(--minor); }
+
+  .block { margin-bottom: 1.25rem; }
+  .block.air { margin-top: 2.4rem; }
+  .head { display: flex; align-items: center; gap: .75rem; margin-bottom: 1.3rem; }
+  .head .n { font-family: var(--mono); font-size: .7rem; color: var(--accent); border: 1px solid var(--line); border-radius: 6px; padding: .22rem .45rem; line-height: 1; }
+  .head .t { font-family: var(--sans); font-weight: 600; font-size: 1.15rem; letter-spacing: -.01em; color: var(--ink); }
+  .head .rule { flex: 1; height: 1px; background: var(--line-soft); }
+  .head .aside { font-family: var(--mono); font-size: .65rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+
+  .health { display: grid; grid-template-columns: 1fr 1px 1.15fr; gap: clamp(1.4rem, 3vw, 2.4rem); align-items: stretch; }
+  .health .rule-v { width: 1px; background: var(--line-soft); }
+  @media (max-width: 720px){ .health { grid-template-columns: 1fr; } .health .rule-v { display: none; } }
+  .sevbar { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: var(--track); }
+  .sevbar i { display: block; height: 100%; }
+  .sevbar i.b { background: var(--blocker); } .sevbar i.m { background: var(--major); } .sevbar i.n { background: var(--minor); }
+  .sevkey { list-style: none; display: flex; flex-wrap: wrap; gap: 1.1rem; margin-top: 1rem; }
+  .sevkey li { display: flex; align-items: center; gap: .5rem; font-size: .8125rem; color: var(--ink-2); }
+  .sevkey .d { width: 8px; height: 8px; border-radius: 50%; }
+  .sevkey b { font-family: var(--mono); color: var(--ink); font-weight: 500; }
+  .heat { display: flex; align-items: flex-end; gap: 5px; height: 72px; }
+  .heat .col { flex: 1; display: flex; align-items: flex-end; height: 100%; }
+  .heat .seg { width: 100%; border-radius: 3px 3px 2px 2px; background: var(--c); min-height: 4px; }
+  .heat-cap { display: flex; justify-content: space-between; margin-top: .85rem; font-size: .8125rem; color: var(--ink-2); }
+  .heat-cap b { color: var(--bad); font-family: var(--mono); font-weight: 500; }
+
+  .finds { display: grid; gap: 1px; background: var(--line-soft); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+  .find { display: grid; grid-template-columns: 3px 1fr auto; gap: 1.1rem; align-items: center; padding: 1.3rem 1.5rem; background: var(--panel); transition: background .2s; }
+  .find:hover { background: var(--panel-2); }
+  .find .mark { align-self: stretch; border-radius: 999px; background: var(--c); }
+  .find .body { min-width: 0; }
+  .find .sev { font-family: var(--mono); font-size: .625rem; letter-spacing: .12em; text-transform: uppercase; color: var(--c); }
+  .find .ttl { font-family: var(--serif); font-weight: 500; font-size: 1.12rem; line-height: 1.3; margin: .2rem 0 .3rem; }
+  .find .act { font-size: .8125rem; color: var(--ink-2); max-width: 62ch; }
+  .find .flow { font-family: var(--mono); font-size: .7rem; color: var(--ink-3); white-space: nowrap; text-align: right; }
+
+  .drawer { margin-top: 1rem; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); overflow: hidden; }
+  .drawer summary { cursor: pointer; padding: .95rem 1.5rem; font-family: var(--mono); font-size: .6875rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); list-style: none; display: flex; align-items: center; gap: .65rem; }
+  .drawer summary::-webkit-details-marker { display: none; }
+  .drawer summary::before { content: '+'; color: var(--accent); font-size: 1.1rem; line-height: 1; }
+  .drawer[open] summary::before { content: '\2013'; }
+  .drawer[open] summary { border-bottom: 1px solid var(--line-soft); }
+  .tbl { width: 100%; border-collapse: collapse; font-size: .8125rem; }
+  .tbl th { text-align: left; padding: .65rem 1.5rem; font-family: var(--mono); font-size: .5625rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); border-bottom: 1px solid var(--line-soft); }
+  .tbl td { padding: .65rem 1.5rem; border-bottom: 1px solid var(--line-soft); color: var(--ink-2); vertical-align: top; line-height: 1.45; }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl .s { font-family: var(--mono); font-size: .5625rem; letter-spacing: .08em; text-transform: uppercase; color: var(--cc); white-space: nowrap; }
+  .tbl .ti { color: var(--ink); }
+  .tbl .fl { font-family: var(--mono); font-size: .6875rem; color: var(--ink-3); white-space: nowrap; }
+  .qw { padding: .9rem 1.5rem 1.1rem; font-size: .8125rem; color: var(--ink-3); border-top: 1px solid var(--line-soft); }
+  .qw b { color: var(--ink-2); }
+
+  .reco { counter-reset: r; list-style: none; display: grid; gap: 1.5rem; }
+  .reco li { position: relative; padding-left: 3rem; }
+  .reco li::before { counter-increment: r; content: counter(r); position: absolute; left: 0; top: -.05rem; width: 1.9rem; height: 1.9rem; border: 1px solid var(--line); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: .8125rem; color: var(--accent); }
+  .reco h4 { font-family: var(--serif); font-weight: 600; font-size: 1.08rem; margin-bottom: .25rem; }
+  .reco p { font-size: .8625rem; color: var(--ink-2); line-height: 1.55; max-width: 72ch; }
+
+  .foot { margin-top: 2.6rem; padding-top: 1.3rem; border-top: 1px solid var(--line); font-family: var(--mono); font-size: .7rem; color: var(--ink-3); display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
+
+  @media (max-width: 920px){ .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 600px){ .kpi-grid { grid-template-columns: repeat(2, 1fr); } .find { grid-template-columns: 3px 1fr; } .find .flow { display: none; } }
+  @media print {
+    :root { --bg:#fff; --panel:#fff; --panel-2:#f6f6f4; --ink:#15150e; --ink-2:#444; --ink-3:#777; --line:#ddd; --line-soft:#eee; --track:#eee; }
+    body { background:#fff; color:#000; } .find:hover{ background:none; }
+    a[href^="http"]::after { content:" ("attr(href)")"; font-size:.8em; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- MASTHEAD (v5 shell) -->
+  <div class="top">
+    <span class="lbl brand">{{BRAND}}</span><span class="sep">/</span>
+    <span class="lbl">{{KICKER}}</span><span class="sep">/</span>
+    <span class="lbl">{{MODE}}</span>
+    <time>{{DATE_DOTTED}}</time>
+  </div>
+  <header class="masthead">
+    <!-- {{VERDICT_CLASS}} = v-ok | (default minor) | v-major | v-blocker -->
+    <div class="verdict {{VERDICT_CLASS}}"><span class="pip"></span>{{VERDICT}}</div>
+    <h1 class="title">{{TITLE}}</h1> <!-- secondary word in <em>…</em> -->
+    <p class="lede">{{LEDE}}</p>
+  </header>
+
+  <!-- KPI CARDS (color = información). Generator rules:
+       - score-like KPIs (Mean/Median/Min) → kpi-v class by threshold (good/mid/warn/bad)
+       - counts (Findings/Fuentes) → NEUTRAL (no color class); meaning via mini sev-bar
+       - Mean: kpi-bar fill width = score/10*100, class = same threshold -->
+  <section class="kpi-grid">
+    <div class="kpi">
+      <span class="kpi-k">{{KPI1_LABEL}}</span>
+      <div class="kpi-val"><span class="kpi-v {{MEAN_CLASS}} num">{{MEAN}}</span><span class="kpi-u num">/10</span></div>
+      <div class="kpi-bar" role="img" aria-label="{{MEAN}} de 10"><i class="{{MEAN_CLASS}}" style="width:{{MEAN_PCT}}%"></i></div>
+    </div>
+    <div class="kpi">
+      <span class="kpi-k">{{KPI2_LABEL}}</span>
+      <div class="kpi-val"><span class="kpi-v {{MEDIAN_CLASS}} num">{{MEDIAN}}</span><span class="kpi-u num">/10</span></div>
+      <span class="kpi-sub">{{KPI2_SUB}}</span>
+    </div>
+    <div class="kpi">
+      <span class="kpi-k"><span class="pip"></span>{{KPI3_LABEL}}</span>
+      <div class="kpi-val"><span class="kpi-v {{MIN_CLASS}} num">{{MIN}}</span></div>
+      <span class="kpi-sub">{{KPI3_SUB}}</span>
+    </div>
+    <div class="kpi">
+      <span class="kpi-k">{{KPI4_LABEL}}</span>
+      <div class="kpi-val"><span class="kpi-v num">{{FINDINGS}}</span></div>
+      <div class="kpi-sevbar" role="img" aria-label="{{SEV_ARIA}}">{{KPI4_SEVBAR}}</div>
+      <span class="kpi-sub">{{KPI4_SUB}}</span>
+    </div>
+    <div class="kpi">
+      <span class="kpi-k">{{KPI5_LABEL}}</span>
+      <div class="kpi-val"><span class="kpi-v num">{{SOURCES}}</span></div>
+      <span class="kpi-sub">{{KPI5_SUB}}</span>
+    </div>
+  </section>
+
+  <!-- 01 SALUD -->
+  <section class="block air">
+    <div class="head"><span class="n">01</span><span class="t">{{HEALTH_TITLE}}</span><span class="rule"></span><span class="aside">{{HEALTH_ASIDE}}</span></div>
+    <div class="panel health">
+      <div>
+        <div class="lbl" style="margin-bottom:.85rem">{{SEV_LABEL}}</div>
+        <div class="sevbar" role="img" aria-label="{{SEV_ARIA}}">{{SEV_BAR}}</div>
+        <ul class="sevkey">{{SEV_LEGEND}}</ul>
+      </div>
+      <div class="rule-v"></div>
+      <div>
+        <div class="lbl" style="margin-bottom:.85rem">{{HEAT_LABEL}}</div>
+        <div class="heat" role="img" aria-label="{{HEAT_ARIA}}">{{HEAT_COLS}}</div>
+        <div class="heat-cap">{{HEAT_CAP}}</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 LO QUE IMPORTA -->
+  <section class="block air">
+    <div class="head"><span class="n">02</span><span class="t">{{FINDINGS_TITLE}}</span><span class="rule"></span><span class="aside">{{FINDINGS_ASIDE}}</span></div>
+    <div class="finds">{{TOP_FINDINGS}}</div>
+    <details class="drawer">
+      <summary>{{DRAWER_LABEL}}</summary>
+      <table class="tbl">
+        <thead><tr><th>#</th><th>Sev</th><th>Finding</th><th>Acción</th><th>/flow</th></tr></thead>
+        <tbody>{{ALL_FINDINGS_ROWS}}</tbody>
+      </table>
+      <p class="qw">{{QUICK_WINS}}</p>
+    </details>
+  </section>
+
+  <!-- 03 RECOMENDACIÓN -->
+  <section class="block air">
+    <div class="head"><span class="n">03</span><span class="t">{{RECO_TITLE}}</span><span class="rule"></span><span class="aside">{{RECO_ASIDE}}</span></div>
+    <div class="panel"><ol class="reco">{{RECOMMENDATIONS}}</ol></div>
+  </section>
+
+  <footer class="foot">
+    <span>{{BRAND}} · html-report</span>
+    <span>{{COMMIT_SHA}} · {{DATE}}</span>
+  </footer>
+
+</div>
+</body>
+</html>

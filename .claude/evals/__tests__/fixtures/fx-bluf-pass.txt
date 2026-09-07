@@ -1,0 +1,1 @@
+El config rompe en la línea 23: falta el guard. Abajo el fix.

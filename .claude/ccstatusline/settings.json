@@ -1,0 +1,144 @@
+{
+  "version": 3,
+  "lines": [
+    [
+      {
+        "id": "1",
+        "type": "current-working-dir",
+        "color": "brightBlue",
+        "metadata": {
+          "segments": "1",
+          "abbreviateHome": "true"
+        },
+        "rawValue": true
+      },
+      {
+        "id": "2",
+        "type": "flex-separator"
+      },
+      {
+        "id": "3",
+        "type": "model",
+        "color": "cyan",
+        "rawValue": true
+      },
+      {
+        "id": "4",
+        "type": "separator"
+      },
+      {
+        "id": "5",
+        "type": "thinking-effort",
+        "color": "brightMagenta",
+        "rawValue": true
+      }
+    ],
+    [
+      {
+        "id": "6",
+        "type": "git-review",
+        "color": "brightCyan"
+      },
+      {
+        "id": "7",
+        "type": "separator"
+      },
+      {
+        "id": "8",
+        "type": "git-changes",
+        "color": "brightWhite"
+      },
+      {
+        "id": "9",
+        "type": "separator"
+      },
+      {
+        "id": "10",
+        "type": "session-cost",
+        "color": "brightYellow",
+        "rawValue": true
+      },
+      {
+        "id": "11",
+        "type": "flex-separator"
+      },
+      {
+        "id": "12",
+        "type": "git-branch",
+        "color": "magenta"
+      }
+    ],
+    [
+      {
+        "id": "13",
+        "type": "weekly-reset-timer",
+        "color": "brightBlack"
+      },
+      {
+        "id": "14",
+        "type": "flex-separator"
+      },
+      {
+        "id": "15",
+        "type": "context-percentage",
+        "color": "brightRed"
+      },
+      {
+        "id": "16",
+        "type": "separator"
+      },
+      {
+        "id": "17",
+        "type": "context-bar",
+        "color": "brightRed",
+        "metadata": {
+          "display": "slider-only"
+        }
+      }
+    ],
+    [
+      {
+        "id": "18",
+        "type": "weekly-usage",
+        "color": "brightCyan"
+      },
+      {
+        "id": "19",
+        "type": "flex-separator"
+      },
+      {
+        "id": "20",
+        "type": "session-usage",
+        "color": "brightGreen"
+      },
+      {
+        "id": "21",
+        "type": "separator"
+      },
+      {
+        "id": "22",
+        "type": "reset-timer",
+        "color": "brightYellow"
+      }
+    ]
+  ],
+  "flexMode": "full-minus-40",
+  "compactThreshold": 60,
+  "colorLevel": 2,
+  "inheritSeparatorColors": false,
+  "globalBold": false,
+  "minimalistMode": false,
+  "powerline": {
+    "enabled": false,
+    "separators": [
+      ""
+    ],
+    "separatorInvertBackground": [
+      false
+    ],
+    "startCaps": [],
+    "endCaps": [],
+    "autoAlign": false,
+    "continueThemeAcrossLines": false
+  }
+}

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="{{LANG}}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{TITLE}}</title>
+<!-- ============================================================
+     html-report DECISION template (dark-first) — feature 007, OQ2.
+     For decisions WITH comparable options (dev or non-dev: monitor,
+     PC component, shoe brand…). Layout: recommendation hero +
+     weighted options×criteria matrix + per-option pros/cons +
+     criteria & weights. SELF-CONTAINED: one <style>, ONE Google-Fonts
+     <link>, ZERO JS. Consumed by the `decide` skill (US4) AND for
+     standalone purchase/choice memos.
+
+     The :root token block below is the CANONICAL DARK TOKEN BLOCK,
+     inlined VERBATIM from glance.template.html (US1). Do NOT re-author
+     / rename / re-value a token (Cmd X). The .dmatrix component is the
+     one defined in references/visuals-svg-first.md (US2) — single source.
+
+     PLACEHOLDER CONTRACT
+       {{LANG}} {{BRAND}} {{KICKER}} {{MODE}} {{DATE_DOTTED}}
+       {{CONFIDENCE_CLASS}}  "" good | c-mid | c-low
+       {{CONFIDENCE}}        "Alta (3/3)" | "Media (2/3)" | "Baja"
+       {{QUESTION}}          the decision (h1; secondary phrase in <em>)
+       {{REC_OPTION}}        recommended option name (hero)
+       {{REC_WHY}}           one-sentence rationale
+       {{MATRIX_HEAD}}       repeat <th> per criterion (with weight, e.g. "Precio ×3")
+       {{MATRIX_ROWS}}       repeat option rows (see UNIT: MROW)
+       {{OPTION_CARDS}}      repeat per-option pros/cons (see UNIT: OPT)
+       {{CRITERIA_ROWS}}     repeat <tr><td>criterio</td><td>peso</td><td>por qué</td></tr>
+       {{FOOT_LEFT}} {{FOOT_RIGHT}}
+============================================================ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* === CANONICAL DARK TOKEN BLOCK (verbatim from glance.template.html — Cmd X) === */
+  :root {
+    --bg:#0a0a0c; --panel:#0f0f12; --panel-2:#15151a;
+    --line:#26262c; --line-soft:#1c1c22; --line-strong:#3a3a42;
+    --ink:#edecf0; --ink-2:#a4a3ad; --ink-3:#6c6b76;
+    --accent:#6ee7d3;
+    --good:#5ec98f; --mid:#d6c267; --warn:#e0a35e; --bad:#e8716f;
+    --blocker:#e8716f; --major:#e0a35e; --minor:#d6c267; --nit:#7d7d87;
+    --track:rgba(255,255,255,.06);
+    --serif:"Newsreader",Georgia,"Times New Roman",serif;
+    --sans:"Geist",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+    --mono:"Geist Mono",ui-monospace,"SF Mono",Consolas,monospace;
+    --maxw:1120px;
+  }
+  *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+  html { font-size:16px; scroll-behavior:smooth; }
+  body {
+    font-family:var(--sans); background:var(--bg); color:var(--ink);
+    line-height:1.6; font-size:.9375rem;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    padding:clamp(2rem,5vw,3.5rem) clamp(1.25rem,5vw,2.5rem) 3.5rem;
+  }
+  .wrap { max-width:var(--maxw); margin:0 auto; }
+  .lbl { font-family:var(--mono); font-size:.6875rem; letter-spacing:.2em; text-transform:uppercase; color:var(--ink-3); }
+  .num { font-variant-numeric:tabular-nums; }
+  code { font-family:var(--mono); font-size:.85em; color:var(--ink); background:var(--panel-2); border:1px solid var(--line-soft); border-radius:5px; padding:.05rem .35rem; }
+  @media (prefers-reduced-motion:no-preference) { body { animation:pf .4s ease-out both; } @keyframes pf { from { opacity:0; } } }
+
+  .top { display:flex; align-items:center; gap:1rem; padding-bottom:1.2rem; border-bottom:1px solid var(--line); margin-bottom:2rem; flex-wrap:wrap; }
+  .top .lbl.brand { color:var(--accent); } .top .sep { color:var(--ink-3); }
+  .top time { margin-left:auto; font-family:var(--mono); font-size:.75rem; color:var(--ink-3); }
+
+  /* Recommendation hero — the answer, above the fold */
+  .rec { background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--good); border-radius:16px; padding:clamp(1.4rem,3vw,2rem); margin-bottom:2.4rem; }
+  .rec .conf { display:inline-flex; align-items:center; gap:.5rem; font-family:var(--mono); font-size:.6875rem; letter-spacing:.12em; text-transform:uppercase; color:var(--good); margin-bottom:.8rem; }
+  .rec .conf.c-mid { color:var(--mid); } .rec .conf.c-low { color:var(--warn); }
+  .rec .conf .pip { width:7px; height:7px; border-radius:50%; background:currentColor; }
+  .rec .q { font-family:var(--serif); font-weight:500; font-size:clamp(1.5rem,3.5vw,2.2rem); line-height:1.1; letter-spacing:-.015em; margin-bottom:.9rem; }
+  .rec .q em { font-style:italic; color:var(--ink-2); font-weight:400; }
+  .rec .pick { font-family:var(--mono); font-size:.7rem; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); }
+  .rec .pick b { display:block; font-family:var(--serif); font-size:1.4rem; letter-spacing:0; text-transform:none; color:var(--good); margin-top:.2rem; }
+  .rec .why { margin-top:.7rem; font-size:.9rem; color:var(--ink-2); max-width:64ch; }
+
+  .block { margin-bottom:2.4rem; }
+  .head { display:flex; align-items:center; gap:.75rem; margin-bottom:1.1rem; }
+  .head .n { font-family:var(--mono); font-size:.7rem; color:var(--accent); border:1px solid var(--line); border-radius:6px; padding:.22rem .45rem; line-height:1; }
+  .head .t { font-family:var(--sans); font-weight:600; font-size:1.1rem; letter-spacing:-.01em; color:var(--ink); }
+  .head .rule { flex:1; height:1px; background:var(--line-soft); }
+
+  /* Decision matrix — options × criteria, weighted (US2 .dmatrix, single source) */
+  .dmatrix-wrap { border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+  .dmatrix { width:100%; border-collapse:collapse; font-size:.82rem; }
+  .dmatrix th { text-align:left; padding:.7rem .9rem; font-family:var(--mono); font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); background:var(--panel-2); border-bottom:1px solid var(--line); }
+  .dmatrix th.tot, .dmatrix td.tot { text-align:right; }
+  .dmatrix td { padding:.7rem .9rem; border-bottom:1px solid var(--line-soft); color:var(--ink-2); vertical-align:middle; }
+  .dmatrix tr:last-child td { border-bottom:none; }
+  .dmatrix tr:hover td { background:var(--panel-2); }
+  .dmatrix .opt { color:var(--ink); font-family:var(--serif); font-size:.98rem; white-space:nowrap; }
+  .dmatrix .cell { display:flex; align-items:center; gap:.5rem; font-family:var(--mono); font-variant-numeric:tabular-nums; color:var(--ink); }
+  .dmatrix .cell i { display:block; height:6px; width:48px; border-radius:999px; background:var(--track); position:relative; flex-shrink:0; }
+  .dmatrix .cell i b { position:absolute; left:0; top:0; height:100%; border-radius:999px; }
+  .dmatrix .tot { font-family:var(--mono); font-weight:600; font-variant-numeric:tabular-nums; color:var(--ink); }
+  .dmatrix .tot.good { color:var(--good); } .dmatrix .tot.mid { color:var(--mid); } .dmatrix .tot.warn { color:var(--warn); } .dmatrix .tot.bad { color:var(--bad); }
+  .dmatrix tr.win td { background:color-mix(in srgb, var(--good) 9%, transparent); }
+  .dmatrix tr.win .opt::before { content:'★ '; color:var(--good); }
+
+  /* Per-option pros/cons */
+  .opts { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:.85rem; }
+  .opt-card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:1rem 1.1rem; }
+  .opt-card h4 { font-family:var(--serif); font-weight:600; font-size:1.05rem; color:var(--ink); margin-bottom:.6rem; display:flex; align-items:center; gap:.5rem; }
+  .opt-card .sc { font-family:var(--mono); font-size:.7rem; color:var(--ink-3); margin-left:auto; }
+  .pc { list-style:none; display:grid; gap:.3rem; font-size:.8rem; line-height:1.45; }
+  .pc li { display:flex; gap:.5rem; color:var(--ink-2); }
+  .pc li::before { font-family:var(--mono); flex-shrink:0; }
+  .pc li.p::before { content:'+'; color:var(--good); }
+  .pc li.c::before { content:'\2013'; color:var(--bad); }
+  .pc + .pc { margin-top:.6rem; }
+
+  .tbl { width:100%; border-collapse:collapse; font-size:.8rem; border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+  .tbl th { text-align:left; padding:.65rem .9rem; font-family:var(--mono); font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); background:var(--panel-2); border-bottom:1px solid var(--line); }
+  .tbl td { padding:.65rem .9rem; border-bottom:1px solid var(--line-soft); color:var(--ink-2); vertical-align:top; line-height:1.45; }
+  .tbl tr:last-child td { border-bottom:none; }
+  .tbl .ti { color:var(--ink); white-space:nowrap; }
+
+  .foot { margin-top:2.4rem; padding-top:1.2rem; border-top:1px solid var(--line); font-family:var(--mono); font-size:.7rem; color:var(--ink-3); display:flex; justify-content:space-between; flex-wrap:wrap; gap:.5rem; }
+
+  @media (max-width:600px){ .dmatrix { font-size:.74rem; } .dmatrix .cell i { width:32px; } }
+  @media print {
+    :root { --bg:#fff; --panel:#fff; --panel-2:#f6f6f4; --ink:#15150e; --ink-2:#444; --ink-3:#777; --line:#ddd; --line-soft:#eee; --track:#eee; }
+    body { background:#fff; color:#000; } .dmatrix tr:hover td { background:none; }
+    .block, .opt-card, .rec, .dmatrix-wrap { break-inside:avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <span class="lbl brand">{{BRAND}}</span><span class="sep">/</span>
+    <span class="lbl">{{KICKER}}</span><span class="sep">/</span>
+    <span class="lbl">{{MODE}}</span>
+    <time>{{DATE_DOTTED}}</time>
+  </div>
+
+  <!-- RECOMMENDATION HERO — the answer first, above the fold -->
+  <section class="rec">
+    <div class="conf {{CONFIDENCE_CLASS}}"><span class="pip"></span>Confianza: {{CONFIDENCE}}</div>
+    <h1 class="q">{{QUESTION}}</h1>
+    <div class="pick">Recomendación<b>{{REC_OPTION}}</b></div>
+    <p class="why">{{REC_WHY}}</p>
+  </section>
+
+  <!-- DECISION MATRIX — options × weighted criteria.
+       UNIT: MROW (add class="win" to the recommended row):
+       <tr class="win"><td class="opt">Monitor A</td>
+         <td><span class="cell"><i><b style="width:80%;background:var(--good)"></b></i>8</span></td>
+         <td class="tot good">7.2</td></tr>
+       cell bar: width = score/max*100; color by threshold (good/mid/warn/bad). -->
+  <section class="block">
+    <div class="head"><span class="n">01</span><span class="t">Comparativa ponderada</span><span class="rule"></span></div>
+    <div class="dmatrix-wrap"><table class="dmatrix">
+      <thead><tr><th>Opción</th>{{MATRIX_HEAD}}<th class="tot">Total</th></tr></thead>
+      <tbody>{{MATRIX_ROWS}}</tbody>
+    </table></div>
+  </section>
+
+  <!-- PER-OPTION pros/cons.
+       UNIT: OPT
+       <div class="opt-card"><h4>Monitor A <span class="sc">7.2</span></h4>
+         <ul class="pc"><li class="p">pro…</li><li class="c">contra…</li></ul></div> -->
+  <section class="block">
+    <div class="head"><span class="n">02</span><span class="t">Opciones en detalle</span><span class="rule"></span></div>
+    <div class="opts">{{OPTION_CARDS}}</div>
+  </section>
+
+  <!-- CRITERIA & weights — transparency on how the score was built -->
+  <section class="block">
+    <div class="head"><span class="n">03</span><span class="t">Criterios y pesos</span><span class="rule"></span></div>
+    <table class="tbl">
+      <thead><tr><th>Criterio</th><th>Peso</th><th>Por qué importa</th></tr></thead>
+      <tbody>{{CRITERIA_ROWS}}</tbody>
+    </table>
+  </section>
+
+  <footer class="foot">
+    <span>{{FOOT_LEFT}}</span>
+    <span>{{FOOT_RIGHT}}</span>
+  </footer>
+
+</div>
+</body>
+</html>

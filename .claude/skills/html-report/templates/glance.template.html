@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="{{LANG}}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{TITLE}}</title>
+<!-- ============================================================
+     html-report GLANCE template (v2, dark-first) — feature 007.
+     Scan-at-a-glance report: masthead + immediate-action callout +
+     KPI row (color = information) + distribution bar + CSS-only
+     filterable / expandable finding cards + drawer + next-steps.
+     SELF-CONTAINED: one <style>, ONE Google-Fonts <link>, ZERO JS
+     (filter = radio-hack, expand = <details>). Dark-first + print-light.
+     Generator fills {{PLACEHOLDERS}} — see contract below.
+
+     PLACEHOLDER CONTRACT
+       {{LANG}}            html lang (e.g. "es")
+       {{BRAND}}           top-left brand label (e.g. "PONEGLYPH")
+       {{KICKER}}          top kicker (e.g. "CC Release Audit")
+       {{MODE}}            top mode label (e.g. "research-audit-light")
+       {{DATE_DOTTED}}     top-right date (e.g. "2026.06.03")
+       {{VERDICT_CLASS}}   "" (default good) | v-major | v-blocker
+       {{VERDICT}}         verdict line (e.g. "Config madura · al día")
+       {{TITLE}}           h1; wrap secondary phrase in <em>…</em>
+       {{LEDE}}            one-sentence lede
+       {{NOW_LABEL}}       immediate-action label (e.g. "Acción inmediata")
+       {{NOW_ACTION}}      the single most important action (1 line, HTML ok)
+       {{KPI_CARDS}}       repeat .kpi blocks (see UNIT: KPI)
+       {{SEVBAR_SEGMENTS}} repeat <i class="b|m|n|x" style="width:%"></i>
+       {{SEVKEY}}          repeat <li> legend items (see UNIT: SEVKEY)
+       {{FILTERS}}         repeat <label for="..."> after the 3 radios (see UNIT: FILTER)
+       {{FINDING_CARDS}}   repeat .card <details>/<div> (see UNIT: CARD)
+       {{DRAWER_TITLE}}    drawer summary label
+       {{DRAWER_ROWS}}     repeat <tr><td class="ti">..</td><td>..</td></tr>
+       {{STEPS}}           repeat .step blocks (see UNIT: STEP)
+       {{FOOT_LEFT}} {{FOOT_RIGHT}}  footer text
+
+     CANONICAL DARK TOKEN BLOCK (the :root below) — feature 007 decision:
+       decision.template.html (US3) MUST inline this block VERBATIM.
+       Never re-author / rename / re-value a token (Cmd X).
+============================================================ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* === CANONICAL DARK TOKEN BLOCK (verbatim source for decision.template) === */
+  :root {
+    --bg:#0a0a0c; --panel:#0f0f12; --panel-2:#15151a;
+    --line:#26262c; --line-soft:#1c1c22; --line-strong:#3a3a42;
+    --ink:#edecf0; --ink-2:#a4a3ad; --ink-3:#6c6b76;
+    --accent:#6ee7d3;
+    --good:#5ec98f; --mid:#d6c267; --warn:#e0a35e; --bad:#e8716f;
+    --blocker:#e8716f; --major:#e0a35e; --minor:#d6c267; --nit:#7d7d87;
+    --track:rgba(255,255,255,.06);
+    --serif:"Newsreader",Georgia,"Times New Roman",serif;
+    --sans:"Geist",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+    --mono:"Geist Mono",ui-monospace,"SF Mono",Consolas,monospace;
+    --maxw:1120px;
+  }
+  *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+  html { font-size:16px; scroll-behavior:smooth; }
+  body {
+    font-family:var(--sans); background:var(--bg); color:var(--ink);
+    line-height:1.6; font-size:.9375rem;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    padding:clamp(2rem,5vw,3.5rem) clamp(1.25rem,5vw,2.5rem) 3.5rem;
+  }
+  .wrap { max-width:var(--maxw); margin:0 auto; }
+  .lbl { font-family:var(--mono); font-size:.6875rem; letter-spacing:.2em; text-transform:uppercase; color:var(--ink-3); }
+  .num { font-variant-numeric:tabular-nums; }
+  a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; }
+  code { font-family:var(--mono); font-size:.85em; color:var(--ink); background:var(--panel-2); border:1px solid var(--line-soft); border-radius:5px; padding:.05rem .35rem; }
+  @media (prefers-reduced-motion:no-preference) { body { animation:pf .4s ease-out both; } @keyframes pf { from { opacity:0; } } }
+
+  .top { display:flex; align-items:center; gap:1rem; padding-bottom:1.2rem; border-bottom:1px solid var(--line); margin-bottom:2rem; flex-wrap:wrap; }
+  .top .lbl.brand { color:var(--accent); } .top .sep { color:var(--ink-3); }
+  .top time { margin-left:auto; font-family:var(--mono); font-size:.75rem; color:var(--ink-3); }
+  .masthead { margin-bottom:1.6rem; }
+  .verdict { display:inline-flex; align-items:center; gap:.5rem; font-family:var(--mono); font-size:.6875rem; letter-spacing:.12em; text-transform:uppercase; color:var(--good); margin-bottom:.9rem; }
+  .verdict.v-major { color:var(--major); } .verdict.v-blocker { color:var(--blocker); }
+  .verdict .pip { width:7px; height:7px; border-radius:50%; background:currentColor; }
+  h1.title { font-family:var(--serif); font-weight:500; font-size:clamp(2.1rem,5vw,3.2rem); line-height:1.04; letter-spacing:-.015em; }
+  h1.title em { font-style:italic; color:var(--ink-2); font-weight:400; }
+  .lede { margin-top:.8rem; font-family:var(--serif); font-size:clamp(1rem,1.8vw,1.2rem); line-height:1.5; color:var(--ink-2); max-width:56ch; }
+
+  .nowbar { display:flex; align-items:baseline; gap:.7rem; flex-wrap:wrap; margin:1.4rem 0 2.2rem; padding:.85rem 1.1rem; background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--bad); border-radius:12px; }
+  .nowbar .k { font-family:var(--mono); font-size:.62rem; letter-spacing:.14em; text-transform:uppercase; color:var(--bad); }
+  .nowbar .v { font-size:.9rem; color:var(--ink-2); } .nowbar .v b { color:var(--ink); font-weight:500; }
+
+  .kpi-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:.8rem; margin-bottom:2.4rem; }
+  .kpi { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1rem 1.1rem 1.05rem; display:flex; flex-direction:column; gap:.45rem; min-width:0; }
+  .kpi-k { font-family:var(--mono); font-size:.6rem; letter-spacing:.13em; text-transform:uppercase; color:var(--ink-3); display:flex; align-items:center; gap:.4rem; }
+  .kpi-k .pip { width:6px; height:6px; border-radius:50%; background:var(--bad); }
+  .kpi-v { font-family:var(--sans); font-weight:600; font-size:2rem; line-height:1; letter-spacing:-.01em; }
+  .kpi-v.good { color:var(--good); } .kpi-v.bad { color:var(--bad); } .kpi-v.warn { color:var(--warn); } .kpi-v.mid { color:var(--mid); }
+  .kpi-sub { font-size:.7rem; color:var(--ink-3); margin-top:auto; }
+
+  .block { margin-bottom:2.4rem; }
+  .head { display:flex; align-items:center; gap:.75rem; margin-bottom:1.1rem; }
+  .head .n { font-family:var(--mono); font-size:.7rem; color:var(--accent); border:1px solid var(--line); border-radius:6px; padding:.22rem .45rem; line-height:1; }
+  .head .t { font-family:var(--sans); font-weight:600; font-size:1.1rem; letter-spacing:-.01em; color:var(--ink); }
+  .head .rule { flex:1; height:1px; background:var(--line-soft); }
+  .head .aside { font-family:var(--mono); font-size:.64rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); }
+
+  .dist { display:flex; align-items:center; gap:1.2rem; flex-wrap:wrap; }
+  .sevbar { display:flex; height:10px; min-width:240px; flex:1; border-radius:999px; overflow:hidden; background:var(--track); }
+  .sevbar i { display:block; height:100%; }
+  .sevbar i.b{background:var(--blocker)} .sevbar i.m{background:var(--major)} .sevbar i.n{background:var(--minor)} .sevbar i.x{background:var(--nit)}
+  .sevkey { list-style:none; display:flex; flex-wrap:wrap; gap:.95rem; }
+  .sevkey li { display:flex; align-items:center; gap:.45rem; font-size:.78rem; color:var(--ink-2); }
+  .sevkey .d { width:8px; height:8px; border-radius:50%; }
+  .sevkey b { font-family:var(--mono); color:var(--ink); font-weight:500; }
+
+  /* CSS-only filter (radio-hack) + card grid */
+  .fin { position:absolute; opacity:0; pointer-events:none; width:0; height:0; }
+  .fbar { display:flex; gap:.4rem; flex-wrap:wrap; margin-bottom:1.1rem; }
+  .fbar label { font-family:var(--mono); font-size:.63rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); border:1px solid var(--line); border-radius:999px; padding:.32rem .72rem; cursor:pointer; transition:color .15s, border-color .15s, background .15s; }
+  .fbar label:hover { color:var(--ink-2); border-color:var(--line-strong); }
+  #fall:checked ~ .fbar label[for=fall],
+  #fa:checked ~ .fbar label[for=fa],
+  #fb:checked ~ .fbar label[for=fb] { color:var(--ink); border-color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, transparent); }
+  .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:.85rem; align-items:start; }
+  #fa:checked ~ .grid .card:not(.b-a) { display:none; }
+  #fb:checked ~ .grid .card:not(.b-b) { display:none; }
+  @media (max-width:680px){ .grid { grid-template-columns:1fr; } }
+
+  .card { background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--c,var(--line)); border-radius:12px; overflow:hidden; }
+  .card > summary { list-style:none; cursor:pointer; padding:.9rem 1.05rem; display:flex; flex-direction:column; gap:.5rem; }
+  .card > summary::-webkit-details-marker { display:none; }
+  .card .crow { display:flex; align-items:center; gap:.45rem; flex-wrap:wrap; }
+  .chip { font-family:var(--mono); font-size:.56rem; letter-spacing:.08em; text-transform:uppercase; padding:.13rem .42rem; border-radius:999px; border:1px solid var(--line); color:var(--ink-3); white-space:nowrap; }
+  .chip.sev { color:var(--c); border-color:color-mix(in srgb, var(--c) 42%, transparent); }
+  .exp { margin-left:auto; font-family:var(--mono); font-size:.95rem; color:var(--accent); line-height:1; }
+  .exp::after { content:'+'; }
+  .card[open] .exp::after { content:'\2013'; }
+  .card .ttl { font-family:var(--serif); font-weight:500; font-size:1.04rem; line-height:1.28; color:var(--ink); }
+  .card .det { padding:.2rem 1.05rem 1rem; border-top:1px solid var(--line-soft); }
+  .card .det .row { display:grid; grid-template-columns:4.6rem 1fr; gap:.1rem .7rem; margin-top:.6rem; font-size:.8rem; color:var(--ink-2); line-height:1.48; }
+  .card .det .row .k { font-family:var(--mono); font-size:.56rem; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); padding-top:.12rem; }
+
+  .drawer { border:1px solid var(--line); border-radius:14px; background:var(--panel); overflow:hidden; }
+  .drawer > summary { cursor:pointer; padding:.9rem 1.3rem; font-family:var(--mono); font-size:.66rem; letter-spacing:.13em; text-transform:uppercase; color:var(--ink-2); list-style:none; display:flex; align-items:center; gap:.6rem; }
+  .drawer > summary::-webkit-details-marker { display:none; }
+  .drawer > summary::before { content:'+'; color:var(--accent); font-size:1.05rem; line-height:1; }
+  .drawer[open] > summary::before { content:'\2013'; }
+  .drawer[open] > summary { border-bottom:1px solid var(--line-soft); }
+  .tbl { width:100%; border-collapse:collapse; font-size:.8rem; }
+  .tbl td { padding:.6rem 1.3rem; border-bottom:1px solid var(--line-soft); color:var(--ink-2); vertical-align:top; line-height:1.45; }
+  .tbl tr:last-child td { border-bottom:none; }
+  .tbl .ti { color:var(--ink); white-space:nowrap; font-family:var(--mono); font-size:.66rem; }
+
+  .reco { display:flex; gap:.6rem; flex-wrap:wrap; }
+  .step { flex:1; min-width:200px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:.9rem 1rem; }
+  .step .s { font-family:var(--mono); font-size:.62rem; color:var(--accent); letter-spacing:.1em; }
+  .step h4 { font-family:var(--serif); font-weight:600; font-size:1rem; margin:.25rem 0 .2rem; }
+  .step p { font-size:.78rem; color:var(--ink-2); line-height:1.5; }
+
+  .foot { margin-top:2.4rem; padding-top:1.2rem; border-top:1px solid var(--line); font-family:var(--mono); font-size:.7rem; color:var(--ink-3); display:flex; justify-content:space-between; flex-wrap:wrap; gap:.5rem; }
+
+  @media (max-width:920px){ .kpi-grid { grid-template-columns:repeat(3,1fr); } }
+  @media (max-width:600px){ .kpi-grid { grid-template-columns:repeat(2,1fr); } }
+  @media print {
+    :root { --bg:#fff; --panel:#fff; --panel-2:#f6f6f4; --ink:#15150e; --ink-2:#444; --ink-3:#777; --line:#ddd; --line-soft:#eee; --track:#eee; }
+    body { background:#fff; color:#000; }
+    .card .det, .drawer .tbl { display:block !important; }
+    a[href^="http"]::after { content:" ("attr(href)")"; font-size:.8em; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <span class="lbl brand">{{BRAND}}</span><span class="sep">/</span>
+    <span class="lbl">{{KICKER}}</span><span class="sep">/</span>
+    <span class="lbl">{{MODE}}</span>
+    <time>{{DATE_DOTTED}}</time>
+  </div>
+
+  <header class="masthead">
+    <div class="verdict {{VERDICT_CLASS}}"><span class="pip"></span>{{VERDICT}}</div>
+    <h1 class="title">{{TITLE}}</h1>
+    <p class="lede">{{LEDE}}</p>
+  </header>
+
+  <!-- Immediate action: the single most important thing. Omit the whole block if N/A. -->
+  <div class="nowbar">
+    <span class="k">{{NOW_LABEL}}</span>
+    <span class="v">{{NOW_ACTION}}</span>
+  </div>
+
+  <!-- UNIT: KPI (repeat, max 5). color = información:
+       <div class="kpi"><span class="kpi-k"><span class="pip"></span>LABEL</span>
+         <span class="kpi-v bad num">N</span><span class="kpi-sub">SUB</span></div>
+       kpi-v class: bad|warn|mid|good (score health) or none (neutral count). -->
+  <section class="kpi-grid">
+    {{KPI_CARDS}}
+  </section>
+
+  <section class="block">
+    <div class="head"><span class="n">01</span><span class="t">Distribución</span><span class="rule"></span><span class="aside">{{DIST_ASIDE}}</span></div>
+    <div class="dist">
+      <!-- segments: <i class="b|m|n|x" style="width:%"></i> ; omit zero-count from bar -->
+      <div class="sevbar" role="img" aria-label="{{SEV_ARIA}}">{{SEVBAR_SEGMENTS}}</div>
+      <!-- UNIT: SEVKEY <li><span class="d" style="background:var(--blocker)"></span><b>N</b>&nbsp;LABEL</li> -->
+      <ul class="sevkey">{{SEVKEY}}</ul>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="head"><span class="n">02</span><span class="t">{{FINDINGS_TITLE}}</span><span class="rule"></span><span class="aside">filtra · expande</span></div>
+    <!-- CSS-only filter: radios FIRST, then labels, then grid. Add #fX rules in <style> if >3 buckets. -->
+    <input class="fin" type="radio" name="filt" id="fall" checked>
+    <input class="fin" type="radio" name="filt" id="fa">
+    <input class="fin" type="radio" name="filt" id="fb">
+    <div class="fbar">{{FILTERS}}</div>
+    <!-- UNIT: CARD (expandable) — class b-a|b-b drives the filter; --c sets the severity color:
+         <details class="card b-a" style="--c:var(--blocker)">
+           <summary><div class="crow"><span class="chip sev">TAG</span><span class="chip">META</span><span class="exp"></span></div>
+             <div class="ttl">TITLE</div></summary>
+           <div class="det"><div class="row"><span class="k">KEY</span><span>VALUE</span></div></div>
+         </details>
+         For one-line items use a static <div class="card b-X"> with just .crow + .ttl (no <details>). -->
+    <div class="grid">
+      {{FINDING_CARDS}}
+    </div>
+  </section>
+
+  <!-- Secondary content on-demand. Omit if not needed. -->
+  <section class="block">
+    <details class="drawer">
+      <summary>{{DRAWER_TITLE}}</summary>
+      <table class="tbl"><tbody>{{DRAWER_ROWS}}</tbody></table>
+    </details>
+  </section>
+
+  <section class="block">
+    <div class="head"><span class="n">03</span><span class="t">{{STEPS_TITLE}}</span><span class="rule"></span><span class="aside">{{STEPS_ASIDE}}</span></div>
+    <!-- UNIT: STEP <div class="step"><span class="s">0N</span><h4>TITLE</h4><p>TEXT</p></div> -->
+    <div class="reco">{{STEPS}}</div>
+  </section>
+
+  <footer class="foot">
+    <span>{{FOOT_LEFT}}</span>
+    <span>{{FOOT_RIGHT}}</span>
+  </footer>
+
+</div>
+</body>
+</html>

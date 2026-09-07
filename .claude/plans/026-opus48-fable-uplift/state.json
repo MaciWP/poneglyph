@@ -1,0 +1,74 @@
+{
+  "spec_slug": "026-opus48-fable-uplift",
+  "mode": "full",
+  "current_phase": "closed",
+  "phases_completed": [
+    1,
+    2,
+    2.5,
+    3,
+    4,
+    5
+  ],
+  "gates_approved": {
+    "1->2": true,
+    "2->3": true
+  },
+  "us_completed": [
+    "US1",
+    "US3",
+    "US4",
+    "US2"
+  ],
+  "us_pending": [],
+  "us_history": [
+    {
+      "us": "US1",
+      "completed_at": "2026-07-07",
+      "tests_passed": true,
+      "files_touched": [
+        ".claude/docs/model-uplift-playbook.md"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US3",
+      "completed_at": "2026-07-07",
+      "tests_passed": true,
+      "files_touched": [
+        ".claude/settings.json"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US4",
+      "completed_at": "2026-07-07",
+      "tests_passed": true,
+      "files_touched": [
+        "CLAUDE.md",
+        "orchestrator-protocol (SKILL+3 refs)",
+        "tech-plan (2 refs)",
+        "meta-create (1 ref)"
+      ],
+      "execution": "class-fix Explore/xhigh; 8 files (>4 declarado)",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US2",
+      "completed_at": "2026-07-07",
+      "tests_passed": true,
+      "files_touched": [
+        ".claude/rules/model-uplift.md"
+      ],
+      "execution": "sync re-run; graders green in-suite; live golden-run deferred out-of-sandbox",
+      "askuserquestion_count": 0
+    }
+  ],
+  "feature_closed": true,
+  "review_verdict": "APPROVED_WITH_WARNINGS",
+  "retro_status": "approved",
+  "started_at": "2026-07-07",
+  "updated_at": "2026-07-07"
+}

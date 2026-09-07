@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["bun"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowImportingTsExtensions": true,
+    "moduleDetection": "force"
+  },
+  "include": [".claude/hooks/**/*.ts"],
+  "exclude": ["node_modules", "**/__test_temp__/**", "**/__test_temp_ast__/**"]
+}

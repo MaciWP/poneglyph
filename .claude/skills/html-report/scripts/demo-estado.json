@@ -1,0 +1,61 @@
+{
+  "meta": {
+    "title": "Claude Code Poneglyph",
+    "titleEm": "estado del sistema",
+    "kicker": "Análisis de estado",
+    "mode": "meta-sistema",
+    "date": "2026-06-08",
+    "verdict": { "kind": "warn", "text": "En transición · refactor de spawn (008) a medias" },
+    "lede": "Meta-sistema de orquestación para Claude Code. 9 features (7 cerradas), hooks al 100%. Una refactor del criterio de spawn (008) en curso ya removió los agents y deja el sistema en transición.",
+    "now": { "label": "Acción inmediata", "action": "Completar <b>feature 008 (spawn-policy)</b>: US2 ya removió los 3 agents; faltan 8 HUs (árbol único, eliminar <code>context isolation</code>, doc workflows, corregir team mode)." },
+    "footLeft": "Poneglyph · html-report dynamic (feature 010)",
+    "footRight": "2026-06-08"
+  },
+  "kpis": [
+    { "label": "Features", "value": "9", "sub": "7 cerradas · 1 en curso · 1 audit" },
+    { "label": "Cerradas", "value": "7/9", "health": "good", "sub": "6 AWW · 1 APPROVED" },
+    { "label": "En curso", "value": "008", "health": "warn", "sub": "Phase 3 · 2/10 HUs" },
+    { "label": "Tests hooks", "value": "100%", "health": "good", "sub": "100/100 · 118 expect" },
+    { "label": "Items abiertos", "value": "6", "health": "warn", "flag": true, "sub": "0 blocker · 3 major" }
+  ],
+  "sections": [
+    {
+      "id": "dist", "num": "01", "title": "Distribución",
+      "blocks": [
+        { "type": "chart", "data": { "kind": "bar", "title": "Items abiertos por severidad", "series": [
+          { "label": "Major", "value": 3, "health": "warn" },
+          { "label": "Minor", "value": 2, "health": "mid" },
+          { "label": "Nit", "value": 1, "health": "good" }
+        ] } },
+        { "type": "chart", "data": { "kind": "bar", "title": "Features por estado", "series": [
+          { "label": "Cerradas", "value": 7, "health": "good" },
+          { "label": "En curso", "value": 1, "health": "warn" },
+          { "label": "Audit", "value": 1, "health": "good" }
+        ] } }
+      ]
+    },
+    {
+      "id": "items", "num": "02", "title": "Items abiertos",
+      "blocks": [
+        { "type": "table", "data": { "filterable": true, "title": "6 items · ninguno bloquea uso", "columns": [
+          { "key": "n", "label": "#", "numeric": true }, { "key": "item", "label": "Item" }, { "key": "sev", "label": "Sev" }, { "key": "loc", "label": "Ubicación" }
+        ], "rows": [
+          { "severity": "major", "cells": { "n": "1", "item": "Refactor 008 a medias: agents removidos, política sin completar", "sev": "MAJOR", "loc": "008" } },
+          { "severity": "major", "cells": { "n": "2", "item": "AC5 006: reducción de tokens no medida; validación diferida", "sev": "MAJOR", "loc": "output-styles · CLAUDE.md" } },
+          { "severity": "major", "cells": { "n": "3", "item": "Retro 001 abierta: 6 promociones sin ratificar", "sev": "MAJOR", "loc": "plans/001" } },
+          { "severity": "minor", "cells": { "n": "4", "item": "Baseline stale 81/81 en 5 skills (real=100)", "sev": "MINOR", "loc": "skills/*/SKILL.md" } },
+          { "severity": "minor", "cells": { "n": "5", "item": "Checkboxes retro 006 sin marcar pese a cierre", "sev": "MINOR", "loc": "plans/006" } },
+          { "severity": "nit", "cells": { "n": "6", "item": "Claims version-specific CC a re-verificar", "sev": "NIT", "loc": "docs" } }
+        ] } }
+      ]
+    },
+    {
+      "id": "reco", "num": "03", "title": "Recomendaciones",
+      "blocks": [
+        { "type": "callout", "data": { "kind": "note", "title": "Por valor / esfuerzo", "body": "1) Completar 008 (8 HUs). 2) Validar 006 en uso + decidir AC5. 3) Cerrar loop 001 (ratificar 6 promos). 4) Quick win 81/81→100. 5) Higiene checkboxes + version-claims." } },
+        { "type": "sidenote", "data": { "marker": "★", "body": "Este informe se generó con el <b>modo dynamic</b> (feature 010) vía <code>render.ts</code> — datos JSON → 1 HTML self-contained." } },
+        { "type": "prose", "html": "<p>Sistema sano y operativo. La deuda es de <strong>cierre de loops y validación diferida</strong>, no de defectos en ejecución.</p>" }
+      ]
+    }
+  ]
+}

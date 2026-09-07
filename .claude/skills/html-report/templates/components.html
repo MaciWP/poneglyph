@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>html-report — Component Library</title>
+<!--
+  ============================================================================
+  html-report — COPY-PASTE COMPONENT LIBRARY (C1-C8)
+  ============================================================================
+  WHAT THIS FILE IS
+    A reference gallery + copy-paste source for the html-report skill. An agent
+    rendering a report (report.template.html or dashboard.template.html) PICKS a
+    component from here and fills the PLACEHOLDER slots.
+
+  HOW TO USE (per component)
+    1. In the single <style> block below, find the /* Cx - ... */ banner.
+       Copy the CSS rules under it.
+    2. Copy the matching markup: each component's markup lives BOTH as a
+       /* MARKUP ... */ CSS comment beside its CSS (for reference) AND as a
+       live, fully-rendered instance in the <body> gallery below. Copy the
+       live <body> instance - it is valid, ready HTML.
+    3. Ensure the destination page template's inlined <style> contains: (a) the
+       DESIGN TOKEN block below, and (b) the SHARED SEVERITY / SCORE CLASSES.
+       Several components depend on those shared classes (noted per banner).
+
+  STRUCTURE NOTE (why one <style>, not one per component)
+    HTML forbids nested <style> elements - the browser would close the block at
+    the first </style> and dump the rest as visible text. So ALL CSS lives in
+    ONE <style>; component boundaries are CSS /* comment */ banners. The
+    copy-paste unit is still per-component: copy the banner's rules + the live
+    <body> instance.
+
+  TOKEN CONTRACT (sacred - Commandment X)
+    The :root token block below is COPIED VERBATIM from the canonical tokens.css
+    (single source of truth, superset of decide/templates/memo.html). Never
+    re-author, rename, or re-value a --token. Divergence is a bug.
+
+  SELF-CONTAINED
+    Only var(--token) references for color/space/radius/font. Zero external
+    assets, zero JS, zero network. Charts = inline SVG (gauge) + CSS flex
+    (severity bar) + CSS width (progress bar). SVG geometry numbers
+    (viewBox, r, dasharray, computed dashoffset) and data widths (width:%) are
+    LITERAL - they are geometry/data, not design tokens. That is correct.
+  ============================================================================
+-->
+<style>
+/* ============================================================
+   html-report DESIGN TOKENS - single source of truth.
+   COPIED VERBATIM from tokens.css. Superset of memo.html. Do not edit.
+============================================================ */
+:root {
+  /* --- Surfaces (light) --- */
+  --color-bg:          #f7f6f3;   /* warm paper, NOT pure white - editorial */
+  --color-surface:     #ffffff;
+  --color-surface-2:   #f0eee8;   /* zebra / header fills */
+  --color-border:      #e3e0d8;
+  --color-border-strong:#cfcabd;
+
+  /* --- Text (light) --- */
+  --color-text:        #1c1b18;   /* near-black warm */
+  --color-text-muted:  #6b675d;
+  --color-text-light:  #9b968a;
+
+  /* --- Accent: deep teal (the one signature color, NOT purple) --- */
+  --color-accent:      #0f766e;
+  --color-accent-2:    #115e59;   /* darker, for gradients/hover */
+  --color-accent-bg:   #ecf6f4;
+  --color-accent-bd:   #bfe0db;
+  --color-link:        #0e7490;
+
+  /* --- Severity scale: fg / bg / border, light --- */
+  --sev-blocker:       #b91c1c;  --sev-blocker-bg:#fef2f2;  --sev-blocker-bd:#f6c9c9;
+  --sev-major:         #c2410c;  --sev-major-bg:  #fff4ec;  --sev-major-bd:  #f8cfae;
+  --sev-minor:         #a16207;  --sev-minor-bg:  #fdf8e7;  --sev-minor-bd:  #ecd9a0; /* amber text - yellow fails contrast */
+  --sev-nit:           #57534e;  --sev-nit-bg:    #f3f1ec;  --sev-nit-bd:    #d8d3c8;
+  --sev-ok:            #15803d;  --sev-ok-bg:     #edf7ee;  --sev-ok-bd:     #b9e2bf;
+
+  /* --- Score thresholds (gauge + table cell) --- */
+  --score-bad:   #b91c1c;  /* < 4   */
+  --score-warn:  #c2410c;  /* 4-5.9 */
+  --score-mid:   #a16207;  /* 6-6.9 */
+  --score-good:  #15803d;  /* >= 7  */
+  --score-track: #e3e0d8;  /* gauge unfilled track */
+
+  /* --- Typography --- */
+  --font-display: "Newsreader", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  --font-sans:    "Geist", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono:    "Geist Mono", ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+
+  --text-xs:   0.75rem;   /* 12px - meta, labels, table th */
+  --text-sm:   0.8125rem; /* 13px - table body, captions */
+  --text-base: 0.9375rem; /* 15px - body copy */
+  --text-md:   1.0625rem; /* 17px - lead paragraph */
+  --text-lg:   1.375rem;  /* 22px - section h2 */
+  --text-xl:   1.75rem;   /* 28px - page subtitle */
+  --text-2xl:  2.25rem;   /* 36px - report title */
+  --text-3xl:  3rem;      /* 48px - gauge numeral / dashboard hero */
+
+  --lh-tight:  1.2;
+  --lh-snug:   1.35;
+  --lh-normal: 1.6;
+
+  /* --- Spacing scale (4px base) --- */
+  --space-1: 0.25rem;  --space-2: 0.5rem;  --space-3: 0.75rem; --space-4: 1rem;
+  --space-5: 1.5rem;   --space-6: 2rem;    --space-7: 3rem;    --space-8: 4rem;
+
+  /* --- Radius (inherits memo) --- */
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px; --radius-full: 9999px;
+
+  /* --- Shadows (inherits memo) --- */
+  --shadow-card:  0 1px 3px rgba(28,27,24,.06), 0 4px 16px rgba(28,27,24,.04);
+  --shadow-hover: 0 4px 12px rgba(28,27,24,.10), 0 8px 32px rgba(28,27,24,.06);
+
+  --maxw: 1080px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg:           #14130f;  /* warm near-black, not blue-black */
+    --color-surface:      #1d1b16;
+    --color-surface-2:    #262219;
+    --color-border:       #34302a;
+    --color-border-strong:#48433a;
+
+    --color-text:         #ece8df;
+    --color-text-muted:   #a39d8e;
+    --color-text-light:   #6e685c;
+
+    --color-accent:       #2dd4bf;  /* brighter teal for dark bg */
+    --color-accent-2:     #5eead4;
+    --color-accent-bg:    #0c2a27;
+    --color-accent-bd:    #14534c;
+    --color-link:         #38bdf8;
+
+    --sev-blocker: #f87171; --sev-blocker-bg:#2c1212; --sev-blocker-bd:#5c1f1f;
+    --sev-major:   #fb923c; --sev-major-bg:  #2a1808; --sev-major-bd:  #5a3411;
+    --sev-minor:   #fbbf24; --sev-minor-bg:  #261f08; --sev-minor-bd:  #524212;
+    --sev-nit:     #b8b1a4; --sev-nit-bg:    #242018; --sev-nit-bd:    #3c372e;
+    --sev-ok:      #4ade80; --sev-ok-bg:     #0e2415; --sev-ok-bd:     #1d4d2c;
+
+    --score-bad:  #f87171; --score-warn: #fb923c; --score-mid: #fbbf24; --score-good: #4ade80;
+    --score-track:#34302a;
+
+    --shadow-card:  0 1px 3px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.25);
+    --shadow-hover: 0 4px 12px rgba(0,0,0,.5), 0 8px 32px rgba(0,0,0,.35);
+  }
+}
+
+/* ============================================================
+   SHARED SEVERITY / SCORE CLASSES
+   Required by: C2 (data-table), C3 (finding-card), C4 (callout, partial),
+                C5 (severity-bar + stat-tile), C6 (progress-bar), C8 (verdict).
+   Define ONCE per page (do NOT duplicate inside each component). Copy this
+   block into the page template alongside the tokens.
+   ------------------------------------------------------------
+   Two DISTINCT visual languages - not interchangeable:
+     .sev--*   tags FINDINGS  (blocker | major | minor | nit | ok)  -> fg/bg/bd trio
+     .score--* tags NUMBERS   (bad | warn | mid | good)             -> fg
+============================================================ */
+.sev--blocker { --c-fg: var(--sev-blocker); --c-bg: var(--sev-blocker-bg); --c-bd: var(--sev-blocker-bd); }
+.sev--major   { --c-fg: var(--sev-major);   --c-bg: var(--sev-major-bg);   --c-bd: var(--sev-major-bd); }
+.sev--minor   { --c-fg: var(--sev-minor);   --c-bg: var(--sev-minor-bg);   --c-bd: var(--sev-minor-bd); }
+.sev--nit     { --c-fg: var(--sev-nit);     --c-bg: var(--sev-nit-bg);     --c-bd: var(--sev-nit-bd); }
+.sev--ok      { --c-fg: var(--sev-ok);      --c-bg: var(--sev-ok-bg);      --c-bd: var(--sev-ok-bd); }
+
+.score--bad  { --s-fg: var(--score-bad);  }
+.score--warn { --s-fg: var(--score-warn); }
+.score--mid  { --s-fg: var(--score-mid);  }
+.score--good { --s-fg: var(--score-good); }
+
+/* sev-badge: standalone uppercase severity pill - reused by C3, C8, anywhere */
+.sev-badge {
+  display: inline-flex; align-items: center;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs); font-weight: 700;
+  letter-spacing: .07em; text-transform: uppercase;
+  color: var(--c-fg, var(--color-text-muted));
+  background: var(--c-bg, var(--color-surface-2));
+  border: 1px solid var(--c-bd, var(--color-border));
+  padding: 0.15rem 0.55rem; border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+/* score-pill: small inline chip coloring a NUMBER by threshold */
+.score-pill {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 1.6rem; padding: 0.1rem 0.45rem;
+  font-family: var(--font-mono); font-size: var(--text-sm); font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--s-fg, var(--color-text));
+  background: color-mix(in srgb, var(--s-fg, var(--color-text)) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--s-fg, var(--color-text)) 35%, transparent);
+  border-radius: var(--radius-sm);
+}
+
+/* small color dot - used by legends (C5) and inline keys */
+.dot {
+  display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--c-fg, var(--color-border)); flex-shrink: 0;
+}
+
+/* =====================================================================
+   C1 - score-gauge  (radial SVG, N/10)
+   PURPOSE  Render a mean/aggregate score as an at-a-glance dial.
+   USE WHEN you have a single headline number out of 10 (mean_score 7.57/10).
+   DEPENDS  on tokens only (--score-*). Self-contained.
+   MATH (reproduce identically): viewBox 0 0 120 120, r=52, cx=cy=60.
+     C = 2*pi*r = 326.726 (circumference, LITERAL).
+     value arc: stroke-dasharray="326.726", stroke-dashoffset = 326.726*(1 - score/10).
+       e.g. score 7.57 -> 326.726*(1 - 0.757) = 79.39.
+     value circle rotated -90 about center so it starts at 12 o'clock.
+     value stroke = threshold var: >=7 good, 6-6.9 mid, 4-5.9 warn, <4 bad.
+   FILL  SCORE, computed DASHOFFSET, the --score-* stroke color, label text.
+   MARKUP (see live instance in <body> gallery, section C1):
+     <div class="gauge" role="img" aria-label="Score 7.57 of 10">
+       <svg viewBox="0 0 120 120" width="120" height="120">
+         <circle cx="60" cy="60" r="52" fill="none" stroke="var(--score-track)" stroke-width="10"/>
+         <circle cx="60" cy="60" r="52" fill="none" stroke="var(--score-good)" stroke-width="10"
+                 stroke-linecap="round" stroke-dasharray="326.726" stroke-dashoffset="79.39"
+                 transform="rotate(-90 60 60)"/>
+       </svg>
+       <div class="gauge-center">
+         <span class="gauge-value">7.57</span><span class="gauge-max">/10</span>
+         <span class="gauge-label">Mean score</span>
+       </div>
+     </div>
+===================================================================== */
+.gauge { position: relative; width: 120px; height: 120px; }
+.gauge svg { display: block; }
+.gauge-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; line-height: var(--lh-tight);
+}
+.gauge-value {
+  font-family: var(--font-display); font-size: var(--text-3xl); font-weight: 600;
+  font-variant-numeric: tabular-nums; color: var(--color-text);
+}
+.gauge-max { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-text-muted); margin-top: -0.2rem; }
+.gauge-label {
+  font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .08em;
+  color: var(--color-text-muted); margin-top: 0.3rem;
+}
+
+/* =====================================================================
+   C2 - data-table  (zebra + severity rows + score-pill cells)
+   PURPOSE  The long tables: scoring table (14 rows) and findings table (10 rows).
+   USE WHEN you have tabular rows that need either (a) a number colored by score
+            threshold, or (b) a whole row tinted by finding severity.
+   DEPENDS  on SHARED severity/score classes (.sev--*, .score-pill, .sev-badge).
+   TWO MODES (mix freely within one table):
+     - score mode:   put <span class="score-pill score--bad">3</span> in a cell.
+     - severity row: add class="sev-row sev--major" to a <tr> for left rule + tint.
+   FILL  thead labels, <tr> rows, pill values + their score--* class.
+   MARKUP (see live instance in <body> gallery, section C2):
+     <div class="table-card">
+       <table class="data-table">
+         <thead><tr><th>#</th><th>Categoria</th><th class="num">Score</th><th>Justificacion</th></tr></thead>
+         <tbody>
+           <tr><td class="mono">5</td><td>Critic (Phase 4)</td>
+               <td class="num"><span class="score-pill score--bad">3</span></td>
+               <td>review.md = 0; nunca ejecutado</td></tr>
+           SEVERITY ROW MODE (tint whole row):
+           <tr class="sev-row sev--blocker"><td class="mono">#1</td><td>Phase 4 nunca ejecutada</td>
+               <td class="num"><span class="sev-badge sev--blocker">BLOCKER</span></td>
+               <td class="mono">/flow --full 002</td></tr>
+         </tbody>
+       </table>
+     </div>
+===================================================================== */
+.table-card {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-card);
+}
+.data-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.data-table thead th {
+  position: sticky; top: 0;
+  padding: var(--space-3) var(--space-4); text-align: left;
+  font-size: var(--text-xs); font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--color-text-muted);
+  background: var(--color-surface-2); border-bottom: 1px solid var(--color-border-strong);
+}
+.data-table tbody td {
+  padding: var(--space-3) var(--space-4); vertical-align: top;
+  border-bottom: 1px solid var(--color-border); color: var(--color-text);
+  line-height: var(--lh-snug);
+}
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:nth-child(even) td { background: var(--color-surface-2); }
+.data-table tbody tr:hover td { background: var(--color-accent-bg); }
+.data-table td.num  { text-align: right; font-variant-numeric: tabular-nums; }
+.data-table td.mono { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); }
+/* severity row: left rule + faint tint in the severity color */
+.data-table tr.sev-row td:first-child { border-left: 3px solid var(--c-fg); }
+.data-table tr.sev-row td,
+.data-table tr.sev-row:nth-child(even) td {
+  background: color-mix(in srgb, var(--c-bg) 60%, transparent);
+}
+.data-table tr.sev-row:hover td { background: var(--c-bg); }
+
+/* =====================================================================
+   C3 - finding-card  (severity left-border + title + meta + action)
+   PURPOSE  Dashboard view of a single top finding (the card form of a C2 row).
+   USE WHEN laying out top findings as a responsive grid (dashboard.template).
+   DEPENDS  on SHARED severity classes (.sev--*, .sev-badge).
+   FILL  severity class on <article>, badge text, meta line, title, action, flow cmd.
+   MARKUP (see live instance in <body> gallery, section C3):
+     <article class="finding-card sev--blocker">
+       <header class="finding-head">
+         <span class="sev-badge sev--blocker">BLOCKER</span>
+         <span class="finding-meta">#1 - low-score - Effort M</span>
+       </header>
+       <h3 class="finding-title">Phase 4 Critic nunca ejecutada (review.md = 0)</h3>
+       <p class="finding-action"><span class="finding-action-label">Accion</span>
+          EJECUTAR critic + reviewer Opus sobre este audit</p>
+       <code class="finding-flow">/flow --full 002</code>
+     </article>
+===================================================================== */
+.finding-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--c-fg, var(--color-border-strong));
+  border-radius: var(--radius-lg); padding: var(--space-5);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow .2s ease, transform .2s ease;
+}
+.finding-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+.finding-head {
+  display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap;
+  margin: calc(-1 * var(--space-5)) calc(-1 * var(--space-5)) var(--space-4);
+  padding: var(--space-3) var(--space-5);
+  background: color-mix(in srgb, var(--c-bg) 55%, transparent);
+  border-bottom: 1px solid var(--color-border);
+}
+.finding-meta { font-size: var(--text-xs); color: var(--color-text-muted); margin-left: auto; }
+.finding-title {
+  font-family: var(--font-display); font-size: var(--text-md); font-weight: 600;
+  line-height: var(--lh-snug); margin: 0 0 var(--space-3);
+}
+.finding-action { font-size: var(--text-sm); color: var(--color-text-muted); margin: 0 0 var(--space-3); line-height: var(--lh-snug); }
+.finding-action-label {
+  display: inline-block; font-size: var(--text-xs); font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--color-accent);
+  margin-right: var(--space-2);
+}
+.finding-flow {
+  display: inline-block; font-family: var(--font-mono); font-size: var(--text-xs);
+  color: var(--color-text); background: var(--color-surface-2);
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  padding: 0.15rem 0.5rem;
+}
+
+/* =====================================================================
+   C4 - callout  (note / warn / info aside, blockquote rendering)
+   PURPOSE  Render the report's > blockquotes (Lectura rapida, Techo n=1,
+            AC5 honesty check) and any info/warning aside.
+   USE WHEN you have an aside that should stand out from body prose.
+   DEPENDS  on tokens only. Self-contained (its own variant colors).
+   VARIANTS  callout--note (teal/accent) | callout--warn (major) | callout--info (link).
+   FILL  variant class, icon glyph, strong lead + body text.
+   MARKUP (see live instances in <body> gallery, section C4):
+     <aside class="callout callout--note">
+       <span class="callout-icon" aria-hidden="true">i</span>
+       <div class="callout-body"><strong>Lectura rapida</strong>: secciones 1-3 bastan para decidir.</div>
+     </aside>
+===================================================================== */
+.callout {
+  display: flex; gap: var(--space-3); align-items: flex-start;
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--co-bd); border-left: 4px solid var(--co-fg);
+  background: var(--co-bg); border-radius: var(--radius-md);
+  font-size: var(--text-base); line-height: var(--lh-normal);
+}
+.callout--note { --co-fg: var(--color-accent); --co-bg: var(--color-accent-bg); --co-bd: var(--color-accent-bd); }
+.callout--info { --co-fg: var(--color-link);   --co-bg: var(--color-accent-bg); --co-bd: var(--color-accent-bd); }
+.callout--warn { --co-fg: var(--sev-major);    --co-bg: var(--sev-major-bg);    --co-bd: var(--sev-major-bd); }
+.callout-icon {
+  flex-shrink: 0; width: 22px; height: 22px; margin-top: 1px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-full); background: var(--co-fg); color: var(--color-surface);
+  font-family: var(--font-display); font-size: var(--text-sm); font-weight: 700; font-style: italic;
+}
+.callout-body { color: var(--color-text); }
+.callout-body strong { color: var(--co-fg); }
+
+/* =====================================================================
+   C5 - stat-tile  +  severity-bar  (single number; stacked distribution)
+   PURPOSE  (a) stat-tile: headline metrics (corpus_size 17, findings 10, verdict).
+            (b) severity-bar: distribution "1 BLOCKER - 6 MAJOR - 3 MINOR - 0 NIT"
+                as a proportional stacked bar + legend.
+   USE WHEN summarizing counts at a glance (hero band / executive summary).
+   DEPENDS  on SHARED severity classes (.sev--*, .dot).
+   MATH (severity-bar)  segment width % = count / total * 100.
+     total findings = 10 -> BLOCKER 1 = 10%, MAJOR 6 = 60%, MINOR 3 = 30%, NIT 0 = 0%.
+     OMIT zero-count segments from the BAR; KEEP them in the LEGEND.
+   FILL  tile value + label; segment width:% + count; legend counts.
+   MARKUP (see live instances in <body> gallery, section C5):
+     <div class="sev-bar" role="img" aria-label="1 blocker, 6 major, 3 minor, 0 nit">
+       <span class="sev-seg sev--blocker" style="width:10%" title="1 BLOCKER"></span>
+       <span class="sev-seg sev--major"   style="width:60%" title="6 MAJOR"></span>
+       <span class="sev-seg sev--minor"   style="width:30%" title="3 MINOR"></span>
+     </div>  (NIT omitted from bar - kept in legend)
+===================================================================== */
+.stat-row { display: flex; flex-wrap: wrap; gap: var(--space-4); }
+.stat-tile {
+  display: flex; flex-direction: column; gap: var(--space-1);
+  min-width: 120px; padding: var(--space-4) var(--space-5);
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-card);
+}
+.stat-value {
+  font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 600;
+  font-variant-numeric: tabular-nums; line-height: var(--lh-tight); color: var(--color-text);
+}
+.stat-label { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .07em; color: var(--color-text-muted); }
+
+.sev-bar {
+  display: flex; height: 14px; width: 100%;
+  border-radius: var(--radius-full); overflow: hidden; background: var(--color-surface-2);
+}
+.sev-seg { height: 100%; background: var(--c-fg); }
+.sev-legend {
+  display: flex; flex-wrap: wrap; gap: var(--space-4);
+  list-style: none; margin: var(--space-3) 0 0; padding: 0;
+  font-size: var(--text-sm); color: var(--color-text-muted);
+}
+.sev-legend li { display: flex; align-items: center; gap: var(--space-2); }
+
+/* =====================================================================
+   C6 - progress-bar  (horizontal score / AC-compliance)
+   PURPOSE  Linear alternative to the gauge for per-category scores or
+            review_ac_compliance 8/8. Compact; good for stacked snapshot lists.
+   USE WHEN dashboard "scoring snapshot" - glance, not detail (vs C2 table).
+   DEPENDS  on SHARED score classes (.score--*).
+   MATH  fill width % = value / max * 100. Fill color = score threshold class.
+   MOTION  optional entrance animation behind prefers-reduced-motion; default
+           state IS the final state (no-JS, no layout shift).
+   FILL  width:%, score--* class on fill, aria-label, optional value text.
+   MARKUP (see live instances in <body> gallery, section C6):
+     <div class="pbar-row">
+       <span class="pbar-name">Critic</span>
+       <div class="pbar" role="img" aria-label="3 of 10"><div class="pbar-fill score--bad" style="width:30%"></div></div>
+       <span class="pbar-val score--bad">3</span>
+     </div>
+===================================================================== */
+.pbar-row { display: grid; grid-template-columns: 7rem 1fr 2.2rem; gap: var(--space-3); align-items: center; }
+.pbar-name { font-size: var(--text-sm); color: var(--color-text); }
+.pbar { height: 8px; background: var(--score-track); border-radius: var(--radius-full); overflow: hidden; }
+.pbar-fill { height: 100%; background: var(--s-fg); border-radius: var(--radius-full); }
+.pbar-val { font-family: var(--font-mono); font-size: var(--text-sm); font-variant-numeric: tabular-nums; color: var(--s-fg); text-align: right; }
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes pbar-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  .pbar-fill { transform-origin: left center; animation: pbar-grow .6s ease-out both; }
+}
+
+/* =====================================================================
+   C7 - section-header  (numbered anchor + trailing rule)
+   PURPOSE  Numbered section titles (## 4. Scoring por categoria) with a
+            permalink anchor and a trailing hairline rule.
+   USE WHEN starting any report section in report.template.html.
+   DEPENDS  on tokens only. Self-contained.
+   FILL  id (must match href), section number, title text.
+   MARKUP (see live instance in <body> gallery, section C7):
+     <h2 class="section-header" id="scoring">
+       <span class="section-num">04</span>
+       Scoring por categoria
+       <a class="section-anchor" href="#scoring" aria-label="Enlace a seccion">#</a>
+     </h2>
+===================================================================== */
+.section-header {
+  display: flex; align-items: baseline; gap: var(--space-3);
+  font-family: var(--font-display); font-size: var(--text-lg); font-weight: 600;
+  color: var(--color-text); margin: var(--space-7) 0 var(--space-4);
+  scroll-margin-top: var(--space-6);
+}
+.section-header .section-num {
+  font-family: var(--font-mono); font-size: var(--text-sm); font-weight: 700;
+  font-variant-numeric: tabular-nums; color: var(--color-accent); flex-shrink: 0;
+}
+.section-header::after {
+  content: ''; flex: 1; height: 1px; background: var(--color-border); align-self: center;
+}
+.section-anchor {
+  font-family: var(--font-mono); font-size: var(--text-base); color: var(--color-text-light);
+  text-decoration: none; opacity: 0; transition: opacity .15s ease; flex-shrink: 0;
+}
+.section-header:hover .section-anchor { opacity: 1; }
+.section-anchor:hover { color: var(--color-accent); }
+
+/* =====================================================================
+   C8 - metadata-header  (report title strip)
+   PURPOSE  Top strip carrying frontmatter: kicker, mode, date, title, subtitle,
+            verdict badge, commit SHA chip, AC chip. First thing a reader sees.
+   USE WHEN opening either page template (full-width header).
+   DEPENDS  on SHARED severity classes (verdict badge maps to .sev--*).
+   VERDICT MAP  APPROVED -> sev--ok | APPROVED_WITH_WARNINGS -> sev--minor (amber)
+                NEEDS_CHANGES -> sev--major | BLOCKED -> sev--blocker.
+   FILL  kicker, mode, datetime + date, title, subtitle, verdict class+text, sha, chips.
+   MARKUP (see live instance in <body> gallery, section C8):
+     <header class="report-header">
+       <div class="report-meta">
+         <span class="kicker">Audit profundo</span>
+         <span class="report-mode">/flow --full</span>
+         <time class="report-date" datetime="2026-05-29">2026-05-29</time>
+       </div>
+       <h1 class="report-title">Claude Code Poneglyph</h1>
+       <p class="report-subtitle">Snapshot - 14 categorias - 17 fuentes - 7 HUs</p>
+       <div class="report-badges">
+         <span class="verdict-badge sev--minor">APPROVED_WITH_WARNINGS</span>
+         <span class="meta-chip"><code>c2eb838</code></span>
+         <span class="meta-chip">AC 8/8</span>
+       </div>
+     </header>
+===================================================================== */
+.report-header {
+  position: relative; overflow: hidden;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg); padding: var(--space-6) var(--space-6) var(--space-5);
+  box-shadow: var(--shadow-card);
+}
+.report-header::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: var(--color-accent); /* single teal hairline - editorial restraint */
+}
+.report-meta { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-4); }
+.report-meta .kicker {
+  font-size: var(--text-xs); font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--color-accent); background: var(--color-accent-bg);
+  border: 1px solid var(--color-accent-bd); padding: 0.2rem 0.6rem; border-radius: var(--radius-full);
+}
+.report-meta .report-mode { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-accent); }
+.report-meta .report-date { margin-left: auto; font-size: var(--text-sm); color: var(--color-text-light); font-variant-numeric: tabular-nums; }
+.report-title {
+  font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 600;
+  letter-spacing: -0.01em; line-height: var(--lh-tight); margin: 0 0 var(--space-2); color: var(--color-text);
+}
+.report-subtitle { font-size: var(--text-md); color: var(--color-text-muted); margin: 0 0 var(--space-5); }
+.report-badges { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.verdict-badge {
+  font-size: var(--text-xs); font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--c-fg); background: var(--c-bg); border: 1px solid var(--c-bd);
+  padding: 0.3rem 0.7rem; border-radius: var(--radius-full);
+}
+.meta-chip {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  font-size: var(--text-xs); color: var(--color-text-muted);
+  background: var(--color-surface-2); border: 1px solid var(--color-border);
+  padding: 0.2rem 0.55rem; border-radius: var(--radius-full);
+}
+.meta-chip code { font-family: var(--font-mono); color: var(--color-text); }
+
+/* ------------------------------------------------------------
+   GALLERY CHROME - styles the demo wrapper of THIS reference file
+   only. NOT a component; page templates ignore everything under
+   `.gallery*`. Safe to drop when copying components out.
+------------------------------------------------------------ */
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; padding: var(--space-6) var(--space-5) var(--space-8);
+  font-family: var(--font-sans); font-size: var(--text-base);
+  line-height: var(--lh-normal);
+  background: var(--color-bg); color: var(--color-text);
+}
+.gallery { max-width: var(--maxw); margin: 0 auto; }
+.gallery > h1 {
+  font-family: var(--font-display); font-size: var(--text-2xl);
+  font-weight: 600; letter-spacing: -0.01em; margin: 0 0 var(--space-2);
+}
+.gallery > p.lede { color: var(--color-text-muted); margin: 0 0 var(--space-7); font-size: var(--text-md); }
+.gallery-block { margin: 0 0 var(--space-8); }
+.gallery-block > h2 {
+  font-family: var(--font-mono); font-size: var(--text-sm); font-weight: 700;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--color-accent);
+  margin: 0 0 var(--space-1);
+}
+.gallery-block > .note { color: var(--color-text-muted); font-size: var(--text-sm); margin: 0 0 var(--space-4); }
+.gallery-demo {
+  padding: var(--space-5); background: var(--color-bg);
+  border: 1px dashed var(--color-border-strong); border-radius: var(--radius-md);
+}
+
+/* ============================================================
+   PRINT - per-component break safety (travels with each card).
+   Page templates own the full @media print block; this is a minimal
+   stub so copied cards don't split across pages.
+============================================================ */
+@media print {
+  .finding-card, .table-card, .callout, .report-header { break-inside: avoid; box-shadow: none; }
+  .finding-card:hover { transform: none; }
+  a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.85em; color: #555; }
+}
+</style>
+</head>
+<body>
+  <!-- ===================================================================
+       LIVE GALLERY - renders C1-C8 with sample data so this file is a
+       visual reference when opened directly, AND a copy-paste source: the
+       instances below are valid, ready HTML. Copy an instance, strip the
+       .gallery-demo wrapper, fill the slots.
+  ==================================================================== -->
+  <div class="gallery">
+    <h1>html-report - Component Library</h1>
+    <p class="lede">Editorial / technical-document design system. 8 components (C1-C8). Copy a component's CSS (from its banner in the head &lt;style&gt;) plus its live instance below. Tokens and shared severity/score classes live once at the top.</p>
+
+    <section class="gallery-block">
+      <h2>C1 - score-gauge</h2>
+      <p class="note">Single headline score out of 10. dashoffset = 326.726 &times; (1 - score/10).</p>
+      <div class="gallery-demo" style="display:flex;gap:2rem;flex-wrap:wrap;">
+        <div class="gauge" role="img" aria-label="Score 7.57 of 10">
+          <svg viewBox="0 0 120 120" width="120" height="120">
+            <circle cx="60" cy="60" r="52" fill="none" stroke="var(--score-track)" stroke-width="10"/>
+            <circle cx="60" cy="60" r="52" fill="none" stroke="var(--score-good)" stroke-width="10"
+                    stroke-linecap="round" stroke-dasharray="326.726" stroke-dashoffset="79.39"
+                    transform="rotate(-90 60 60)"/>
+          </svg>
+          <div class="gauge-center">
+            <span class="gauge-value">7.57</span><span class="gauge-max">/10</span>
+            <span class="gauge-label">Mean score</span>
+          </div>
+        </div>
+        <div class="gauge" role="img" aria-label="Score 3.0 of 10">
+          <svg viewBox="0 0 120 120" width="120" height="120">
+            <circle cx="60" cy="60" r="52" fill="none" stroke="var(--score-track)" stroke-width="10"/>
+            <circle cx="60" cy="60" r="52" fill="none" stroke="var(--score-bad)" stroke-width="10"
+                    stroke-linecap="round" stroke-dasharray="326.726" stroke-dashoffset="228.71"
+                    transform="rotate(-90 60 60)"/>
+          </svg>
+          <div class="gauge-center">
+            <span class="gauge-value">3.0</span><span class="gauge-max">/10</span>
+            <span class="gauge-label">Critic</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="gallery-block">
+      <h2>C2 - data-table</h2>
+      <p class="note">Zebra rows, score-pills in cells, and severity-tinted finding rows.</p>
+      <div class="gallery-demo">
+        <div class="table-card">
+          <table class="data-table">
+            <thead><tr><th>#</th><th>Categoria</th><th class="num">Score</th><th>Justificacion</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">1</td><td>Scope (Phase 1)</td><td class="num"><span class="score-pill score--good">8</span></td><td>spec.md completo y aprobado</td></tr>
+              <tr><td class="mono">6</td><td>Rubrica anchors</td><td class="num"><span class="score-pill score--mid">6</span></td><td>Anclada, techo n=1</td></tr>
+              <tr><td class="mono">5</td><td>Critic (Phase 4)</td><td class="num"><span class="score-pill score--bad">3</span></td><td>review.md = 0; nunca ejecutado</td></tr>
+              <tr class="sev-row sev--blocker"><td class="mono">#1</td><td>Phase 4 nunca ejecutada</td><td class="num"><span class="sev-badge sev--blocker">BLOCKER</span></td><td class="mono">/flow --full 002</td></tr>
+              <tr class="sev-row sev--major"><td class="mono">#2</td><td>Corpus n=1 sin contraste</td><td class="num"><span class="sev-badge sev--major">MAJOR</span></td><td class="mono">/tech-plan 002</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="gallery-block">
+      <h2>C3 - finding-card</h2>
+      <p class="note">Severity left-border, badge, meta, action, flow command.</p>
+      <div class="gallery-demo" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;">
+        <article class="finding-card sev--blocker">
+          <header class="finding-head">
+            <span class="sev-badge sev--blocker">BLOCKER</span>
+            <span class="finding-meta">#1 &middot; low-score &middot; Effort M</span>
+          </header>
+          <h3 class="finding-title">Phase 4 Critic nunca ejecutada (review.md = 0)</h3>
+          <p class="finding-action"><span class="finding-action-label">Accion</span>EJECUTAR critic + reviewer Opus sobre este audit</p>
+          <code class="finding-flow">/flow --full 002</code>
+        </article>
+        <article class="finding-card sev--major">
+          <header class="finding-head">
+            <span class="sev-badge sev--major">MAJOR</span>
+            <span class="finding-meta">#2 &middot; corpus &middot; Effort L</span>
+          </header>
+          <h3 class="finding-title">Rubrica anclada en un unico corpus (techo n=1)</h3>
+          <p class="finding-action"><span class="finding-action-label">Accion</span>Ampliar corpus para validar el scoring por contraste</p>
+          <code class="finding-flow">/tech-plan 002</code>
+        </article>
+      </div>
+    </section>
+
+    <section class="gallery-block">
+      <h2>C4 - callout</h2>
+      <p class="note">Renders blockquotes / asides. Variants: note &middot; warn &middot; info.</p>
+      <div class="gallery-demo" style="display:flex;flex-direction:column;gap:1rem;">
+        <aside class="callout callout--note">
+          <span class="callout-icon" aria-hidden="true">i</span>
+          <div class="callout-body"><strong>Lectura rapida</strong>: secciones 1-3 bastan para decidir.</div>
+        </aside>
+        <aside class="callout callout--warn">
+          <span class="callout-icon" aria-hidden="true">!</span>
+          <div class="callout-body"><strong>Techo n=1</strong>: rubrica anclada en un unico corpus; sin contraste.</div>
+        </aside>
+        <aside class="callout callout--info">
+          <span class="callout-icon" aria-hidden="true">i</span>
+          <div class="callout-body"><strong>AC5 honesty check</strong>: el audit declara sus propios limites de forma explicita.</div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="gallery-block">
+      <h2>C5 - stat-tile + severity-bar</h2>
+      <p class="note">Headline metrics and proportional distribution. Zero-count NIT omitted from bar, kept in legend.</p>
+      <div class="gallery-demo">
+        <div class="stat-row" style="margin-bottom:1.5rem;">
+          <div class="stat-tile"><span class="stat-value">17</span><span class="stat-label">Fuentes externas</span></div>
+          <div class="stat-tile"><span class="stat-value">10</span><span class="stat-label">Findings</span></div>
+          <div class="stat-tile"><span class="stat-value">14</span><span class="stat-label">Categorias</span></div>
+        </div>
+        <div class="sev-bar" role="img" aria-label="1 blocker, 6 major, 3 minor, 0 nit">
+          <span class="sev-seg sev--blocker" style="width:10%" title="1 BLOCKER"></span>
+          <span class="sev-seg sev--major"   style="width:60%" title="6 MAJOR"></span>
+          <span class="sev-seg sev--minor"   style="width:30%" title="3 MINOR"></span>
+        </div>
+        <ul class="sev-legend">
+          <li><span class="dot sev--blocker"></span>1 Blocker</li>
+          <li><span class="dot sev--major"></span>6 Major</li>
+          <li><span class="dot sev--minor"></span>3 Minor</li>
+          <li><span class="dot sev--nit"></span>0 Nit</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="gallery-block">
+      <h2>C6 - progress-bar</h2>
+      <p class="note">Compact per-category score list for the dashboard snapshot.</p>
+      <div class="gallery-demo" style="display:flex;flex-direction:column;gap:0.75rem;">
+        <div class="pbar-row">
+          <span class="pbar-name">Critic</span>
+          <div class="pbar" role="img" aria-label="3 of 10"><div class="pbar-fill score--bad" style="width:30%"></div></div>
+          <span class="pbar-val score--bad">3</span>
+        </div>
+        <div class="pbar-row">
+          <span class="pbar-name">Rubrica</span>
+          <div class="pbar" role="img" aria-label="6 of 10"><div class="pbar-fill score--mid" style="width:60%"></div></div>
+          <span class="pbar-val score--mid">6</span>
+        </div>
+        <div class="pbar-row">
+          <span class="pbar-name">Scope</span>
+          <div class="pbar" role="img" aria-label="8 of 10"><div class="pbar-fill score--good" style="width:80%"></div></div>
+          <span class="pbar-val score--good">8</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="gallery-block">
+      <h2>C7 - section-header</h2>
+      <p class="note">Numbered title + permalink anchor + trailing rule. Hover the header to reveal the anchor.</p>
+      <div class="gallery-demo">
+        <h2 class="section-header" id="scoring">
+          <span class="section-num">04</span>
+          Scoring por categoria
+          <a class="section-anchor" href="#scoring" aria-label="Enlace a seccion">#</a>
+        </h2>
+      </div>
+    </section>
+
+    <section class="gallery-block">
+      <h2>C8 - metadata-header</h2>
+      <p class="note">Report title strip. Verdict badge maps to the severity scale.</p>
+      <div class="gallery-demo">
+        <header class="report-header">
+          <div class="report-meta">
+            <span class="kicker">Audit profundo</span>
+            <span class="report-mode">/flow --full</span>
+            <time class="report-date" datetime="2026-05-29">2026-05-29</time>
+          </div>
+          <h1 class="report-title">Claude Code Poneglyph</h1>
+          <p class="report-subtitle">Snapshot &middot; 14 categorias &middot; 17 fuentes &middot; 7 HUs</p>
+          <div class="report-badges">
+            <span class="verdict-badge sev--minor">APPROVED_WITH_WARNINGS</span>
+            <span class="meta-chip"><code>c2eb838</code></span>
+            <span class="meta-chip">AC 8/8</span>
+          </div>
+        </header>
+      </div>
+    </section>
+
+  </div>
+</body>
+</html>

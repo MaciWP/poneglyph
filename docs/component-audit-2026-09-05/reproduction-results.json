@@ -1,0 +1,130 @@
+{
+  "kind": "audit-observations-not-product-pass",
+  "offline": true,
+  "observations": 15,
+  "reproduced": 15,
+  "results": [
+    {
+      "id": "R01-ranker-yaml",
+      "reproduced": true,
+      "observed": {
+        "skills": 32,
+        "descriptionsParsedAsYamlMarker": 31
+      }
+    },
+    {
+      "id": "R02-negated-hint",
+      "reproduced": true,
+      "observed": {
+        "hintCount": 1
+      }
+    },
+    {
+      "id": "R03-diagnostic-import",
+      "reproduced": true,
+      "observed": {
+        "exitCode": 1,
+        "missingDependencyReported": true
+      }
+    },
+    {
+      "id": "R04-secret-scan-exclusions",
+      "reproduced": true,
+      "observed": {
+        "skipped": [
+          "example.py",
+          "example.tsx",
+          ".env.local"
+        ],
+        "orchestrationExcluded": true,
+        "apiSpecExcluded": true
+      }
+    },
+    {
+      "id": "R05-git-negation",
+      "reproduced": true,
+      "observed": {
+        "negativeRequestSuppressesWarning": true
+      }
+    },
+    {
+      "id": "R06-workspace-os",
+      "reproduced": true,
+      "observed": {
+        "windowsInputProducesMacRoot": true
+      }
+    },
+    {
+      "id": "R07-zero-chart",
+      "reproduced": true,
+      "observed": {
+        "emptyDonutDisplays": 1
+      }
+    },
+    {
+      "id": "R08-raw-table-cell",
+      "reproduced": true,
+      "observed": {
+        "stringCellIsRawMarkup": true
+      }
+    },
+    {
+      "id": "R09-contrast",
+      "reproduced": true,
+      "observed": {
+        "foreground": "#16a34a",
+        "background": "#f3f5f9",
+        "ratio": 3.019,
+        "requiredForNormalText": 4.5
+      }
+    },
+    {
+      "id": "R10-offline-option",
+      "reproduced": true,
+      "observed": {
+        "defaultRenderIncludesRemoteFonts": true
+      }
+    },
+    {
+      "id": "R11-comment-complexity",
+      "reproduced": true,
+      "observed": {
+        "commentOnlyFile": "fail",
+        "score": 42,
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "R12-missing-scan-target",
+      "reproduced": true,
+      "observed": {
+        "exitCode": 0,
+        "findings": 0
+      }
+    },
+    {
+      "id": "R13-scanner-raw-value",
+      "reproduced": true,
+      "observed": {
+        "emitsDetectedValue": true,
+        "syntheticOnly": true
+      }
+    },
+    {
+      "id": "R14-map-as-query",
+      "reproduced": true,
+      "observed": {
+        "inMemoryMapFlagged": true
+      }
+    },
+    {
+      "id": "R15-unreachable-complexity",
+      "reproduced": true,
+      "observed": {
+        "minimumScoreForFiveLowFactors": 33.333,
+        "trivialThreshold": 15,
+        "simpleThreshold": 30
+      }
+    }
+  ]
+}

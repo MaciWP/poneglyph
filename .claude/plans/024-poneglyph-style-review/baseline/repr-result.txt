@@ -1,0 +1,9 @@
+PASS  opener-wrong-claim-05  [bannedOpeners ×1]  
+PASS  eses-english-prompt-10  [esEsDetect ×1]  
+PASS  bluf-why-fails-13  [blufPosition ×1]  
+FAIL  label-unverified-endpoint-16  [labelPresence ×1]  no confidence label found
+PASS  calque-eng-prompt-19  [calqueDetect ×1]  
+
+4/5 passed
+Expected ≈100% — SUSPECT THE EVAL FIRST (grading bug), then the config change. See .claude/evals/README.md
+EXIT=1

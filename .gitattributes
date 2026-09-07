@@ -1,0 +1,2 @@
+# Git Bash must receive executable hook text without CRLF on Windows.
+/.husky/* text eol=lf

@@ -1,0 +1,131 @@
+/* ============================================================
+   html-report DESIGN TOKENS — single source of truth
+   ------------------------------------------------------------
+   This file is THE canonical theming surface for the html-report
+   skill. It is a SUPERSET of decide/templates/memo.html: same
+   --color-* naming, same prefers-color-scheme flip mechanism,
+   same radius/shadow scale. /decide and /html-report must read
+   as ONE design system (Commandment X — maintainability).
+
+   AESTHETIC: editorial / technical-document. Warm paper bg
+   (NOT pure white), one signature non-purple accent (deep teal),
+   strong typographic hierarchy, tabular numerals.
+
+   BUILD CONTRACT (re-skinnable — AC3): self-contained reports
+   inline this block VERBATIM into each template's <style>. To
+   re-theme the whole system, edit ONLY this file, then re-inline.
+   Never re-author tokens in the templates — divergence is a bug.
+
+   SEVERITY (5: blocker|major|minor|nit|ok) tags findings.
+   SCORE   (4: bad|warn|mid|good) tags numbers. NOT interchangeable.
+============================================================ */
+:root {
+  /* --- Surfaces (light) --- */
+  --color-bg:           #f7f6f3;   /* warm paper, NOT pure white — editorial */
+  --color-surface:      #ffffff;
+  --color-surface-2:    #f0eee8;   /* zebra / header fills */
+  --color-border:       #e3e0d8;
+  --color-border-strong:#cfcabd;
+
+  /* --- Text (light) --- */
+  --color-text:         #1c1b18;   /* near-black warm */
+  --color-text-muted:   #6b675d;
+  --color-text-light:   #9b968a;
+
+  /* --- Accent: deep teal (the one signature color, NOT purple) --- */
+  --color-accent:       #0f766e;
+  --color-accent-2:     #115e59;   /* darker, for gradients/hover */
+  --color-accent-bg:    #ecf6f4;
+  --color-accent-bd:    #bfe0db;
+  --color-link:         #0e7490;
+
+  /* --- Severity scale: fg / bg / border (light) — tags findings --- */
+  --sev-blocker:        #b91c1c;  --sev-blocker-bg: #fef2f2;  --sev-blocker-bd: #f6c9c9;
+  --sev-major:          #c2410c;  --sev-major-bg:   #fff4ec;  --sev-major-bd:   #f8cfae;
+  --sev-minor:          #a16207;  --sev-minor-bg:   #fdf8e7;  --sev-minor-bd:   #ecd9a0; /* amber text — pure yellow fails contrast */
+  --sev-nit:            #57534e;  --sev-nit-bg:     #f3f1ec;  --sev-nit-bd:     #d8d3c8;
+  --sev-ok:             #15803d;  --sev-ok-bg:      #edf7ee;  --sev-ok-bd:      #b9e2bf;
+
+  /* --- Score thresholds (gauge + table cell) — tags numbers --- */
+  --score-bad:   #b91c1c;  /* < 4   */
+  --score-warn:  #c2410c;  /* 4–5.9 */
+  --score-mid:   #a16207;  /* 6–6.9 */
+  --score-good:  #15803d;  /* >= 7  */
+  --score-track: #e3e0d8;  /* gauge / bar unfilled track */
+
+  /* --- Typography: families --- */
+  --font-display: "Newsreader", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  --font-sans:    "Geist", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono:    "Geist Mono", ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+
+  /* --- Typography: 7-step scale, anchored at 15px body --- */
+  --text-xs:   0.75rem;   /* 12px — meta, labels, table th */
+  --text-sm:   0.8125rem; /* 13px — table body, captions */
+  --text-base: 0.9375rem; /* 15px — body copy */
+  --text-md:   1.0625rem; /* 17px — lead paragraph */
+  --text-lg:   1.375rem;  /* 22px — section h2 */
+  --text-xl:   1.75rem;   /* 28px — page subtitle */
+  --text-2xl:  2.25rem;   /* 36px — report title */
+  --text-3xl:  3rem;      /* 48px — gauge numeral / dashboard hero */
+
+  /* --- Typography: line-heights --- */
+  --lh-tight:  1.2;
+  --lh-snug:   1.35;
+  --lh-normal: 1.6;
+
+  /* --- Spacing scale (4px base) --- */
+  --space-1: 0.25rem;  --space-2: 0.5rem;  --space-3: 0.75rem; --space-4: 1rem;
+  --space-5: 1.5rem;   --space-6: 2rem;    --space-7: 3rem;    --space-8: 4rem;
+
+  /* --- Radius (inherits memo) --- */
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px; --radius-full: 9999px;
+
+  /* --- Shadows (inherits memo, warm-tinted) --- */
+  --shadow-card:  0 1px 3px rgba(28,27,24,.06), 0 4px 16px rgba(28,27,24,.04);
+  --shadow-hover: 0 4px 12px rgba(28,27,24,.10), 0 8px 32px rgba(28,27,24,.06);
+
+  /* --- Layout --- */
+  --maxw: 1080px;
+}
+
+/* ============================================================
+   DARK MODE — single flip of every token (memo mechanism).
+   Every severity + score color has both-scheme variants.
+============================================================ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* --- Surfaces (dark) — warm near-black, not blue-black --- */
+    --color-bg:           #14130f;
+    --color-surface:      #1d1b16;
+    --color-surface-2:    #262219;
+    --color-border:       #34302a;
+    --color-border-strong:#48433a;
+
+    /* --- Text (dark) --- */
+    --color-text:         #ece8df;
+    --color-text-muted:   #a39d8e;
+    --color-text-light:   #6e685c;
+
+    /* --- Accent (dark) — brighter teal for dark bg --- */
+    --color-accent:       #2dd4bf;
+    --color-accent-2:     #5eead4;
+    --color-accent-bg:    #0c2a27;
+    --color-accent-bd:    #14534c;
+    --color-link:         #38bdf8;
+
+    /* --- Severity scale (dark) --- */
+    --sev-blocker: #f87171; --sev-blocker-bg: #2c1212; --sev-blocker-bd: #5c1f1f;
+    --sev-major:   #fb923c; --sev-major-bg:   #2a1808; --sev-major-bd:   #5a3411;
+    --sev-minor:   #fbbf24; --sev-minor-bg:   #261f08; --sev-minor-bd:   #524212;
+    --sev-nit:     #b8b1a4; --sev-nit-bg:     #242018; --sev-nit-bd:     #3c372e;
+    --sev-ok:      #4ade80; --sev-ok-bg:      #0e2415; --sev-ok-bd:      #1d4d2c;
+
+    /* --- Score thresholds (dark) --- */
+    --score-bad:  #f87171; --score-warn: #fb923c; --score-mid: #fbbf24; --score-good: #4ade80;
+    --score-track:#34302a;
+
+    /* --- Shadows (dark) --- */
+    --shadow-card:  0 1px 3px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.25);
+    --shadow-hover: 0 4px 12px rgba(0,0,0,.5), 0 8px 32px rgba(0,0,0,.35);
+  }
+}

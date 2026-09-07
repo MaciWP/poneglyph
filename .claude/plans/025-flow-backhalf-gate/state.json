@@ -1,0 +1,63 @@
+{
+  "spec_slug": "025-flow-backhalf-gate",
+  "mode": "full",
+  "current_phase": "closed",
+  "phases_completed": [
+    1,
+    2,
+    2.5,
+    3,
+    4,
+    5
+  ],
+  "gates_approved": {
+    "1->2": true,
+    "2->3": true
+  },
+  "us_completed": [
+    "US1",
+    "US2",
+    "US3"
+  ],
+  "us_pending": [],
+  "feature_closed": true,
+  "review_verdict": "APPROVED",
+  "retro_status": "approved",
+  "started_at": "2026-06-30",
+  "updated_at": "2026-06-30",
+  "us_history": [
+    {
+      "us": "US1",
+      "completed_at": "2026-06-30",
+      "tests_passed": true,
+      "files_touched": [
+        "scripts/flow-state.ts",
+        "scripts/__tests__/flow-state.test.ts"
+      ],
+      "execution": "status report + findOpenPlans/summarizeState, tdd red→green",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US2",
+      "completed_at": "2026-06-30",
+      "tests_passed": true,
+      "files_touched": [
+        "hooks/post-compact.ts",
+        "hooks/__tests__/post-compact.test.ts"
+      ],
+      "execution": "openPlansReminder inline + buildOutput root-injectable + test nuevo",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US3",
+      "completed_at": "2026-06-30",
+      "tests_passed": true,
+      "files_touched": [
+        "commands/flow.md",
+        "skills/retro/SKILL.md"
+      ],
+      "execution": "schema D4 (us_history+current_phase) + retro ownership",
+      "askuserquestion_count": 0
+    }
+  ]
+}

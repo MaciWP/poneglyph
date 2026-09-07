@@ -1,0 +1,163 @@
+[
+  {
+    "id": "skill-drillme-01",
+    "expected": "drillme",
+    "skills": [],
+    "tools": [
+      "Read",
+      "Glob",
+      "Glob",
+      "Glob",
+      "PowerShell",
+      "PowerShell"
+    ],
+    "hit": false
+  },
+  {
+    "id": "skill-techplan-02",
+    "expected": "tech-plan",
+    "skills": [
+      "tech-plan"
+    ],
+    "tools": [
+      "Skill",
+      "Glob",
+      "Glob",
+      "Bash",
+      "Grep",
+      "Read",
+      "Glob",
+      "Glob"
+    ],
+    "hit": true
+  },
+  {
+    "id": "skill-critic-03",
+    "expected": "critic",
+    "skills": [
+      "critic"
+    ],
+    "tools": [
+      "Skill",
+      "Glob",
+      "Glob",
+      "Glob"
+    ],
+    "hit": true
+  },
+  {
+    "id": "skill-scope-04",
+    "expected": "scope",
+    "skills": [
+      "scope"
+    ],
+    "tools": [
+      "Skill",
+      "ToolSearch",
+      "Glob",
+      "Glob",
+      "Read"
+    ],
+    "hit": true
+  },
+  {
+    "id": "probe-tech-plan",
+    "expected": "tech-plan",
+    "skills": [],
+    "tools": [
+      "Grep",
+      "Grep",
+      "Read",
+      "Grep",
+      "Glob"
+    ],
+    "hit": false
+  },
+  {
+    "id": "probe-tdd-design",
+    "expected": "tdd-design",
+    "skills": [],
+    "tools": [
+      "Glob",
+      "Glob",
+      "Glob",
+      "Bash",
+      "Read",
+      "Read",
+      "Read"
+    ],
+    "hit": false
+  },
+  {
+    "id": "probe-critic",
+    "expected": "critic",
+    "skills": [
+      "critic",
+      "lessons"
+    ],
+    "tools": [
+      "Skill",
+      "Bash",
+      "Bash",
+      "Skill"
+    ],
+    "hit": true
+  },
+  {
+    "id": "probe-retro",
+    "expected": "retro",
+    "skills": [
+      "retro"
+    ],
+    "tools": [
+      "Skill",
+      "Glob"
+    ],
+    "hit": true
+  },
+  {
+    "id": "probe-scope",
+    "expected": "scope",
+    "skills": [
+      "scope"
+    ],
+    "tools": [
+      "Skill",
+      "Grep",
+      "Glob",
+      "Glob",
+      "Glob",
+      "Read",
+      "Grep",
+      "Grep",
+      "ToolSearch"
+    ],
+    "hit": true
+  },
+  {
+    "id": "probe-orchestrator",
+    "expected": "orchestrator-protocol",
+    "skills": [
+      "orchestrator-protocol"
+    ],
+    "tools": [
+      "Skill",
+      "Glob"
+    ],
+    "hit": true
+  },
+  {
+    "id": "probe-dev",
+    "expected": "dev",
+    "skills": [
+      "dev"
+    ],
+    "tools": [
+      "Grep",
+      "Skill",
+      "Grep",
+      "Bash"
+    ],
+    "hit": true
+  }
+]

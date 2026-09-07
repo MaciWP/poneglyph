@@ -1,0 +1,2 @@
+{"id":"fx-bluf-pass","prompt":"fixture","type":"style","grader":"blufPosition","source":"fixture"}
+{"id":"fx-opener-fail","prompt":"fixture","type":"style","grader":"bannedOpeners","source":"fixture"}

@@ -1,0 +1,185 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "respectGitignore": true,
+  "minimumVersion": "2.1.228",
+  "fallbackModel": [
+    "claude-sonnet-5",
+    "claude-haiku-4-5-20251001"
+  ],
+  "env": {
+    "BASH_DEFAULT_TIMEOUT_MS": "300000",
+    "ENABLE_LSP_TOOL": "1",
+    "CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS": "50000",
+    "CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD": "1",
+    "ENABLE_PROMPT_CACHING_1H": "1",
+    "CLAUDE_CODE_SUBAGENT_MODEL": "claude-haiku-4-5-20251001"
+  },
+  "permissions": {
+    "allow": [
+      "Bash",
+      "Read",
+      "Edit",
+      "Write",
+      "Glob",
+      "Grep",
+      "WebFetch",
+      "WebSearch",
+      "Skill",
+      "AskUserQuestion",
+      "LSP",
+      "NotebookEdit",
+      "SendMessage",
+      "mcp__plugin_context7_context7__*"
+    ],
+    "ask": [
+      "Agent",
+      "Workflow"
+    ],
+    "deny": [
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf /)",
+      "Bash(curl * | bash)",
+      "Bash(curl * | sh)",
+      "Bash(wget * -O - | sh)",
+      "Bash(wget * -O - | bash)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)",
+      "Edit(.env)",
+      "Edit(*.pem)",
+      "Edit(*credentials*)",
+      "Edit(*secret*)",
+      "Read(*.pem)",
+      "Read(*credentials*)",
+      "Read(*secret*)",
+      "Edit(.env.*)",
+      "Edit(./secrets/**)",
+      "PowerShell(irm * | iex)",
+      "PowerShell(iwr * | iex)"
+    ],
+    "defaultMode": "auto"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun $HOME/.claude/hooks/headless-model-gate.ts",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun $HOME/.claude/hooks/skill-activation.ts",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "InstructionsLoaded": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun $HOME/.claude/hooks/instructions-loaded.ts",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun $HOME/.claude/hooks/security-gate.ts",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "worktree": {
+    "symlinkDirectories": [
+      "node_modules",
+      ".venv"
+    ],
+    "baseRef": "head"
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "ccstatusline",
+    "padding": 0,
+    "refreshInterval": 10
+  },
+  "enabledPlugins": {
+    "typescript-lsp@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "context7@claude-plugins-official": true
+  },
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "outputStyle": "Poneglyph",
+  "language": "spanish",
+  "theme": "dark",
+  "tui": "fullscreen",
+  "autoUpdatesChannel": "latest",
+  "effortLevel": "xhigh",
+  "sandbox": {
+    "enabled": false
+  },
+  "spinnerVerbs": {
+    "mode": "replace",
+    "verbs": [
+      "Pensando",
+      "Analizando",
+      "Investigando",
+      "Procesando",
+      "Evaluando",
+      "Planificando",
+      "Construyendo",
+      "Revisando",
+      "Optimizando"
+    ]
+  },
+  "advisorModel": "opus",
+  "promptSuggestionEnabled": false,
+  "awaySummaryEnabled": false,
+  "agentPushNotifEnabled": false,
+  "remoteControlAtStartup": false,
+  "preferredNotifChannel": "iterm2_with_bell",
+  "editorMode": "normal",
+  "skipDangerousModePermissionPrompt": true,
+  "autoCompactEnabled": true,
+  "skipAutoPermissionPrompt": true,
+  "autoMode": {
+    "hard_deny": [
+      "Bash(rm -rf .claude)",
+      "Bash(rm -rf .claude/*)",
+      "Bash(rm -rf ~)",
+      "Bash(rm -rf $HOME)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)"
+    ],
+    "soft_deny": [
+      "$defaults",
+      "Edit(.claude/settings.json)",
+      "Write(.claude/settings.json)",
+      "Edit(.claude/settings.global.json)",
+      "Write(.claude/settings.global.json)",
+      "Bash(rm .claude)"
+    ]
+  }
+}

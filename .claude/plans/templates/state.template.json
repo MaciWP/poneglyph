@@ -1,0 +1,17 @@
+{
+  "spec_slug": "{NNN}-{slug}",
+  "mode": "minimal|standard|full",
+  "current_phase": 1,
+  "phases_completed": [],
+  "gates_approved": {
+    "1->2": false,
+    "2->3": false
+  },
+  "us_completed": [],
+  "us_pending": [],
+  "feature_closed": false,
+  "review_verdict": null,
+  "retro_status": null,
+  "started_at": "{ISO-date}",
+  "updated_at": "{ISO-date}"
+}

@@ -1,0 +1,104 @@
+{
+  "spec_slug": "028-p2-backlog-closeout",
+  "mode": "standard",
+  "current_phase": "closed",
+  "phases_completed": [
+    1,
+    2,
+    2.5,
+    3,
+    4,
+    5
+  ],
+  "gates_approved": {
+    "1->2": true,
+    "2->3": true
+  },
+  "us_completed": [
+    "US2",
+    "US4",
+    "US3",
+    "US1",
+    "US5",
+    "US6"
+  ],
+  "us_pending": [],
+  "us_history": [
+    {
+      "us": "US2",
+      "completed_at": "2026-07-08",
+      "tests_passed": true,
+      "files_touched": [
+        ".claude/settings.json",
+        ".claude/docs/system-inventory.md"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US4",
+      "completed_at": "2026-07-08",
+      "tests_passed": true,
+      "files_touched": [
+        "hooks/security-gate.ts",
+        "hooks/__tests__/security-gate-functions.test.ts",
+        "rules/paths/hooks.md"
+      ],
+      "execution": "red-green forced; dual-channel Stop response",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US3",
+      "completed_at": "2026-07-08",
+      "tests_passed": true,
+      "files_touched": [
+        "hooks/learning-inbox.ts",
+        "hooks/__tests__/learning-inbox.test.ts",
+        "skills/project-onboard/SKILL.md"
+      ],
+      "execution": "red-green forced; workaround retired (floor 0.5); RAW_TRANSCRIPT filter; word-boundary snippet; gitignore proposal; auto-memory split doc",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US1",
+      "completed_at": "2026-07-08",
+      "tests_passed": true,
+      "files_touched": [
+        "skills/security-audit/ (renamed)",
+        "12 dispatcher files",
+        "rank.test.ts"
+      ],
+      "execution": "git mv + word-boundary sweep; native built-in mention preserved with label; AC1-conductual diferido a próxima sesión",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US5",
+      "completed_at": "2026-07-08",
+      "tests_passed": true,
+      "files_touched": [
+        "CLAUDE.md",
+        "skills/critic/SKILL.md"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US6",
+      "completed_at": "2026-07-08",
+      "tests_passed": true,
+      "files_touched": [
+        "orchestrator-protocol/SKILL.md",
+        "scripts/flow-state.ts+test",
+        "commands/flow.md",
+        "workflows/ultracode-audit.js"
+      ],
+      "execution": "SK-07 row; complete-phase red-green; RI-3 defaults",
+      "askuserquestion_count": 0
+    }
+  ],
+  "feature_closed": true,
+  "review_verdict": "APPROVED_WITH_WARNINGS",
+  "retro_status": "approved",
+  "started_at": "2026-07-08",
+  "updated_at": "2026-07-08"
+}

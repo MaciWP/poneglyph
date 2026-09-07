@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "title": "Alfombrillas de cristal",
+    "titleEm": "comparativa 2026",
+    "kicker": "Comparativa de producto",
+    "mode": "shopping",
+    "date": "2026-06-08",
+    "verdict": { "kind": "ok", "text": "Control → Razer Atlas · Velocidad+precio → Pulsar · Build → XTEN/Skypad" },
+    "lede": "Seis glass mousepads de gama alta (2025–2026) comparados en precio, rendimiento y construcción. Specs verificadas; el scoring 1–10 es síntesis editorial del consenso de reviews, no medición del fabricante.",
+    "now": { "label": "Recomendación", "action": "FPS/control → <b>Razer Atlas</b> · velocidad + precio → <b>Pulsar Superglide</b> · build premium → <b>XTEN</b> / <b>Skypad 3.0</b> · mejor equilibrio → <b>LGG Venus Pro</b>." },
+    "footLeft": "Poneglyph · html-report dynamic · fuentes: gamerhardware, Tom's Hardware, Pangoly",
+    "footRight": "2026-06-08"
+  },
+  "kpis": [
+    { "label": "Modelos", "value": "6", "sub": "glass mousepads gama alta" },
+    { "label": "Rango precio", "value": "$70–105", "sub": "USD aprox" },
+    { "label": "Mejor overall", "value": "Skypad 3.0", "health": "good", "sub": "build + glide" },
+    { "label": "Mejor value", "value": "Pulsar", "health": "good", "sub": "glide ≈ Skypad, −30%" },
+    { "label": "Mejor control", "value": "Razer Atlas", "health": "mid", "sub": "micro-etched" }
+  ],
+  "sections": [
+    {
+      "id": "precio", "num": "01", "title": "Precio",
+      "blocks": [
+        { "type": "chart", "data": { "kind": "bar", "title": "Precio aprox. en USD — verde = más barato", "series": [
+          { "label": "Pulsar", "value": 70, "health": "good" },
+          { "label": "Wallhack", "value": 80, "health": "mid" },
+          { "label": "LGG Venus", "value": 90, "health": "mid" },
+          { "label": "Razer Atlas", "value": 100, "health": "warn" },
+          { "label": "Skypad 3.0", "value": 100, "health": "warn" },
+          { "label": "XTEN", "value": 105, "health": "warn" }
+        ] } }
+      ]
+    },
+    {
+      "id": "stats", "num": "02", "title": "Estadísticas (síntesis de reviews)",
+      "blocks": [
+        { "type": "callout", "data": { "kind": "note", "title": "Cómo leer esto", "body": "Scoring 1–10 derivado del <b>consenso de reviews</b> (gamerhardware, Tom's Hardware, Pangoly) — NO son cifras del fabricante. Glass <i>micro-etched</i> da más control; <i>smooth</i> da más velocidad." } },
+        { "type": "chart", "data": { "kind": "bar", "title": "Velocidad / glide", "series": [
+          { "label": "Skypad 3.0", "value": 9, "health": "good" },
+          { "label": "Pulsar", "value": 9, "health": "good" },
+          { "label": "XTEN", "value": 9, "health": "good" },
+          { "label": "Wallhack", "value": 8, "health": "good" },
+          { "label": "LGG Venus", "value": 7, "health": "mid" },
+          { "label": "Razer Atlas", "value": 6, "health": "mid" }
+        ] } },
+        { "type": "chart", "data": { "kind": "bar", "title": "Control / parada", "series": [
+          { "label": "Razer Atlas", "value": 9, "health": "good" },
+          { "label": "LGG Venus", "value": 9, "health": "good" },
+          { "label": "Wallhack", "value": 7, "health": "mid" },
+          { "label": "Skypad 3.0", "value": 7, "health": "mid" },
+          { "label": "XTEN", "value": 7, "health": "mid" },
+          { "label": "Pulsar", "value": 6, "health": "mid" }
+        ] } },
+        { "type": "chart", "data": { "kind": "bar", "title": "Durabilidad / build", "series": [
+          { "label": "XTEN", "value": 10, "health": "good" },
+          { "label": "Razer Atlas", "value": 9, "health": "good" },
+          { "label": "Skypad 3.0", "value": 9, "health": "good" },
+          { "label": "LGG Venus", "value": 9, "health": "good" },
+          { "label": "Wallhack", "value": 8, "health": "good" },
+          { "label": "Pulsar", "value": 8, "health": "good" }
+        ] } }
+      ]
+    },
+    {
+      "id": "tabla", "num": "03", "title": "Características",
+      "blocks": [
+        { "type": "table", "data": { "filterable": true, "title": "Specs verificadas (fuente: gamerhardware 2026)", "columns": [
+          { "key": "modelo", "label": "Modelo" },
+          { "key": "precio", "label": "Precio", "numeric": true },
+          { "key": "tam", "label": "Tamaño (mm)" },
+          { "key": "sup", "label": "Superficie" },
+          { "key": "base", "label": "Base" },
+          { "key": "nota", "label": "Nota" }
+        ], "rows": [
+          { "cells": { "modelo": "Skypad 3.0 XL", "precio": "~$100", "tam": "500×400", "sup": "Smooth / Etched", "base": "Goma antideslizante", "nota": "El original; build + texturas a elegir" } },
+          { "cells": { "modelo": "Razer Atlas", "precio": "~$100", "tam": "450×400", "sup": "Micro-etched", "base": "Goma antideslizante", "nota": "Mejor parada para glass; oleophobic; fácil de comprar" } },
+          { "cells": { "modelo": "Pulsar Superglide Glass", "precio": "~$70", "tam": "490×420", "sup": "Smooth", "base": "Goma antideslizante", "nota": "Glide ≈ Skypad a menor precio (mejor value)" } },
+          { "cells": { "modelo": "Wallhack SP-004", "precio": "~$80", "tam": "490×420", "sup": "Smooth (2.5mm)", "base": "Goma antideslizante", "nota": "Ultra-fino, minimalista; favorito de foros" } },
+          { "cells": { "modelo": "LGG Venus Pro", "precio": "~$90", "tam": "500×400", "sup": "Micro-etched", "base": "Goma antideslizante", "nota": "Mejor ratio velocidad-control" } },
+          { "cells": { "modelo": "XTEN Glass", "precio": "~$105", "tam": "490×420", "sup": "Smooth (borosilicato JP)", "base": "Goma premium", "nota": "Cristal borosilicato japonés; mejor build" } }
+        ] } }
+      ]
+    },
+    {
+      "id": "veredicto", "num": "04", "title": "Veredicto por perfil",
+      "blocks": [
+        { "type": "callout", "data": { "kind": "tip", "title": "Qué comprar según tu uso", "body": "<b>FPS / aim con control</b>: Razer Atlas o LGG Venus Pro (micro-etched, más parada). <b>Velocidad pura + ahorro</b>: Pulsar Superglide (glide casi Skypad, −30% precio). <b>Lo mejor sin mirar precio</b>: Skypad 3.0 XL o XTEN (build superior). <b>Mínimo grosor / estética</b>: Wallhack SP-004." } },
+        { "type": "prose", "html": "<p>Todas son cristal templado (alta durabilidad) con base de goma. La diferencia real está en <b>superficie</b>: <i>smooth</i> (Skypad, Pulsar, XTEN, Wallhack) prioriza velocidad; <i>micro-etched</i> (Razer, LGG) añade control/parada. Precios y specs verificados; los scores son síntesis de reviews.</p><p>Fuentes: <a href=\"https://gamerhardware.org/best-glass-mousepads/\">gamerhardware</a> · <a href=\"https://www.tomshardware.com/news/razer-atlas-hands-on\">Tom's Hardware (Razer Atlas)</a> · <a href=\"https://pangoly.com/en/compare/mouse-pad/razer-atlas-vs-skypad-wallhack-glasspad-4-0\">Pangoly (Razer vs Skypad/Wallhack)</a>.</p>" }
+      ]
+    }
+  ]
+}

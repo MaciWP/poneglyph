@@ -1,0 +1,34 @@
+name: Poneglyph configuration check
+description: Validate an addon with the shared static gate from this reviewed core revision.
+inputs:
+  root:
+    description: Git repository root to validate, relative to the workflow workspace.
+    required: false
+    default: .
+runs:
+  using: composite
+  steps:
+    - name: Set up Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: '1.3.14'
+    - name: Prepare the reviewed validator
+      shell: bash
+      env:
+        PONEGLYPH_CORE: ${{ github.action_path }}
+        HUSKY: '0'
+      run: |
+        set -euo pipefail
+        cd "$PONEGLYPH_CORE"
+        bun install --frozen-lockfile --ignore-scripts
+        # Remote actions arrive without Git metadata. The shared gate also
+        # inventories core skill names through Git; no commit or fetch is needed.
+        if [ ! -e .git ]; then
+          git init --quiet --template=
+        fi
+    - name: Check addon source
+      shell: bash
+      env:
+        PONEGLYPH_CORE: ${{ github.action_path }}
+        PONEGLYPH_ADDON: ${{ github.workspace }}/${{ inputs.root }}
+      run: bun "$PONEGLYPH_CORE/.claude/scripts/check-config.ts" --root "$PONEGLYPH_ADDON"

@@ -1,0 +1,99 @@
+# Harness Adapters
+
+Poneglyph maintains one doctrine, one skill catalog, and one source for each
+command. Host adapters install native entrypoints. Shared procedures do not
+guarantee identical model decisions or permission systems.
+
+## Source and installation
+
+| Surface | Claude Code | Codex | Grok Build |
+|---|---|---|---|
+| Doctrine | Linked core CLAUDE.md | Generated AGENTS.md: doctrine, style, runtime contract | Existing Claude compatibility loads shared doctrine and rules |
+| Style | Poneglyph output style | Included once in AGENTS.md | Generated style twin, linked or checked Windows copy |
+| Skills | Shared .claude/skills | Each core skill directory links into the selected profile | Existing Claude discovery, without another set of links |
+| Commands | Five shared markdown commands | Generated $name skills read the original command | Existing Claude command discovery exposes /name |
+| Lifecycle | Shared flow.md | Same phases, artifacts and human gates through $flow | Same phases, artifacts and human gates through /flow |
+| Permissions and authentication | Native profile plus ignored overlay | Native Codex configuration | Native Grok configuration and enabled compatibility sources |
+
+The adapter discovers core skill directories from source, excluding links into
+optional addons. The 2026-09-07 source review found 30 skills and five commands.
+References and scripts stay with their skill. Generated wrappers contain
+invocation glue, not independently maintained command bodies.
+
+`rules/harness-runtime.md` resolves resources from the installation. Project
+plans and source changes stay in the current project. A Claude tool name does
+not provide another host with that API. If a vendor plugin is unavailable,
+report the gap and use an available equivalent only where it fulfills the
+operation. File search must not be described as semantic LSP inspection.
+Claude settings recipes still configure Claude when read from another host.
+
+## Hook contracts and limits
+
+The four Claude registrations stay in `settings.global.json`. Native adapters
+reuse command judgement, skill matching and secret detection.
+
+| Shared operation | Claude Code | Codex | Grok Build |
+|---|---|---|---|
+| Headless command guard | PreToolUse | Native PreToolUse response | Native PreToolUse response |
+| Skill hints | UserPromptSubmit context | Native UserPromptSubmit context | Explicit shared routing; passive stdout is ignored |
+| Modified-file secret heuristic | Stop warning and explicit review command | Stop user warning and explicit review command | Explicit review command |
+| Instruction-load telemetry | InstructionsLoaded | No equivalent installed | No equivalent installed |
+| Git-intent transcript warning | Existing Claude parser | No guessed transcript parser; shared approval doctrine | No guessed transcript parser; shared approval doctrine |
+
+The headless guard covers its existing command patterns. It does not prove
+authorization or intercept every worker surface. Native hook failures can fail
+open. A registration is not a universal security boundary.
+
+Codex requires review and trust of changed hooks through `/hooks`. Its transcript
+format is not stable. This adapter neither grants trust nor forces continuation
+to simulate a warning. [Codex hooks](https://learn.chatgpt.com/docs/hooks).
+
+Grok uses camelCase input and a different denial response. Only PreToolUse blocks;
+passive stdout is ignored. Keep `[compat.claude] hooks = false` and install the
+native hook once. Other integrations remain independent.
+[Grok hooks](https://docs.x.ai/build/features/hooks).
+
+## Install and verify
+
+Preview before execution. Preserve matching links, native settings and other
+hooks. Recovery copies stay outside skill discovery roots in the user's Poneglyph
+installation-backups directory. Backups are not auto-deleted.
+
+```bash
+bun .claude/commands/sync-claude.ts --status
+bun .claude/scripts/sync-codex.ts --status
+bun .claude/scripts/sync-grok.ts --status
+bun .claude/commands/sync-claude.ts --execute --backup --force
+bun .claude/scripts/sync-codex.ts --execute --backup --force
+bun .claude/scripts/sync-grok.ts --execute --backup --force
+bun run check:config
+bun run doctor --ci
+bun run doctor
+```
+
+Sync shared generated doctrine before account profiles linked to it.
+`CODEX_HOME` selects the Codex profile; the default is `~/.codex`.
+`sync-grok --home-dir PATH` supports a disposable profile without replacing HOME.
+Grok reuses the shared Claude installation, which must be installed first.
+
+Check an unrelated scratch project, repeated-sync stability, native discovery,
+and preserved integrations. Test hook input, output and failures without a model.
+Complete native trust and human session checks separately. Timeouts, skipped
+checks and static listings do not establish successful activation.
+
+## Optional private addon and MCP
+
+Work remains an optional machine addon. Activation and its marketplace belong in
+ignored `settings.machine.json`. Claude and Grok share its enabled Claude plugin.
+Codex profiles link only its unique skills. Do not also install those skills in
+`~/.agents/skills`: this produced duplicate Grok discovery. Preserve private
+memory and verify the installed cache has no retired Work hook.
+
+MCP endpoints, credentials, enabled tools and permissions remain private machine
+configuration. The adapters do not export credentials or establish connections.
+Compare services and transport requirements independently: different
+host-specific names or loopback ports do not prove different services.
+Matching configuration does not prove authentication or connectivity.
+
+Model choice and agent authorization remain governed by CLAUDE.md. Resolve
+capabilities from the active host. No adapter starts or evaluates a model.

@@ -1,0 +1,79 @@
+{
+  "spec_slug": "027-roi-fixes-model-advisor",
+  "mode": "standard",
+  "current_phase": "closed",
+  "phases_completed": [
+    1,
+    2,
+    2.5,
+    3,
+    4,
+    5
+  ],
+  "gates_approved": {
+    "1->2": true,
+    "2->3": true
+  },
+  "us_completed": [
+    "US1",
+    "US2",
+    "US4",
+    "US3"
+  ],
+  "us_pending": [],
+  "us_history": [
+    {
+      "us": "US1",
+      "completed_at": "2026-07-07",
+      "tests_passed": true,
+      "files_touched": [
+        "hooks/session-start-plans.ts",
+        "hooks/__tests__/session-start-plans.test.ts",
+        "hooks/post-compact.ts",
+        "settings.json",
+        "rules/paths/hooks.md"
+      ],
+      "execution": "red-green forced; illegible-surfacing extendido a openPlansReminder (oracle T1.3, test viejo actualizado)",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US2",
+      "completed_at": "2026-07-07",
+      "tests_passed": true,
+      "files_touched": [
+        "commands/sync-claude.ts",
+        "meta-settings-cookbook/SKILL.md",
+        "meta-create/SKILL.md",
+        "meta-create/references/doctrine-sweep.md"
+      ],
+      "execution": "scripts/ synced (RI-1 class dead); 3 evals quals (RI-10)",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US4",
+      "completed_at": "2026-07-07",
+      "tests_passed": true,
+      "files_touched": [
+        "skills/skill-advisor/SKILL.md",
+        "commands/flow.md"
+      ],
+      "execution": "model/effort propose-ratify gated, fuente unica playbook §4",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US3",
+      "completed_at": "2026-07-07",
+      "tests_passed": true,
+      "files_touched": [
+        "docs/system-inventory.md"
+      ],
+      "execution": "conteos → snapshot+puntero; absorbe hooks 8 + scripts synced",
+      "askuserquestion_count": 0
+    }
+  ],
+  "feature_closed": true,
+  "review_verdict": "APPROVED",
+  "retro_status": "approved",
+  "started_at": "2026-07-07",
+  "updated_at": "2026-07-07"
+}

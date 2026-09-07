@@ -1,0 +1,97 @@
+REM ===== SNAPSHOT 2026-08-23 - NOT EXECUTABLE, NOT SYNCED =====
+REM Live source: D:\llama.cpp\serve-qwen.cmd   (see README.md in this folder)
+@echo off
+REM =============================================================================
+REM  Qwen3.8-27B en RTX 5090 (32 GB) - llama.cpp b10588
+REM  Endpoint OpenAI-compatible: http://127.0.0.1:8080/v1/chat/completions
+REM
+REM    serve-qwen.cmd            Q5_K_XL  DEFAULT: calidad+ctx  ~190 corto / 177 largo
+REM    serve-qwen.cmd q4         Q4_K_XL  equilibrio            ~210 / 200
+REM    serve-qwen.cmd nvfp4      NVFP4    velocidad maxima      ~252 / 257  (pierde calidad, ver abajo)
+REM    serve-qwen.cmd nvfp4 -c 32768     flags extra detras (el ultimo manda)
+REM
+REM  TEMPERATURA 0 YA VA POR DEFECTO EN EL SERVIDOR. Es el factor DOMINANTE:
+REM    temp libre -> el drafter acierta 24%%  ->  90,8 tok/s y genera de mas
+REM    temp 0     -> el drafter acierta 81%%  -> 216,0 tok/s
+REM    En tiempo real de espera: 27,5s frente a 8,9s = 3,1x
+REM  Si usas la UI web (http://127.0.0.1:8080), comprueba en sus Settings que la
+REM  temperatura este a 0: si la UI la manda explicita, pisa el default de aqui.
+REM
+REM  EN CADA PETICION (esto vale mas que cambiar de modelo):
+REM    "temperature": 0          -> +23%%. El drafter acierta el 91%% en vez del 69%%,
+REM                                 y para codigo greedy es MEJOR, no una concesion.
+REM    "reasoning_effort": "low" -> 3x menos tokens de pensamiento
+REM    "max_tokens": 1200 o mas  -> OBLIGATORIO: incluso con low puede gastarse un
+REM                                 presupuesto pequeno pensando y devolver VACIO.
+REM
+REM  Medido aqui (criba de Eratostenes, temp 0, media de 3, GPU libre):
+REM    Q5 sin speculative .....................  59,2 tok/s
+REM    Q4 sin speculative .....................  70,7
+REM    NVFP4 sin speculative ..................  72,7
+REM    Q5 + MTP n5, temp 0,6 .................. 150,0
+REM    Q5 + MTP n8, temp 0 .................... 190,6
+REM    Q4 + MTP n8, temp 0 .................... 210,2
+REM    NVFP4 + MTP separado n6, temp 0 ........ 251,9 corto / 216,0 largo
+REM    NVFP4 + MTP separado n10, temp 0 ....... 251,8 corto / 256,6 LARGO  <- optimo
+REM  El n-max optimo depende de la longitud: en salida larga la aceptacion cae
+REM  (68% en n10) pero el paralelismo compensa; n12 ya es meseta (252,7).
+REM
+REM  El truco del NVFP4: IGNORAR su MTP embebido y usar el drafter separado de
+REM  Unsloth. Con el embebido solo da 194 tok/s; con el separado, 252.
+REM
+REM  CALIDAD MEDIDA CON KL-DIVERGENCE (2026-08-23, base Q8_0, 32K tokens x 2 corpus,
+REM  llama-perplexity --kl-divergence; la mini-eval pass/fail de 8 tareas dio 8/8 en
+REM  todos y NO tiene resolucion para esto):
+REM                     PPL wiki   PPL CODIGO   top-1 codigo
+REM    Q6_K_XL          +0,004%%    +0,13%%       98,2%%   (BORRADO: Q5 lo cubre; re-descargable de unsloth)
+REM    Q5_K_XL          +0,08%%     +0,65%%       96,6%%
+REM    Q4_K_XL          +0,08%%     +2,1%%        94,9%%
+REM    NVFP4-HIGHEST    +1,4%%      +9,5%%        90,6%%   <- dominado por Q4: borrable
+REM    NVFP4-HIGH       +4,8%%      +16,7%%       87,8%%   <- difiere 1 de cada 8 tokens
+REM  La velocidad del nvfp4 se paga: en codigo NO es gratis. Usalo para iterar en
+REM  masa con tests que verifiquen; para trabajo serio, Q5.
+REM  Si algun dia se re-descarga Q6_XL: NO cabe con ctx 128K en 32 GB (desborda a
+REM  RAM y cae a 6-25 tok/s SIN error); servirlo con ctx 64K y sin vision (30,3 GB).
+REM  n-max optimo POR FORMATO: K-quants (Q4/Q5/Q6) -> n8; NVFP4 -> n10.
+REM
+REM  Descartado y por que:
+REM    n-max 12 con Q5 ..... colapsa a 93 tok/s
+REM    p-min 0.10 .......... hunde un 36%%
+REM    GRAPH_OPT=1 ......... solo +0,8%% aqui (el +27%% publicado era en un MoE)
+REM    DFlash2 drafter ..... GGUF incompatible (expected 81 tensors, got 58)
+REM    EAGLE-3 ............. no hay drafter para Qwen3.8, solo para el 3.6
+REM    ik_llama.cpp ........ mas lento que el oficial en single-GPU con quants UD
+REM =============================================================================
+setlocal
+set GGML_CUDA_GRAPH_OPT=1
+set LLAMA=D:\llama.cpp\llama-server.exe
+set DRAFT=D:\models\MTP\mtp-Qwen3.8-27B-Q4_0.gguf
+set MMPROJ=D:\models\mmproj-F16.gguf
+set MODEL=D:\models\Qwen3.8-27B-UD-Q5_K_XL.gguf
+set NMAX=8
+set TAG=Q5_K_XL
+set CTX=131072
+set VISION=-mm "%MMPROJ%" --image-min-tokens 1024
+set VTAG=on
+
+if /I "%~1"=="q4" (
+  set MODEL=D:\models\Qwen3.8-27B-UD-Q4_K_XL.gguf
+  set TAG=Q4_K_XL
+  shift
+) else if /I "%~1"=="nvfp4" (
+  set MODEL=D:\models\NVFP4\Qwen3.8-27B-NVFP4-MTP-HIGH.gguf
+  set NMAX=10
+  set TAG=NVFP4-HIGH
+  shift
+) else if /I "%~1"=="q5" (
+  shift
+)
+
+echo Modelo: %TAG%  ^|  puerto 8080  ^|  ctx %CTX%  ^|  MTP n-max %NMAX%  ^|  vision %VTAG%
+"%LLAMA%" -m "%MODEL%" ^
+  -md "%DRAFT%" -ngld 99 --spec-draft-n-max %NMAX% ^
+  %VISION% ^
+  -ngl 99 -c %CTX% -fa on -ctk q8_0 -ctv q8_0 -np 1 ^
+  --host 127.0.0.1 --port 8080 --alias qwen3.8-27b ^
+  --temp 0 --reasoning-effort low ^
+  --metrics --reasoning-preserve %1 %2 %3 %4 %5 %6 %7 %8 %9

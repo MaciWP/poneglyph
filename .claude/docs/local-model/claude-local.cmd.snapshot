@@ -1,0 +1,21 @@
+REM ===== SNAPSHOT 2026-08-23 - NOT EXECUTABLE, NOT SYNCED =====
+REM Live source: D:\llama.cpp\claude-local.cmd  (see README.md in this folder)
+@echo off
+REM =============================================================================
+REM  Claude Code -> Qwen3.8-27B LOCAL (gratis, ~250 tok/s)
+REM  Requiere el servidor corriendo:  D:\llama.cpp\serve-qwen.cmd nvfp4
+REM  llama-server b10588 ya expone la API Anthropic nativa en /v1/messages
+REM  (tool-calling, streaming, vision y thinking incluidos - sin proxy).
+REM  Uso:  claude-local [argumentos normales de claude]
+REM =============================================================================
+setlocal
+set ANTHROPIC_BASE_URL=http://127.0.0.1:8080
+set ANTHROPIC_AUTH_TOKEN=local
+set ANTHROPIC_MODEL=qwen3.8-27b
+set ANTHROPIC_SMALL_FAST_MODEL=qwen3.8-27b
+REM  OBLIGATORIO: Claude Code no reconoce este modelo y asumiria 200K de
+REM  contexto; sin esto no auto-compacta a tiempo y desborda los 128K reales
+REM  del servidor (el desborde es SILENCIOSO: cae a 6-25 tok/s sin error).
+set CLAUDE_CODE_MAX_CONTEXT_TOKENS=131072
+claude %*
+endlocal

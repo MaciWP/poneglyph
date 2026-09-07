@@ -1,0 +1,99 @@
+{
+  "base_commit": "802d7953ea6da0f6c8116e8947932b52ea1130ea",
+  "kind": "observations-not-product-pass",
+  "offline": true,
+  "reproduced": 8,
+  "observations": 8,
+  "results": [
+    {
+      "id": "N01-empty-sync-green",
+      "reproduced": true,
+      "observed": {
+        "status": "🟢"
+      }
+    },
+    {
+      "id": "N02-test-name-as-summary",
+      "reproduced": true,
+      "observed": {
+        "status": "🔴",
+        "detail": "1 fail / 1 pass (454 tests)"
+      }
+    },
+    {
+      "id": "N03-shell-boundaries",
+      "reproduced": true,
+      "observed": [
+        {
+          "command": "claude -p audit --model haiku && claude -p audit --model opus",
+          "allowed": true
+        },
+        {
+          "command": "env claude -p audit --model opus",
+          "allowed": true
+        },
+        {
+          "command": "bun .claude/evals/run.ts --model haiku --dry-run && claude -p audit --model opus",
+          "allowed": true
+        }
+      ]
+    },
+    {
+      "id": "N04-model-equals-ignored",
+      "reproduced": true,
+      "observed": {
+        "model": "claude-haiku-4-5-20251001",
+        "explicit": false,
+        "dryRun": false
+      }
+    },
+    {
+      "id": "N05-flag-as-model",
+      "reproduced": true,
+      "observed": {
+        "model": "--dry-run",
+        "explicit": true,
+        "dryRun": true
+      }
+    },
+    {
+      "id": "N06-inline-budget-zero",
+      "reproduced": true,
+      "observed": {
+        "measuredInlineDescriptionBytes": 0
+      }
+    },
+    {
+      "id": "N07-incomplete-session-healthy",
+      "reproduced": true,
+      "observed": {
+        "ok": true
+      }
+    },
+    {
+      "id": "N08-ranker-still-broken",
+      "reproduced": true,
+      "observed": {
+        "skills": 30,
+        "descriptionsParsedAsMarker": 29
+      }
+    }
+  ],
+  "activation": [
+    {
+      "label": "before",
+      "trials": 11,
+      "hits": 8
+    },
+    {
+      "label": "after",
+      "trials": 11,
+      "hits": 8
+    },
+    {
+      "label": "after-rerun",
+      "trials": 6,
+      "hits": 3
+    }
+  ]
+}

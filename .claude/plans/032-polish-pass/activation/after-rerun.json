@@ -1,0 +1,96 @@
+[
+  {
+    "id": "skill-drillme-01#1",
+    "expected": "drillme",
+    "skills": [
+      "drillme",
+      "lessons"
+    ],
+    "tools": [
+      "Read",
+      "Glob",
+      "Bash",
+      "Read",
+      "Read",
+      "Skill",
+      "Skill"
+    ],
+    "hit": true
+  },
+  {
+    "id": "probe-tech-plan#1",
+    "expected": "tech-plan",
+    "skills": [],
+    "tools": [
+      "Grep",
+      "Glob",
+      "Read",
+      "Glob",
+      "Read",
+      "Grep"
+    ],
+    "hit": false
+  },
+  {
+    "id": "probe-tdd-design#1",
+    "expected": "tdd-design",
+    "skills": [
+      "tdd-design"
+    ],
+    "tools": [
+      "Glob",
+      "Glob",
+      "Skill",
+      "Bash"
+    ],
+    "hit": true
+  },
+  {
+    "id": "skill-drillme-01#2",
+    "expected": "drillme",
+    "skills": [],
+    "tools": [
+      "Read",
+      "Glob",
+      "Glob",
+      "Bash",
+      "Bash",
+      "Read"
+    ],
+    "hit": false
+  },
+  {
+    "id": "probe-tech-plan#2",
+    "expected": "tech-plan",
+    "skills": [],
+    "tools": [
+      "Grep",
+      "Glob",
+      "ToolSearch",
+      "Read",
+      "Read",
+      "Read"
+    ],
+    "hit": false
+  },
+  {
+    "id": "probe-tdd-design#2",
+    "expected": "tdd-design",
+    "skills": [
+      "tdd-design"
+    ],
+    "tools": [
+      "Skill",
+      "Glob",
+      "Glob",
+      "Read",
+      "Glob",
+      "Glob",
+      "Glob",
+      "Read",
+      "Read",
+      "Bash"
+    ],
+    "hit": true
+  }
+]

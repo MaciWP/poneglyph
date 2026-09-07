@@ -1,0 +1,5 @@
+FAIL  label-unverified-endpoint-16  [labelPresence ×1]  label without payload: [Seguro] — labels must carry payload
+
+0/1 passed
+Expected ≈100% — SUSPECT THE EVAL FIRST (grading bug), then the config change. See .claude/evals/README.md
+EXIT=1

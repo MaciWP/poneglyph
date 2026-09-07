@@ -1,0 +1,12 @@
+{
+  "skills": [
+    "review-patterns"
+  ],
+  "query": "Review this service class for code quality issues: it has a 200-line method with 15 if/else branches",
+  "expected_behavior": [
+    "Identifies high cyclomatic complexity",
+    "Suggests extracting methods for each branch",
+    "Flags the class as violating Single Responsibility",
+    "Provides severity ratings for each issue"
+  ]
+}

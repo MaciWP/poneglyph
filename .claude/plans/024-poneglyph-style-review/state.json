@@ -1,0 +1,30 @@
+{
+  "spec_slug": "024-poneglyph-style-review",
+  "mode": "full",
+  "current_phase": "closed",
+  "phases_completed": [
+    1,
+    2,
+    2.5,
+    3,
+    4,
+    5
+  ],
+  "gates_approved": {
+    "1->2": true,
+    "2->3": true
+  },
+  "us_completed": [
+    "US1",
+    "US2",
+    "US3",
+    "US4",
+    "US5"
+  ],
+  "us_pending": [],
+  "feature_closed": true,
+  "review_verdict": "APPROVED",
+  "retro_status": "approved",
+  "started_at": "2026-06-23",
+  "updated_at": "2026-06-23"
+}

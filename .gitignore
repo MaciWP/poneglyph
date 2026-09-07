@@ -1,0 +1,106 @@
+# Dependencies
+node_modules/
+bun.lockb
+
+# Build output
+dist/
+build/
+# Exception: .claude/skills/build/ is the Phase 3 implementation skill, not build output
+!.claude/skills/build/
+!.claude/skills/build/**
+
+# Session data (local only)
+data/sessions/*.jsonl
+storage/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Logs
+*.log
+npm-debug.log*
+.devlogs/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# MCP config (contains tokens)
+.mcp.json
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Per-machine settings overlay (env.PATH etc.) — sync-claude deep-merges it into the
+# generated ~/.claude/settings.json. Each machine keeps its own; never committed.
+.claude/settings.machine.json
+
+# Doctor privacy terms ({ "privacyTerms": [...] }) — the company names the public repo
+# must never contain live only on the machines that grep for them (032/WP6).
+.claude/doctor.local.json
+
+# Test coverage
+coverage/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Claude Code temporary files
+tmpclaude-*-cwd
+
+# Claude Code metrics (runtime data)
+**/.claude/metrics/
+
+# Trace data
+.claude/traces/
+
+# Context registry (runtime data)
+.claude/.context-registry.json
+
+# Archived plans (closed/abandoned features — out of accidental read reach)
+.claude/plans/_archive/
+
+# Learning inbox + load-layer log (may contain transcript snippets — never commit).
+# Exception: best-of-n-log.md is versioned pilot evidence (feature 019).
+.claude/learned/*
+!.claude/learned/best-of-n-log.md
+
+# Runtime data directories
+data/
+
+# Test results (Playwright/runner artifacts)
+test-results/
+
+# Windows shell artifact
+nul
+
+# Generated reports
+*.html
+poneglyph-analysis.md
+# Exception: the whole html-report skill templates dir is SOURCE (approved designs,
+# the templates meant to be used), never generated renders. Whole-dir exception so new
+# templates are versioned without re-arming the *.html rule (it ate deliverables 2x).
+!.claude/skills/html-report/templates/**
+
+# Specs (design documents, not part of distributed config)
+.specs/
+
+# ccstatusline scratch files (settings.json is intentionally tracked)
+.claude/ccstatusline/*.bak
+.claude/ccstatusline/settings.bak
+
+# Machine-local symlink into ~/.agents (Orca-managed skill) — absolute path, never portable
+.claude/skills/orca-cli
+.claude/ccstatusline/*.tmp
+

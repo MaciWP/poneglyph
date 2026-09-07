@@ -81,6 +81,12 @@ and preserved integrations. Test hook input, output and failures without a model
 Complete native trust and human session checks separately. Timeouts, skipped
 checks and static listings do not establish successful activation.
 
+Keep an IDE-observed checkout and its `.git` directory in place during updates.
+Orca uses Git metadata to identify its workspaces. Prepare source changes in a
+separate review checkout, then use ordinary Git integration after checking for
+overlap with local work. A failed directory move can leave a partially moved
+repository; never assume that a nonzero exit left the source unchanged.
+
 ## Optional private addon and MCP
 
 Work remains an optional machine addon. Activation and its marketplace belong in
@@ -94,6 +100,33 @@ configuration. The adapters do not export credentials or establish connections.
 Compare services and transport requirements independently: different
 host-specific names or loopback ports do not prove different services.
 Matching configuration does not prove authentication or connectivity.
+
+### Context7 without an account or API key
+
+Context7 supports anonymous access to public documentation at
+`https://mcp.context7.com/mcp`, subject to its anonymous rate limits. The native
+Codex configuration is:
+
+```toml
+[mcp_servers.context7]
+url = "https://mcp.context7.com/mcp"
+```
+
+Add this entry to the selected profile's `config.toml`; preserve its other
+settings. Configure each opted-in `CODEX_HOME` separately, including the default
+profile when it is used. Do not add credentials, an OAuth endpoint, or another
+Context7 plugin merely to reproduce the same documentation service. Claude's
+existing Context7 plugin and Grok's compatible discovery can remain in place.
+
+Inspect the entry with `codex mcp get context7 --json`, then open a new session
+and check `/mcp`. Configuration inspection alone does not prove a connection.
+Verify a public-library documentation lookup separately; do not send private
+source or incident details. If the anonymous service is unavailable or rate
+limited, report that limit and consult the library's official documentation.
+Do not silently introduce a paid plan or require a new account.
+
+[Context7 anonymous access](https://context7.com/docs/resources/all-clients),
+[Codex native MCP configuration](https://learn.chatgpt.com/docs/extend/mcp).
 
 Model choice and agent authorization remain governed by CLAUDE.md. Resolve
 capabilities from the active host. No adapter starts or evaluates a model.

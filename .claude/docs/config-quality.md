@@ -83,12 +83,14 @@ a proof of full parser compliance or a replacement for native host schemas.
 | Host | Shared layer | What this gate does not promise |
 |---|---|---|
 | Claude Code | Core doctrine, skills, commands and native global hooks | Effective permissions, hook execution, model availability or skill activation |
-| Codex | Existing adapter's five portable skills and global `AGENTS.md` | Automatic use of Claude hooks, slash commands or permissions |
+| Codex | Shared core skill catalog, generated command entrypoints and global `AGENTS.md`; native hook adapters | Native hook trust or dispatch, model activation, and equivalent permissions |
 | Grok Build | Skills and explicitly selected native/compatibility configuration | Identical meaning of Claude metadata or equivalent workflow runtimes |
 
-Codex discovers user skills from `~/.agents/skills` and supports linked skill
-folders. Work is an optional per-machine addon, available across that user's
-projects after explicit installation. Its links stay outside publishable source.
+The current adapter links skill folders into the selected `$CODEX_HOME/skills`
+and preserves their supporting resources. Work is an optional per-machine addon,
+available across that profile's projects after explicit installation. Its links
+stay outside publishable source. Do not also place Work in `~/.agents/skills`
+when Grok already discovers the enabled Claude plugin: that duplicates discovery.
 The source gate rejects links **in a publishable snapshot**, not local host
 discovery itself. [Codex skill discovery](https://learn.chatgpt.com/docs/build-skills)
 
@@ -136,7 +138,10 @@ old fingerprints must not be copied as if they applied to this repository.
 
 Husky can be bypassed with `--no-verify` or `HUSKY=0`, and Git skips missing hook
 directories. CI failure does not prevent a merge unless required checks are
-configured remotely. No remote repository protection is installed by this patch.
+configured remotely. This source gate does not configure repository protection.
+Verify automatic `pull_request` and `push` execution on the actual published
+SHAs. A successful manual dispatch proves those checks ran, not that automatic
+triggers or required-check enforcement work.
 [Husky limitations](https://typicode.github.io/husky/how-to.html)
 
 Removing current content does not remove previously published copies.

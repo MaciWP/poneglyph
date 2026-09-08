@@ -240,26 +240,9 @@ Body: 8 sections (Summary, Lessons ✅/❌, Process, Drillme, Promotions, Living
 
 After producing retro.md AND user has reviewed (light/standard) or explicitly closed (full):
 
-**13a. Mandatory verification checklist** — iterate and verify EACH artefact:
+**13a. Verify recorded closure**
 
-```
-For each artefact in .claude/plans/{NNN}-{slug}/:
-  - [ ] spec.md frontmatter status: closed (else: update + add closed: YYYY-MM-DD)
-  - [ ] tasks/index.md frontmatter status: closed (else: update + add closed: YYYY-MM-DD)
-  - [ ] For each tasks/US{N}.md:
-        if status != closed:
-          → mark closed: YYYY-MM-DD + status: closed RESIDUALLY
-          → record in retro.md §Lessons ❌: "Phase 3 did not close US{N}.md frontmatter — build skill missed Step 8b on this HU"
-  - [ ] If state.json exists → current_phase: closed + feature_closed: true + last_update: YYYY-MM-DD
-  - [ ] retro.md frontmatter status: approved (after user review) — flips from initial `open`
-```
-
-The retro skill is the **last gate**. Any US{N}.md found not-closed at this point is a Phase 3 (`build`) process failure that the retro must:
-
-1. Close residually (do the work).
-2. Flag in lessons ❌ for process improvement (the lesson is about Phase 3, not the HU itself).
-
-**Anti-pattern blocked**: closing the feature with US frontmatters left in `approved` or `draft` → documental incoherence; future audits will surface ghost-state.
+Read `state.json` and the per-HU verification history. Pending HUs, missing evidence or an unapproved review keep the feature open. Do not mark a draft/approved HU closed merely because retro has begun. For a completed and verified HU with stale frontmatter, run `flow-state.ts sync-artifacts`; investigate the interrupted projection. Missing state requires recovery of actual decisions, not inference from artifact existence. See [flow contract](../../docs/flow-contract.md).
 
 **13b. Apply approved promotions and living-spec deltas**:
 
@@ -268,19 +251,19 @@ The retro skill is the **last gate**. Any US{N}.md found not-closed at this poin
 
 **13c. Update counters + clear the inbox**:
 
-- `state.json.retro_status = "approved"`, `feature_closed = true`.
+- After actual ratification, run `flow-state.ts retro-status approved`, then `flow-state.ts close-feature`. Only after success project feature closure into spec/tasks index frontmatter; never set terminal state directly.
 - `retro.md.promotions_approved` counter += N (per actually-applied); clear `.claude/learned/inbox.md` (entries became candidates or were honestly discarded — record the discard count in retro.md).
 
-**Important**: do NOT close lifecycle while promotions are still pending approval. Either close them in this session or carry as action items into the next session — but the feature itself CAN close once 13a verification passes (residuals fixed) + retro.md is produced.
+**Closure:** unresolved ratification keeps retro pending. A user-approved deferral is an explicit action item, not an applied promotion. Producing retro.md alone never closes the feature.
 
 **Ratification ownership (plan 025 — back-half gate)**: `retro_status` is a two-state field with a named owner.
 
 | `retro_status` | Meaning | Owner of the transition |
 |---|---|---|
-| `"pending"` | retro.md produced, awaiting human ratification of promotions/living-spec deltas. **The lifecycle is INCOMPLETE** — `feature_closed` stays `false` and the plan still surfaces in `flow-state.ts status` + the post-compact open-plans reminder | **The user** ratifies (AskUserQuestion in Step 14); the Lead never self-approves |
+| `"pending"` | retro.md produced, awaiting human ratification of promotions/living-spec deltas. **The lifecycle is INCOMPLETE** — `feature_closed` stays `false` and the plan still surfaces in `flow-state.ts status` | **The user** ratifies (AskUserQuestion in Step 14); the Lead never self-approves |
 | `"approved"` | User ratified; promotions/deltas applied; `feature_closed = true` set via `flow-state.ts close-feature` | Lead applies AFTER the user's explicit ratification |
 
-A retro left at `pending` is the documented back-half abandonment failure mode (audit 2026-06-30): it is not "done", it is *awaiting you*. The `status` report and the reminder exist to make that visible instead of silent.
+A retro left at `pending` is the documented back-half abandonment failure mode (audit 2026-06-30): it is not "done", it is *awaiting you*. The `status` report exists to make that visible instead of silent.
 
 ### Step 14 — Report + approval request
 

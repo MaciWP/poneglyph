@@ -89,7 +89,7 @@ Phase 2.5 is the most focused phase — only 2 auxiliaries truly apply. Other au
 |---|---|---|
 | `anti-hallucination` | Before every Edit/Write — verify target file/function/path exists or is in the HU's planned `files` | Lead runs Glob/Grep/LSP manually before the operation |
 | `drillme` | Intra-HU before declaring done (Step 7 — 4 `[approach]` questions) | Lead invokes `/drillme "Phase 3 HU US{N}"` manually before closing the HU |
-| `diagnostic-patterns` | When tests fail in Step 9 verification (5-whys, retry budget, stack-trace analysis) | Lead reads error output manually + applies error-recovery.md retry policy |
+| `diagnostic-patterns` | When tests fail in Step 8 verification (5-whys, retry budget, stack-trace analysis) | Lead reads error output manually + applies error-recovery.md retry policy |
 | `lsp-operations` | During Step 4 ejemplos + Step 5 impl — `findReferences`/`hover`/`goToDefinition` for semantic navigation when blast radius matters | Lead uses Grep + Read manually as fallback (less precise but functional) |
 | `review-patterns` | ⚠️ Optional — during impl if quality concern emerges (SOLID violation suspected, performance bottleneck) | Lead invokes `/critic` review-patterns mode in Phase 4 anyway; intra-impl invocation is opportunistic |
 | `meta-create` | When HU's `files` field includes new `.claude/skills/`, `.claude/hooks/`, `.claude/rules/`, `.claude/plugins/`, `.mcp.json` | Lead reads `meta-create/SKILL.md` manually before designing the extension (Commandment IX — meta-system maintainability) |

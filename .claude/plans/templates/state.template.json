@@ -1,6 +1,6 @@
 {
   "spec_slug": "{NNN}-{slug}",
-  "mode": "minimal|standard|full",
+  "mode": "full",
   "current_phase": 1,
   "phases_completed": [],
   "gates_approved": {
@@ -9,6 +9,9 @@
   },
   "us_completed": [],
   "us_pending": [],
+  "us_history": [],
+  "gate_history": [],
+  "boundary_checks": [],
   "feature_closed": false,
   "review_verdict": null,
   "retro_status": null,

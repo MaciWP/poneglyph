@@ -24,7 +24,7 @@ function baseState(): FlowState {
     mode: "standard",
     current_phase: 3,
     phases_completed: [1, 2, 2.5],
-    gates_approved: { "1->2": true, "2->3": false },
+    gates_approved: { "1->2": true, "2->3": true },
     us_completed: [],
     us_pending: ["US1", "US2"],
     feature_closed: false,
@@ -35,9 +35,21 @@ function baseState(): FlowState {
   };
 }
 
+const GOOD_REVIEW = { blockers: 0, majors: 0, minors: 0, nits: 0, checks: "passed" as const, coverageMet: true };
+const APPROVAL = { date: DATE, reference: "fixture:user-approved-tasks-and-oracle" };
+function verification(us = "US1") {
+  return { us, revision: "fixture:checked-inputs-v1", tests_passed: true as boolean | null,
+    checks: [{ name: "fixture runtime", status: "passed" as const, evidence: "fixture:observed pass" }] };
+}
+
+function verifiedState(): FlowState {
+  const first = closeUs(baseState(), "US1", { date: DATE, verification: verification() });
+  return closeUs(first, "US2", { date: DATE, verification: verification("US2") });
+}
+
 describe("closeUs", () => {
   test("moves US from pending to completed and appends history", () => {
-    const s = closeUs(baseState(), "US1", { date: DATE, files: ["a.md"] });
+    const s = closeUs(baseState(), "US1", { date: DATE, files: ["a.md"], verification: verification() });
     expect(s.us_completed).toContain("US1");
     expect(s.us_pending).not.toContain("US1");
     expect(s.us_history?.at(-1)).toMatchObject({ us: "US1", completed_at: DATE });
@@ -46,18 +58,19 @@ describe("closeUs", () => {
   // This assertion used to expect tests_passed: true unconditionally — it certified a
   // hardcode that no measurement backed. The three paths are now distinguishable.
   test("records tests_passed as null when nobody measured it", () => {
-    const s = closeUs(baseState(), "US1", { date: DATE });
+    const s = closeUs(baseState(), "US1", { date: DATE, verification: { ...verification(), tests_passed: null } });
     expect(s.us_history?.at(-1)?.tests_passed).toBeNull();
   });
 
   test("records a measured green suite", () => {
-    const s = closeUs(baseState(), "US1", { date: DATE, testsPassed: true });
+    const s = closeUs(baseState(), "US1", { date: DATE, testsPassed: true, verification: verification() });
     expect(s.us_history?.at(-1)?.tests_passed).toBe(true);
   });
 
-  test("records a measured red suite instead of silently claiming green", () => {
-    const s = closeUs(baseState(), "US1", { date: DATE, testsPassed: false });
-    expect(s.us_history?.at(-1)?.tests_passed).toBe(false);
+  test("rejects a measured red suite without closing the US", () => {
+    const state = baseState();
+    expect(() => closeUs(state, "US1", { date: DATE, verification: { ...verification(), tests_passed: false } })).toThrow(/failed/);
+    expect(state.us_pending).toContain("US1");
   });
 
   test("throws on US not in pending", () => {
@@ -67,32 +80,32 @@ describe("closeUs", () => {
 
 describe("approveGate", () => {
   test("2->3 sets flag and advances phase to 3", () => {
-    const s = approveGate(baseState(), "2->3");
+    const s = approveGate({ ...baseState(), gates_approved: { "1->2": true, "2->3": false } }, "2->3", APPROVAL);
     expect(s.gates_approved["2->3"]).toBe(true);
     expect(s.current_phase).toBe(3);
   });
 
   test("unknown gate throws", () => {
     // @ts-expect-error invalid gate on purpose
-    expect(() => approveGate(baseState(), "3->4")).toThrow(/gate/i);
+    expect(() => approveGate(baseState(), "3->4", APPROVAL)).toThrow(/gate/i);
   });
 });
 
 describe("setVerdict / closeFeature", () => {
   test("APPROVED verdict advances to phase 5 and completes phases 3,4", () => {
-    const s = setVerdict({ ...baseState(), us_pending: [] }, "APPROVED");
+    const s = setVerdict({ ...verifiedState(), us_pending: [] }, "APPROVED", GOOD_REVIEW);
     expect(s.review_verdict).toBe("APPROVED");
     expect(s.current_phase).toBe(5);
     expect(s.phases_completed).toContain(4);
   });
 
   test("invalid verdict throws", () => {
-    expect(() => setVerdict(baseState(), "MAYBE")).toThrow(/verdict/i);
+    expect(() => setVerdict(baseState(), "MAYBE", GOOD_REVIEW)).toThrow(/verdict/i);
   });
 
   test("closeFeature flips terminal flags", () => {
     const s = closeFeature(
-      { ...baseState(), us_pending: [], review_verdict: "APPROVED", retro_status: "approved" },
+      { ...verifiedState(), us_pending: [], review_verdict: "APPROVED", review_assessment: GOOD_REVIEW, phases_completed: [1, 2, 2.5, 3, 4], retro_status: "approved" },
       { date: DATE },
     );
     expect(s.feature_closed).toBe(true);
@@ -102,12 +115,12 @@ describe("setVerdict / closeFeature", () => {
   });
 
   test("closeFeature refuses without an approving verdict (Cmd IV guard)", () => {
-    expect(() => closeFeature({ ...baseState(), us_pending: [] }, { date: DATE })).toThrow(/review_verdict/);
+    expect(() => closeFeature({ ...verifiedState(), us_pending: [] }, { date: DATE })).toThrow(/review_verdict/);
     expect(() =>
-      closeFeature({ ...baseState(), us_pending: [], review_verdict: "NEEDS_CHANGES" }, { date: DATE }),
+      closeFeature({ ...verifiedState(), us_pending: [], review_verdict: "NEEDS_CHANGES" }, { date: DATE }),
     ).toThrow(/APPROVED/);
     const ok = closeFeature(
-      { ...baseState(), us_pending: [], review_verdict: "APPROVED_WITH_WARNINGS", retro_status: "approved" },
+      { ...verifiedState(), us_pending: [], review_verdict: "APPROVED_WITH_WARNINGS", review_assessment: { ...GOOD_REVIEW, minors: 1 }, phases_completed: [1, 2, 2.5, 3, 4], retro_status: "approved" },
       { date: DATE },
     );
     expect(ok.feature_closed).toBe(true);
@@ -117,7 +130,7 @@ describe("setVerdict / closeFeature", () => {
     // retro_status null: closing would stamp a retro that never ran
     expect(() =>
       closeFeature(
-        { ...baseState(), us_pending: [], review_verdict: "APPROVED", retro_status: null },
+        { ...verifiedState(), us_pending: [], review_verdict: "APPROVED", review_assessment: GOOD_REVIEW, phases_completed: [1, 2, 2.5, 3, 4], retro_status: null },
         { date: DATE },
       ),
     ).toThrow(/retro_status/);
@@ -126,7 +139,7 @@ describe("setVerdict / closeFeature", () => {
   test("closeFeature preserves a justified skip instead of overwriting to approved (029/US12)", () => {
     const skipped = "skipped — feature trivial: 0 lecciones, 0 promotions, 0 drift";
     const s = closeFeature(
-      { ...baseState(), us_pending: [], review_verdict: "APPROVED", retro_status: skipped },
+      { ...verifiedState(), us_pending: [], review_verdict: "APPROVED", review_assessment: GOOD_REVIEW, phases_completed: [1, 2, 2.5, 3, 4], retro_status: skipped },
       { date: DATE },
     );
     expect(s.feature_closed).toBe(true);
@@ -240,9 +253,9 @@ describe("runCommand (integration, tmpdir)", () => {
     const plan = mkdtempSync(join(tmpdir(), "flow-state-"));
     mkdirSync(join(plan, "tasks"));
     writeFileSync(join(plan, "state.json"), JSON.stringify(baseState(), null, 2));
-    writeFileSync(join(plan, "tasks", "US1.md"), ["---", "us: US1", "status: approved", "---"].join("\n"));
+    writeFileSync(join(plan, "tasks", "US1.md"), ["---", "us: US1", "depends_on: []", "status: approved", "---"].join("\n"));
 
-    await runCommand("close-us", ["US1"], { planDir: plan, date: DATE });
+    await runCommand("close-us", ["US1"], { planDir: plan, date: DATE, verification: verification() });
 
     const state = JSON.parse(readFileSync(join(plan, "state.json"), "utf8"));
     expect(state.us_completed).toContain("US1");
@@ -250,14 +263,14 @@ describe("runCommand (integration, tmpdir)", () => {
     expect(readFileSync(join(plan, "tasks", "US1.md"), "utf8")).toContain("status: closed");
   });
 
-  test("approve-gate refreshes updated_at on disk (RI-5)", async () => {
+  test("repeating an approved gate preserves its timestamp and phase", async () => {
     const plan = mkdtempSync(join(tmpdir(), "flow-state-gate-"));
     writeFileSync(join(plan, "state.json"), JSON.stringify(baseState(), null, 2));
     const LATER = "2026-07-02";
-    await runCommand("approve-gate", ["2-3"], { planDir: plan, date: LATER });
+    await runCommand("approve-gate", ["2-3"], { planDir: plan, date: LATER, approval: APPROVAL.reference });
     const state = JSON.parse(readFileSync(join(plan, "state.json"), "utf8"));
     expect(state.gates_approved["2->3"]).toBe(true);
-    expect(state.updated_at).toBe(LATER);
+    expect(state.updated_at).toBe(DATE);
   });
 
   test("malformed state.json fails loudly", async () => {
@@ -270,7 +283,7 @@ describe("runCommand (integration, tmpdir)", () => {
 describe("complete-phase (028/US6-D6)", () => {
   test("T6.1 marks phase completed and refreshes updated_at", async () => {
     const plan = mkdtempSync(join(tmpdir(), "flow-state-phase-"));
-    writeFileSync(join(plan, "state.json"), JSON.stringify({ ...baseState(), current_phase: 2 }, null, 2));
+    writeFileSync(join(plan, "state.json"), JSON.stringify({ ...baseState(), current_phase: 2, phases_completed: [1, 2] }, null, 2));
     await runCommand("complete-phase", ["2.5"], { planDir: plan, date: "2026-07-08" });
     const state = JSON.parse(readFileSync(join(plan, "state.json"), "utf8"));
     expect(state.phases_completed).toContain(2.5);

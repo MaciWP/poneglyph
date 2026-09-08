@@ -1,8 +1,8 @@
 ---
 name: tdd-design
 description: |
-  Diseño de tests/validaciones ANTES de implementar (Fase 2.5 del workflow de 5 fases). Lee las tasks/ aprobadas y produce UNO de dos artefactos por HU según la naturaleza de sus ficheros: tests.md (TDD-mode) cuando la HU produce código ejecutable, o validations.md (validation-mode) cuando produce markdown/skills/docs/configs. Honra test-policy.md. Cierra con el hard gate 2→3.
-  Úsala cuando: tasks/ aprobado y oracle pendiente, "TDD", "tests", "diseña los tests", "especifica el oracle", "validaciones", tras /tech-plan y antes de /build.
+  Design tests or validations before implementation. Read draft or approved tasks under an approved scope. In flow, default to TDD for behavior changes and validations for documentation. Present tasks and oracle together at gate 2→3.
+  Use after tech-plan or when asked to design tests, TDD, an oracle or validations.
 metadata:
   keywords: >
     Keywords - TDD, tests, test-design, specifica-tests, oracle, validations,
@@ -27,7 +27,7 @@ Dual-mode bridge between plan and correct code: executable tests (red→green) f
 
 | Trigger | Example |
 |---|---|
-| `tasks/` directory with approved HUs exists, no `tests.md`/`validations.md` yet | After `tech-plan` closes Phase 2 |
+| `tasks/` draft or approved HUs exist under an approved spec, no oracle yet | After `tech-plan` closes Phase 2 |
 | User invokes `/tdd-design` explicitly | Direct invocation |
 | `tech-plan` skill closes and triggers Phase 2.5 invocation (Step 13 of tech-plan) | Auto-chain from Phase 2 |
 
@@ -35,8 +35,8 @@ Dual-mode bridge between plan and correct code: executable tests (red→green) f
 
 | Anti-trigger | Why |
 |---|---|
-| `tasks/` not yet approved (`status: draft`) | Phase 2 first |
-| Mode `minimal` (trivial task — no `tasks/` directory created) | Phase 2.5 skipped in minimal mode |
+| No defined HUs or unapproved spec | Prepare scope and draft tasks first |
+| No flow plan and no behavior to test | Use an appropriate direct validation |
 | Bug fix with reproducible failing test already in repo | The existing failing test IS the oracle; no design needed |
 
 ## Output-mode decision (canonical per AC7/AC8)
@@ -58,7 +58,7 @@ CLI override: `--tdd` / `--validation` / `--auto` (default = auto-detect by `fil
 ### Step 1 — Read inputs
 
 1. `Glob .claude/plans/*-*/tasks/index.md` — find active feature.
-2. If multiple → pick most recent approved; ask user if ambiguous.
+2. Use the active plan under its approved spec; tasks may be draft. Resolve multiple plans from session context before asking.
 3. Read `tasks/index.md` (DAG + HUs summary).
 4. Read each `tasks/US{N}.md` (frontmatter + `files` field + AC).
 5. Read `.claude/rules/test-policy.md`. If absent → treat as `auxiliary` + warn user.
@@ -79,6 +79,11 @@ Output frontmatter of resulting `tests.md`/`validations.md` declares the resolve
 | `auxiliary` OR absent | `optional` | Tests run post-impl as verification; TDD-first not enforced |
 
 Honor per-HU overrides if `tasks/US{N}.md` carries `tdd: forced` (force test-first despite auxiliary) or `tdd-skip: <reason ≥10 chars>` (skip test-first despite business-critical). Concrete reason required for skip.
+
+Inside `flow`, behavior-changing HUs default to `tdd: forced`, including auxiliary
+code. Derive tests from requirements before implementation; observe a relevant
+failure before making it pass. Reuse existing fixtures. Document-only HUs use
+validations. Justify exceptions before execution. Outside flow, retain project policy.
 
 ### Step 3 — Classify each HU by nature
 
@@ -177,7 +182,7 @@ Frontmatter of `validations.md`: `spec`, `tasks`, `phase: 2.5`, `validation_mode
 
 Anti-hallucination (auxiliary `anti-hallucination`): every function/module/path referenced in a test or validation must exist or be planned to exist in the corresponding HU's `files` field. Never invent references.
 
-### Step 8 — Report and request approval
+### Step 8 — Present the joint approval package
 
 Output to user:
 
@@ -186,7 +191,7 @@ Output to user:
 3. Anti-pattern alerts surfaced (>30% untestable, tests duplicate AC verbatim without adding oracle, etc.).
 4. Explicit prompt: "Hard gate 2->3 — necesito tu aprobación de tasks/ + tests.md/validations.md antes de Phase 3 (build)."
 
-The skill does NOT proceed to Phase 3.
+Tasks may remain draft during oracle design. Record phases 2 and 2.5 complete once their artifacts are ready; present tasks + oracle together at gate 2->3. Record the user’s actual decision with `approve-gate 2-3 --approval <decision-ref>`; an existing applicable decision remains valid. Artifact creation does not approve execution. See [flow contract](../../docs/flow-contract.md).
 
 ## SIEMPRE rules
 
@@ -204,13 +209,13 @@ Wiring and manual fallbacks for this phase (anti-hallucination, drillme, the pro
 
 | Signal | Adaptation |
 |---|---|
-| `test-policy.md` = `auxiliary` AND mode minimal | `tests.md` with only happy path per HU; skip edge/property-based; declare reduced honestly |
+| Small behavior change | Keep TDD; use focused happy-path and relevant edge checks |
 | HUs with many invariants (parsers, pure transforms) | Property-based opt-in for those HUs; declare invariant + generator explicitly |
 | HUs are 100% docs/skills/configs | Skip `tests.md` entirely — only produce `validations.md` |
 | HUs are 100% executable code | Skip `validations.md` — only produce `tests.md` |
 | All HUs untestable (>50% rate) | STOP, escalate to user — Phase 2 decomposition is wrong; reopen Phase 2 |
 
-Declare adaptation in output frontmatter notes: "Mode auxiliary minimal — happy path only; reason: trivial task per spec.md".
+Record the actual test scope and any justified exception in the oracle.
 
 ## Casos edge
 

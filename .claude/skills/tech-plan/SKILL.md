@@ -77,6 +77,10 @@ Read `.claude/rules/test-policy.md`. Declare resolved mode on the line after `Le
 
 A node may carry `tdd-skip: <reason >=10 chars>` to opt out under forced/adaptive. Concrete reason required (anti-pattern: skip without reason).
 
+For `flow`, set `tdd: forced` on behavior-changing HUs, including auxiliary code.
+Design their oracle before implementation. Use validations for document-only HUs;
+record any TDD exception before execution. Outside flow, keep project policy.
+
 ### Step 3 — Discovery (anti-duplicate verification)
 
 Read `references/01-discovery.md` for the full protocol. Quick checks before writing any HU:
@@ -153,7 +157,9 @@ For each planned HU:
 | 🟡 | Dependent | Needs prior output | SEQUENTIAL — wait |
 | 🔴 | Blocking | Human checkpoint/validation | PAUSE — approve before continuing |
 
-Calculate `Parallel Efficiency Score` = parallel ops / total. If score <50% → STOP, refactor DAG (probably granularity too coarse or false dependencies). Full classification rules + worked examples in `references/04-classification-waves.md`.
+Each HU needs one verifiable outcome, acceptance criteria and justified dependencies.
+A sequential DAG is valid. Split complexity by behavior and coupling, not a
+parallelism quota. See `references/04-classification-waves.md`.
 
 ### Step 10 — Produce artefacts
 
@@ -192,26 +198,26 @@ Before reporting close: run the checklist in `references/06-quality-gates.md`. K
 - All HUs have role/action/benefit + AC + depends_on + files + tdd_mode.
 - **Execution-prompt rubric pass**: score each US's "Execution prompt (Phase 3 input)" block against `.claude/skills/prompt-engineer/scoring-criteria.md` (do not duplicate the rubric — Read it). A block scoring <70 gets refined BEFORE gate 2→3; the score is a doubt signal, not a hard stop.
 - DAG has no cycles (cycle = smell, refactor).
-- Parallel Efficiency Score >=50%.
+- Every dependency is justified; each HU has a verifiable outcome.
 - Anti-hallucination applied (every claim about existing code verified).
 - `test-policy.md` honored per node.
 
 ### Step 13 — Invoke tdd-design (Phase 2.5)
 
-For Standard+ levels: **MUST invoke `tdd-design` skill** to produce `tests.md` or `validations.md` BEFORE returning control to user. Skill-to-skill invocation is probabilistic — the Lead verifies post-skill and dispatches manually if `tdd-design` auto-fire failed.
+Record phase 2 complete once draft tasks are ready. **Invoke `tdd-design` on these drafts** to produce `tests.md` or `validations.md` BEFORE returning control to user. Skill-to-skill invocation is probabilistic — the Lead verifies post-skill and dispatches manually if `tdd-design` auto-fire failed.
 
-Quick mode: skip (no Phase 2.5).
+An existing oracle may be reused after checking its coverage; record that result for phase 2.5. A `/flow` task still needs an oracle before build.
 
 ### Step 14 — Report and request approval
 
 Output to user:
 
 1. Paths: `tasks/index.md` + N `tasks/US{N}.md` + `tests.md`/`validations.md`.
-2. Resumen: "Level X, TDD-mode Y, N HUs in M waves, Parallel Efficiency Z%, planner-protocol legacy K".
-3. Decision absorbed: MIGRAR-Y-CUT for `planner-protocol` skill (this implementation enacts it — see "Legacy migration" below).
+2. Summary: level, TDD policy, HUs, dependency waves and critical path.
+3. Explain consequential decisions and any remaining uncertainty.
 4. Explicit prompt: "Hard gate 2->3 — necesito tu aprobación de `tasks/` + `tests.md`/`validations.md` antes de Phase 3."
 
-The skill does NOT proceed to Phase 3. Only the user approves.
+Present tasks + oracle once at gate 2->3. Record the applicable user decision with `approve-gate 2-3 --approval <decision-ref>`; never infer it from files. Resume an already approved package without requesting the same decision again. See [flow contract](../../docs/flow-contract.md).
 
 ## SIEMPRE rules
 
@@ -251,8 +257,7 @@ Declare adaptation in `tasks/index.md`: "Level X — modo Y por motivo Z. Saltad
 
 - ⚠️ HU requires >5 files → too large, split.
 - ⚠️ HU has >5 deps → granularity badly defined, refactor.
-- ⚠️ DAG is fully linear (all sequential) → review whether parallelism is unexploited.
-- ⚠️ Parallel Efficiency Score <50% → refactor DAG before closing.
+- A dependency has no functional reason → inspect coupling before revising the DAG.
 - ⚠️ Plan invents AC not traceable to `spec.md` → anti-pattern; every AC must trace.
 - ⚠️ Plan mentions technologies not justified by `spec.md` constraints → tech-creep, reopen Phase 1.
 - ⚠️ Step 13 (`tdd-design` invocation) never produces tests.md/validations.md → skill-to-skill failed; Lead must invoke manually.
@@ -275,7 +280,7 @@ Declare adaptation in `tasks/index.md`: "Level X — modo Y por motivo Z. Saltad
 | II | Context7/Grep/WebFetch + LSP before asserting any technical claim |
 | V | Drillme drills 1 + 3 detect over-engineering and non-atomicity |
 | I | Obligatory research = understand before planning |
-| X | DAG identifies parallelism; Parallel Efficiency Score >=50% required |
+| X | DAG exposes real dependencies and opportunities without forced parallelism |
 | VIII | Structured questionnaires + targeted research; delegation prompts reviewed by `prompt-engineer` |
 
 ## Content map
@@ -285,7 +290,7 @@ Declare adaptation in `tasks/index.md`: "Level X — modo Y por motivo Z. Saltad
 | Anti-duplicate Discovery (sources + pre-create checks) | `${CLAUDE_SKILL_DIR}/references/01-discovery.md` | Static/dynamic sources + Glob/Grep checks before "create X". Read when about to plan a new module/file/function. |
 | Anti-obsolescence Research (Context7 + WebFetch) | `${CLAUDE_SKILL_DIR}/references/02-research.md` | When/how to verify external APIs against docs; anti-stale-knowledge. Read when `spec.md` references external libraries or unfamiliar domains. |
 | Gap Analysis per change type | `${CLAUDE_SKILL_DIR}/references/03-gap-analysis.md` | Ground-truth checklists for each change type before generating HUs. Read when verifying that planned changes don't collide with existing code. |
-| Task Classification 🔵🟡🔴 + Parallel Efficiency Score | `${CLAUDE_SKILL_DIR}/references/04-classification-waves.md` | DAG construction canon. Read when building the DAG; computing parallelism score; deciding wave membership. |
+| Task classification and dependency waves | `${CLAUDE_SKILL_DIR}/references/04-classification-waves.md` | Read when dividing work into verifiable HUs and deciding dependencies. |
 | Team Mode + cross-validation (Full level) | `${CLAUDE_SKILL_DIR}/references/05-team-mode.md` | Four-Eyes workflow for complexity >60. Read when entering Full mode and architectural risk justifies cross-perspective audit. |
 | Quality Gates + Poka-Yoke + TDD checklist | `${CLAUDE_SKILL_DIR}/references/06-quality-gates.md` | Pre-close checklist: every quality bar that must pass before reporting plan close. Read in Step 12 before reporting. |
 
@@ -299,7 +304,7 @@ Phase 2 closed for {NNN}-{slug}:
 - TDD-mode: forced|adaptive|optional — <reason from test-policy.md>
 - tasks/index.md: .claude/plans/{NNN}-{slug}/tasks/index.md
 - HUs: N atomic stories in M waves
-- Parallel Efficiency Score: X% (target: >=50%)
+- Dependencies: <reasons for sequential work and independent waves>
 - Critical path: ~X sessions
 - Research sources: <list>
 - Drillme: <covered N/4 Socratic categories>

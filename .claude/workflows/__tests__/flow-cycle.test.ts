@@ -1,6 +1,7 @@
 import { describe, test, expect } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { classifyReview } from "../../scripts/lib/flow-contract";
 
 // A Workflow script is not an importable module: the runtime injects its globals
 // (args/agent/parallel/pipeline/phase/log) and wraps the body in an async
@@ -56,10 +57,11 @@ type StubOpts = {
   hu?: (label: string) => unknown;
   checks?: unknown;
   findings?: Record<string, unknown>;
+  missingReviewer?: boolean;
 };
 
 /** Records every agent label so the test can assert WHICH agents ran, not just the result. */
-function stub({ ready = true, us: stories = [], hu, checks, findings = {} }: StubOpts) {
+function stub({ ready = true, us: stories = [], hu, checks, findings = {}, missingReviewer = false }: StubOpts) {
   const calls: string[] = [];
   const agent = async (_prompt: string, opts: { label: string }) => {
     calls.push(opts.label);
@@ -84,9 +86,10 @@ function stub({ ready = true, us: stories = [], hu, checks, findings = {} }: Stu
     }
     if (l.startsWith("build:")) return hu!(l);
     if (l === "review:base-checks")
-      return checks ?? { checks: [{ name: "suite", command: "bun test", ok: true, detail: "10 pass" }], diff_stat: "3 files" };
+      return checks ?? { checks: [{ name: "suite", command: "bun test ./.claude/", ok: true, detail: "10 pass" }], diff_stat: "3 files" };
     if (l === "review:fresh-reviewer")
-      return { findings: findings.reviewer ?? [], spec_drift: findings.drift ?? "none", spec_drift_note: "" };
+      return missingReviewer ? null : { findings: findings.reviewer ?? [], spec_drift: findings.drift ?? "none", spec_drift_note: "",
+        acceptance_checks: findings.acceptance ?? [{ requirement: "AC1", status: "passed", evidence: "fixture:observed expected outcome" }] };
     if (l === "review:quality") return { findings: findings.quality ?? [] };
     if (l === "review:performance") return { findings: findings.perf ?? [] };
     if (l === "review:security") return { findings: findings.security ?? [] };
@@ -205,5 +208,60 @@ describe("flow-cycle — fase 4 y veredicto", () => {
     const r = await run({ slug: "032-x" }, s);
     expect(r).not.toHaveProperty("verdict");
     expect(r.next).toMatch(/flow-state verdict/);
+  });
+});
+
+
+describe("flow-cycle conforms to the persisted review contract", () => {
+  test("an incomplete subset cannot approve the whole feature", async () => {
+    const s = stub({ us: [us("US1", 1, ["a.ts"]), us("US2", 1, ["b.ts"])], hu: () => doneHU("US1") });
+    const r = await run({ slug: "032-x", only: ["US1"] }, s);
+    expect(r.verdict_proposed).toBe("NEEDS_CHANGES");
+  });
+  test("an unselected pending dependency is not treated as completed", async () => {
+    const s = stub({ us: [us("US1", 1, ["a.ts"]), us("US2", 2, ["b.ts"], { deps: ["US1"] })], hu: () => doneHU("US2") });
+    const r = await run({ slug: "032-x", only: ["US2"] }, s);
+    expect(s.calls).not.toContain("build:US2");
+    expect(r.verdict_proposed).toBe("BLOCKED");
+  });
+  test("a missing reviewer cannot silently approve", async () => {
+    const s = stub({ us: [us("US1", 1, ["a.ts"])], hu: () => doneHU("US1"), missingReviewer: true });
+    expect((await run({ slug: "032-x" }, s)).verdict_proposed).toBe("BLOCKED");
+  });
+  test.each([{ acceptance: [] }, { acceptance: [{ requirement: "AC1", status: "not_run", evidence: "runtime unavailable" }] }])("missing acceptance evidence blocks: %j", async ({ acceptance }) => {
+    const s = stub({ us: [us("US1", 1, ["a.ts"])], hu: () => doneHU("US1"), findings: { acceptance } });
+    expect((await run({ slug: "032-x" }, s)).verdict_proposed).toBe("BLOCKED");
+  });
+  test("unmet acceptance requires changes even with a green suite", async () => {
+    const s = stub({ us: [us("US1", 1, ["a.ts"])], hu: () => doneHU("US1"), findings: {
+      acceptance: [{ requirement: "AC1", status: "failed", evidence: "expected 2, observed 3" }],
+    } });
+    expect((await run({ slug: "032-x" }, s)).verdict_proposed).toBe("NEEDS_CHANGES");
+  });
+  test("an unrelated successful command cannot replace the project check", async () => {
+    const s = stub({ us: [us("US1", 1, ["a.ts"])], hu: () => doneHU("US1"), checks: {
+      checks: [{ name: "diff", command: "git diff --stat", ok: true, detail: "3 files" }], diff_stat: "3 files",
+    } });
+    expect((await run({ slug: "032-x" }, s)).verdict_proposed).toBe("BLOCKED");
+  });
+  test.each(["MAJOR", "MINOR", "NIT", "BLOCKER"])("one %s agrees with the canonical classifier", async severity => {
+    const s = stub({ us: [us("US1", 1, ["a.ts"])], hu: () => doneHU("US1"),
+      findings: { reviewer: [{ severity, summary: "fixture", locus: "a.ts:1", recommendation: "fix" }] } });
+    const r = await run({ slug: "032-x" }, s);
+    expect(r.verdict_proposed).toBe(classifyReview(r.review_assessment));
+    if (severity === "MAJOR") expect(r.verdict_proposed).toBe("NEEDS_CHANGES");
+  });
+  test("two MAJORs are not approved with warnings", async () => {
+    const finding = { severity: "MAJOR", summary: "fixture", locus: "a.ts:1", recommendation: "fix" };
+    const s = stub({ us: [us("US1", 1, ["a.ts"])], hu: () => doneHU("US1"), findings: { reviewer: [finding, finding] } });
+    const r = await run({ slug: "032-x" }, s);
+    expect(r.verdict_proposed).toBe("NEEDS_CHANGES");
+    expect(classifyReview(r.review_assessment)).toBe(r.verdict_proposed);
+  });
+  test("empty checks mean BLOCKED, never green", async () => {
+    const s = stub({ us: [us("US1", 1, ["a.ts"])], hu: () => doneHU("US1"), checks: { checks: [], diff_stat: "" } });
+    const r = await run({ slug: "032-x" }, s);
+    expect(r.verdict_proposed).toBe("BLOCKED");
+    expect(classifyReview(r.review_assessment)).toBe(r.verdict_proposed);
   });
 });

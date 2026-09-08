@@ -66,17 +66,12 @@ Las 5 preguntas obligatorias, etiquetadas con las 4 categorías canónicas del S
 
 - [ ] <item concreto> — Owner: usuario | Lead | sesión futura
 
-## Cierre del feature (verification gate — MANDATORY)
+## Feature closure gate
 
-**Iterate and verify EACH artefact before declaring feature closed**:
-
-- [ ] `spec.md` frontmatter → `status: closed` + `closed: YYYY-MM-DD` + `retro: retro.md`
-- [ ] `tasks/index.md` frontmatter → `status: closed` + `closed: YYYY-MM-DD`
-- [ ] **For each `tasks/US{N}.md`**:
-  - if `status` ≠ `closed` → mark `status: closed` + `closed: YYYY-MM-DD` RESIDUALLY
-  - if found not-closed → record in §Lecciones ❌ as `"Phase 3 did not close US{N}.md frontmatter — build skill missed Step 8b on this HU"`
-- [ ] If `state.json` exists → `current_phase: closed` + `feature_closed: true` + `last_update: YYYY-MM-DD`
-- [ ] This retro's own frontmatter → `status: approved` (after user review; was `open` during retro generation)
-- [ ] Commit final con mensaje convencional resumiendo el feature
-
-**Anti-pattern blocked**: declaring feature closed with US{N}.md frontmatters left in `approved` or `draft`. The retro skill is the LAST gate — residual cleanup is its responsibility, AND the gap surfaces a Phase 3 (`build`) process failure that must be logged in lessons ❌.
+- [ ] Every HU has verified closure in state.json; pending HUs keep the feature open
+- [ ] The approving review checks the assembled result against every requirement
+- [ ] Retro decisions are ratified, or a justified skip is recorded
+- [ ] Run retro-status approved and close-feature only after those conditions hold
+- [ ] State and document statuses agree; sync-artifacts repairs stale projections
+- [ ] Never close unfinished HUs residually or infer permission from a document
+- [ ] Publication follows its separate authorization; closure does not request a commit

@@ -50,7 +50,7 @@ const DISCOVER_SCHEMA = {
 const plan = await agent(
   `Read the /flow plan at ${PLAN} in this repo. ` +
     `1) Read ${PLAN}/state.json — the plan is ready ONLY if tasks are approved and phase 2.5 closed (tests.md or validations.md exists) and us_pending is non-empty; otherwise return ready:false with the reason. ` +
-    `2) For each US id in us_pending, read ${PLAN}/tasks/US{n}.md and extract: id, title, wave number, depends_on (array of US ids), files (paths it may touch), the FULL "Execution prompt (Phase 3 input)" block verbatim as execution_prompt, and tdd_mode if declared. ` +
+    `2) For each US id in us_pending, read ${PLAN}/tasks/US{n}.md and extract: id, title, wave number, depends_on (array of US ids), files (paths it may touch), the FULL "Execution prompt (Phase 3 input)" block verbatim as execution_prompt, and tdd_mode (forced by default for behavior changes, validation for documentation, or a justified exception recorded before execution). ` +
     `3) check_command = the project verification command (project CLAUDE.md §verification or .claude/rules/test-policy.md). ` +
     `Return ONLY the structured object.`,
   { label: 'discover:plan', phase: 'Discover', schema: DISCOVER_SCHEMA, model: 'sonnet', effort: 'low' },
@@ -83,7 +83,7 @@ function huPrompt(u) {
     `You are executing ONE user story of an approved /flow plan, inline-quality bar. ` +
     `Plan: ${PLAN}. US: ${u.id} — ${u.title}.\n\n` +
     `PRIMARY INSTRUCTION (execution prompt from tasks/${u.id}.md):\n${u.execution_prompt}\n\n` +
-    `Constraints: honor ${PLAN}/tests.md or validations.md for this US (red→green when tdd forced${u.tdd_mode ? `; declared tdd_mode: ${u.tdd_mode}` : ''}). ` +
+    `Constraints: honor ${PLAN}/tests.md or validations.md for this US (red→green by default for behavior changes; honor a justified exception only when it was recorded before execution${u.tdd_mode ? `; declared tdd_mode: ${u.tdd_mode}` : ''}). ` +
     `Follow the surrounding code style. Smallest diff that satisfies the ACs. ` +
     `Do NOT touch ${PLAN}/state.json or US frontmatter (the Lead closes state with the user). ` +
     `Do NOT git commit/push. ` +
@@ -186,5 +186,5 @@ return {
   failed: results.filter((r) => r.status === 'failed').map((r) => r.id),
   suite,
   reviewer_findings: review ? review.findings : null,
-  next: 'El Lead cierra: flow-state close-us por HU done (tras validar), resuelve blocked con el usuario, y corre /critic para el verdict humano.',
+  next: 'El Lead cierra: flow-state close-us --verification <report.json> por HU done (tras verificar el diff final), resuelve blocked con el usuario, y corre /critic para el verdict humano.',
 }

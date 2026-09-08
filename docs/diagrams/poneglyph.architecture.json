@@ -1,0 +1,310 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Poneglyph at a glance",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "viewBox": [
+      896,
+      455
+    ],
+    "views": [
+      {
+        "id": "working-together",
+        "label": "From intent to evidence",
+        "focus": [
+          "human",
+          "agent",
+          "work",
+          "result"
+        ],
+        "note": "You set the goal. The agent applies the working method, executes tools, and reports observed results."
+      },
+      {
+        "id": "shared-guidance",
+        "label": "One source, native hosts",
+        "focus": [
+          "doctrine",
+          "skills",
+          "hosts",
+          "agent"
+        ],
+        "note": "Shared instructions and skills travel through host adapters. Permissions and model behavior remain native."
+      },
+      {
+        "id": "quality-and-memory",
+        "label": "Checks and continuity",
+        "focus": [
+          "work",
+          "evidence",
+          "checks",
+          "result"
+        ],
+        "note": "Plans, state, tests, and lessons make work inspectable. Passing checks support specific claims, not every claim."
+      }
+    ],
+    "repository": {
+      "url": "https://github.com/MaciWP/poneglyph",
+      "revision": "baf1fb8e5ea8caa02b9b5e1c530f34cae1ba42c7"
+    }
+  },
+  "components": [
+    {
+      "id": "human",
+      "type": "external",
+      "label": "You",
+      "sublabel": "Goals, decisions, approvals",
+      "pos": [
+        14,
+        192.5
+      ],
+      "size": [
+        157.5,
+        70
+      ],
+      "sources": [
+        {
+          "path": "CLAUDE.md"
+        }
+      ]
+    },
+    {
+      "id": "agent",
+      "type": "backend",
+      "label": "Coding agent",
+      "sublabel": "Reasons and executes tools",
+      "pos": [
+        252,
+        192.5
+      ],
+      "size": [
+        157.5,
+        70
+      ],
+      "sources": [
+        {
+          "path": "CLAUDE.md"
+        }
+      ]
+    },
+    {
+      "id": "work",
+      "type": "backend",
+      "label": "Project work",
+      "sublabel": "dev loop / flow lifecycle",
+      "pos": [
+        490,
+        192.5
+      ],
+      "size": [
+        157.5,
+        70
+      ],
+      "sources": [
+        {
+          "path": ".claude/skills/dev/SKILL.md"
+        }
+      ]
+    },
+    {
+      "id": "result",
+      "type": "backend",
+      "label": "Verified result",
+      "sublabel": "Changes, evidence, limits",
+      "pos": [
+        721,
+        192.5
+      ],
+      "size": [
+        157.5,
+        70
+      ]
+    },
+    {
+      "id": "doctrine",
+      "type": "database",
+      "label": "Shared doctrine",
+      "sublabel": "Rules and working principles",
+      "pos": [
+        252,
+        31.5
+      ],
+      "size": [
+        157.5,
+        70
+      ],
+      "sources": [
+        {
+          "path": "CLAUDE.md"
+        }
+      ]
+    },
+    {
+      "id": "skills",
+      "type": "database",
+      "label": "Skills and commands",
+      "sublabel": "Task-specific instructions",
+      "pos": [
+        490,
+        31.5
+      ],
+      "size": [
+        157.5,
+        70
+      ],
+      "sources": [
+        {
+          "path": ".claude/rules/skill-routing.md"
+        }
+      ]
+    },
+    {
+      "id": "checks",
+      "type": "security",
+      "label": "Quality checks",
+      "sublabel": "Tests, doctor, hook checks",
+      "pos": [
+        721,
+        31.5
+      ],
+      "size": [
+        157.5,
+        70
+      ],
+      "sources": [
+        {
+          "path": ".claude/scripts/doctor.ts"
+        }
+      ]
+    },
+    {
+      "id": "hosts",
+      "type": "external",
+      "label": "Native hosts",
+      "sublabel": "Claude / Codex / Grok",
+      "pos": [
+        252,
+        353.5
+      ],
+      "size": [
+        157.5,
+        70
+      ],
+      "sources": [
+        {
+          "path": ".claude/docs/harness-adapters.md"
+        }
+      ]
+    },
+    {
+      "id": "evidence",
+      "type": "database",
+      "label": "Project evidence",
+      "sublabel": "Plans, state, tests, lessons",
+      "pos": [
+        490,
+        353.5
+      ],
+      "size": [
+        157.5,
+        70
+      ],
+      "sources": [
+        {
+          "path": ".claude/skills/lessons/SKILL.md"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "human-request",
+      "from": "human",
+      "to": "agent",
+      "label": "request"
+    },
+    {
+      "id": "agent-work",
+      "from": "agent",
+      "to": "work",
+      "label": "apply method"
+    },
+    {
+      "id": "work-result",
+      "from": "work",
+      "to": "result",
+      "label": "verify / report",
+      "variant": "emphasis",
+      "labelAt": [
+        684,
+        277
+      ]
+    },
+    {
+      "id": "doctrine-agent",
+      "from": "doctrine",
+      "to": "agent",
+      "label": "guide",
+      "labelAt": [
+        331.1,
+        111.3
+      ]
+    },
+    {
+      "id": "skills-work",
+      "from": "skills",
+      "to": "work",
+      "label": "load as needed",
+      "labelAt": [
+        569.1,
+        111.3
+      ]
+    },
+    {
+      "id": "checks-result",
+      "from": "checks",
+      "to": "result",
+      "label": "check claims",
+      "variant": "security",
+      "labelAt": [
+        800.1,
+        111.3
+      ]
+    },
+    {
+      "id": "hosts-agent",
+      "from": "hosts",
+      "to": "agent",
+      "label": "run agent"
+    },
+    {
+      "id": "work-evidence",
+      "from": "work",
+      "to": "evidence",
+      "label": "record / reuse",
+      "labelAt": [
+        569.1,
+        272.3
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Benefits",
+      "items": [
+        "One maintained working method across projects and hosts.",
+        "Reusable skills and recorded evidence support consistent decisions."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Costs & limits",
+      "items": [
+        "Instructions consume context and need maintenance.",
+        "Host behavior varies. Guidance and hook checks do not guarantee compliance."
+      ]
+    }
+  ]
+}

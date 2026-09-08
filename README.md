@@ -16,6 +16,60 @@ history into this repository. See [the migration boundary](.claude/docs/reposito
 
 ---
 
+## How Poneglyph works
+
+Poneglyph gives coding agents a shared working method. You provide goals and
+decisions; the agent uses instructions, tools, and evidence to carry out the work.
+Commands coordinate a process. Skills provide task-specific instructions.
+
+| Layer | When it applies | Benefit | Cost or limit |
+|---|---|---|---|
+| **Poneglyph** | Across projects and supported hosts | Reuse one maintained set of working principles and skills | Context and maintenance costs; host behavior still differs |
+| **Flow** | A feature needing scope, dependent tasks, and acceptance | Trace decisions from requirements to verified closure; resume recorded progress | Preparation, approval waits, and state maintenance |
+| **Dev** | Every coding task, inside Flow or standalone | Reuse before building; verify behavior and revisit failed assumptions | Research and review take effort; written stages do not execute themselves |
+
+### Poneglyph at a glance
+
+![Poneglyph: user intent reaches a coding agent, project work, and a verified result; shared instructions, native hosts, checks, and project evidence support the work.](docs/diagrams/poneglyph.png)
+
+[Interactive HTML](docs/diagrams/poneglyph.html) · [Editable JSON](docs/diagrams/poneglyph.architecture.json)
+
+Shared instructions travel through host adapters. Permissions and authentication
+remain native. Skills and hook hints support the agent; they do not guarantee
+that every instruction is followed.
+
+### Flow: from idea to accepted feature
+
+![Flow: scope approval precedes planning and test design; package approval precedes Build, Critic, Retro, and closure. Failed review returns to Build; blockers require a human decision.](docs/diagrams/flow.png)
+
+[Interactive HTML](docs/diagrams/flow.html) · [Editable JSON](docs/diagrams/flow.workflow.json)
+
+Use `/flow` in Claude or Grok, and `$flow` in Codex. The six phase skills produce
+scope, tasks, expected checks, changes, review, and lessons. Human decisions approve
+scope and the execution package. `state.json` records progress for resumption.
+The state helper records evidence; it does not run or authenticate the checks.
+
+### Dev: the coding loop
+
+![Dev: KNOW, PLAN, BUILD, REVIEW, and LEARN; high-impact work waits for approval, while failures return to the stage responsible for the cause.](docs/diagrams/dev.png)
+
+[Interactive HTML](docs/diagrams/dev.html) · [Editable JSON](docs/diagrams/dev.workflow.json)
+
+**Flow organizes the feature; Dev guides each coding task.** A small fix can use
+Dev directly. Every stage still applies, with depth proportional to the work.
+REVIEW runs the checks and the affected behavior; LEARN retains non-obvious lessons.
+Closing a task or a Flow lifecycle does not authorize a commit, push, or merge.
+
+**Explore locally:** open an HTML link, use GitHub's **Download raw file**, and
+open the downloaded file in your browser. A clone can open it directly. Each file
+works offline and includes guided chapters, search, focus, themes, and export.
+No Archify installation is needed to view it. Click a PNG to inspect it at full size.
+
+These guides describe a source snapshot. See [sources and reproduction](docs/diagrams/sources.md)
+for the checked architecture and Flow revisions, and how to regenerate the diagrams.
+
+---
+
 ## What you need
 
 | Tool | Why | Required? |

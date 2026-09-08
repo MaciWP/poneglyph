@@ -1,7 +1,7 @@
 ---
 parent: tech-plan
 name: classification-waves
-description: Task Classification 🔵🟡🔴 + Parallelization rules + Parallel Efficiency Score.
+description: Task classification, justified dependencies and optional parallel execution.
 ---
 
 # Task Classification + Parallelization — references/04
@@ -10,7 +10,7 @@ description: Task Classification 🔵🟡🔴 + Parallelization rules + Parallel
 
 - [Task Classification](#task-classification)
 - [Parallelization Rules](#parallelization-rules)
-- [Parallel Efficiency Score](#parallel-efficiency-score)
+- [Dependency quality](#dependency-quality)
 - [Seed Wave Patterns](#seed-wave-patterns)
 
 ## Task Classification
@@ -59,25 +59,19 @@ description: Task Classification 🔵🟡🔴 + Parallelization rules + Parallel
 
 ---
 
-## Parallel Efficiency Score
+## Dependency quality
 
-Evaluate after each task:
-
-| Score | Meaning | Action |
-|-------|---------|--------|
-| >80% | Excellent | Continue |
-| 50-80% | Acceptable | Review opportunities |
-| <50% | Poor | **STOP** - refactor approach |
-
-**Calculation**: `(parallel operations) / (total that COULD be parallel) × 100`
-
----
+Each HU has one verifiable outcome and a bounded implementation scope. A dependency
+must name the output it needs. Check cycles, missing prerequisites and shared
+state. A fully sequential DAG is valid. Parallelism is an opportunity, not a
+minimum percentage or a reason to invent tasks. Agent execution still requires
+the current session's permission and model choice.
 
 ## Seed Wave Patterns
 
 > **Post-feature-008 mapping** — the named agents below (`builder`/`scout`/`reviewer`/`planner`) were **cut**. Read them as their current equivalents: `builder` → `build` skill (Phase 3, inline) or a Workflow impl unit; `scout` → `Explore` (built-in, read-only); `reviewer` → Phase 4 `critic` / review panel; `planner` → `tech-plan` skill. **Spawn rule**: 1-3 independent units run **inline** (never spawn); these patterns illustrate **≥4-unit** fan-outs → `Workflow`. The patterns themselves remain valid; only the names changed.
 
-Starting templates for the first wave of common task shapes. Adapt the agent/skill mix to the specific task. Each pattern targets high `Parallel Efficiency Score` from wave 1.
+Starting templates for the first wave of common task shapes. Adapt the agent/skill mix to the specific task. Use only patterns that fit real dependencies.
 
 ### types-first parallel
 

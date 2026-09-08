@@ -56,7 +56,8 @@ In parallel:
 5. Read `state.json` — confirm `current_phase: 3` complete + all `us_pending == []`.
 6. Read `.claude/plans/templates/review.template.md` (the output template).
 7. Read `.claude/rules/test-policy.md` (coverage policy).
-8. `Bash git diff origin/main..HEAD --stat` — branch delta scope.
+8. Resolve the approved starting revision. Inspect committed and working-tree
+   changes against it; do not assume all implementation is already committed.
 
 ### Step 2 — Confirm prerequisites
 
@@ -84,7 +85,7 @@ Declare the chosen level in `review.md` frontmatter (`review_level: <light|stand
 In a single message (Recipe 1 — Bash batch):
 
 ```
-Bash(<project test cmd>) + Bash(<project typecheck cmd>) + Bash(<project lint cmd>) + Bash(git diff --stat origin/main..HEAD)
+Bash(<project test cmd>) + Bash(<project typecheck cmd>) + Bash(<project lint cmd>) + Bash(git diff <approved-base> --stat)
 ```
 
 Capture exit codes + output. Each becomes a row in the `Correctness` and `Quality` sections of review.md.
@@ -98,7 +99,8 @@ For each section, populate `review.md` with findings (file:line + severity + rec
 #### Correctness
 
 - Does the spec.md problem statement match what was delivered? (Read spec.md happy path → trace through code.)
-- Each AC in spec.md → trace to a closed HU in `tasks/`.
+- Each AC in spec.md → record the responsible HU, executed check and observed
+  result in review.md. A closed HU or a code location alone is not proof.
 - Tests pass on the assembled branch (Step 4 output).
 - Happy path E2E: simulate the user's actual flow — for diffs with a runtime surface, invoke `Skill(verify)` (drive the affected flow end-to-end and observe behavior); manual walkthrough/smoke only where verify's anti-trigger applies (tests/docs/markdown-only — nothing to drive). (028/US5)
 - Known edge cases from `tests.md`/`validations.md` — are they covered?
@@ -221,16 +223,24 @@ created: YYYY-MM-DD
 ---
 ```
 
-Body: 5 sections (Correctness / Quality / Security / Performance / Maintainability) + Findings list + Verdict justification + Spec-drift section if applicable.
+Body: 5 sections + requirement/evidence table + findings + verdict + any spec drift.
+Required outcomes without evidence cannot be marked met. Check the assembled
+runtime, not only isolated HU tests. `coverageMet` includes those outcomes.
 
 ### Step 11 — Verdict + report
 
 | Verdict | When | Next |
 |---|---|---|
-| **APPROVED** | All sections green, 0 BLOCKER, 0 MAJOR | `state.json.current_phase: 5` → propose `/retro` |
-| **APPROVED_WITH_WARNINGS** | 0 BLOCKER, ≤2 MAJOR, no security issue | Continue to retro; MAJORs noted for retro consideration |
-| **NEEDS_CHANGES** | ≥1 MAJOR or coverage < policy | Specific HU(s) to reopen in Phase 3 + diagnosis attached |
-| **BLOCKED** | ≥1 BLOCKER (security vuln / data loss / breaking change without migration / hardcoded secret / fundamental design flaw) | STOP — escalate; do not propose retro |
+| **BLOCKED** | ≥1 BLOCKER or a required check could not run | Resolve the blocker; distinguish infrastructure from product defects |
+| **NEEDS_CHANGES** | No blocker; ≥1 MAJOR, failed required check, or coverage below policy | Reopen identified HUs with `reopen-us --note <finding>` |
+| **APPROVED_WITH_WARNINGS** | Required checks pass, coverage met, 0 BLOCKER/MAJOR, ≥1 MINOR/NIT | Continue to retro |
+| **APPROVED** | Required checks pass, coverage met, no findings | Continue to retro |
+
+Persist counts, check status and coverage in `review-assessment.json`, then run `flow-state.ts verdict <VERDICT> --review <file>`. The helper computes the decision and rejects contradictions. Apply [the flow contract](../../docs/flow-contract.md); unknown or unexecuted evidence cannot produce approval.
+
+For an in-scope defect, flow reopens the identified HUs, invokes build, then
+repeats verification and critic without another scope approval. Honor the retry
+budget; changed scope, unresolved questions and BLOCKED require a user decision.
 
 Report:
 

@@ -5,7 +5,7 @@ created: {ISO-date}
 phase: 2.5
 status: draft
 test_mode: tdd
-tdd_policy: business-critical|mixed|auxiliary
+tdd_policy: forced|adaptive|optional
 ---
 
 # Test specs per HU (TDD-mode)

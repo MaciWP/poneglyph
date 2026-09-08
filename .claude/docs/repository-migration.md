@@ -55,6 +55,14 @@ the content as well as configured terms, then repeat checks across reachable
 history, historical filenames and Actions logs. A corrected source snapshot does
 not make an earlier Git blob suitable for public release.
 
+Review Git author and committer fields as well as source. A server-side merge
+can use an account email that differs from the checkout's local Git identity;
+inspect the resulting remote commit before changing visibility. Distinguish
+owner-approved public contact metadata from company information and credentials.
+Record that decision explicitly rather than assuming that an address is private
+or that previous public exposure authorizes its use. This is not a historical
+allowlist for private content or a reason to weaken secret detection.
+
 The historical repository is not a second installation. Keep shared doctrine and
 validators in the new core. Work remains an optional per-machine addon with no
 duplicated `CLAUDE.md`, `AGENTS.md`, agents, hooks or shared tests. Inspect installed
@@ -66,6 +74,12 @@ as `-text` in `.gitattributes`. Verify each archived file against its recorded G
 blob in the index, the working copy, and the installed cache. A same-version local
 plugin update can report "up to date" while retaining old bytes; verify the cache
 and use a native reinstall with `--keep-data` when it needs refreshing.
+
+Recovery copies can retain an origin URL whose repository name has since been
+reused. Before restoring or pushing a historical copy, verify its intended
+private repository and repair that remote reference. Keep the active checkout
+and its Git directory stable while an IDE observes them; later reviewed source
+changes do not require repeating the initial repository import.
 
 If verification fails, keep the new repository private and fix the failing check.
 Do not restore public access to the historical repository as a rollback.

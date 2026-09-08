@@ -8,6 +8,7 @@ When a row matches, invoke the skill — skipping a matching row requires saying
 | A decision with gaps, doubts or under-specified points | `drillme` |
 | About to assert a file/function/signature exists | `anti-hallucination` |
 | Any coding task | `dev` (the loop — CLAUDE.md §The dev loop) |
+| Interactive technical diagram or standalone explorable architecture/flow; simple inline diagrams keep Mermaid | `archify` |
 | Approved spec needs technical decomposition | `tech-plan` |
 | About to report "done" on work with runtime surface | `verify` |
 | About to review a diff/PR, or a review just surfaced a repeatable mistake | `lessons` |

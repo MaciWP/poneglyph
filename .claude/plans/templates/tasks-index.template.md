@@ -2,7 +2,7 @@
 spec: {NNN}-{slug}
 created: {ISO-date}
 approved: <ISO-date cuando el hard gate 2→3 se cierra; omitir mientras draft>
-mode: minimal|standard|full
+mode: full
 status: draft
 phase: 2
 total_us: {N}

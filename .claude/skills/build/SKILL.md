@@ -35,7 +35,7 @@ Discipline: **atomicity + honest test/validation closure + inline execution** (o
 
 | Anti-trigger | Why |
 |---|---|
-| `tasks/` not yet approved (status `draft`) | Phase 2 first |
+| `tasks/` not yet approved (status `draft`) | Prepare tasks + oracle, then record the joint gate 2→3 decision |
 | Phase 2.5 oracle not approved (no `tests.md`/`validations.md`) | Phase 2.5 first — TDD-mode HUs need oracle BEFORE impl |
 | All HUs in `state.json` already completed | Phase 4 (`/critic`) instead |
 | Bug fix in trivial mode (no `tasks/` directory) | Direct edit by Lead — Phase 3 ceremony adds nothing |
@@ -91,6 +91,9 @@ Anti-hallucination auxiliary fires here automatically; if it doesn't, the Lead r
 ### Step 5 — Honor TDD-mode per HU
 
 Read `tests.md` frontmatter `tdd_policy: <forced|adaptive|optional>` + per-node overrides (`tdd: forced`, `tdd-skip: <reason>`).
+
+For flow, behavior-changing HUs use forced TDD unless an exception was justified
+before execution. Validate documentation without inventing executable tests.
 
 **Forced (or per-node `tdd: forced`)** — strict red→green:
 
@@ -156,61 +159,26 @@ Coverage: 4/4 in the `[approach]` category — Phase 3 is implementation-focused
 
 > Skill-to-skill invocation is probabilistic. If `drillme` does not auto-fire and a real doubt blocks progress, the Lead invokes `/drillme "<concrete doubt — HU US{N}>"` manually before closing the HU.
 
-### Step 8 — Update state.json AND `tasks/US{N}.md` frontmatter
+### Step 8 — Verify (blocking gate per HU)
 
-Two updates per HU closure (both mandatory — Cmd VII observability + documental coherence). One command does both, schema-validated: `bun .claude/scripts/flow-state.ts close-us US{N} --files "a.md,b.ts"` — prefer it over hand-rolled JSON/sed edits.
-
-**8a. Update `state.json`** after tests pass (or validations close):
-
-```json
-{
-  "current_phase": 3,
-  "us_completed": ["US1", "US2", "US{N}"],
-  "us_pending": ["US{M}", "US{P}"],
-  "us_history": [
-    {
-      "us": "US{N}",
-      "completed_at": "2026-MM-DD",
-      "tests_passed": true,
-      "files_touched": ["path/a", "path/b"],
-      "execution": "inline",
-      "askuserquestion_count": 0
-    }
-  ]
-}
-```
-
-If `state.json` does not exist yet (first HU of Phase 3) → create it with the schema declared in US8 (`/flow`). If schema undefined → use the minimal shape above.
-
-**8b. Update `tasks/US{N}.md` frontmatter** — the closed HU's own document:
-
-```diff
- ---
- us: US{N}
- ...
-- status: approved
-+ status: closed
-+ closed: YYYY-MM-DD
-+ implemented: YYYY-MM-DD  # if not present
- ---
-```
-
-Without this update, the US document remains in `status: approved` even though its code is delivered → documental incoherence at feature closure (Phase 5 retro catches this as a smell). The build skill is RESPONSIBLE for closing the US frontmatter the moment the HU passes its gate.
-
-**Anti-pattern blocked**: closing a HU in `state.json` but leaving `tasks/US{N}.md status: approved` → forces Phase 5 retro to do residual cleanup + flag a Phase 3 process failure in lessons ❌.
-
-### Step 9 — Verify (blocking gate per HU)
-
-Before reporting HU completed:
+Run `verify` before changing completion state. Record all required checks on the final diff:
 
 - Tests pass: `bun test <relevant>` (or project equivalent) → 100% on touched files.
-- Project full suite: `bun test ./.claude/hooks/` (or equivalent) → no regressions in unrelated code.
+- Required project gate from AGENTS.md/CLAUDE.md; distinguish baseline, infrastructure and introduced failures.
 - Type check (if project has type checker): `tsc --noEmit` / `mypy` / `cargo check` / `go vet`.
 - Lint (if configured).
-- **Docs-sync (same HU)**: if the HU created/changed a component (hook, skill, command, setting), the docs that DESCRIBE it (registry tables like `rules/paths/hooks.md §Available Hook Events + reliability`, `system-inventory.md`) update in the SAME HU — truth-debt regenerates otherwise (lesson: 017 Phase 4 MAJOR).
+- Update component documentation in the same HU before running the final checks.
 - If ANY of the above fails → invoke `diagnostic-patterns` skill, retry per `error-recovery.md` budget. After 2 retries → escalate to user.
 
-**Never report "completed" without tests passing** (Commandment IV).
+**A failed or unexecuted required check leaves the HU pending.** Document-only validation may record `tests_passed: null`; never invent a suite run.
+
+### Step 9 — Persist verified closure
+
+After Step 8, write `verification-US{N}.json` using [the flow contract](../../docs/flow-contract.md): US id, checked revision/diff fingerprint, measured test result, and every required check with observed evidence. A skipped required check is `not_run`, never `not_applicable`.
+
+Run `bun .claude/scripts/flow-state.ts close-us US{N} --verification <report.json> --files "a.md,b.ts"`. The helper rejects absent, failed or incomplete verification, records it in `us_history`, then projects the closure into the HU frontmatter. `state.json` is authoritative; after interrupted projection use `sync-artifacts`, preserving recorded approvals.
+
+Missing/corrupt state is not permission to invent the minimal JSON shown in older versions. Recover recorded decisions explicitly; artifact existence never proves approval. After review requests changes, `reopen-us US{N} --note <finding>` invalidates stale closure before implementation resumes.
 
 ### Step 10 — Report HU closure + next HU
 
@@ -286,7 +254,7 @@ Wiring and manual fallbacks for this phase (anti-hallucination, drillme, diagnos
 | Improvise on ambiguous AC | Code introduces decision not in AC + no `AskUserQuestion` fired | Revert ambiguous bit; ask user; redo |
 | Skip red phase in forced TDD | `tests.md` says forced but impl committed before test ran red | Re-run test in isolation (revert temporarily); verify red was reachable; document in Issues |
 | Over-engineer beyond AC | New abstraction/hook/fallback not requested in AC | Remove; simpler version that meets AC only |
-| Report "completed" without verifying | No test output in Step 9 yet HU marked done in state.json | Reopen HU; run verify; only then re-close |
+| Report "completed" without verifying | No verification from Step 8 yet HU marked done in state.json | Reopen HU; run verify; only then re-close |
 | Spawn 1 agent for a big HU "for isolation" | An Agent() call for a single HU | Forbidden (P1/P2); execute inline; `/clear` if context grows |
 | Modify unrelated code "while there" | Diff includes files outside HU's `files` field | Revert non-HU edits; flag for retro if pattern emerges |
 

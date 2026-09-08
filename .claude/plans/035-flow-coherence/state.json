@@ -1,0 +1,166 @@
+{
+  "spec_slug": "035-flow-coherence",
+  "mode": "full",
+  "current_phase": 5,
+  "phases_completed": [
+    1,
+    2,
+    2.5,
+    3,
+    4
+  ],
+  "gates_approved": {
+    "1->2": true,
+    "2->3": true
+  },
+  "gate_history": [
+    {
+      "gate": "1->2",
+      "at": "2026-09-08",
+      "reference": "conversation: approved flow-only scope",
+      "artifacts": [
+        "spec.md"
+      ]
+    },
+    {
+      "gate": "2->3",
+      "at": "2026-09-08",
+      "reference": "conversation: Implement the plan",
+      "artifacts": [
+        "tasks/index.md",
+        "tasks/US1.md",
+        "tasks/US2.md",
+        "tasks/US3.md",
+        "tests.md",
+        "validations.md"
+      ]
+    }
+  ],
+  "us_completed": [
+    "US1",
+    "US2",
+    "US3"
+  ],
+  "us_pending": [],
+  "us_history": [
+    {
+      "us": "US1",
+      "completed_at": "2026-09-08",
+      "tests_passed": true,
+      "verification": {
+        "us": "US1",
+        "revision": "baf1fb8+source-sha256:3970aa243159a9f9d5203ed2cf657646973d5321d80471e67c8eec9598fcaa38",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "source doctor",
+            "status": "passed",
+            "evidence": "bun run doctor --ci: exit 0; 546 pass, 0 fail; plugin validation and budget passed"
+          },
+          {
+            "name": "CLI and lifecycle behavior",
+            "status": "passed",
+            "evidence": "flow-contract.test.ts exercises actual CLI lifecycle, missing records, draft projection, dependencies, reopening and recovery"
+          },
+          {
+            "name": "modified-file secret check",
+            "status": "passed",
+            "evidence": "native-hook.ts --check: exit 0"
+          },
+          {
+            "name": "native installation and live models",
+            "status": "not_applicable",
+            "evidence": "Explicitly excluded from this source-only implementation; full doctor reports stale generated Codex flow entrypoint"
+          }
+        ]
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US2",
+      "completed_at": "2026-09-08",
+      "tests_passed": true,
+      "verification": {
+        "us": "US2",
+        "revision": "baf1fb8+source-sha256:3970aa243159a9f9d5203ed2cf657646973d5321d80471e67c8eec9598fcaa38",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "source doctor",
+            "status": "passed",
+            "evidence": "bun run doctor --ci: exit 0; 546 pass, 0 fail; plugin validation and budget passed"
+          },
+          {
+            "name": "CLI and lifecycle behavior",
+            "status": "passed",
+            "evidence": "flow-contract.test.ts exercises actual CLI lifecycle, missing records, draft projection, dependencies, reopening and recovery"
+          },
+          {
+            "name": "modified-file secret check",
+            "status": "passed",
+            "evidence": "native-hook.ts --check: exit 0"
+          },
+          {
+            "name": "native installation and live models",
+            "status": "not_applicable",
+            "evidence": "Explicitly excluded from this source-only implementation; full doctor reports stale generated Codex flow entrypoint"
+          }
+        ]
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US3",
+      "completed_at": "2026-09-08",
+      "tests_passed": true,
+      "verification": {
+        "us": "US3",
+        "revision": "baf1fb8+source-sha256:3970aa243159a9f9d5203ed2cf657646973d5321d80471e67c8eec9598fcaa38",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "source doctor",
+            "status": "passed",
+            "evidence": "bun run doctor --ci: exit 0; 546 pass, 0 fail; plugin validation and budget passed"
+          },
+          {
+            "name": "CLI and lifecycle behavior",
+            "status": "passed",
+            "evidence": "flow-contract.test.ts exercises actual CLI lifecycle, missing records, draft projection, dependencies, reopening and recovery"
+          },
+          {
+            "name": "modified-file secret check",
+            "status": "passed",
+            "evidence": "native-hook.ts --check: exit 0"
+          },
+          {
+            "name": "native installation and live models",
+            "status": "not_applicable",
+            "evidence": "Explicitly excluded from this source-only implementation; full doctor reports stale generated Codex flow entrypoint"
+          }
+        ]
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    }
+  ],
+  "boundary_checks": [],
+  "feature_closed": false,
+  "review_verdict": "APPROVED_WITH_WARNINGS",
+  "retro_status": "pending",
+  "started_at": "2026-09-08",
+  "updated_at": "2026-09-08",
+  "review_assessment": {
+    "blockers": 0,
+    "majors": 0,
+    "minors": 1,
+    "nits": 0,
+    "checks": "passed",
+    "coverageMet": true
+  }
+}

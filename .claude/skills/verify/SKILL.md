@@ -25,8 +25,6 @@ when_to_use: |
 
 Makes "done" mean verified. This skill is the executor of the dev loop's REVIEW
 stage (CLAUDE.md §The dev loop); `critic` invokes it for the happy-path E2E row.
-Born from measured friction: 20+ "¿estás 100% seguro?" turns across 18 sessions,
-plus CI/tsc breaking AFTER a reported "done" (029 analysis, 2026-08-05).
 
 For authorized publication, read [the publication protocol](references/publication.md)
 in KNOW. It coordinates local checks, candidate CI, and verified integration.
@@ -44,7 +42,8 @@ runtime surface (product code, hooks, CLIs, UI).
 Run the project's check command — from the project CLAUDE.md §Commands/Verification
 (this repo: `bun test ./.claude/`; a Vite/React repo: `tsc && vitest`; a Django
 repo: `pytest`). Types and lint included when the stack has them.
-Failure → `diagnostic-patterns`, fix the root cause, rerun. NEVER manipulate a
+Failure → diagnose, distinguish baseline/infrastructure defects, and rerun. None
+counts as a passing check. NEVER manipulate a
 check to make it pass (Cmd IV). Run the checks over the **whole** changed set, not
 only the files you remember touching, and never trust a delegated agent's "clean"
 report (`Skill(lessons)` G2/G6 — a merge gate red is never a nit).
@@ -79,7 +78,8 @@ deliberately NOT tested and why | none known>
 ```
 
 Claims are labeled: verified (observed first-hand) / probable (inferred — say
-from what) / not verified (say why). Deferred checks stay visible, never banked.
+from what) / not verified (say why). For flow, record final-input results using
+the [verification contract](../../docs/flow-contract.md) before HU closure.
 
 ## SIEMPRE rules
 

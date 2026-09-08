@@ -98,7 +98,7 @@ const plan = await agent(
     `1) ${PLAN}/state.json — ready:true ONLY if tasks are approved, phase 2.5 is closed (tests.md or validations.md exists) and us_pending is non-empty. Otherwise ready:false with a one-line reason naming what is missing.\n` +
     `2) today = output of \`date +%F\` (run it, do not guess the date).\n` +
     `3) For each US id in us_pending, read ${PLAN}/tasks/US{n}.md and extract: id, title, wave, depends_on, files, and the FULL "Execution prompt (Phase 3 input)" block VERBATIM as execution_prompt.\n` +
-    `   oracle_mode per US, from ${PLAN}/tests.md frontmatter (tdd_policy) + per-node overrides + .claude/rules/test-policy.md: "forced" (strict red→green), "optional" (impl + suite verify), "validation" (markdown/config US covered by validations.md), "skip" (node carries tdd-skip: <reason> → copy it into oracle_skip_reason). oracle_ref = the exact section that covers this US.\n` +
+    `   Flow defaults to forced TDD for behavior changes, including auxiliary code. Use validation for documents; optional/skip requires a recorded exception before execution. Resolve oracle_mode per US from ${PLAN}/tests.md frontmatter (tdd_policy) + per-node overrides + .claude/rules/test-policy.md: "forced" (strict red→green), "optional" (impl + suite verify), "validation" (markdown/config US covered by validations.md), "skip" (node carries tdd-skip: <reason> → copy it into oracle_skip_reason). oracle_ref = the exact section that covers this US.\n` +
     `4) check_command / typecheck_command / lint_command = the project's verification commands (project CLAUDE.md, .claude/rules/test-policy.md). Empty string when the project has none. test_policy = the declared level.\n` +
     `5) spec_summary = problem statement + acceptance criteria of ${PLAN}/spec.md, condensed to ≤15 lines (the review writer works from this).\n` +
     `6) review_level per critic/SKILL.md Step 3: "light" (1-2 HUs, no security/perf surface), "standard" (3-N HUs, no critical area), "full" (architectural, or the diff will touch auth/payments/secrets/crypto/session). Give the reason in one line.\n` +
@@ -202,7 +202,7 @@ for (const w of waves) {
   const inWave = selected.filter((u) => u.wave === w)
   // Una HU cuya dependencia no cerró NO se ejecuta: ejecutar sobre una premisa
   // rota es la violación del DAG que /flow manda sacar a la luz, no absorber.
-  const runnable = inWave.filter((u) => u.depends_on.every((d) => doneIds.has(d) || !selected.some((x) => x.id === d)))
+  const runnable = inWave.filter((u) => u.depends_on.every((d) => doneIds.has(d) || !plan.us.some((x) => x.id === d)))
   for (const u of inWave.filter((u) => !runnable.includes(u))) {
     results.push({ id: u.id, status: 'blocked', summary: 'dependencia no cerrada — violación del DAG', files_touched: [], oracle_evidence: '-', check: '-', drillme: [], questions: [`depende de ${u.depends_on.join(', ')}, que no cerró`] })
   }
@@ -268,11 +268,18 @@ const finding = {
 const FINDINGS_SCHEMA = { type: 'object', required: ['findings'], properties: { findings: { type: 'array', items: finding } } }
 const REVIEWER_SCHEMA = {
   type: 'object',
-  required: ['findings', 'spec_drift', 'spec_drift_note'],
+  required: ['findings', 'spec_drift', 'spec_drift_note', 'acceptance_checks'],
   properties: {
     findings: { type: 'array', items: finding },
     spec_drift: { enum: ['none', 'legitimate', 'scope_creep', 'skipped_ac'] },
     spec_drift_note: { type: 'string' },
+    acceptance_checks: {
+      type: 'array',
+      items: {
+        type: 'object', required: ['requirement', 'status', 'evidence'],
+        properties: { requirement: { type: 'string' }, status: { enum: ['passed', 'failed', 'not_run'] }, evidence: { type: 'string' } },
+      },
+    },
   },
 }
 
@@ -310,8 +317,8 @@ const [base, reviewer, quality, perf, security] = await parallel([
         agent(
           `You are a FRESH-CONTEXT reviewer, READ-ONLY, constrained to CORRECTNESS and REQUIREMENTS only. Style, performance and maintainability are explicitly OUT of your scope — other reviewers own them.\n` +
             `1) Read ${PLAN}/spec.md (problem + ACs + out-of-scope) and, for each completed US (${doneIdsLine}), its ${PLAN}/tasks/US{n}.md ACs.\n` +
-            `2) Read the delivered work: \`git diff HEAD\` on these files: ${filesLine}.\n` +
-            `3) TRACE every AC to the diff. Flag: an AC with no implementation, an implementation that contradicts its AC, a happy path that breaks at the seams between US, and any edge case declared in ${PLAN}/tests.md or validations.md that nothing covers.\n` +
+            `2) Read the full delivered files and committed plus working-tree changes against the approved starting revision. The following diff is only one input: \`git diff HEAD\` on these files: ${filesLine}.\n` +
+            `3) TRACE every AC to the assembled result. Execute its acceptance check, including the real user flow when runtime exists. Return one acceptance_checks entry per requirement: requirement, status (passed/failed/not_run), and evidence (command plus observed output). A code location or closed US is not execution evidence. Flag missing implementation, wrong results and uncovered edges.\n` +
             `4) Classify spec_drift (critic Step 8): "none" · "legitimate" (divergence looks intentional and reasonable → propose the spec.md patch in spec_drift_note) · "scope_creep" (delivered more than spec.md asked) · "skipped_ac" (an AC silently dropped). Name the affected spec.md section in spec_drift_note.\n` +
             `Every finding carries an exact file:line you have actually read — no invented locations, no vague "somewhere in". Empty findings array is a valid, honest answer.`,
           { label: 'review:fresh-reviewer', phase: 'Review', schema: REVIEWER_SCHEMA, model: 'opus' },
@@ -359,32 +366,31 @@ const findings_count = { blocker: count('BLOCKER'), major: count('MAJOR'), minor
 const checks = (base && base.checks) || []
 const checksRed = checks.filter((c) => !c.ok)
 const specDrift = (reviewer && reviewer.spec_drift) || 'none'
+const acceptance_checks = (reviewer && reviewer.acceptance_checks) || []
+const missingReview = (wantReviewer && (!reviewer || !Array.isArray(acceptance_checks) || !acceptance_checks.length ||
+  acceptance_checks.some(c => !c || typeof c.requirement !== 'string' || !c.requirement.trim() ||
+    typeof c.evidence !== 'string' || !c.evidence.trim() || !['passed', 'failed'].includes(c.status)))) ||
+  (wantQuality && !quality) || (wantPerf && !perf) || (wantSecurity && !security)
+const requiredCommands = [plan.check_command, plan.typecheck_command, plan.lint_command].filter(Boolean)
+const missingChecks = !requiredCommands.length || requiredCommands.some(command => !checks.some(c => c.command === command && typeof c.ok === 'boolean'))
 
-// Veredicto determinista (critic Step 11). La tabla original solapa en el tramo
-// MAJOR (≥1 → NEEDS_CHANGES vs ≤2 → WITH_WARNINGS); se resuelve por precedencia
-// y se declara aquí para que sea auditable. Es PROPUESTO: lo ratifica el humano.
-let verdict = 'APPROVED'
-let verdictReason = 'checks verdes, 0 BLOCKER, 0 MAJOR, todas las HUs cerradas'
-if (findings_count.blocker > 0) {
-  verdict = 'BLOCKED'
-  verdictReason = `${findings_count.blocker} BLOCKER — el lifecycle se detiene hasta que el usuario decida`
-} else if (checksRed.length > 0 || failed.length > 0 || blocked.length > 0 || findings_count.major > 2 || (security && security.findings.length > 0)) {
-  verdict = 'NEEDS_CHANGES'
-  verdictReason = [
-    checksRed.length ? `checks en rojo: ${checksRed.map((c) => c.name).join(', ')}` : null,
-    failed.length ? `HUs failed: ${failed.map((r) => r.id).join(', ')}` : null,
-    blocked.length ? `HUs blocked: ${blocked.map((r) => r.id).join(', ')}` : null,
-    findings_count.major > 2 ? `${findings_count.major} MAJOR` : null,
-    security && security.findings.length ? 'findings de seguridad' : null,
-  ].filter(Boolean).join(' · ')
-} else if (findings_count.major > 0) {
-  verdict = 'APPROVED_WITH_WARNINGS'
-  verdictReason = `${findings_count.major} MAJOR sin bloqueo ni fallo de checks`
+// Same decision contract as scripts/lib/flow-contract.ts. Workflow has no filesystem
+// imports; conformance tests exercise this adapter against classifyReview.
+const review_assessment = {
+  blockers: findings_count.blocker,
+  majors: findings_count.major,
+  minors: findings_count.minor,
+  nits: findings_count.nit,
+  checks: missingChecks || missingReview || blocked.length > 0 ? 'not_run' : checksRed.length > 0 || failed.length > 0 ? 'failed' : 'passed',
+  coverageMet: !['scope_creep', 'skipped_ac'].includes(specDrift) && done.length === plan.us.length &&
+    Array.isArray(acceptance_checks) && acceptance_checks.length > 0 && acceptance_checks.every(c => c.status === 'passed'),
 }
-if (verdict !== 'BLOCKED' && ['scope_creep', 'skipped_ac'].includes(specDrift)) {
-  verdict = 'NEEDS_CHANGES'
-  verdictReason += `${verdictReason ? ' · ' : ''}spec_drift: ${specDrift}`
-}
+let verdict
+if (review_assessment.blockers > 0 || review_assessment.checks === 'not_run') verdict = 'BLOCKED'
+else if (review_assessment.majors > 0 || review_assessment.checks === 'failed' || !review_assessment.coverageMet) verdict = 'NEEDS_CHANGES'
+else if (review_assessment.minors + review_assessment.nits > 0) verdict = 'APPROVED_WITH_WARNINGS'
+else verdict = 'APPROVED'
+const verdictReason = `${findings_count.blocker} BLOCKER, ${findings_count.major} MAJOR, ${findings_count.minor} MINOR, ${findings_count.nit} NIT; checks=${review_assessment.checks}; coverage=${review_assessment.coverageMet}; spec_drift: ${specDrift}`
 
 // ---------------------------------------------------------------------------
 // Fase 4 — Synthesize: el artefacto de fase 4 se escribe desde el template.
@@ -402,6 +408,8 @@ const digest = {
   spec_summary: plan.spec_summary,
   verdict,
   verdict_reason: verdictReason,
+  review_assessment,
+  acceptance_checks,
   findings_count,
   spec_drift: specDrift,
   spec_drift_note: (reviewer && reviewer.spec_drift_note) || '',
@@ -422,8 +430,9 @@ const written = await agent(
   `Write the Phase 4 artifact of a /flow lifecycle. Read .claude/plans/templates/review.template.md and follow its structure and section order; extend the frontmatter as declared below. Write the file to ${PLAN}/review.md (overwrite if it exists). Write NOTHING else — ${NO_WRITE}\n\n` +
     `Frontmatter: spec: ${slug} · tasks_implemented: [${doneIdsLine}] · oracle_source: ${plan.oracle_source} · created: ${plan.today} · phase: 4 · status: draft · review_level: ${level} · verdict: ${verdict} · spec_drift: ${specDrift} · findings_count (blocker/major/minor/nit) · fresh_reviewer_invoked: ${wantReviewer ? 'yes' : 'no'} · security_review_invoked: ${wantSecurity ? 'yes' : 'no'} · review_patterns_modes: [${[wantQuality ? 'quality' : null, wantPerf ? 'performance' : null].filter(Boolean).join(', ')}] · generated_by: flow-cycle workflow.\n\n` +
     `Body rules:\n` +
-    `- Veredicto: "${verdict}" — PROPUESTO por el workflow, pendiente de ratificación humana (\`flow-state verdict\`). Razón: ${verdictReason}.\n` +
+    `- Veredicto: "${verdict}" — PROPUESTO por el workflow, pendiente de ratificación humana (\`flow-state verdict <VERDICT> --review <assessment.json>\`). Razón: ${verdictReason}.\n` +
     `- "Oracle ejecutado": one row per US from per_hu (oracle_evidence + check). Aggregate, never copy the oracle's content.\n` +
+    `- Requirements: copy acceptance_checks into a requirement/status/evidence table. Missing evidence is not a pass.\n` +
     `- Checklist of 5 sections: tick each item ONLY with evidence from the digest; an item without evidence stays unticked with "sin evidencia" — do not invent a check that nobody ran.\n` +
     `- Findings table: severity · description · file:line · recommendation, with the source in parentheses (fresh-reviewer / review-patterns:quality / review-patterns:performance / security-audit). Sort BLOCKER → NIT. Do NOT re-judge severities.\n` +
     `- "Living-spec deltas": only if spec_drift ≠ none; propose the patch, never apply it.\n` +
@@ -449,6 +458,8 @@ return {
   review_level: level,
   verdict_proposed: verdict,
   verdict_reason: verdictReason,
+  review_assessment,
+  acceptance_checks,
   review_path: (written && written.path) || `${PLAN}/review.md`,
   review_written: !!(written && written.written),
   per_hu: results,
@@ -471,7 +482,7 @@ return {
     writer_notes: (written && written.notes) || '',
   },
   next:
-    `El Lead cierra con el usuario: 1) valida cada HU done y la cierra con \`bun .claude/scripts/flow-state.ts close-us US{N} --files "..."\`; ` +
+    `El Lead cierra con el usuario: 1) valida cada HU done y la cierra con \`bun .claude/scripts/flow-state.ts close-us US{N} --verification <report.json> --files "..."\`; ` +
     `2) registra los boundary_checks; 3) resuelve blocked/failed contigo (nunca improvisando la respuesta); ` +
-    `4) ratifica o corrige el veredicto propuesto (\`flow-state verdict\`) — el workflow NO lo aprueba; 5) /retro con retro_inputs.`,
+    `4) ratifica o corrige el veredicto propuesto (\`flow-state verdict <VERDICT> --review <assessment.json>\`) — el workflow NO lo aprueba; 5) /retro con retro_inputs.`,
 }

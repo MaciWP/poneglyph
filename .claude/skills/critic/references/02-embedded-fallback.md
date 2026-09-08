@@ -10,9 +10,9 @@ spec / phase / review_level / verdict / spec_drift / findings_count / created
 
 ## 1. Correctness
 - [ ] spec.md problem solved E2E
-- [ ] Each AC mapped to a closed HU
+- [ ] Each AC has a responsible HU, executed check and observed result
 - [ ] Tests pass on assembled branch
-- [ ] Happy path manual walkthrough OK
+- [ ] Assembled happy path executed when runtime exists; missing evidence is explicit
 - [ ] Known edge cases covered
 
 ## 2. Quality

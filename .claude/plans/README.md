@@ -12,13 +12,12 @@
 - `slug`: kebab-case description of the feature (e.g. `auth-refactor`, `onboarding-flow`).
 - If two features share the same slug, NNN differentiates them (`002-foo`, `003-foo`).
 
-## Lifecycle by mode
+## Lifecycle
 
-| Mode | When | Artefacts created |
-|---|---|---|
-| **minimal** | Trivial task (<30 complexity, 1-2 files, known pattern) | No directory created. Only Phase 3 + Phase 4-light run. |
-| **standard** | Bounded task with some uncertainty (30-60 complexity) | `spec.md`, `tasks/` (index + US{N}.md), `tests.md` or `validations.md`, `review.md`, `retro.md`, `state.json` |
-| **full** | Architectural / multi-domain task (>60 complexity) | Same as standard (state.json is created in both — only minimal skips it; see `commands/flow.md` Step 4) |
+Flow always uses the same six phase skills. Depth scales with the task; justified
+skips are announced and recorded. New plans use mode: full; historical mode
+values remain readable. The [flow contract](../docs/flow-contract.md) owns commands,
+verification and artifact recovery.
 
 ## Files by phase
 
@@ -27,7 +26,7 @@
 | 1 | `spec.md` | scope |
 | 2 | `tasks/` directory containing `index.md` (DAG + summary) + one `US{N}.md` per story | tech-plan |
 | 2.5 | `tests.md` (code) **or** `validations.md` (markdown/skills/docs) — chosen per HU based on whether files are executable | tdd-design |
-| 3 | Code changes; updates `state.json` (standard/full) | build |
+| 3 | Code changes; records verified closure in `state.json` | build |
 | 4 | `review.md` | critic |
 | 5 | `retro.md` | retro |
 
@@ -35,13 +34,11 @@
 
 ## Status transitions
 
-| Status | Meaning | Transition |
-|---|---|---|
-| `draft` | Artefact created, not yet approved | → `approved` after human hard gate |
-| `approved` | Human gate passed; phase may proceed | → `implementing` when Phase 3 starts |
-| `implementing` | Active development underway | → `closed` after Phase 5 done; → `blocked` if dependency fails |
-| `closed` | All phases done, retro complete | Terminal |
-| `blocked` | Waiting on external dependency | → `implementing` once unblocked |
+Documents start as draft. Recorded human approval projects approved status.
+A verified HU closure projects closed status; reopening invalidates review/retro
+and restores approved task status. Feature closure requires verified HUs, an
+approving review and resolved retro. BLOCKED is a lifecycle verdict, not an
+implicit approval to continue. The helper owns these transitions.
 
 ## Garbage collection policy
 

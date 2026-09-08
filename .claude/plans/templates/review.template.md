@@ -11,7 +11,17 @@ status: draft
 
 ## Veredicto
 
-**APPROVED** | **NEEDS_CHANGES** | **BLOCKED** — <razón en 1 línea>
+**APPROVED** | **APPROVED_WITH_WARNINGS** | **NEEDS_CHANGES** | **BLOCKED** — <supported reason>
+
+## Requirement evidence
+
+| Requirement | Responsible HU | Executed check | Observed result | Status |
+|---|---|---|---|---|
+| <spec AC> | <US id> | <command or runtime action> | <actual result or log reference> | passed / failed / not_run |
+
+Include every required outcome. A code location or closed HU is not proof.
+Exercise the assembled user flow when runtime exists. Missing required evidence
+prevents approval. Record the assessment using the flow-state helper.
 
 ## Oracle ejecutado
 
@@ -83,6 +93,6 @@ status: draft
 
 ## Next step
 
-- Si **NEEDS_CHANGES**: HU(s) específicas a re-trabajar → <lista con AC concreto que falla>
-- Si **APPROVED**: siguiente = Fase 5 (`/retro`); actualizar `state.json.current_phase` a `fase-5`.
-- Si **BLOCKED**: <motivo y qué se necesita para desbloquear; actualizar `state.json.us_pending` con detalle>.
+- **NEEDS_CHANGES**: reopen the affected HUs, fix within approved scope, then repeat verify and critic within the retry budget.
+- **APPROVED / APPROVED_WITH_WARNINGS**: record the supported verdict with the helper, then invoke retro.
+- **BLOCKED**: report the blocker; an authorized reopen is required before continuing.

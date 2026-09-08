@@ -56,7 +56,7 @@ Before considering the plan executed:
 
 | Script | Purpose | Exit Code |
 |--------|---------|-----------|
-| `./scripts/check.sh` | typecheck + lint + test | 0 = OK |
+| The project's declared checks | Applicable types, lint and tests | All required commands complete successfully |
 
 **If fails → NOT complete.** Resolve before commit.
 
@@ -64,5 +64,5 @@ Before considering the plan executed:
 
 - [ ] Ground Truth verifications completed
 - [ ] Deep Research completed, no deprecated APIs
-- [ ] `./scripts/check.sh` exit code 0
+- [ ] Actual project checks completed successfully; no invented command
 - [ ] If cross-validation, validator agent approved

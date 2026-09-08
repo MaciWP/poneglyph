@@ -32,6 +32,7 @@ import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync } from
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { readHookStdin } from "./lib/hook-stdin";
+import { frontmatter, skillKeywords } from "../scripts/lib/skill-metadata";
 
 export interface SkillEntry {
   name: string;
@@ -43,10 +44,6 @@ interface PromptPayload {
   cwd?: string;
   [key: string]: unknown;
 }
-
-// Head of SKILL.md is enough: name + description (with the Keywords line)
-// live in the frontmatter. Avoids loading full bodies on every prompt.
-const HEAD_BYTES = 2_500;
 
 export function loadSkills(dirs: string[]): SkillEntry[] {
   const byName = new Map<string, SkillEntry>();
@@ -62,25 +59,11 @@ export function loadSkills(dirs: string[]): SkillEntry[] {
       const skillFile = join(dir, entry, "SKILL.md");
       if (byName.has(entry) || !existsSync(skillFile)) continue;
       try {
-        const head = readFileSync(skillFile, "utf8").slice(0, HEAD_BYTES);
-        // The Keywords block lives inside `description: |` and may wrap across
-        // indented continuation lines — capture until the next top-level YAML
-        // line (column 0), not just the first line (SK-01: 10/24 skills wrap).
-        const kwBlock = head.match(/Keywords\s*-\s*([\s\S]*?)(?=\n\S|$)/i);
-        if (!kwBlock) continue;
-        // Join wrapped lines BEFORE splitting on commas: a multi-word keyword
-        // that wraps without a trailing comma ("review\ncomment") is ONE
-        // keyword, not two single-words — the old `split(/[,\n]/)` produced
-        // the "review"→pr-conventional-comments false positive (audit 2026-08-07).
-        const keywords = kwBlock[1]
-          .replace(/\s*\n\s*/g, " ")
-          .split(/\s*,\s*/)
-          .flatMap((k) => k.split(/\s-\s/)) // inline `kw - "ejemplo"` tail
-          .map((k) => k.trim().toLowerCase().replace(/['"]/g, ""))
-          .filter((k) => k.length >= 3);
+        const { fields } = frontmatter(readFileSync(skillFile, "utf8"));
+        const keywords = skillKeywords(fields);
         if (keywords.length > 0) byName.set(entry, { name: entry, keywords });
       } catch {
-        // unreadable skill — skip
+        // Unreadable skill or invalid YAML — skip.
       }
     }
   }

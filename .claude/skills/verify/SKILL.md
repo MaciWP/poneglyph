@@ -28,6 +28,9 @@ stage (CLAUDE.md §The dev loop); `critic` invokes it for the happy-path E2E row
 Born from measured friction: 20+ "¿estás 100% seguro?" turns across 18 sessions,
 plus CI/tsc breaking AFTER a reported "done" (029 analysis, 2026-08-05).
 
+For authorized publication, read [the publication protocol](references/publication.md)
+in KNOW. It coordinates local checks, candidate CI, and verified integration.
+
 ## Anti-trigger (proportionality)
 
 Doc/markdown-only diffs and test-only diffs with no runtime surface do NOT get

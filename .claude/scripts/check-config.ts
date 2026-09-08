@@ -5,6 +5,8 @@ import { existsSync, lstatSync, readFileSync, realpathSync } from "node:fs";
 import { dirname, join, posix, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { parse as parseToml } from "smol-toml";
+import { frontmatter } from "./lib/skill-metadata";
+export { frontmatter } from "./lib/skill-metadata";
 
 export interface Finding { path: string; rule: string; message: string; severity: "error" | "warning" }
 export interface Source { files: Map<string, string>; links: string[]; binary?: string[]; ignoredSkills?: string[] }
@@ -72,14 +74,6 @@ export function readSource(root: string, staged = false): Source {
     }
   }
   return { files, links, binary, ignoredSkills };
-}
-
-export function frontmatter(text: string): { fields: Record<string, unknown>; body: string } {
-  const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(text);
-  if (!match) throw new Error("Missing or malformed YAML frontmatter.");
-  const fields = Bun.YAML.parse(match[1]);
-  if (!object(fields)) throw new Error("Frontmatter must be a mapping.");
-  return { fields, body: text.slice(match[0].length) };
 }
 
 export function privacyMatches(files: Map<string, string>, terms: string[]): string[] {

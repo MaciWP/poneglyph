@@ -47,6 +47,8 @@ know that after investigating.
   official docs → reputable experts → high-quality reference projects. Verify version.
 - Anything discoverable in <1 min (test framework, lint rules, layout, existing
   abstractions) is research you owe — never a question to the user.
+- If the task includes publication, run the remote preflight in
+  [verify's publication protocol](../verify/references/publication.md) before PLAN.
 
 ## Stage 2 — PLAN (analyze / price / de-risk)
 

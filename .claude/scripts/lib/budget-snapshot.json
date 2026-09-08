@@ -1,12 +1,12 @@
 {
-  "takenAt": "2026-09-03",
+  "takenAt": "2026-09-08",
   "alwaysLoaded": {
     "CLAUDE.md": 13513,
     "output-styles/poneglyph.md": 12688,
     "rules/error-recovery.md": 2462,
     "rules/harness-runtime.md": 1745,
-    "rules/skill-routing.md": 1002,
-    "skills: description + when_to_use": 21200,
+    "rules/skill-routing.md": 1127,
+    "skills: description + when_to_use": 21680,
     "installed plugins: description + when_to_use (this machine)": 2360
   },
   "skillBodies": {
@@ -22,7 +22,7 @@
     "explain-changes": 10101,
     "frontend-craft": 4567,
     "graphify": 38954,
-    "html-report": 21909,
+    "html-report": 22057,
     "lessons": 12950,
     "lsp-operations": 7519,
     "meta-create": 10478,
@@ -39,6 +39,7 @@
     "tdd-design": 16486,
     "tech-plan": 18615,
     "unstuck": 3994,
-    "verify": 4365
+    "verify": 4365,
+    "archify": 4519
   }
 }

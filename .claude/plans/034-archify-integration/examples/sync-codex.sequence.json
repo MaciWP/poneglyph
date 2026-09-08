@@ -1,0 +1,220 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "sync-codex: from discovery to a verified skill link",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "animation": "trace",
+    "column_fit": "spread",
+    "viewBox": [
+      1160,
+      550
+    ],
+    "views": [
+      {
+        "id": "discovery",
+        "label": "Discover shared skills",
+        "focus": [
+          "operator",
+          "adapter",
+          "source"
+        ],
+        "note": "The operator requests execution; the adapter reads the maintained skill directories."
+      },
+      {
+        "id": "preflight",
+        "label": "Check source and destination",
+        "focus": [
+          "source",
+          "adapter",
+          "destination"
+        ],
+        "note": "Preflight checks the destination state and source availability before any entry is installed."
+      },
+      {
+        "id": "installation",
+        "label": "Install and report",
+        "focus": [
+          "adapter",
+          "destination",
+          "operator"
+        ],
+        "note": "For a missing directory, create the native link and report its inspected state."
+      }
+    ]
+  },
+  "participants": [
+    {
+      "id": "operator",
+      "type": "external",
+      "label": "Operator"
+    },
+    {
+      "id": "adapter",
+      "type": "backend",
+      "label": "sync-codex"
+    },
+    {
+      "id": "source",
+      "type": "database",
+      "label": "Poneglyph"
+    },
+    {
+      "id": "destination",
+      "type": "database",
+      "label": "CODEX_HOME"
+    }
+  ],
+  "segments": [
+    {
+      "from": 150,
+      "to": 238,
+      "label": "Discover"
+    },
+    {
+      "from": 245,
+      "to": 357,
+      "label": "Preflight: missing destination"
+    },
+    {
+      "from": 365,
+      "to": 483,
+      "label": "Install and inspect"
+    }
+  ],
+  "messages": [
+    {
+      "id": "execute-sync",
+      "from": "operator",
+      "to": "adapter",
+      "y": 165,
+      "label": "--execute",
+      "variant": "emphasis"
+    },
+    {
+      "id": "discover-skills",
+      "from": "adapter",
+      "to": "source",
+      "y": 195,
+      "label": "coreSkillNames()"
+    },
+    {
+      "id": "return-skills",
+      "from": "source",
+      "to": "adapter",
+      "y": 225,
+      "label": "skill directories",
+      "variant": "return"
+    },
+    {
+      "id": "inspect-destination",
+      "from": "adapter",
+      "to": "destination",
+      "y": 255,
+      "label": "linkStatus()"
+    },
+    {
+      "id": "missing-destination",
+      "from": "destination",
+      "to": "adapter",
+      "y": 285,
+      "label": "missing",
+      "variant": "return"
+    },
+    {
+      "id": "inspect-source",
+      "from": "adapter",
+      "to": "source",
+      "y": 315,
+      "label": "existsSync(source)"
+    },
+    {
+      "id": "source-available",
+      "from": "source",
+      "to": "adapter",
+      "y": 345,
+      "label": "source exists",
+      "variant": "return"
+    },
+    {
+      "id": "install-skill-link",
+      "from": "adapter",
+      "to": "destination",
+      "y": 375,
+      "label": "createLink()",
+      "variant": "emphasis"
+    },
+    {
+      "id": "verify-link",
+      "from": "adapter",
+      "to": "destination",
+      "y": 405,
+      "label": "linkStatus()"
+    },
+    {
+      "id": "link-status",
+      "from": "destination",
+      "to": "adapter",
+      "y": 435,
+      "label": "linked",
+      "variant": "return"
+    },
+    {
+      "id": "report-installation",
+      "from": "adapter",
+      "to": "operator",
+      "y": 465,
+      "label": "sync result",
+      "variant": "return"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "adapter",
+      "from": 160,
+      "to": 470,
+      "type": "backend"
+    },
+    {
+      "participant": "source",
+      "from": 190,
+      "to": 230,
+      "type": "database"
+    },
+    {
+      "participant": "source",
+      "from": 310,
+      "to": 350,
+      "type": "database"
+    },
+    {
+      "participant": "destination",
+      "from": 250,
+      "to": 290,
+      "type": "database"
+    },
+    {
+      "participant": "destination",
+      "from": 370,
+      "to": 440,
+      "type": "database"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Selected path",
+      "items": [
+        "One missing skill entry: a directory junction on Windows, a symlink elsewhere."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Other outcomes",
+      "items": [
+        "Matching links are reused. A local/conflicting entry stops preflight unless backup is requested."
+      ]
+    }
+  ]
+}

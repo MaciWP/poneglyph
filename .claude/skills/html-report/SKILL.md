@@ -54,7 +54,8 @@ The design quality bar lives in `references/`, loaded only when needed (keeps th
 | User wants the markdown CONTENT authored/edited, not rendered | the relevant phase skill (`critic`, `retro`, `scope`…) |
 | User wants a PDF | render HTML then print-to-PDF (the template's `@media print` is built for this) |
 | Trivial one-paragraph note | plain markdown — HTML scaffolding is over-engineering here (Commandment V) |
-| Needs live interactivity / data refresh | out of scope — this skill emits a static snapshot, by design (no JS) |
+| Needs live external data refresh | a live application; this skill's dynamic reports explore an embedded snapshot |
+| Wants an explorable technical architecture, workflow, sequence, dataflow, or lifecycle diagram | `archify`; simple inline diagrams keep Mermaid |
 | User wants to GENERATE arbitrary user-facing UI / a landing page | builtin `frontend-design` — this skill renders Claude Code's OWN outputs, not general UI |
 
 ## Workflow

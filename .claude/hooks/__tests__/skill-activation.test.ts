@@ -82,6 +82,13 @@ writeFileSync(
 
 const skills = loadSkills([fixtures]);
 
+test("the shared Archify entry is discoverable by the native hook loader", () => {
+  const catalog = loadSkills([join(import.meta.dir, "../../skills")]);
+  const archify = catalog.find((entry) => entry.name === "archify");
+  expect(archify).toBeDefined();
+  expect(archify!.keywords).toContain("diagrama interactivo");
+});
+
 describe("loadSkills — multi-line Keywords block (SK-01)", () => {
   const wrapped = skills.find((s) => s.name === "wrapped-kw");
   test("continuation-line keywords are parsed, next YAML key is not swallowed", () => {

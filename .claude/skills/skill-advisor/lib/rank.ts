@@ -9,6 +9,7 @@
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { frontmatter, skillKeywords } from "../../../scripts/lib/skill-metadata";
 
 export interface SkillMeta {
   name: string;
@@ -36,7 +37,6 @@ export const USAGE_TIER: Record<string, number> = {
   "meta-create": 1, graphify: 1,
   "diagnostic-patterns": 1, consult: 1, "anti-hallucination": 1,
 };
-const HEAD_BYTES = 2_500;
 const STOP = new Set([
   "the", "and", "for", "with", "que", "los", "las", "una", "del", "por", "con",
   "este", "esta", "para", "como", "the", "a", "de", "el", "la", "en", "un",
@@ -79,7 +79,7 @@ export function rank(task: string, skills: SkillMeta[]): RankedSkill[] {
     .slice(0, SHORTLIST_MAX);
 }
 
-/** Reads SKILL.md heads from the given dirs. Mirrors skill-activation.loadSkills. */
+/** Reads complete YAML frontmatter; the first readable entry per name wins. */
 export function loadSkillsFromDisk(dirs: string[]): SkillMeta[] {
   const byName = new Map<string, SkillMeta>();
   for (const dir of dirs) {
@@ -94,19 +94,14 @@ export function loadSkillsFromDisk(dirs: string[]): SkillMeta[] {
       const file = join(dir, entry, "SKILL.md");
       if (byName.has(entry) || !existsSync(file)) continue;
       try {
-        const head = readFileSync(file, "utf8").slice(0, HEAD_BYTES);
-        const descMatch = head.match(/description:\s*([^\n]+)/i);
-        const kwLine = head.match(/Keywords\s*-\s*(.+)/i);
-        const keywords = kwLine
-          ? kwLine[1].split(",").map((k) => k.trim().toLowerCase()).filter((k) => k.length >= 3)
-          : [];
+        const { fields } = frontmatter(readFileSync(file, "utf8"));
         byName.set(entry, {
           name: entry,
-          description: descMatch ? descMatch[1].trim() : "",
-          keywords,
+          description: typeof fields.description === "string" ? fields.description : "",
+          keywords: skillKeywords(fields),
         });
       } catch {
-        // unreadable — skip
+        // Unreadable skill or invalid YAML — skip.
       }
     }
   }

@@ -92,4 +92,4 @@ disable-model-invocation: false
 
 ## Reutiliza
 
-- Patrón de lectura de heads de `loadSkills` en `.claude/hooks/skill-activation.ts`.
+- Shared YAML parser and keyword contract: [skill-metadata.ts](../../scripts/lib/skill-metadata.ts).

@@ -87,6 +87,9 @@ nul
 
 # Generated reports
 *.html
+!docs/diagrams/poneglyph.html
+!docs/diagrams/flow.html
+!docs/diagrams/dev.html
 poneglyph-analysis.md
 # Exception: the whole html-report skill templates dir is SOURCE (approved designs,
 # the templates meant to be used), never generated renders. Whole-dir exception so new

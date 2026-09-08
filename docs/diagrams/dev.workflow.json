@@ -1,0 +1,213 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Dev: the coding loop",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "complete-loop",
+        "label": "The five stages",
+        "focus": [
+          "understand",
+          "decide",
+          "implement",
+          "exercise",
+          "capture"
+        ],
+        "note": "Use every stage for every coding task. Scale the depth to the work, inside Flow or standalone."
+      },
+      {
+        "id": "human-decision",
+        "label": "When to wait",
+        "focus": [
+          "decide",
+          "consent",
+          "implement"
+        ],
+        "note": "An approved scope can proceed. New high-impact decisions wait for human approval before implementation."
+      },
+      {
+        "id": "return-to-cause",
+        "label": "Repair the cause",
+        "focus": [
+          "exercise",
+          "implement",
+          "decide",
+          "understand"
+        ],
+        "note": "Fix code in BUILD, revisit false assumptions in PLAN, and recover missing context in KNOW."
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "id": "coding",
+      "label": "Every coding task: inside Flow or standalone"
+    },
+    {
+      "id": "decisions",
+      "label": "Human decisions and retained learning",
+      "variant": "normal"
+    }
+  ],
+  "mainPath": [
+    "understand",
+    "decide",
+    "implement",
+    "exercise",
+    "capture"
+  ],
+  "nodes": [
+    {
+      "id": "understand",
+      "lane": "coding",
+      "col": 0,
+      "type": "database",
+      "label": "KNOW",
+      "sublabel": "Understand and reuse",
+      "width": 160,
+      "height": 100
+    },
+    {
+      "id": "decide",
+      "lane": "coding",
+      "col": 1,
+      "type": "backend",
+      "label": "PLAN",
+      "sublabel": "Scope, assumptions, risks",
+      "width": 160,
+      "height": 100
+    },
+    {
+      "id": "implement",
+      "lane": "coding",
+      "col": 2,
+      "type": "backend",
+      "label": "BUILD",
+      "sublabel": "Smallest sound change",
+      "width": 160,
+      "height": 100
+    },
+    {
+      "id": "exercise",
+      "lane": "coding",
+      "col": 3,
+      "type": "security",
+      "label": "REVIEW",
+      "sublabel": "Checks and real behavior",
+      "width": 160,
+      "height": 100
+    },
+    {
+      "id": "capture",
+      "lane": "decisions",
+      "col": 3,
+      "type": "database",
+      "label": "LEARN",
+      "sublabel": "Keep non-obvious lessons",
+      "width": 160,
+      "height": 100
+    },
+    {
+      "id": "consent",
+      "lane": "decisions",
+      "col": 1,
+      "type": "security",
+      "label": "Human decision",
+      "sublabel": "Wait for approval",
+      "width": 160,
+      "height": 100
+    }
+  ],
+  "edges": [
+    {
+      "id": "evidence-plan",
+      "from": "understand",
+      "to": "decide",
+      "label": "evidence",
+      "role": "main"
+    },
+    {
+      "id": "bounded-build",
+      "from": "decide",
+      "to": "implement",
+      "label": "bounded scope",
+      "role": "main"
+    },
+    {
+      "id": "impact-approval",
+      "from": "decide",
+      "to": "consent",
+      "label": "high impact",
+      "role": "branch",
+      "variant": "security"
+    },
+    {
+      "id": "approved-build",
+      "from": "consent",
+      "to": "implement",
+      "label": "approved",
+      "role": "branch",
+      "variant": "emphasis"
+    },
+    {
+      "id": "change-check",
+      "from": "implement",
+      "to": "exercise",
+      "label": "change",
+      "role": "main"
+    },
+    {
+      "id": "verified-learning",
+      "from": "exercise",
+      "to": "capture",
+      "label": "verified",
+      "role": "main",
+      "variant": "emphasis"
+    },
+    {
+      "id": "fix-code",
+      "from": "exercise",
+      "to": "implement",
+      "label": "code fault",
+      "role": "error",
+      "variant": "security"
+    },
+    {
+      "id": "rethink-plan",
+      "from": "implement",
+      "to": "decide",
+      "label": "false assumption",
+      "role": "error",
+      "variant": "security"
+    },
+    {
+      "id": "recover-knowledge",
+      "from": "implement",
+      "to": "understand",
+      "label": "missed context",
+      "role": "error",
+      "variant": "security"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Benefits",
+      "items": [
+        "Reuse before building; test behavior before claiming success.",
+        "Return to the failed premise instead of patching symptoms."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Costs & limits",
+      "items": [
+        "Research and review take effort, even for small changes.",
+        "Written stages are guidance. The agent must execute the checks."
+      ]
+    }
+  ]
+}

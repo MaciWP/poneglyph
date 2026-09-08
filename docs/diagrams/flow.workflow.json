@@ -1,0 +1,268 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Flow: from idea to accepted feature",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "prepare-before-build",
+        "label": "Define and approve",
+        "focus": [
+          "scope",
+          "scope-decision",
+          "tasks",
+          "oracle",
+          "execution-decision"
+        ],
+        "note": "Approve scope first. Then approve the task package and its expected checks before implementation."
+      },
+      {
+        "id": "build-and-accept",
+        "label": "Build, review, close",
+        "focus": [
+          "build",
+          "critique",
+          "retro",
+          "closed"
+        ],
+        "note": "Work through dependent tasks using Dev. Review the complete outcome, resolve retro, and close with evidence."
+      },
+      {
+        "id": "repair-and-resume",
+        "label": "Repair and resume",
+        "focus": [
+          "critique",
+          "build",
+          "blocked",
+          "closed"
+        ],
+        "note": "Fix affected tasks after review. Resume from state.json and artifacts; a real blocker needs a human decision."
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "id": "preparation",
+      "label": "Definition and records: scope, plan, checks, closure"
+    },
+    {
+      "id": "human",
+      "label": "Human decisions",
+      "variant": "exception"
+    },
+    {
+      "id": "delivery",
+      "label": "Execute and accept: state.json records progress"
+    }
+  ],
+  "mainPath": [
+    "scope",
+    "scope-decision",
+    "tasks",
+    "oracle",
+    "execution-decision",
+    "build",
+    "critique",
+    "retro",
+    "closed"
+  ],
+  "nodes": [
+    {
+      "id": "scope",
+      "lane": "preparation",
+      "col": 0,
+      "type": "backend",
+      "label": "1 · Scope",
+      "sublabel": "spec.md",
+      "width": 140,
+      "height": 100
+    },
+    {
+      "id": "scope-decision",
+      "lane": "human",
+      "col": 0,
+      "type": "security",
+      "label": "Approve scope",
+      "sublabel": "Gate 1 → 2",
+      "width": 140,
+      "height": 100
+    },
+    {
+      "id": "tasks",
+      "lane": "preparation",
+      "col": 1,
+      "type": "backend",
+      "label": "2 · Tech-plan",
+      "sublabel": "Tasks + dependencies",
+      "width": 140,
+      "height": 100
+    },
+    {
+      "id": "oracle",
+      "lane": "preparation",
+      "col": 2,
+      "type": "backend",
+      "label": "2.5 · Tdd-design",
+      "sublabel": "Tests / validations",
+      "width": 140,
+      "height": 100
+    },
+    {
+      "id": "execution-decision",
+      "lane": "human",
+      "col": 2,
+      "type": "security",
+      "label": "Approve build",
+      "sublabel": "Gate 2 → 3",
+      "width": 140,
+      "height": 100
+    },
+    {
+      "id": "build",
+      "lane": "delivery",
+      "col": 3,
+      "type": "backend",
+      "label": "3 · Build",
+      "sublabel": "Dev loop per task",
+      "width": 140,
+      "height": 100
+    },
+    {
+      "id": "critique",
+      "lane": "delivery",
+      "col": 4,
+      "type": "security",
+      "label": "4 · Critic",
+      "sublabel": "review.md + evidence",
+      "width": 140,
+      "height": 100
+    },
+    {
+      "id": "retro",
+      "lane": "delivery",
+      "col": 5,
+      "type": "database",
+      "label": "5 · Retro",
+      "sublabel": "Lessons + decisions",
+      "width": 140,
+      "height": 100
+    },
+    {
+      "id": "closed",
+      "lane": "preparation",
+      "col": 5,
+      "type": "database",
+      "label": "Closed",
+      "sublabel": "Resolved lifecycle",
+      "width": 140,
+      "height": 100
+    },
+    {
+      "id": "blocked",
+      "lane": "human",
+      "col": 4,
+      "type": "security",
+      "label": "Blocked",
+      "sublabel": "Human decision needed",
+      "width": 140,
+      "height": 100
+    }
+  ],
+  "edges": [
+    {
+      "id": "scope-ready",
+      "from": "scope",
+      "to": "scope-decision",
+      "label": "ready",
+      "role": "main"
+    },
+    {
+      "id": "scope-approved",
+      "from": "scope-decision",
+      "to": "tasks",
+      "label": "approved",
+      "role": "main",
+      "variant": "emphasis"
+    },
+    {
+      "id": "plan-checks",
+      "from": "tasks",
+      "to": "oracle",
+      "label": "define checks",
+      "role": "main"
+    },
+    {
+      "id": "package-ready",
+      "from": "oracle",
+      "to": "execution-decision",
+      "label": "package ready",
+      "role": "main"
+    },
+    {
+      "id": "build-approved",
+      "from": "execution-decision",
+      "to": "build",
+      "label": "approved",
+      "role": "main",
+      "variant": "emphasis"
+    },
+    {
+      "id": "verify-work",
+      "from": "build",
+      "to": "critique",
+      "label": "verified tasks",
+      "role": "main"
+    },
+    {
+      "id": "review-approved",
+      "from": "critique",
+      "to": "retro",
+      "label": "accepted",
+      "role": "main",
+      "variant": "emphasis"
+    },
+    {
+      "id": "close-lifecycle",
+      "from": "retro",
+      "to": "closed",
+      "label": "retro resolved",
+      "role": "main"
+    },
+    {
+      "id": "repair-tasks",
+      "from": "critique",
+      "to": "build",
+      "label": "needs changes",
+      "role": "error",
+      "variant": "security"
+    },
+    {
+      "id": "unresolved-blocker",
+      "from": "critique",
+      "to": "blocked",
+      "label": "blocker",
+      "role": "error",
+      "variant": "security"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Benefits",
+      "items": [
+        "Scope, tasks, checks, and review form a traceable feature record.",
+        "state.json and artifacts support resuming interrupted work."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Costs & limits",
+      "items": [
+        "Preparation, approval waits, and state maintenance add overhead.",
+        "The helper records evidence; it does not execute checks. Closure does not publish code."
+      ]
+    }
+  ]
+}

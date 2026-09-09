@@ -3,6 +3,12 @@
 Reviewed on 2026-09-09. Target: `feat/reproducible-lab` against
 `1ca2c86ea0d6cdf5f6548548512f550bde7a877e` (`origin/main`).
 
+Publication base updated to `5ebbe2b9833f22ea175dfcea5c72925e457ff599` after
+PR #7 merged concurrently. Its shared `withoutGitEnv` helper is reused; the
+duplicate filter from the initial laboratory commit was removed. This PR retains
+the staged-tree guard and the real two-repository regression. The incoming
+consult skill change is kept as upstream content, outside this PR's review scope.
+
 **Disposition: ready for draft publication after the commit and CI gates pass;
 not approved for merge.** US10 and native acceptance remain open. This is an
 inline review, not an independent reviewer or a completed Critic/Retro lifecycle.

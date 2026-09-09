@@ -14,6 +14,11 @@ over time. Open the downloaded HTML locally; it works offline. Authored text is
 Spanish, with the original English viewer controls. It describes the mechanism;
 native configuration swaps and model trials still require acceptance evidence.
 
+For the measurement design, deliberate traps, four-pillar metrics, external
+comparisons and interpretation limits, read the
+[laboratory methodology](../../docs/lab-methodology.md). It distinguishes the
+current implementation from proposed capabilities; it does not claim measured uplift.
+
 ## Try the complete flow without models
 
 From the Poneglyph repository, choose a **new directory outside repositories**:
@@ -59,7 +64,7 @@ subset; `--trials` and `--seed` are explicit alternatives.
 The model and all three limits are mandatory for native preparation. The example
 limits are illustrative, not an approved live budget. Preparation starts no model
 and changes no native configuration. It writes private snapshots under the chosen
-directory, with a local `.gitignore`. Do not publish profile snapshots or logs.
+directory, with a local `.gitignore`. Do not publish profile snapshots, streams or logs.
 
 `base` removes captured personal instructions, skills, hooks and plugin activation.
 Native model/provider, environment, permissions and declared MCP settings remain
@@ -138,7 +143,10 @@ core paths are stable per profile so repetitions do not invent new hook paths.
 
 The runner calibrates the oracle, acquires an exclusive journal, moves originals
 to protected sibling backups, and installs one profile at a time. Each attempt
-uses a new project and session. Before the next attempt, generated memory and
+uses a new session in an opaque OS temporary directory; laboratory objects, other
+runs and condition labels are not reachable from it by relative path. After grading,
+the submitted tree is copied to `runs/<id>/work` and the temporary copy is removed.
+Before the next attempt, generated memory and
 configuration state are quarantined. It restores original content, link targets
 and absence on success, failure or cancellation. Unexpected modifications are
 kept as conflicts, not overwritten. A pending journal blocks another experiment.
@@ -147,6 +155,15 @@ After a crash, `restore` does not need a model. Stop surviving processes first.
 Keep original backups and the journal when recovery reports a conflict. The
 recovery command never steals a live owner's lock. For a simulated workspace,
 use `status DIRECTORY` or `restore DIRECTORY` to select its synthetic home.
+
+The Claude adapter declares its tool envelope: `Read`, `Write`, `Edit`, `Glob`,
+`Grep`, `Bash` and `Skill`, in `dontAsk` mode. The profile's common `permissions`
+block may extend it and is identical across conditions. Interactive use may run
+another mode, such as `auto`; record that difference. Each attempt keeps the raw
+host stream as `runs/<id>/stream.jsonl` and the final assistant text as `final.txt`.
+The stream's `system/init` event and the result's `permission_denials` show the
+effective envelope and the loaded components. These files are private evidence;
+never publish them. stderr is not kept.
 
 The per-attempt deadline covers the agent process. The total deadline covers the
 trial loop, including profile work and verification between attempts. Calibration
@@ -186,8 +203,9 @@ This first version does not claim arbitrary real-repository evaluation.
 ## History and interpretation
 
 Definitions are content-addressed JSON objects. Every execution keeps the frozen
-experiment reference, configuration evidence, submitted workspace, individual
-checks, durations and available telemetry. Result payloads include an integrity
+experiment reference, configuration evidence, submitted workspace, raw host stream,
+final text, individual checks, durations, turn count, API seconds, per-model usage,
+permission denials and available telemetry. Result payloads include an integrity
 hash in the same atomic write. Hashes detect accidental modification; they do
 not authenticate a result against an adversary who can rewrite the whole store.
 
@@ -203,7 +221,8 @@ the report does not add it a second time to total input. Agent and verifier time
 are separate, and elapsed experiment time includes setup and restoration.
 
 Comparisons require the same scenario hashes, oracle, host/model, environment,
-limits and complete task/trial pairs, except for the declared changed dimension.
+limits, the same set of resolved models and complete task/trial pairs, except for
+the declared changed dimension.
 Different prompts can be compared deliberately. Historical environment changes
 are exposed. Results describe the selected tasks; repeated attempts are not
 independent tasks, and the tool does not infer statistical superiority or

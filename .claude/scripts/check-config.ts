@@ -23,6 +23,11 @@ function git(root: string, args: string[], input?: string): Buffer {
   } catch { throw new Error("Cannot read the Git snapshot; no validation was completed."); }
 }
 
+/** Hooks export GIT_DIR and GIT_INDEX_FILE. A test run spawned from a hook must not inherit them, or fixture repositories resolve to the real one (linked worktree, 2026-09-09). */
+export function withoutGitEnv(env: NodeJS.ProcessEnv): Record<string, string> {
+  return Object.fromEntries(Object.entries(env).filter((e): e is [string, string] => e[1] !== undefined && !e[0].startsWith("GIT_")));
+}
+
 /** Read only Git-listed files. Never follow links or read user-level configuration. */
 export function readSource(root: string, staged = false): Source {
   // Native resolution also expands Windows short names and normalizes drive case.

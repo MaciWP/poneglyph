@@ -5,6 +5,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { parseArgs } from "node:util";
 import { frontmatter } from "./check-config";
+import { codexConfigPlan, describePolicy } from "./lib/host-config";
 import { backupDestination, hookFilePlan, installHookFile, nativeHookConfig } from "./lib/native-hooks";
 
 export function coreSkillNames(projectRoot: string): string[] {
@@ -261,9 +262,13 @@ async function main(): Promise<void> {
   const hookFile = path.join(codexHome ?? path.join(os.homedir(), ".codex"), "hooks.json");
   const hooks = nativeHookConfig("codex", projectRoot);
   hookFilePlan(hookFile, hooks); // Validate configuration before any mutation.
+  // Context/effort policy keys in the profile's config.toml (plan 037); other keys are preserved.
+  const configFile = path.join(codexHome ?? path.join(os.homedir(), ".codex"), "config.toml");
+  const configPlan = () => codexConfigPlan(fs.existsSync(configFile) ? fs.readFileSync(configFile, "utf8") : "");
   const status = () => {
     printStatus(links);
     console.log(`${hookFilePlan(hookFile, hooks).status.padEnd(8)} ${hookFile}`);
+    console.log(`${(configPlan().changed ? "stale" : "linked").padEnd(8)} ${configFile} (${describePolicy("codex")})`);
     console.log("Native hook execution requires Codex /hooks trust; registration alone is not activation evidence.");
   };
   if (values.status) return status();
@@ -295,8 +300,20 @@ async function main(): Promise<void> {
     if ((state === "local" || state === "conflict") && !values.backup) throw new Error(`Review collision at ${link.dest}; replacement requires --backup.`);
     if (!fs.existsSync(link.source)) throw new Error(`Source missing: ${link.source}`);
   }
+  const plan = configPlan();
+  if (plan.changed && fs.existsSync(configFile) && !values.backup) throw new Error("Context policy change in config.toml requires --backup.");
   for (const link of links) createLink(link, values.backup ?? false);
   installHookFile(hookFile, hooks);
+  if (plan.changed) {
+    if (fs.existsSync(configFile)) {
+      const backup = backupDestination(configFile);
+      fs.copyFileSync(configFile, backup);
+      if (!fs.readFileSync(configFile).equals(fs.readFileSync(backup))) throw new Error("Codex recovery verification failed.");
+      console.log(`backup: ${configFile} -> ${backup}`);
+    }
+    fs.mkdirSync(path.dirname(configFile), { recursive: true });
+    fs.writeFileSync(configFile, plan.content);
+  }
   status();
 }
 

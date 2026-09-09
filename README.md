@@ -203,6 +203,7 @@ the registrations there would execute each hook twice.
 | Event | Hook | Purpose |
 |-------|------|---------|
 | `PreToolUse` (Bash) | `headless-model-gate.ts` | Deny a headless `claude -p` without a cheap `--model` (Fable/Opus need `--allow-expensive`) |
+| `PreToolUse` (Bash) | `bash-output-shaper.ts` | Deny whole-file `cat`/`sed` dumps (>12 KB), bound unbounded `git log`/`ls -R`/`find` (`# raw` bypasses) |
 | `UserPromptSubmit` | `skill-activation.ts` | Precise `Skill()` hints on keyword match |
 | `Stop` | `security-gate.ts` | Secret warn + git-discipline warn (session repo only) |
 | `InstructionsLoaded` | `instructions-loaded.ts` | Log every instruction-layer load |

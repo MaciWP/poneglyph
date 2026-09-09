@@ -18,16 +18,19 @@ describe("frontmatterField", () => {
 
 describe("compare (ratchet)", () => {
   const base = { alwaysLoaded: { "CLAUDE.md": 1000, "skills: description + when_to_use": 2000 }, skillBodies: { dev: 500 } };
-  it("is silent within tolerance and when sizes shrink", () => {
-    expect(compare({ alwaysLoaded: { "CLAUDE.md": 1040, "skills: description + when_to_use": 1500 }, skillBodies: { dev: 400 } }, base)).toEqual([]);
+  it("is silent when sizes are equal or shrink (ratchet 0 %, plan 037)", () => {
+    expect(compare({ alwaysLoaded: { "CLAUDE.md": 1000, "skills: description + when_to_use": 1500 }, skillBodies: { dev: 400 } }, base)).toEqual([]);
   });
-  it("flags a file, a skill body and the total that grew past 5 %", () => {
-    const v = compare({ alwaysLoaded: { "CLAUDE.md": 1100, "skills: description + when_to_use": 2100 }, skillBodies: { dev: 600 } }, base);
+  it("flags a file, a skill body and the total on any growth", () => {
+    const v = compare({ alwaysLoaded: { "CLAUDE.md": 1001, "skills: description + when_to_use": 2000 }, skillBodies: { dev: 501 } }, base);
     expect(v.map((x) => x.key)).toEqual(["CLAUDE.md", "skill dev", "always-loaded TOTAL"]);
   });
-  it("flags new always-loaded pieces and new skills as budget decisions", () => {
+  it("still honours an explicit tolerance", () => {
+    expect(compare({ alwaysLoaded: { "CLAUDE.md": 1040, "skills: description + when_to_use": 2000 }, skillBodies: { dev: 500 } }, base, 0.05)).toEqual([]);
+  });
+  it("flags new always-loaded pieces and new skills as budget decisions (and the total they grow)", () => {
     const v = compare({ alwaysLoaded: { ...base.alwaysLoaded, "rules/new.md": 10 }, skillBodies: { ...base.skillBodies, shiny: 10 } }, base);
-    expect(v.map((x) => x.key)).toEqual(["rules/new.md (new)", "skill shiny (new)"]);
+    expect(v.map((x) => x.key)).toEqual(["rules/new.md (new)", "skill shiny (new)", "always-loaded TOTAL"]);
   });
 });
 
@@ -67,7 +70,7 @@ describe("measure", () => {
 });
 
 describe("the real layer stays within its snapshot (ratchet — Cmd IX)", () => {
-  it("no always-loaded piece, skill body or total grew more than 5 % since the last ratified snapshot", () => {
+  it("no always-loaded piece, skill body or total grew since the last ratified snapshot", () => {
     const snapshot = loadSnapshot(SNAPSHOT_DIR);
     expect(snapshot, "budget-snapshot.json missing — run `bun .claude/scripts/budget.ts --update`").not.toBeNull();
     const violations = compare(measure(REPO), snapshot!);

@@ -327,11 +327,12 @@ describe("feature-shape flow hint (029/US13)", () => {
     expect(r.injection).toContain("skill-activation-hint");
   });
 
-  test("feature shape alone (no skill keyword match) still injects the /flow line", () => {
+  test("feature shape alone (no skill keyword match) still injects the /flow line, with the tiered ceiling (plan 037)", () => {
     const raw = JSON.stringify({ prompt: "desarrolla una nueva funcionalidad de exportación a excel" });
     const r = analyzePayload(raw, skills);
     expect(r.flowHint).toBe(true);
     expect(r.injection).toContain("/flow");
+    expect(r.injection).toContain("/autocompact 400k");
   });
 
   test("no feature shape → no /flow line (unchanged behavior)", () => {

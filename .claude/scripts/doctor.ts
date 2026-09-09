@@ -15,6 +15,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { compare, loadSnapshot, measure, total } from "./lib/budget";
 import { check, type Report } from "./check-config";
+import { collectTranscripts, contextRow, loadTranscripts, summarizeContext } from "./usage-profile";
 
 export type Status = "🟢" | "🟡" | "🔴";
 export interface Check {
@@ -160,7 +161,7 @@ async function main(): Promise<void> {
     checks.push({ name: "Always-loaded budget", status: "🟡", detail: `${total(m.alwaysLoaded)} B, no snapshot — bun .claude/scripts/budget.ts --update` });
   } else {
     const viol = compare(m, snapshot);
-    checks.push({ name: "Always-loaded budget", status: viol.length ? "🔴" : "🟢", detail: viol.length ? viol.map((x) => `${x.key} ${x.snapshot}→${x.current}`).join("; ") : `${total(m.alwaysLoaded)} B ≤ snapshot ${total(snapshot.alwaysLoaded)} B (+5 %)` });
+    checks.push({ name: "Always-loaded budget", status: viol.length ? "🔴" : "🟢", detail: viol.length ? viol.map((x) => `${x.key} ${x.snapshot}→${x.current}`).join("; ") : `${total(m.alwaysLoaded)} B ≤ snapshot ${total(snapshot.alwaysLoaded)} B (ratchet 0 %, plan 037)` });
   }
 
   try {
@@ -186,6 +187,10 @@ async function main(): Promise<void> {
       }
     }
     checks.push({ name: "Sessions today (this project)", ...summarizeSessions(models) });
+    // Shape of the spend across every project on this machine (plan 037): the ceiling is 200k by
+    // default (`autoCompactWindow`), so messages above it are the sessions that cost.
+    const transcripts = loadTranscripts(collectTranscripts(join(homedir(), ".claude", "projects"), 7));
+    checks.push({ name: "Context (7d, this machine)", ...contextRow(summarizeContext(transcripts)) });
   }
 
   const table = renderChecks(checks);

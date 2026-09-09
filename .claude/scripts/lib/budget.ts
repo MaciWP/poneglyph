@@ -15,7 +15,10 @@ import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-export const TOLERANCE = 0.05;
+// 0 since plan 037 (2026-09-09): every byte of always-loaded growth is a decision taken with
+// `--update`, never a rounding allowance. 89 % of this machine's tokens went to meta-work on
+// the layer itself; the layer does not get to grow by accident.
+export const TOLERANCE = 0;
 export const SNAPSHOT_FILE = "budget-snapshot.json";
 
 // Rules that never enter the global always-loaded layer (mirrors sync-claude's

@@ -464,7 +464,8 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
 }
 
 // Recursive deep-merge: nested plain objects merge per-key (so `env` keeps base
-// keys + overlay PATH); arrays and scalars are replaced by the overlay.
+// keys + overlay PATH); arrays and scalars are replaced by the overlay. The one
+// exception is `hooks` — generateSettings routes it through mergeHookEvents.
 function deepMerge(
   base: Record<string, unknown>,
   overlay: Record<string, unknown>,
@@ -480,6 +481,30 @@ function deepMerge(
   return out;
 }
 
+type HookGroup = {
+  matcher?: string;
+  hooks: Array<{ command: string } & Record<string, unknown>>;
+};
+
+// Plan 038 — `hooks.<event>` UNIONS instead of replacing: base groups first, then the
+// overlay's; a handler whose `command` already appeared in that event is dropped (the
+// base wins) and a group left empty disappears. Before this, an event the machine
+// overlay also defined masked every base handler (bash-output-shaper, 2026-09-09).
+// Anything that is not two plain objects keeps deepMerge's rule (overlay wins).
+export function mergeHookEvents(base: unknown, overlay: unknown): unknown {
+  if (!isPlainObject(base) || !isPlainObject(overlay)) return overlay ?? base;
+  const out: Record<string, unknown> = { ...base };
+  for (const [event, groups] of Object.entries(overlay)) {
+    const seen = new Set<string>();
+    const all = [...((base[event] as HookGroup[] | undefined) ?? []), ...(groups as HookGroup[])];
+    out[event] = all.flatMap((group) => {
+      const hooks = group.hooks.filter((h) => !seen.has(h.command) && !!seen.add(h.command));
+      return hooks.length ? [{ ...group, hooks }] : [];
+    });
+  }
+  return out;
+}
+
 interface SettingsResult {
   status: "written" | "preview" | "error";
   overlayApplied: boolean;
@@ -489,8 +514,9 @@ interface SettingsResult {
   backupPath?: string;
 }
 
-// Generates ~/.claude/settings.json as a REAL file = deepMerge(base, machine overlay).
-// With config.execute=false it only previews. Replaces any prior symlink in place.
+// Generates ~/.claude/settings.json as a REAL file = deepMerge(base, machine overlay),
+// with `hooks` unioned per event (mergeHookEvents). With config.execute=false it only
+// previews. Replaces any prior symlink in place.
 export function generateSettings(
   projectRoot: string,
   homeDir: string,
@@ -521,6 +547,7 @@ export function generateSettings(
         unknown
       >;
       merged = deepMerge(base, overlay);
+      if ("hooks" in overlay) merged.hooks = mergeHookEvents(base.hooks, overlay.hooks);
       overlayApplied = true;
     } else {
       merged = base;

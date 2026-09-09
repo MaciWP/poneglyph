@@ -9,7 +9,9 @@ import {
   formatGrokTwinLine,
   formatSettingsValidationLine,
   formatSpTwinStatusLine,
+  generateSettings,
   generateSpTwin,
+  mergeHookEvents,
   parseDoctorInvalidSettings,
   problemsForFile,
 } from "../sync-claude.ts";
@@ -321,6 +323,96 @@ describe("formatSettingsValidationLine", () => {
     expect(red).toStartWith("🔴");
     expect(red).toContain("   - x › y: Expected string");
     expect(formatSettingsValidationLine({ ok: true, problems: [], skipped: "claude CLI not runnable" })).toStartWith("🟡");
+  });
+});
+
+// Plan 038 — the machine overlay used to REPLACE a whole hooks.<event> array, masking every
+// base handler for that event (bash-output-shaper vanished on 2026-09-09). Now: union per
+// event, base groups first, handlers de-duplicated by `command` (first occurrence wins).
+const handler = (command: string, timeout = 10) => ({ type: "command", command, timeout });
+const GATE = "bun $HOME/.claude/hooks/headless-model-gate.ts";
+const SHAPER = "bun $HOME/.claude/hooks/bash-output-shaper.ts";
+const ORCA = "powershell -File C:/orca/hook.ps1";
+const BASE_HOOKS = {
+  PreToolUse: [{ matcher: "Bash", hooks: [handler(GATE, 5), handler(SHAPER, 5)] }],
+  InstructionsLoaded: [{ hooks: [{ ...handler("bun $HOME/.claude/hooks/instructions-loaded.ts"), async: true }] }],
+};
+const OVERLAY_HOOKS = {
+  PreToolUse: [
+    { matcher: "Bash", hooks: [handler(GATE)] },
+    { matcher: "*", hooks: [handler(ORCA)] },
+  ],
+  SubagentStart: [{ hooks: [handler(ORCA)] }],
+};
+const commands = (groups: unknown) =>
+  (groups as Array<{ hooks: Array<{ command: string }> }>).flatMap((g) => g.hooks.map((h) => h.command));
+
+describe("mergeHookEvents (plan 038)", () => {
+  const merged = mergeHookEvents(BASE_HOOKS, OVERLAY_HOOKS) as Record<string, unknown>;
+
+  it("a. keeps both sides' groups for a shared event, base group first", () => {
+    expect(commands(merged.PreToolUse)).toEqual([GATE, SHAPER, ORCA]);
+    expect((merged.PreToolUse as Array<{ matcher: string }>).map((g) => g.matcher)).toEqual(["Bash", "*"]);
+  });
+
+  it("b. drops an overlay handler whose command the base already has (base copy wins) and the group it emptied", () => {
+    const pre = merged.PreToolUse as Array<{ hooks: Array<{ command: string; timeout: number }> }>;
+    expect(pre).toHaveLength(2);
+    expect(pre[0].hooks.find((h) => h.command === GATE)!.timeout).toBe(5);
+  });
+
+  it("c. preserves an overlay-only event unchanged", () => {
+    expect(merged.SubagentStart).toEqual(OVERLAY_HOOKS.SubagentStart);
+  });
+
+  it("d. preserves a base-only event unchanged", () => {
+    expect(merged.InstructionsLoaded).toEqual(BASE_HOOKS.InstructionsLoaded);
+  });
+
+  it("f. returns the other side unchanged when hooks is missing on one side", () => {
+    expect(mergeHookEvents(BASE_HOOKS, undefined)).toEqual(BASE_HOOKS);
+    expect(mergeHookEvents(undefined, OVERLAY_HOOKS)).toEqual(OVERLAY_HOOKS);
+    expect(mergeHookEvents(undefined, undefined)).toBeUndefined();
+  });
+
+  it("does not mutate its inputs", () => {
+    expect(BASE_HOOKS.PreToolUse).toHaveLength(1);
+    expect(OVERLAY_HOOKS.PreToolUse).toHaveLength(2);
+  });
+});
+
+describe("generateSettings — hooks union is wired, other arrays still replaced", () => {
+  it("e. unions hooks.PreToolUse but lets permissions.allow be replaced by the overlay", () => {
+    const root = mkdtempSync(path.join(tmpdir(), "settings-hooks-"));
+    const repo = path.join(root, "repo");
+    const profile = path.join(root, "profile");
+    mkdirSync(path.join(repo, ".claude"), { recursive: true });
+    writeFileSync(
+      path.join(repo, ".claude", "settings.global.json"),
+      JSON.stringify({ permissions: { allow: ["Read", "Grep"] }, hooks: BASE_HOOKS }),
+    );
+    writeFileSync(
+      path.join(repo, ".claude", "settings.machine.json"),
+      JSON.stringify({ permissions: { allow: ["Bash(bun *)"] }, hooks: OVERLAY_HOOKS }),
+    );
+    expect(generateSettings(repo, profile, { execute: true, backup: false }).status).toBe("written");
+    const out = JSON.parse(readFileSync(path.join(profile, ".claude", "settings.json"), "utf-8"));
+    expect(out.permissions.allow).toEqual(["Bash(bun *)"]);
+    expect(commands(out.hooks.PreToolUse)).toEqual([GATE, SHAPER, ORCA]);
+    expect(Object.keys(out.hooks).sort()).toEqual(["InstructionsLoaded", "PreToolUse", "SubagentStart"]);
+  });
+
+  it("copies the base hooks untouched when the overlay has no hooks key", () => {
+    const root = mkdtempSync(path.join(tmpdir(), "settings-hooks-"));
+    const repo = path.join(root, "repo");
+    const profile = path.join(root, "profile");
+    mkdirSync(path.join(repo, ".claude"), { recursive: true });
+    writeFileSync(path.join(repo, ".claude", "settings.global.json"), JSON.stringify({ hooks: BASE_HOOKS }));
+    writeFileSync(path.join(repo, ".claude", "settings.machine.json"), JSON.stringify({ model: "opus" }));
+    generateSettings(repo, profile, { execute: true, backup: false });
+    const out = JSON.parse(readFileSync(path.join(profile, ".claude", "settings.json"), "utf-8"));
+    expect(out.hooks).toEqual(BASE_HOOKS);
+    expect(out.model).toBe("opus");
   });
 });
 

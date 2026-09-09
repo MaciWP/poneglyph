@@ -85,6 +85,38 @@ bun run doctor --ci
 bun run doctor
 ```
 
+### Shared context/effort policy (plan 037)
+
+All three hosts carry one tiered policy, so a session behaves the same everywhere:
+compact at **200k tokens** by default, raise to **400k** per session when a task
+needs it, reasoning effort **high** (each host's own default) with the stronger
+tier one command away. Source of truth: `.claude/scripts/lib/host-config.ts`.
+
+| Host | Keys written | Default | Raise for one session |
+|---|---|---|---|
+| Claude | `autoCompactWindow`, `effortLevel` (settings.global.json) | 200k · high | `/autocompact 400k` · `/effort xhigh` |
+| Codex | `model_auto_compact_token_limit`, `model_reasoning_effort`, `plan_mode_reasoning_effort` (config.toml, via `sync-codex`) | 200k · high · plan xhigh | `codex -c model_auto_compact_token_limit=400000 -c model_reasoning_effort=xhigh` |
+| Grok | `session.auto_compact_threshold_percent`, `models.default_reasoning_effort`, `model."grok-4.6".context_window` (config.toml, via `sync-grok`) | 40 % of a pinned 500k = 200k · high | `grok --effort xhigh` (per session) |
+
+Grok has no absolute compaction limit, only a percent of the model window, and
+left implicit it "assumes 200,000 tokens and mis-times auto-compaction" (its
+config guide) — so the percent would silently mean 80k. `sync-grok` pins
+`model."grok-4.6".context_window = 500000` so `40 %` is a stated 200k; grok-4.6's
+window is `[Probable — vendor pages, 2026-09-09]`, and `grok inspect` accepts the
+block. Codex and Claude take an absolute token limit directly, so they need no pin.
+
+The Codex policy that actually takes effect is the one `sync-codex` writes to the
+profile's `$CODEX_HOME/config.toml`; the repo `.codex/config.toml` carries the
+same values for uniformity across checkouts, but a project file only applies in a
+trusted project and does not override the profile's own compaction/effort keys.
+
+The sync scripts merge only these keys, preserving every other setting; they
+back up `config.toml` before writing (`--backup` — `sync-codex --execute` now
+requires `--backup` whenever the policy differs). TOML comments are not preserved
+by the round-trip — both live configs on this machine carry none.
+`ponytail: comment loss on config.toml rewrite; upgrade trigger = a host config
+that needs inline comments preserved.`
+
 Sync shared generated doctrine before account profiles linked to it.
 `CODEX_HOME` selects the Codex profile; the default is `~/.codex`.
 `sync-grok --home-dir PATH` supports a disposable profile without replacing HOME.

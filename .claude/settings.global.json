@@ -68,6 +68,11 @@
             "type": "command",
             "command": "bun $HOME/.claude/hooks/headless-model-gate.ts",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "bun $HOME/.claude/hooks/bash-output-shaper.ts",
+            "timeout": 5
           }
         ]
       }
@@ -136,7 +141,7 @@
   "theme": "dark",
   "tui": "fullscreen",
   "autoUpdatesChannel": "latest",
-  "effortLevel": "xhigh",
+  "effortLevel": "high",
   "sandbox": {
     "enabled": false
   },
@@ -163,6 +168,7 @@
   "editorMode": "normal",
   "skipDangerousModePermissionPrompt": true,
   "autoCompactEnabled": true,
+  "autoCompactWindow": "200k",
   "skipAutoPermissionPrompt": true,
   "autoMode": {
     "hard_deny": [

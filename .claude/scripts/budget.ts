@@ -31,7 +31,7 @@ if (args.has("--update")) {
 if (snapshot) {
   const violations = compare(current, snapshot);
   if (violations.length > 0) {
-    console.log("\n🔴 Over budget (snapshot + 5 %):");
+    console.log("\n🔴 Over budget (snapshot, 0 % growth allowed — plan 037):");
     for (const v of violations) console.log(`   - ${v.key}: ${v.snapshot} → ${v.current}`);
     console.log("   Reduce, or ratify the growth with `bun .claude/scripts/budget.ts --update`.");
     process.exit(1);

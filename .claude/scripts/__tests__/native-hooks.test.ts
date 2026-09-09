@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parse } from "smol-toml";
 import { hookFilePlan, installHookFile, mergeNativeHooks, nativeHookConfig } from "../lib/native-hooks";
-import { grokCompatPlan } from "../sync-grok";
+import { grokConfigPlan } from "../sync-grok";
 
 describe("host-owned configuration preservation", () => {
   it("preserves foreign handlers and group metadata through repeated sync", () => {
@@ -48,13 +48,16 @@ describe("host-owned configuration preservation", () => {
     expect(readFileSync(file, "utf8")).toBe("{broken");
   });
 
-  it("changes only Grok's inherited-hook flag and becomes byte-stable", () => {
+  it("owns Grok's inherited-hook flag and the context policy, preserves the rest, and becomes byte-stable", () => {
     const original = '[permissions]\nmode = "ask"\n[compat.claude]\nskills = true\nhooks = true\n[plugins]\npaths = ["custom"]\n';
-    const result = grokCompatPlan(original);
+    const result = grokConfigPlan(original);
     expect(result.changed).toBe(true);
     const before = parse(original) as any;
     before.compat.claude.hooks = false;
+    before.models = { default_reasoning_effort: "high" };
+    before.model = { "grok-4.6": { context_window: 500000 } };
+    before.session = { auto_compact_threshold_percent: 40 };
     expect(parse(result.content)).toEqual(before);
-    expect(grokCompatPlan(result.content)).toEqual({ changed: false, content: result.content });
+    expect(grokConfigPlan(result.content)).toEqual({ changed: false, content: result.content });
   });
 });

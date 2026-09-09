@@ -4,16 +4,13 @@ import * as fs from "node:fs";
 import { homedir } from "node:os";
 import * as path from "node:path";
 import { parseArgs } from "node:util";
-import { parse, stringify } from "smol-toml";
 import { createLink, linkStatus, type CodexLink } from "./sync-codex";
+import { describePolicy, grokConfigPlan } from "./lib/host-config";
 import { backupDestination, hookFilePlan, installHookFile, nativeHookConfig } from "./lib/native-hooks";
 
-export function grokCompatPlan(text: string): { changed: boolean; content: string } {
-  const config = parse(text) as Record<string, any>;
-  if (config.compat?.claude?.hooks === false) return { changed: false, content: text };
-  config.compat = { ...config.compat, claude: { ...config.compat?.claude, hooks: false } };
-  return { changed: true, content: stringify(config) };
-}
+// Native keys Poneglyph owns in ~/.grok/config.toml: inherited Claude hooks off (the native
+// adapter replaces them) plus the shared context/effort policy (plan 037). Other keys survive.
+export { grokConfigPlan };
 
 export function buildGrokLinks(coreRoot: string, home: string): CodexLink[] {
   return [{
@@ -38,7 +35,7 @@ if (import.meta.main) {
     const root = fs.realpathSync.native(path.resolve(import.meta.dir, "../.."));
     const links = buildGrokLinks(root, home);
     const configFile = path.join(home, ".grok", "config.toml");
-    const configPlan = grokCompatPlan(fs.existsSync(configFile) ? fs.readFileSync(configFile, "utf8") : "");
+    const configPlan = grokConfigPlan(fs.existsSync(configFile) ? fs.readFileSync(configFile, "utf8") : "");
     const hookFile = path.join(home, ".grok", "hooks", "poneglyph.json");
     const hooks = nativeHookConfig("grok", root);
     hookFilePlan(hookFile, hooks); // Validate before changing links or settings.
@@ -49,7 +46,7 @@ if (import.meta.main) {
         if (!fs.existsSync(link.source)) throw new Error("Missing generated style source; run sync-claude first.");
         if (["local", "conflict"].includes(linkStatus(link)) && !values.backup) throw new Error("Review the existing style; replacement requires --backup.");
       }
-      if (configPlan.changed && fs.existsSync(configFile) && !values.backup) throw new Error("Compatibility settings change requires --backup.");
+      if (configPlan.changed && fs.existsSync(configFile) && !values.backup) throw new Error("Native configuration change requires --backup.");
       for (const link of links) createLink(link, values.backup ?? false);
       if (configPlan.changed) {
         if (fs.existsSync(configFile)) {
@@ -66,8 +63,8 @@ if (import.meta.main) {
     for (const link of links) console.log(`${linkStatus(link).padEnd(8)} ${link.dest}`);
     console.log(`${hookFilePlan(hookFile, hooks).status.padEnd(8)} ${hookFile}`);
     console.log(`${(fs.existsSync(shared) ? "linked" : "missing").padEnd(8)} shared Claude installation`);
-    const compat = fs.existsSync(configFile) && !grokCompatPlan(fs.readFileSync(configFile, "utf8")).changed;
-    console.log(`${(compat ? "linked" : "stale").padEnd(8)} Grok compatibility: inherited Claude hooks disabled`);
+    const compat = fs.existsSync(configFile) && !grokConfigPlan(fs.readFileSync(configFile, "utf8")).changed;
+    console.log(`${(compat ? "linked" : "stale").padEnd(8)} ${configFile} (${describePolicy("grok")})`);
     console.log("Native inspection and a user session are required to verify effective discovery and hook execution.");
   } catch {
     console.error("sync-grok failed: review the source paths, collisions and configuration; private details withheld.");

@@ -1,0 +1,27 @@
+{
+  "us": "US8",
+  "revision": "lab-source-sha256:35de9b196c63019e3e5097a105c94459465f197db90805f7792eccbfde405809",
+  "tests_passed": true,
+  "checks": [
+    {
+      "name": "assembled project checks",
+      "status": "passed",
+      "evidence": "bun run doctor: exit 0; 595 tests passed; plugin validation, budget and installed configuration status passed. Four configuration warnings match the baseline."
+    },
+    {
+      "name": "strict laboratory types",
+      "status": "passed",
+      "evidence": "TypeScript 5.9.3 strict noEmit check over all lab files and imports: exit 0. No project dependency change."
+    },
+    {
+      "name": "runtime and recovery",
+      "status": "passed",
+      "evidence": "Real CLI demo: 10 synthetic attempts, finished-restored. CLI drill: 2 profiles, 0 task attempts, drill-restored. Repetition is tested; HTML inspected. Native acceptance belongs to US10."
+    },
+    {
+      "name": "modified-file check",
+      "status": "passed",
+      "evidence": "native-hook.ts --check passed (heuristic scope)."
+    }
+  ]
+}

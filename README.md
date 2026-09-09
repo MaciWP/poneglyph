@@ -60,13 +60,30 @@ Dev directly. Every stage still applies, with depth proportional to the work.
 REVIEW runs the checks and the affected behavior; LEARN retains non-obvious lessons.
 Closing a task or a Flow lifecycle does not authorize a commit, push, or merge.
 
+### Laboratory: compare configurations and restore
+
+![Laboratory: freeze profiles and prompts, protect the original configuration, run fresh attempts, verify results, restore configuration, and compare compatible history. Recovery conflicts retain a journal for explicit restoration.](docs/diagrams/lab.png)
+
+[Interactive HTML](docs/diagrams/lab.html) · [Editable JSON](docs/diagrams/lab.workflow.json) · [Laboratory commands](.claude/lab/README.md)
+
+Run controlled comparisons on demand. Keep prompt versions equal when comparing
+profiles, or profile versions equal when comparing prompts. The saved `current`
+profile is a snapshot; restoration returns the configuration present when the
+execution started. Historical results retain their original versions.
+
+`bun run lab demo` exercises the workflow with a synthetic home and no model calls.
+`drill` checks native replacement and restoration; `run` evaluates coding tasks.
+Native acceptance on Windows and macOS remains pending. Observed comparisons
+do not establish statistical superiority. This guide's authored text is Spanish;
+the unchanged Archify viewer controls are English.
+
 **Explore locally:** open an HTML link, use GitHub's **Download raw file**, and
 open the downloaded file in your browser. A clone can open it directly. Each file
 works offline and includes guided chapters, search, focus, themes, and export.
 No Archify installation is needed to view it. Click a PNG to inspect it at full size.
 
 These guides describe a source snapshot. See [sources and reproduction](docs/diagrams/sources.md)
-for the checked architecture and Flow revisions, and how to regenerate the diagrams.
+for the checked source snapshots and how to regenerate the diagrams.
 
 ---
 

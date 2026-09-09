@@ -1,0 +1,22 @@
+{
+  "us": "US10",
+  "revision": "lab-source-sha256:35de9b196c63019e3e5097a105c94459465f197db90805f7792eccbfde405809",
+  "tests_passed": true,
+  "checks": [
+    {
+      "name": "CLI, report and project checks",
+      "status": "passed",
+      "evidence": "595 project tests; strict types; synthetic demo and recovery drill; report screenshot inspected."
+    },
+    {
+      "name": "native Windows acceptance",
+      "status": "not_run",
+      "evidence": "CLI syntax and real profile capture inspected without models. Live swap/load/model acceptance requires selected models/budget and exclusive configuration ownership."
+    },
+    {
+      "name": "native macOS acceptance",
+      "status": "not_run",
+      "evidence": "The workspace is Windows. macOS access was not provided and configured CI was not remotely executed."
+    }
+  ]
+}

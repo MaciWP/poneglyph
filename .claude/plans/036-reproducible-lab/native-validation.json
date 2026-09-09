@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "status": "pending-native-acceptance",
+  "versions_observed": {
+    "claude": "2.1.263",
+    "codex": "0.153.4",
+    "grok": "1.0.13",
+    "bun": "1.3.14"
+  },
+  "cells": [
+    {
+      "host": "claude",
+      "platform": "windows",
+      "cli_syntax": "passed",
+      "capture_in_memory": "passed",
+      "native_swap_restore": "not_run",
+      "model_trial": "not_run",
+      "effective_loading": "not_run"
+    },
+    {
+      "host": "claude",
+      "platform": "macos",
+      "cli_syntax": "not_run",
+      "capture_in_memory": "not_run",
+      "native_swap_restore": "not_run",
+      "model_trial": "not_run",
+      "effective_loading": "not_run"
+    },
+    {
+      "host": "codex",
+      "platform": "windows",
+      "cli_syntax": "passed",
+      "capture_in_memory": "passed",
+      "native_swap_restore": "not_run",
+      "model_trial": "not_run",
+      "effective_loading": "not_run"
+    },
+    {
+      "host": "codex",
+      "platform": "macos",
+      "cli_syntax": "not_run",
+      "capture_in_memory": "not_run",
+      "native_swap_restore": "not_run",
+      "model_trial": "not_run",
+      "effective_loading": "not_run"
+    },
+    {
+      "host": "grok",
+      "platform": "windows",
+      "cli_syntax": "passed",
+      "capture_in_memory": "passed",
+      "native_swap_restore": "not_run",
+      "model_trial": "not_run",
+      "effective_loading": "not_run"
+    },
+    {
+      "host": "grok",
+      "platform": "macos",
+      "cli_syntax": "not_run",
+      "capture_in_memory": "not_run",
+      "native_swap_restore": "not_run",
+      "model_trial": "not_run",
+      "effective_loading": "not_run"
+    }
+  ],
+  "notes": [
+    "No real user configuration swap or model trial was performed.",
+    "Offline macOS CI is configured, not remotely executed.",
+    "Native acceptance requires model selection, a live budget, exclusive profile ownership and macOS access."
+  ]
+}

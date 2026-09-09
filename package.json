@@ -10,6 +10,7 @@
     "doctor:fast": "bun .claude/scripts/doctor.ts --fast",
     "budget": "bun .claude/scripts/budget.ts",
     "check:config": "bun .claude/scripts/check-config.ts",
+    "lab": "bun .claude/lab/cli.ts",
     "prepare": "husky"
   },
   "repository": {

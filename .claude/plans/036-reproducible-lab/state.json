@@ -1,0 +1,624 @@
+{
+  "spec_slug": "036-reproducible-lab",
+  "mode": "full",
+  "current_phase": 3,
+  "phases_completed": [
+    1,
+    2,
+    2.5
+  ],
+  "gates_approved": {
+    "1->2": true,
+    "2->3": true
+  },
+  "us_completed": [
+    "US1",
+    "US2",
+    "US3",
+    "US4",
+    "US5",
+    "US6",
+    "US7",
+    "US8",
+    "US9"
+  ],
+  "us_pending": [
+    "US10"
+  ],
+  "us_history": [
+    {
+      "us": "US1",
+      "completed_at": "2026-09-08",
+      "tests_passed": true,
+      "verification": {
+        "us": "US1",
+        "revision": "store.ts and store.test.ts, 2026-09-08",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "version store and schedule",
+            "status": "passed",
+            "evidence": "2 tests, 13 assertions; missing module observed before implementation; immutable hashes and budget rejection exercised"
+          }
+        ]
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US2",
+      "completed_at": "2026-09-08",
+      "tests_passed": true,
+      "verification": {
+        "us": "US2",
+        "revision": "profiles.ts and profiles.test.ts, 2026-09-08",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "profile capture",
+            "status": "passed",
+            "evidence": "2 tests, 9 assertions; original linked source edited after capture, captured bytes unchanged; credential file not copied; unknown discovery and unsafe paths rejected"
+          }
+        ]
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US3",
+      "completed_at": "2026-09-08",
+      "tests_passed": true,
+      "verification": {
+        "us": "US3",
+        "revision": "transaction.ts and transaction.test.ts, 2026-09-08",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "recoverable transaction",
+            "status": "passed",
+            "evidence": "15 tests, 41 assertions; nine interruption boundaries, exclusive journal, preserved link targets, changed backups and unexpected files exercised in temporary homes"
+          }
+        ]
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US4",
+      "completed_at": "2026-09-08",
+      "tests_passed": true,
+      "verification": {
+        "us": "US4",
+        "revision": "catalog.ts, worker.ts, oracle.ts and oracle.test.ts, 2026-09-08",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "independent oracle",
+            "status": "passed",
+            "evidence": "5 tests, 13 assertions; each initial scenario fails and reference passes; invented checks, early exit, protected-file changes, deny-all and resetting query instrumentation fail"
+          }
+        ]
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US5",
+      "completed_at": "2026-09-08",
+      "tests_passed": true,
+      "verification": {
+        "us": "US5",
+        "revision": "advanced scenarios and oracle, 2026-09-08",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "advanced scenarios",
+            "status": "passed",
+            "evidence": "7 oracle tests, 19 assertions; unknown scenarios observed before implementation; partial import rejected, reference retry succeeds, unnecessary source edits rejected"
+          }
+        ]
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US6",
+      "completed_at": "2026-09-08",
+      "tests_passed": true,
+      "verification": {
+        "us": "US6",
+        "revision": "runner, process, Claude adapter and oracle bridge, 2026-09-08",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "bounded execution and repetition",
+            "status": "passed",
+            "evidence": "11 tests, 44 assertions across runner/process/oracles; pipe draining, nonzero exit, timeout, output cap, repeat and cancellation exercised with non-model processes"
+          }
+        ]
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US7",
+      "completed_at": "2026-09-08",
+      "tests_passed": true,
+      "verification": {
+        "us": "US7",
+        "revision": "Grok adapter, 2026-09-08",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "Grok decoder contract",
+            "status": "passed",
+            "evidence": "1 deterministic test, 10 assertions; empty and failed output rejected; native launch and effective-load acceptance belong to US10 and remain unexecuted"
+          }
+        ]
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US8",
+      "completed_at": "2026-09-08",
+      "tests_passed": true,
+      "verification": {
+        "us": "US8",
+        "revision": "Codex adapter, 2026-09-08",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "Codex JSONL and native flags",
+            "status": "passed",
+            "evidence": "1 test, 11 assertions; completed turn and assistant text required, failures rejected, workspace-write and native hook trust retained; native acceptance is pending in US10"
+          }
+        ]
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US9",
+      "completed_at": "2026-09-08",
+      "tests_passed": true,
+      "verification": {
+        "us": "US9",
+        "revision": "report.ts and report.test.ts, 2026-09-08",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "historical comparison and HTML",
+            "status": "passed",
+            "evidence": "3 tests, 11 assertions; failed-attempt totals, unknown costs, confounded comparisons, unmatched pairs and HTML escaping verified"
+          }
+        ]
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US1",
+      "completed_at": "2026-09-08",
+      "tests_passed": true,
+      "verification": {
+        "us": "US1",
+        "revision": "lab-source-sha256:35de9b196c63019e3e5097a105c94459465f197db90805f7792eccbfde405809",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "assembled project checks",
+            "status": "passed",
+            "evidence": "bun run doctor: exit 0; 595 tests passed; plugin validation, budget and installed configuration status passed. Four configuration warnings match the baseline."
+          },
+          {
+            "name": "strict laboratory types",
+            "status": "passed",
+            "evidence": "TypeScript 5.9.3 strict noEmit check over all lab files and imports: exit 0. No project dependency change."
+          },
+          {
+            "name": "runtime and recovery",
+            "status": "passed",
+            "evidence": "Real CLI demo: 10 synthetic attempts, finished-restored. CLI drill: 2 profiles, 0 task attempts, drill-restored. Repetition is tested; HTML inspected. Native acceptance belongs to US10."
+          },
+          {
+            "name": "modified-file check",
+            "status": "passed",
+            "evidence": "native-hook.ts --check passed (heuristic scope)."
+          }
+        ]
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US2",
+      "completed_at": "2026-09-08",
+      "tests_passed": true,
+      "verification": {
+        "us": "US2",
+        "revision": "lab-source-sha256:35de9b196c63019e3e5097a105c94459465f197db90805f7792eccbfde405809",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "assembled project checks",
+            "status": "passed",
+            "evidence": "bun run doctor: exit 0; 595 tests passed; plugin validation, budget and installed configuration status passed. Four configuration warnings match the baseline."
+          },
+          {
+            "name": "strict laboratory types",
+            "status": "passed",
+            "evidence": "TypeScript 5.9.3 strict noEmit check over all lab files and imports: exit 0. No project dependency change."
+          },
+          {
+            "name": "runtime and recovery",
+            "status": "passed",
+            "evidence": "Real CLI demo: 10 synthetic attempts, finished-restored. CLI drill: 2 profiles, 0 task attempts, drill-restored. Repetition is tested; HTML inspected. Native acceptance belongs to US10."
+          },
+          {
+            "name": "modified-file check",
+            "status": "passed",
+            "evidence": "native-hook.ts --check passed (heuristic scope)."
+          }
+        ]
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US3",
+      "completed_at": "2026-09-08",
+      "tests_passed": true,
+      "verification": {
+        "us": "US3",
+        "revision": "lab-source-sha256:35de9b196c63019e3e5097a105c94459465f197db90805f7792eccbfde405809",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "assembled project checks",
+            "status": "passed",
+            "evidence": "bun run doctor: exit 0; 595 tests passed; plugin validation, budget and installed configuration status passed. Four configuration warnings match the baseline."
+          },
+          {
+            "name": "strict laboratory types",
+            "status": "passed",
+            "evidence": "TypeScript 5.9.3 strict noEmit check over all lab files and imports: exit 0. No project dependency change."
+          },
+          {
+            "name": "runtime and recovery",
+            "status": "passed",
+            "evidence": "Real CLI demo: 10 synthetic attempts, finished-restored. CLI drill: 2 profiles, 0 task attempts, drill-restored. Repetition is tested; HTML inspected. Native acceptance belongs to US10."
+          },
+          {
+            "name": "modified-file check",
+            "status": "passed",
+            "evidence": "native-hook.ts --check passed (heuristic scope)."
+          }
+        ]
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US4",
+      "completed_at": "2026-09-08",
+      "tests_passed": true,
+      "verification": {
+        "us": "US4",
+        "revision": "lab-source-sha256:35de9b196c63019e3e5097a105c94459465f197db90805f7792eccbfde405809",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "assembled project checks",
+            "status": "passed",
+            "evidence": "bun run doctor: exit 0; 595 tests passed; plugin validation, budget and installed configuration status passed. Four configuration warnings match the baseline."
+          },
+          {
+            "name": "strict laboratory types",
+            "status": "passed",
+            "evidence": "TypeScript 5.9.3 strict noEmit check over all lab files and imports: exit 0. No project dependency change."
+          },
+          {
+            "name": "runtime and recovery",
+            "status": "passed",
+            "evidence": "Real CLI demo: 10 synthetic attempts, finished-restored. CLI drill: 2 profiles, 0 task attempts, drill-restored. Repetition is tested; HTML inspected. Native acceptance belongs to US10."
+          },
+          {
+            "name": "modified-file check",
+            "status": "passed",
+            "evidence": "native-hook.ts --check passed (heuristic scope)."
+          }
+        ]
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US5",
+      "completed_at": "2026-09-08",
+      "tests_passed": true,
+      "verification": {
+        "us": "US5",
+        "revision": "lab-source-sha256:35de9b196c63019e3e5097a105c94459465f197db90805f7792eccbfde405809",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "assembled project checks",
+            "status": "passed",
+            "evidence": "bun run doctor: exit 0; 595 tests passed; plugin validation, budget and installed configuration status passed. Four configuration warnings match the baseline."
+          },
+          {
+            "name": "strict laboratory types",
+            "status": "passed",
+            "evidence": "TypeScript 5.9.3 strict noEmit check over all lab files and imports: exit 0. No project dependency change."
+          },
+          {
+            "name": "runtime and recovery",
+            "status": "passed",
+            "evidence": "Real CLI demo: 10 synthetic attempts, finished-restored. CLI drill: 2 profiles, 0 task attempts, drill-restored. Repetition is tested; HTML inspected. Native acceptance belongs to US10."
+          },
+          {
+            "name": "modified-file check",
+            "status": "passed",
+            "evidence": "native-hook.ts --check passed (heuristic scope)."
+          }
+        ]
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US6",
+      "completed_at": "2026-09-08",
+      "tests_passed": true,
+      "verification": {
+        "us": "US6",
+        "revision": "lab-source-sha256:35de9b196c63019e3e5097a105c94459465f197db90805f7792eccbfde405809",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "assembled project checks",
+            "status": "passed",
+            "evidence": "bun run doctor: exit 0; 595 tests passed; plugin validation, budget and installed configuration status passed. Four configuration warnings match the baseline."
+          },
+          {
+            "name": "strict laboratory types",
+            "status": "passed",
+            "evidence": "TypeScript 5.9.3 strict noEmit check over all lab files and imports: exit 0. No project dependency change."
+          },
+          {
+            "name": "runtime and recovery",
+            "status": "passed",
+            "evidence": "Real CLI demo: 10 synthetic attempts, finished-restored. CLI drill: 2 profiles, 0 task attempts, drill-restored. Repetition is tested; HTML inspected. Native acceptance belongs to US10."
+          },
+          {
+            "name": "modified-file check",
+            "status": "passed",
+            "evidence": "native-hook.ts --check passed (heuristic scope)."
+          }
+        ]
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US7",
+      "completed_at": "2026-09-08",
+      "tests_passed": true,
+      "verification": {
+        "us": "US7",
+        "revision": "lab-source-sha256:35de9b196c63019e3e5097a105c94459465f197db90805f7792eccbfde405809",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "assembled project checks",
+            "status": "passed",
+            "evidence": "bun run doctor: exit 0; 595 tests passed; plugin validation, budget and installed configuration status passed. Four configuration warnings match the baseline."
+          },
+          {
+            "name": "strict laboratory types",
+            "status": "passed",
+            "evidence": "TypeScript 5.9.3 strict noEmit check over all lab files and imports: exit 0. No project dependency change."
+          },
+          {
+            "name": "runtime and recovery",
+            "status": "passed",
+            "evidence": "Real CLI demo: 10 synthetic attempts, finished-restored. CLI drill: 2 profiles, 0 task attempts, drill-restored. Repetition is tested; HTML inspected. Native acceptance belongs to US10."
+          },
+          {
+            "name": "modified-file check",
+            "status": "passed",
+            "evidence": "native-hook.ts --check passed (heuristic scope)."
+          }
+        ]
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US8",
+      "completed_at": "2026-09-08",
+      "tests_passed": true,
+      "verification": {
+        "us": "US8",
+        "revision": "lab-source-sha256:35de9b196c63019e3e5097a105c94459465f197db90805f7792eccbfde405809",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "assembled project checks",
+            "status": "passed",
+            "evidence": "bun run doctor: exit 0; 595 tests passed; plugin validation, budget and installed configuration status passed. Four configuration warnings match the baseline."
+          },
+          {
+            "name": "strict laboratory types",
+            "status": "passed",
+            "evidence": "TypeScript 5.9.3 strict noEmit check over all lab files and imports: exit 0. No project dependency change."
+          },
+          {
+            "name": "runtime and recovery",
+            "status": "passed",
+            "evidence": "Real CLI demo: 10 synthetic attempts, finished-restored. CLI drill: 2 profiles, 0 task attempts, drill-restored. Repetition is tested; HTML inspected. Native acceptance belongs to US10."
+          },
+          {
+            "name": "modified-file check",
+            "status": "passed",
+            "evidence": "native-hook.ts --check passed (heuristic scope)."
+          }
+        ]
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US9",
+      "completed_at": "2026-09-08",
+      "tests_passed": true,
+      "verification": {
+        "us": "US9",
+        "revision": "lab-source-sha256:35de9b196c63019e3e5097a105c94459465f197db90805f7792eccbfde405809",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "assembled project checks",
+            "status": "passed",
+            "evidence": "bun run doctor: exit 0; 595 tests passed; plugin validation, budget and installed configuration status passed. Four configuration warnings match the baseline."
+          },
+          {
+            "name": "strict laboratory types",
+            "status": "passed",
+            "evidence": "TypeScript 5.9.3 strict noEmit check over all lab files and imports: exit 0. No project dependency change."
+          },
+          {
+            "name": "runtime and recovery",
+            "status": "passed",
+            "evidence": "Real CLI demo: 10 synthetic attempts, finished-restored. CLI drill: 2 profiles, 0 task attempts, drill-restored. Repetition is tested; HTML inspected. Native acceptance belongs to US10."
+          },
+          {
+            "name": "modified-file check",
+            "status": "passed",
+            "evidence": "native-hook.ts --check passed (heuristic scope)."
+          }
+        ]
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    }
+  ],
+  "gate_history": [
+    {
+      "gate": "1->2",
+      "at": "2026-09-08",
+      "reference": "conversation: scope_gate_approval = Aprobar alcance",
+      "artifacts": [
+        "spec.md"
+      ]
+    },
+    {
+      "gate": "2->3",
+      "at": "2026-09-08",
+      "reference": "conversation: Implement the plan",
+      "artifacts": [
+        "tasks/index.md",
+        "tasks/US1.md",
+        "tasks/US2.md",
+        "tasks/US3.md",
+        "tasks/US4.md",
+        "tasks/US5.md",
+        "tasks/US6.md",
+        "tasks/US7.md",
+        "tasks/US8.md",
+        "tasks/US9.md",
+        "tasks/US10.md",
+        "tests.md",
+        "validations.md"
+      ]
+    }
+  ],
+  "boundary_checks": [
+    {
+      "phase": "3",
+      "item": "dev, flow, tech-plan, tdd-design, build read; approvals recorded; baseline doctor 546 pass",
+      "at": "2026-09-08"
+    },
+    {
+      "phase": "3",
+      "item": "49 laboratory tests and 595 project tests passed; strict types and demo/drill verified; native acceptance remains pending in US10",
+      "at": "2026-09-08"
+    },
+    {
+      "phase": "3",
+      "item": "Publication review: oracle v2 and cancellation regressions repaired; strict types and 19-step synthetic CLI flow verified. pr-review.md records the corrected candidate; final commit/CI evidence belongs on the draft PR. US10 remains pending.",
+      "at": "2026-09-09"
+    }
+  ],
+  "feature_closed": false,
+  "review_verdict": null,
+  "retro_status": null,
+  "started_at": "2026-09-08",
+  "updated_at": "2026-09-09",
+  "reopen_history": [
+    {
+      "us": "US1",
+      "reason": "Refresh verification after assembled integration checks",
+      "at": "2026-09-08"
+    },
+    {
+      "us": "US2",
+      "reason": "Refresh verification after assembled integration checks",
+      "at": "2026-09-08"
+    },
+    {
+      "us": "US3",
+      "reason": "Refresh verification after assembled integration checks",
+      "at": "2026-09-08"
+    },
+    {
+      "us": "US4",
+      "reason": "Refresh verification after assembled integration checks",
+      "at": "2026-09-08"
+    },
+    {
+      "us": "US5",
+      "reason": "Refresh verification after assembled integration checks",
+      "at": "2026-09-08"
+    },
+    {
+      "us": "US6",
+      "reason": "Refresh verification after assembled integration checks",
+      "at": "2026-09-08"
+    },
+    {
+      "us": "US7",
+      "reason": "Refresh verification after assembled integration checks",
+      "at": "2026-09-08"
+    },
+    {
+      "us": "US8",
+      "reason": "Refresh verification after assembled integration checks",
+      "at": "2026-09-08"
+    },
+    {
+      "us": "US9",
+      "reason": "Refresh verification after assembled integration checks",
+      "at": "2026-09-08"
+    }
+  ]
+}

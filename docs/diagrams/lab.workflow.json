@@ -1,0 +1,247 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Laboratorio de Poneglyph: comparar y restaurar",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "prepare",
+        "label": "1 · Preparar versiones",
+        "focus": [
+          "lab-experiment",
+          "lab-original",
+          "lab-profile"
+        ],
+        "note": "Guarda perfiles, prompts y límites. current es una foto; la configuración original se conserva al empezar cada ejecución."
+      },
+      {
+        "id": "measure",
+        "label": "2 · Ejecutar y comprobar",
+        "focus": [
+          "lab-profile",
+          "lab-agent",
+          "lab-oracle"
+        ],
+        "note": "Cada intento usa un proyecto y una sesión nuevos. El verificador comprueba la entrega y los datos, no la afirmación del agente."
+      },
+      {
+        "id": "recover",
+        "label": "3 · Restaurar y recuperar",
+        "focus": [
+          "lab-original",
+          "lab-restore",
+          "lab-recovery"
+        ],
+        "note": "Se intenta restaurar al terminar o fallar. Si queda recuperación pendiente, lab restore usa el journal; no se inicia otra prueba."
+      },
+      {
+        "id": "compare",
+        "label": "4 · Comparar en el tiempo",
+        "focus": [
+          "lab-experiment",
+          "lab-oracle",
+          "lab-history"
+        ],
+        "note": "Compara un factor: perfil o prompt. repeat conserva versiones; un entorno o motor incompatible exige otro experimento."
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "id": "preparation",
+      "label": "Preparación · versiones guardadas y configuración original"
+    },
+    {
+      "id": "trial",
+      "label": "Intentos · una configuración cada vez"
+    },
+    {
+      "id": "closure",
+      "label": "Cierre · restauración, recuperación e historial"
+    }
+  ],
+  "mainPath": [
+    "lab-experiment",
+    "lab-original",
+    "lab-profile",
+    "lab-agent",
+    "lab-oracle",
+    "lab-restore",
+    "lab-history"
+  ],
+  "nodes": [
+    {
+      "id": "lab-experiment",
+      "lane": "preparation",
+      "col": 0,
+      "type": "database",
+      "label": "Experimento guardado",
+      "sublabel": "Perfiles · prompt · límites",
+      "width": 170,
+      "height": 106
+    },
+    {
+      "id": "lab-original",
+      "lane": "preparation",
+      "col": 1,
+      "type": "security",
+      "label": "Original protegido",
+      "sublabel": "Estado al empezar",
+      "width": 170,
+      "height": 106
+    },
+    {
+      "id": "lab-profile",
+      "lane": "trial",
+      "col": 1,
+      "type": "backend",
+      "label": "Instalar un perfil",
+      "sublabel": "base / current / candidate",
+      "width": 170,
+      "height": 106
+    },
+    {
+      "id": "lab-agent",
+      "lane": "trial",
+      "col": 2,
+      "type": "backend",
+      "label": "El agente trabaja",
+      "sublabel": "Proyecto y sesión nuevos",
+      "width": 170,
+      "height": 106
+    },
+    {
+      "id": "lab-oracle",
+      "lane": "trial",
+      "col": 3,
+      "type": "security",
+      "label": "Verificar y registrar",
+      "sublabel": "Pruebas independientes",
+      "width": 170,
+      "height": 106
+    },
+    {
+      "id": "lab-restore",
+      "lane": "closure",
+      "col": 3,
+      "type": "security",
+      "label": "Restaurar original",
+      "sublabel": "Comprobar la recuperación",
+      "width": 170,
+      "height": 106
+    },
+    {
+      "id": "lab-history",
+      "lane": "closure",
+      "col": 4,
+      "type": "database",
+      "label": "Consultar historial",
+      "sublabel": "Calidad · tiempo · consumo",
+      "width": 170,
+      "height": 106
+    },
+    {
+      "id": "lab-recovery",
+      "lane": "closure",
+      "col": 2,
+      "type": "security",
+      "label": "Recuperación pendiente",
+      "sublabel": "Conservar journal y copias",
+      "width": 180,
+      "height": 106
+    }
+  ],
+  "edges": [
+    {
+      "id": "start-run",
+      "from": "lab-experiment",
+      "to": "lab-original",
+      "label": "run",
+      "role": "main"
+    },
+    {
+      "id": "protect-first",
+      "from": "lab-original",
+      "to": "lab-profile",
+      "role": "main"
+    },
+    {
+      "id": "launch-trial",
+      "from": "lab-profile",
+      "to": "lab-agent",
+      "role": "main"
+    },
+    {
+      "id": "grade-delivery",
+      "from": "lab-agent",
+      "to": "lab-oracle",
+      "label": "Entrega",
+      "role": "main"
+    },
+    {
+      "id": "finish-trials",
+      "from": "lab-oracle",
+      "to": "lab-restore",
+      "label": "Fin o parada",
+      "role": "main"
+    },
+    {
+      "id": "read-history",
+      "from": "lab-restore",
+      "to": "lab-history",
+      "label": "Restaurado",
+      "role": "main"
+    },
+    {
+      "id": "next-trial",
+      "from": "lab-oracle",
+      "to": "lab-profile",
+      "label": "Otro intento",
+      "role": "return",
+      "variant": "dashed"
+    },
+    {
+      "id": "recovery-needed",
+      "from": "lab-restore",
+      "to": "lab-recovery",
+      "label": "Conflicto",
+      "role": "error",
+      "variant": "security"
+    },
+    {
+      "id": "recover-original",
+      "from": "lab-recovery",
+      "to": "lab-restore",
+      "label": "lab restore",
+      "role": "return",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Versiones bajo control",
+      "items": [
+        "base retira la capa personal; current conserva la foto capturada; candidate prueba tus cambios.",
+        "Editar crea otra versión. Credenciales y políticas obligatorias permanecen fuera del intercambio."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Pruebas que deciden",
+      "items": [
+        "Cinco escenarios: acceso, validación, consultas, importación y cambio innecesario.",
+        "Los fallos se registran. Datos desconocidos y comparaciones incompatibles se señalan."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Tres modos, bajo demanda",
+      "items": [
+        "demo simula; drill intercambia y restaura sin modelos; run ejecuta las tareas.",
+        "Validación nativa en Windows y macOS pendiente: intercambio real y pruebas con modelos."
+      ]
+    }
+  ]
+}

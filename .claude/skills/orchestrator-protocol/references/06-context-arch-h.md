@@ -41,6 +41,11 @@ graph TD
 
 ## Skill Loading Limits
 
+For an approved Orca team, use `orca-workflow`'s worker contract with the Arch H
+blocks below. Resolve installed skill paths explicitly. Workers apply `dev` and
+the supervised `build` branch; the coordinator retains state and acceptance.
+The historical inline-only/native-worker table describes the default route.
+
 > The custom `builder`/`reviewer`/`scout` agents and their per-role baselines were **cut in feature 008** — work runs inline (delegation doctrine: SKILL.md §P8). Limits below govern the surfaces that still exist:
 
 | Surface | Preload (free) | Max via Arch H Read | Notes |

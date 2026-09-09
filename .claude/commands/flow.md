@@ -74,16 +74,25 @@ Resolve shared resources through the installed `rules/harness-runtime.md`.
 host's real search and question tools. Codex's generated `$flow` reads this same
 source. Claude metadata does not provide another host with Claude APIs.
 
-Build runs inline. Agents require the applicable user permission and explicit
-model choice. Task decomposition never grants that permission. If an independent
-reviewer cannot run, critique inline and disclose that limitation.
+Build runs inline by default. For a user-authorized supervised Orca team, invoke
+`orca-workflow`: one shared worktree, coordinator-owned reservations and explicit
+worker roles. CLAUDE.md's Agent spawn section owns team approval and its validity
+on resume. Task decomposition never grants permission.
+
+Workers apply `build`'s supervised-worker branch and return evidence. Only the
+coordinator records transitions with flow-state. Orca's completed/ready status
+does not satisfy a HU dependency until the coordinator verifies and closes it.
+Quiesce affected writers before acceptance checks and all writers before final
+critique. If an independent reviewer cannot run, critique inline and disclose it.
 
 With explicit opt-in, at least four independent HUs may use Claude's saved
 `flow-build` (build and checks) or `flow-cycle` (also proposed review) workflow.
 Both take `slug`; `flow-cycle` also takes `only` and `level`. Serialize file
 collisions. Validate returned evidence before recording any closure or verdict.
-Use these only where the real Claude Workflow contract exists; otherwise keep
-the same phases inline. Workflows never approve state or authorize publication.
+Use these only where the real Claude Workflow contract exists. Orca teams use
+`orca-workflow`; other hosts keep the same phases inline. These are distinct
+execution paths, not an agent-count requirement for Orca. Workflows never approve
+state or authorize publication.
 
 ## Report and retain
 

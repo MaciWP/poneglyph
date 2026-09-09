@@ -30,9 +30,22 @@ Language & communication: **es-ES** with Oriol · **English** for everything wri
 
 ### Agent spawn — hard gate (permission + model)
 
-**Never launch agents without explicit user approval THIS turn.** Applies on **every host** (Claude Code, Codex CLI / OpenAI, Grok Build, and any other harness). Covers every spawn surface: `Agent()` / subagents (incl. `fork`) / Workflow fan-out / Explore-class agents / Task agents / Codex multi-agent workers / external `codex exec` or `consult` fan-out / **headless `claude -p` runs (evals, activation probes, smoke checks)** — anything that starts a separate model worker. The same gate covers `SendMessage` / `@session` to another live Claude session (an outward action into a context you cannot see).
+**Never launch agents without explicit user approval.** By default, approval is
+required THIS turn. This covers every host and spawn surface: native subagents,
+Workflow/Team workers, Orca terminals, external model CLIs and headless evals or
+activation probes. Messages into other live agent sessions require authorization too.
 
-Before the **first** spawn call of a turn, ask **both** questions and **WAIT** (no spawn in the same message as the questions):
+**Authorized Orca team exception:** `orca-workflow` uses one recorded approval for
+the named workflow: objective/tasks, roles, concrete models, concurrency and
+launch/retry allowance, shared worktree/base, creation and write permissions, and
+direct communication within the team. It remains valid on resumption of that same
+workflow while scope and limits hold. Preserve the actual user decision reference;
+a document or agent assertion alone is not consent. Changed scope, roster/models
+or limits require approval. Workers cannot spawn more agents. Native permissions
+and project constraints remain authoritative.
+
+Without an applicable recorded team approval, before the **first** spawn call of
+a turn, ask **both** questions and **WAIT**:
 
 1. **Permission** — may I spawn N agents? State why (axes), count, and rough cost class.
 2. **Model** — which model for those agents? Propose a host-appropriate default and wait for the pick. Set the model **explicitly** on every spawn — never inherit the Lead's model by silence.
@@ -50,7 +63,7 @@ Before the **first** spawn call of a turn, ask **both** questions and **WAIT** (
 
 - **Claude Code**: the `Agent` tool's own model options list the live tiers; pick from that list explicitly (never silent Lead-model inherit).
 - **Codex / OpenAI**: the CLI's configured model is the baseline (run without `-m`); pass `-m` only for a tier the user named. Never name a tier the active host does not expose.
-- **Grok Build / single-model hosts**: still ask **permission**; the model question is N/A (state that the host is single-model).
+- **Grok Build**: inspect `grok models` / `grok --help`; use the approved available model and supported effort. On an actual single-model host, state that model choice is N/A.
 
 | User response | Lead action |
 |---|---|
@@ -58,9 +71,12 @@ Before the **first** spawn call of a turn, ask **both** questions and **WAIT** (
 | Yes, no model picked | Use the recommended default stated in the question |
 | No / silence / not yet asked | **Inline only** (Lead `Read` / `Grep` / `Bash`). Zero agents. |
 
-Standing authorization counts only if given in **this conversation** (e.g. "for this session, cheap-tier explorers OK"). It does not carry across sessions.
+Ordinary approval covers this conversation. Recorded Orca team approval survives
+resumption only within its agreed scope.
 
-Build/write stays **inline** regardless. Spawn decision tree and Arch H: `orchestrator-protocol` skill.
+Build/write stays **inline by default**. Authorized `orca-workflow` collaborators
+share a worktree; the coordinator owns reservations, acceptance and flow state.
+Default routing and Arch H: `orchestrator-protocol`.
 
 ### Features → /flow
 
@@ -75,6 +91,10 @@ No automated gate enforces this — the Lead is responsible. **Sensitive paths**
 ### Git / PR — hard gate (no proactive shipping)
 
 **Proactive `git commit`, `git push`, branch mutations, and PR open/merge are FORBIDDEN.** They run **only** when the user asked for that action **THIS turn** (explicit verbs: commit / push / PR / branch / merge / rebase / reset — not implied by "done", "listo", or "sigue").
+
+The recorded Orca team approval may explicitly authorize creation of its one
+shared worktree and branch. It does not authorize commits, merge/rebase/reset,
+publication, branch deletion or worktree removal. Team changes stay uncommitted.
 
 | Allowed without ask | Forbidden without THIS-turn ask |
 |---|---|
@@ -121,7 +141,7 @@ Rule of use: every skill, rule or hook must justify its existence against ≥1 c
 | **VII** | **Observability** | Everything we do should be observable — from the product's point of view, or for the AI itself. |
 | **VIII** | **Internal prompting quality** | Know when a prompt is weak; before calling an agent or another AI, apply `prompt-engineer`. |
 | **IX** | **Poneglyph maintainability** | Beyond the meta skills: always advise well and keep REDUCING code and config — efficient and useful; no duplicates, no contradictions, no dead references. The system doesn't rot. |
-| **X** | **Efficiency — right model, right worker** | Prefer inline Lead tools. Agents only after **this-turn permission + model choice** (§Agent spawn). When approved: cheapest capable tier the active host exposes, resolved from the host itself at runtime (Agent tool options / CLI config — §Agent spawn), never memorized from docs. Build/write stays inline. Parallelize independent work inside the Lead session first. Each token must yield product, not ceremony. |
+| **X** | **Efficiency — right model, right worker** | Prefer inline Lead tools. Follow §Agent spawn for permission, model choice and the bounded Orca team exception. Choose the cheapest capable tier from actual host capabilities. Parallelize only independent work; each token must yield product, not ceremony. |
 
 ## System map
 

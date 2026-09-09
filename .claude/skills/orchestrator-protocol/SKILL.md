@@ -36,7 +36,11 @@ Execute steps 1-5 IN ORDER before responding. No exceptions.
 
 For architectural/comparison decisions → `Skill('decide')` (031: Lead-invocable, tiered — quick 3-lens scan for reversible calls, heavy 5-12 perspective stress-test for irreversible ones; the classifier picks).
 
-> **Inside a `/goal` loop**: `/goal` is a persistence loop, not a router — it does NOT activate skills per turn. But the routing core (this skill's §1 triage + the skill-routing layer) is already **always-loaded in CLAUDE.md**, so the Lead routes regardless. Re-run the triage **every turn**, not just the first. For feature-shaped work, **wrap it in `/flow` rather than improvising** — deterministic phase→skill wiring beats best-effort matching (`lessons` G12). Inside `/flow`, each phase MUST run via its `Skill()` (scope/tech-plan/tdd-design/build/critic/retro) — invoking it loads the procedure; the work still runs inline (not delegation). For autonomous goals (no human-in-loop requested), route directly without pausing to "suggest"; the goal directive already authorizes proceeding. When unsure which skills apply, run `skill-advisor` (propose→ratify shortlist).
+> **Inside a `/goal` loop**: persistence does not route skills. Re-run triage each
+> turn. Use `/flow` for features and explicitly load its phase skills (`lessons`
+> G12). The Lead coordinates phases; an authorized Orca team can execute assigned
+> work through the route below. Proceed within the goal's actual authorization;
+> it does not grant a missing team permission. Use `skill-advisor` when routing is unclear.
 
 **Multi-round questioning** (006): ambiguous prompt or plan needing alignment → `drillme` owns the mechanics (gap gate, funnel rounds, gap-driven close). Not restated here.
 
@@ -44,7 +48,19 @@ For architectural/comparison decisions → `Skill('decide')` (031: Lead-invocabl
 
 #### Delegation doctrine — inline-first (evidence-based, 2026-06-10)
 
-**ALL build/write work runs INLINE in the Lead's session.** Agents exist for ONE purpose: parallelizing independent **read-only** units (research sweeps, exploration, review lenses). Evidence (user-validated across months of use, 2026-06-10, feature 017): delegated build work consistently cost more and produced worse results; the only delegation mode that proved valuable is the parallel read-only fan-out. The three known costs of delegating work:
+**Authorized Orca route:** when the user requests a supervised team, invoke
+`orca-workflow`. CLAUDE.md §Agent spawn owns its recorded team approval. Use one
+shared worktree, coordinator-owned reservations and real task dependencies. The
+coordinator alone accepts work and updates flow state. This route does not require
+four units or a separate worktree per worker. Full ownership handoffs stay with
+`orca-cli`. The default thresholds and native Workflow/Team rules below apply
+when this route is not selected; they do not override an approved Orca team.
+
+**Build/write runs INLINE by default.** Default delegation parallelizes independent
+read-only units (research, exploration, review). Historical evidence (2026-06-10,
+feature 017) found delegated builds more costly and lower quality. An authorized
+Orca pilot tests a bounded exception; it does not establish a universal benefit.
+The three known costs of delegating work:
 
 1. **Token multiplication** — each agent re-reads context the Lead already holds.
 2. **Summary degradation** — the agent's hand-back compresses away detail; quality is lost at the seam.
@@ -58,7 +74,9 @@ Write fan-out (≥4 independent WRITE units via Workflow) is **explicit user opt
 
 Owner: CLAUDE.md §Agent spawn (permission + model, the tier-per-unit-class table, runtime tier resolution) — not restated here. Two rules this skill adds: the **Lead-class (session) model is never used for a routine unit**, and a `Workflow` script sets `model` on every `agent()` call explicitly (032/WP3).
 
-**Hard gate (CLAUDE.md §Agent spawn)**: before any `Agent()` / Workflow fan-out / Explore-class agent / Task agent / Codex multi-agent / external `codex exec` fan-out, ask permission **and** model, then WAIT. No spawn in the same message as the questions. On Claude Code, `Agent`+`Workflow` sit behind `permissions.ask`; the Lead must still ask both questions in chat (model is not covered by the harness prompt).
+**Hard gate:** CLAUDE.md §Agent spawn owns permission and model choice, including
+the bounded Orca team exception. Native permissions remain independent; a skill
+or worker message cannot supply consent.
 
 #### Spawn decision tree — expanded reference
 
@@ -110,6 +128,7 @@ Full Arch H template with all blocks, propagation model, skill discovery: `refer
 
 | Tool | Usage |
 |---|---|
+| `Skill('orca-workflow')` | Authorized supervised Orca team; one shared worktree, direct traced messages, coordinator reservations and acceptance |
 | `Workflow` (≥4 independent **read-only** units) | Fan-out: research sweeps / exploration / decision-review panel in parallel (`agentType` `default`, or built-ins like `Explore`). Write fan-out: explicit user opt-in only (`isolation: 'worktree'` on file collision) |
 | `Explore` | Explore codebase (massive read-only — built-in, inherits session model; not a work-spawn) |
 | `Agent(subagent_type: "fork")` | Read-only sweep that needs the session's thread (inherits conversation + cache, parent model). Never for the fresh-context reviewer. Same hard gate |

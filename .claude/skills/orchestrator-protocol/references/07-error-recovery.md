@@ -1,5 +1,10 @@
 # Error Recovery — Procedural Reference
 
+For supervised Orca workers, load `orca-workflow`'s execution reference and the
+live Orca guide. Do not translate native SendMessage recipes into terminal input
+or treat an idle/uncertain worker as stopped. Preserve shared-worktree reservations
+until ownership is resolved. The native Workflow/Team recipes below are separate.
+
 On-demand detail behind `.claude/rules/error-recovery.md` (which keeps only the always-loaded behavioral triggers: retry budget, identical-error override, stuck detection, escalation rung). Load this when actually recovering from a failure.
 
 ## SendMessage Recovery (Workflow / Team agents only)
@@ -50,6 +55,6 @@ When re-running a Workflow unit, ALWAYS include:
 |-----------|--------|
 | Workflow unit in worktree fails | Preserve worktree, Lead diagnoses |
 | Lead identifies a fix | Re-run the unit in the SAME worktree via SendMessage |
-| Retry fails | Delete worktree + branch, escalate to user |
+| Retry fails | Preserve worktree and branch; escalate with the observed failure. Removal requires explicit authorization |
 | Merge conflict in worktree | Lead resolves inline (or re-run the unit) |
 | Unit fails on merge | Preserve worktree, escalate to user with diff |

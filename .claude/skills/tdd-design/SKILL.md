@@ -62,7 +62,7 @@ CLI override: `--tdd` / `--validation` / `--auto` (default = auto-detect by `fil
 3. Read `tasks/index.md` (DAG + HUs summary).
 4. Read each `tasks/US{N}.md` (frontmatter + `files` field + AC).
 5. Read `.claude/rules/test-policy.md`. If absent → treat as `auxiliary` + warn user.
-6. Read `.claude/plans/templates/tests.template.md` and `validations.template.md` (verify exist via Glob).
+6. Read `.claude/plans/templates/tests.template.md` and `validations.template.md` (project-local first, then `~/.claude/plans/templates/`; verify exist via Glob. Outside poneglyph only the global copy exists).
 7. **Discover the project's test conventions** (TDD-mode only — the oracle must reuse existing test infrastructure, never reinvent it):
    - Inventory shared fixtures/factories/helpers: `Glob **/conftest.py`, `**/factory*.py`, `**/factories.py`, `**/fixtures/**`, test setup/helper files (`*.fixture.*`, `setup-tests.*`, `testUtils*`). List what already exists.
    - Load any project test-conventions skill if present (e.g. `django-testing-patterns`, `*-testing-*`, `*-test-standards`) — **its rules override these generic ones**; this generic skill defers to the project's encoded best-practices.

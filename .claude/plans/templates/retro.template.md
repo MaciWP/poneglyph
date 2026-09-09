@@ -75,3 +75,4 @@ Las 5 preguntas obligatorias, etiquetadas con las 4 categorías canónicas del S
 - [ ] State and document statuses agree; sync-artifacts repairs stale projections
 - [ ] Never close unfinished HUs residually or infer permission from a document
 - [ ] Publication follows its separate authorization; closure does not request a commit
+- [ ] After close-feature and with the user's authorization, the working set moved to `_archive/{NNN}-{slug}/`; only `spec.md` and `retro.md` stay in git

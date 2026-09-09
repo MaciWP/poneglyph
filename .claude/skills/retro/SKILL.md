@@ -53,7 +53,7 @@ In parallel:
 4. Read `tests.md` and/or `validations.md` (oracle).
 5. Read `review.md` — particularly `frontmatter.verdict` + `frontmatter.spec_drift` + findings count.
 6. Read `state.json` — confirm `current_phase: 4` complete.
-7. Read `.claude/plans/templates/retro.template.md` + `CLAUDE.md` §"The 10 Commandments" (for Step 9 audit).
+7. Read `.claude/plans/templates/retro.template.md` (project-local first, then `~/.claude/plans/templates/retro.template.md` — outside poneglyph only the global copy exists) + `CLAUDE.md` §"The 10 Commandments" (for Step 9 audit).
 8. Read `.claude/learned/inbox.md` if present — legacy auto-captured candidates (the `learning-inbox` Stop hook was cut 2026-08-05/030; the file no longer grows), input for Step 8.
 
 ### Step 2 — Confirm prerequisites
@@ -62,7 +62,7 @@ In parallel:
 |---|---|
 | `review.md.verdict` ∈ {APPROVED, APPROVED_WITH_WARNINGS} | STOP — escalate; do not produce retro on broken work |
 | All HUs in `state.json.us_completed` | STOP — escalate |
-| `retro.template.md` exists | If missing → use the embedded checklist (Read `references/02-embedded-fallback.md`) |
+| `retro.template.md` exists (project-local or `~/.claude/plans/templates/`) | If both missing → use the embedded checklist (Read `references/02-embedded-fallback.md`) |
 
 ### Step 3 — Determine retro level (adaptation)
 
@@ -253,6 +253,12 @@ Read `state.json` and the per-HU verification history. Pending HUs, missing evid
 
 - After actual ratification, run `flow-state.ts retro-status approved`, then `flow-state.ts close-feature`. Only after success project feature closure into spec/tasks index frontmatter; never set terminal state directly.
 - `retro.md.promotions_approved` counter += N (per actually-applied); clear `.claude/learned/inbox.md` (entries became candidates or were honestly discarded — record the discard count in retro.md).
+
+**13d. Archive the working set (authorized move, only after `close-feature` succeeded)**:
+
+- Ask the user before moving anything. With their authorization: create `.claude/plans/_archive/{NNN}-{slug}/`, move everything except `spec.md` and `retro.md` there (`tasks/`, `tests.md`, `validations.md`, `state.json`, `review.md`, evidence files), run `git rm --cached -r` on the moved paths (files stay on disk; `_archive/` is gitignored) and add the plan's row to `plans/README.md` §Closed features.
+- Without authorization: record the action item "archive working set" — never move silently.
+- Under a company plans policy (`.claude/plans/` excluded from git) nothing is tracked; report where the durable outcome went (ticket, wiki). Rule and rationale: `plans/README.md` §Closed features.
 
 **Closure:** unresolved ratification keeps retro pending. A user-approved deferral is an explicit action item, not an applied promotion. Producing retro.md alone never closes the feature.
 

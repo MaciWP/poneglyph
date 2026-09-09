@@ -46,6 +46,7 @@ Until the root problem and out-of-scope are explicit, no technical work proceeds
 
 Before opening the questionnaire:
 
+0. **Plans-dir git policy (once per project)** — `git check-ignore -q .claude/plans`: exit 0 → company policy already set (plans never enter the shared repo; nothing to do). Else, `.claude/plans/.gitignore` exists → personal policy already set. Else `AskUserQuestion`: *company/shared repo* → append `.claude/plans/` to `.git/info/exclude` (machine-local, no repo footprint); *personal repo* → write `.claude/plans/.gitignore` containing `_archive/`. Never write either silently. Rule and rationale: `plans/README.md` §Other projects.
 1. `Glob .claude/plans/*-*/spec.md` — ¿hay specs activas (`status: draft|approved|implementing`)?
 2. Si hay una `implementing` reciente → preguntar al usuario: "¿Continúas con `<slug>` o es feature nuevo?"
 3. Si no hay nada → calcular `NNN` siguiente disponible + derivar `slug` (kebab-case, ≤30 chars) del prompt.
@@ -107,7 +108,7 @@ Cost: ~3-5K tokens extra. Default-on only in `full` mode; user can override with
 
 ### Step 4 — Produce `spec.md`
 
-1. `Read .claude/plans/templates/spec.template.md` (anti-hallucination: confirm template exists).
+1. `Read .claude/plans/templates/spec.template.md`, falling back to `~/.claude/plans/templates/spec.template.md` (anti-hallucination: confirm the template exists; outside poneglyph only the global copy does).
 2. Create `.claude/plans/{NNN}-{slug}/spec.md` filling required fields:
    - `# Problema` — one sentence, root cause.
    - `# Resultado esperado` — 2-4 measurable outcomes from the questionnaire.

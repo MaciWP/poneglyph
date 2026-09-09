@@ -91,5 +91,8 @@ Report phase, completed/pending HUs, verdict, verification, blockers and next
 action. Use `status` to find incomplete lifecycles. A report or retro document
 alone does not mean completion. Keep promotions and justified skips visible.
 Git publication follows its own authorization; closure does not imply a commit.
-Archive closed/abandoned plans under `_archive/` only through an authorized move;
-keep templates and live references available.
+On an authorized close, keep `spec.md` and `retro.md` in the plan directory and
+move the working set (`tasks/`, `tests.md`, `validations.md`, `state.json`,
+`review.md`, evidence files) to `_archive/{NNN}-{slug}/`, which git ignores.
+Abandoned plans move whole. Never move without the user's authorization; keep
+templates and live references available. Rule: `plans/README.md` §Closed features.

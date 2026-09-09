@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import * as path from "path";
 import {
+  LINK_FOLDERS,
   classifyGrokTwin,
   expandFolderLinks,
   formatGrokTwinLine,
@@ -320,5 +321,14 @@ describe("formatSettingsValidationLine", () => {
     expect(red).toStartWith("🔴");
     expect(red).toContain("   - x › y: Expected string");
     expect(formatSettingsValidationLine({ ok: true, problems: [], skipped: "claude CLI not runnable" })).toStartWith("🟡");
+  });
+});
+
+describe("LINK_FOLDERS", () => {
+  it("links plans/templates for the global template fallback without linking plans/ itself", () => {
+    // ~/.claude/plans is Claude Code's plan-mode store: a whole-folder link would replace it.
+    expect(LINK_FOLDERS).toContain("plans/templates");
+    expect(LINK_FOLDERS).not.toContain("plans");
+    expect(path.join("/home", ".claude", "plans/templates")).toBe(path.join("/home", ".claude", "plans", "templates"));
   });
 });

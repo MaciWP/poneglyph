@@ -44,28 +44,69 @@ implicit approval to continue. The helper owns these transitions.
 
 Directories with `status: draft` and no updates for **>30 days** may be purged manually. There is no auto-purge. Before deleting: verify no other feature depends on this one via `Grep` in `.claude/plans/`.
 
-## Closed (still in this directory)
+## Closed features — what stays in git
 
-`_archive/` is gitignored — moving a closed plan there drops it from git.
-Closed numbered features stay here and are listed so `plans/` is not mistaken
-for in-flight work.
+Closing a feature keeps only the durable record in this directory and moves the
+working set out of git (rule decided 2026-09-09):
 
-| Dir | Closed | Verdict |
+| Plan state | In git | In `_archive/{NNN}-{slug}/` (gitignored, machine-local) |
 |---|---|---|
-| `024-poneglyph-style-review` | 2026-06-23 | APPROVED |
-| `025-flow-backhalf-gate` | 2026-06-30 | APPROVED |
-| `026-opus48-fable-uplift` | 2026-07-07 | APPROVED_WITH_WARNINGS |
-| `027-roi-fixes-model-advisor` | 2026-07-07 | APPROVED |
-| `028-p2-backlog-closeout` | 2026-07-08 | APPROVED_WITH_WARNINGS |
-| `029-workflow-uplift` | 2026-08-18 | APPROVED_WITH_WARNINGS (retro ratified) |
+| Open (`state.json` → `feature_closed: false`) | Everything — the working set must travel between machines and worktrees | — |
+| Closed (`close-feature` done, retro ratified) | `spec.md` (definition) + `retro.md` (outcome, lessons, verdict) | `tasks/`, `tests.md`, `validations.md`, `state.json`, `review.md`, baselines, JSON evidence, research notes |
+| Plan-mode artefact (no `state.json`) | `plan.md` (decisions + results) | everything else |
 
-In-flight = `state.json` with `feature_closed: false`. Check with `bun .claude/scripts/flow-state.ts status`.
+Exception: a file that a tracked script or skill still reads stays in git and is
+named in the table below (today only `032-polish-pass/activation/*.json`).
 
-**Plan-mode artefacts** (dev loop + drillme, not a `/flow` feature — no `state.json`): `032-polish-pass/` holds `plan.md` (decisions, work packages, results per WP), `diet-ledger.md` (skill diet measurements), `activation/` (probe evidence) plus the independent `review.md` / `validation.md`; `033-headless-cheap-tier/` holds the plan and results of the headless-model guard (2026-09-03). Same numbering sequence as features so nothing collides.
+Why: this repository is public and the working set is scratch — it exposes
+detail without adding context. The industry keeps the short durable record in
+the repo (ADRs, Kiro/spec-kit specs) and the working plan outside it (Claude
+Code and Cursor write plans to the home directory by default). `spec.md` +
+`retro.md` already carry definition, outcome and lessons; no extra summary
+document is needed.
+
+The move is an authorized action at closure (`retro` Step 13d), never
+automatic. A closed plan is not repaired with `sync-artifacts`; reopening
+restores its working set from `_archive/` first.
+
+| Dir | Closed | Verdict | Record in git |
+|---|---|---|---|
+| `024-poneglyph-style-review` | 2026-06-23 | APPROVED | `spec.md`, `retro.md` |
+| `025-flow-backhalf-gate` | 2026-06-30 | APPROVED | `spec.md`, `retro.md` |
+| `026-opus48-fable-uplift` | 2026-07-07 | APPROVED_WITH_WARNINGS | `spec.md`, `retro.md` |
+| `027-roi-fixes-model-advisor` | 2026-07-07 | APPROVED | `spec.md`, `retro.md` |
+| `028-p2-backlog-closeout` | 2026-07-08 | APPROVED_WITH_WARNINGS | `spec.md`, `retro.md` |
+| `029-workflow-uplift` | 2026-08-18 | APPROVED_WITH_WARNINGS (retro ratified) | `spec.md`, `retro.md` |
+| `032-polish-pass` | 2026-09-03 | plan-mode | `plan.md` + `activation/*.json` (read by `docs/component-audit-2026-09-05/review-main-802d795.ts`) |
+| `033-headless-cheap-tier` | 2026-09-03 | plan-mode | `plan.md` |
+| `034-archify-integration` | 2026-09-08 | plan-mode | `plan.md` |
+
+Plan-mode artefacts (dev loop + drillme, not a `/flow` feature) share the
+numbering sequence so nothing collides. In-flight = `state.json` with
+`feature_closed: false`. Check with `bun .claude/scripts/flow-state.ts status`.
+
+## Other projects
+
+`/flow` writes to `<project>/.claude/plans/`. `scope` settles the git policy
+once per project (Initial detection, step 0) and never writes it silently:
+
+| Project type | Policy | Mechanism |
+|---|---|---|
+| Personal | Same rule as this repo: open = everything, closed = `spec.md` + `retro.md` | `.claude/plans/.gitignore` containing `_archive/` |
+| Company / shared | Nothing from `.claude/plans/` enters the shared repo; the durable outcome goes to the team's system of record (ticket, wiki) | The file `git rev-parse --git-path info/exclude` returns gets `.claude/plans/` — machine-local, zero footprint in the repo, shared by every worktree of that checkout (in a linked worktree `.git` is a file, so never hardcode `.git/info/exclude`) |
+
+Detection: `git check-ignore -q .claude/plans` exits 0 → company policy set;
+`git check-ignore -q .claude/plans/_archive` exits 0 → personal policy set (this
+repo's root `.gitignore` already does it); neither → ask.
+Under the company policy plans do not travel between machines, the same as
+Claude Code's own `~/.claude/plans/`; accepted trade-off.
 
 ## Archived plans (`_archive/`) — reading rule
 
-Closed features with no live references move to `_archive/` (gitignored — preserved on disk, out of git and out of fresh clones). As of 2026-06-24 `_archive/` has **zero functional dependents**: nothing in `.claude/` reads a file from it. (The one real dependency — html-report's smoke-test input — was relocated to `skills/html-report/examples/sample-audit-report.md`; the rest were already-dead pointers, now fixed. Only historical prose in retros/decision-notes cites archived plans *by name*, which degrades-not-breaks.)
+`_archive/{NNN}-{slug}/` holds the working set of every closed feature and the
+whole directory of abandoned ones (gitignored — preserved on disk, out of git
+and out of fresh clones). Nothing functional in `.claude/` reads from it; only
+historical prose cites archived files by name, which degrades-not-breaks.
 
 **Reading rule**: treat `_archive/` as historical. **Exclude it from exploratory `Grep`/`Glob`** (`grep … | grep -v _archive`, as `doctrine-sweep` already does). Read a file under `_archive/` only when (a) an explicit reference points at a concrete file there, or (b) the user asks for provenance/archaeology. This is a **soft** convention: gitignore keeps `_archive/` out of git and out of context, but does NOT block `Read`/`Grep`. The only residual risk is accidentally surfacing stale info — low-impact now that nothing functional lives there, so a soft rule is sufficient (a hard PreToolUse block would be over-engineering and would also break legitimate by-reference reads).
 
@@ -73,7 +114,9 @@ Closed features with no live references move to `_archive/` (gitignored — pres
 
 ## Template override (project-local)
 
-Templates in this directory are global defaults (via `~/.claude/` symlink). A project-local override takes precedence:
+Templates in this directory are the global defaults: `sync-claude` links
+`plans/templates` to `~/.claude/plans/templates` (the rest of `plans/` is never
+synced). A project-local override takes precedence:
 
 1. Skill checks `.claude/plans/templates/<name>.template.md` (project-local).
 2. If not found, falls back to the global `~/.claude/plans/templates/<name>.template.md`.

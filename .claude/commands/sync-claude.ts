@@ -11,7 +11,7 @@ import { $ } from "bun";
 
 // === CONFIGURATION ===
 
-const LINK_FOLDERS = [
+export const LINK_FOLDERS = [
   "skills",
   "commands",
   "hooks",
@@ -21,6 +21,10 @@ const LINK_FOLDERS = [
   // `bun .claude/scripts/flow-state.ts`, which only resolved with
   // cwd=poneglyph (sync-trap class RI-1, audit 2026-07-02). evals/ stays NOT synced.
   "scripts",
+  // plans/templates ONLY (2026-09-09): scope/tech-plan/tdd-design/critic/retro fall back
+  // to ~/.claude/plans/templates/ outside poneglyph. The rest of plans/ stays project-local
+  // and ~/.claude/plans itself (Claude Code's plan-mode store) is never replaced.
+  "plans/templates",
 ];
 
 // `rules` and `docs` are NOT whole-folder links (see LINK_FOLDERS): both expand per-entry

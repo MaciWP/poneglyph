@@ -113,6 +113,7 @@ bun .claude/commands/sync-claude.ts --unlink
 | `hooks/` | Automations |
 | `workflows/` | Saved Workflow scripts |
 | `output-styles/` | Output style modes (e.g. Poneglyph) |
+| `plans/templates/` | `/flow` document templates — the global fallback the phase skills read outside poneglyph (`~/.claude/plans/templates/`) |
 | `CLAUDE.md` | Global instructions |
 
 > `agents/`, `orchestrator/` and `knowledge/` were removed from the sync list 2026-06-11 — the directories no longer exist (custom agents cut in feature 008).
@@ -129,7 +130,7 @@ bun .claude/commands/sync-claude.ts --unlink
 |--------|--------|
 | `agent_docs/` | Project-specific docs |
 | `experts/` | Learned expertise |
-| `plans/` | Temporary plans |
+| `plans/` (except `templates/`) | Project-local `/flow` lifecycles; `~/.claude/plans/` itself is Claude Code's plan-mode store and is never replaced |
 | `metrics/` | Session metrics |
 
 ## Troubleshooting

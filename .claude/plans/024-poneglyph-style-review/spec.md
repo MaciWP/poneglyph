@@ -4,7 +4,7 @@ created: 2026-06-23
 approved: 2026-06-23
 mode: full
 phase: 1
-status: approved
+status: closed
 ---
 
 # Problema

@@ -27,7 +27,8 @@ export const SHORTLIST_MAX = 5;
  * Census-derived usage tiers (031): 2 = high (≥5 launches), 1 = some use,
  * 0 (absent) = zero recorded launches. Used ONLY as a tie-breaker — lexical
  * score always dominates. Static by design (no I/O per invocation); refresh
- * this map at each skills census (source: skills-census docs in plans/).
+ * this map at each skills census (source: skills-census docs, archived under
+ * plans/_archive/029-workflow-uplift/ — closed plans keep only spec.md + retro.md in git).
  * Snapshot: 2026-08-05 census + 031 renames (codex-consult→consult, escalate→unstuck).
  */
 export const USAGE_TIER: Record<string, number> = {

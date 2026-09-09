@@ -47,7 +47,7 @@ Three obligatory verifications BEFORE writing any HU: project context (Glob/Grep
 1. `Glob .claude/plans/*-*/spec.md` — find active spec(s).
 2. If multiple → pick the one with `status: approved` and most recent `approved:` date; ask user if ambiguous.
 3. Read `spec.md` — verify `status: approved`. If `draft` → STOP, escalate.
-4. Read `.claude/plans/templates/tasks.template.md` and `tasks-index.template.md` (US1 outputs — confirm exist via Glob).
+4. Read `.claude/plans/templates/tasks.template.md` and `tasks-index.template.md` (project-local first, then `~/.claude/plans/templates/`; US1 outputs — confirm exist via Glob. Outside poneglyph only the global copy exists).
 
 ## Workflow
 

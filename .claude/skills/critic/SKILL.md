@@ -54,7 +54,7 @@ In parallel:
 3. Read `tasks/index.md` + all `tasks/US{N}.md`.
 4. Read `tests.md` and/or `validations.md`.
 5. Read `state.json` — confirm `current_phase: 3` complete + all `us_pending == []`.
-6. Read `.claude/plans/templates/review.template.md` (the output template).
+6. Read `.claude/plans/templates/review.template.md` (project-local first, then `~/.claude/plans/templates/review.template.md`; the output template).
 7. Read `.claude/rules/test-policy.md` (coverage policy).
 8. Resolve the approved starting revision. Inspect committed and working-tree
    changes against it; do not assume all implementation is already committed.
@@ -66,7 +66,7 @@ In parallel:
 | All HUs in `state.json.us_completed` | STOP — escalate to user; do not generate review.md prematurely |
 | Tests pass on the assembled branch (`bun test ./.claude/hooks/` or project equivalent) | Continue but mark `Correctness` section RED in review.md |
 | spec.md still describes what was delivered | Continue + flag spec-drift for living-spec loop (Step 8) |
-| `review.template.md` exists | If missing → use the embedded checklist (Read `references/02-embedded-fallback.md`) |
+| `review.template.md` exists (project-local or `~/.claude/plans/templates/`) | If both missing → use the embedded checklist (Read `references/02-embedded-fallback.md`) |
 
 ### Step 3 — Determine review level (adaptation)
 

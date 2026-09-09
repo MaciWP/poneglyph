@@ -225,8 +225,9 @@ bun .claude/scripts/sync-grok.ts --execute --backup --force
 `sync-claude.ts` generates `~/.claude/settings.json` from
 `.claude/settings.global.json` plus `.claude/settings.machine.json` (hook groups are
 unioned per event and de-duplicated by `command`, so the overlay only adds
-machine-specific handlers), then runs `claude doctor` on the result: a file Claude Code would reject fails the sync and
-the previous one is restored (`--no-validate` skips the check). The tracked
+machine-specific handlers), then runs `claude doctor` on the result: a file Claude
+Code would reject fails the sync and the previous one is restored (`--no-validate`
+skips the check). The tracked
 `.claude/settings.json` remains deliberately hook-free to prevent duplicate hook
 execution in this repository. Codex links the core skill catalog, generates
 entrypoints for shared commands, and preserves other handlers when adding native

@@ -65,7 +65,7 @@
   ],
   "notes": [
     "No real user configuration swap or model trial was performed.",
-    "Offline macOS CI is configured, not remotely executed.",
+    "Offline CI is tracked on the draft PR; it does not provide native acceptance.",
     "Native acceptance requires model selection, a live budget, exclusive profile ownership and macOS access."
   ]
 }

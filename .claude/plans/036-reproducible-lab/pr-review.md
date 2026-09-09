@@ -32,6 +32,7 @@ those findings without importing historical Git history or changing doctrine.
 | F3 | Major | Cancellation during child registration occurred before listener attachment and was lost. [process.test.ts:20](../../lab/process.test.ts#L20) first returned `cancelled: false`. | [process.ts:36](../../lab/process.ts#L36) rechecks the signal after handlers are installed. The regression now passes. |
 | F4 | Minor | The old runner test name claimed both cancellation and failed-launch coverage, but only aborted before launch. | Renamed that test. [runner.test.ts:48](../../lab/runner.test.ts#L48) now removes the temporary cwd through a reversible rename, asserts a real `spawn` error, and verifies original configuration and journal recovery. |
 | F5 | Critical | The real commit hook failed 2/600 tests because Git fixtures inherited the committing worktree's index. The fixture commands changed that index; the working files remained intact. | [pre-commit.ts](../../scripts/pre-commit.ts) retains the hook context for staged validation, clears Git-local context only for the test subprocess, and checks that tests leave the index tree unchanged. [The regression](../../scripts/__tests__/pre-commit.test.ts) uses two real repositories and asserts owner-index preservation. |
+| F6 | Critical CI gate | Initial macOS CI failed the abrupt-exit fixture before its intended checkpoint. The fixture passed an OS temporary-directory alias into the transaction's deliberate linked-ancestor rejection. | [recovery.test.ts](../../lab/recovery.test.ts#L8) now resolves its temporary root first, matching the existing transaction fixtures and production runner. Exit-code and restored-byte assertions remain unchanged. |
 
 `praise (non-blocking):` The runner calibrates initial and reference implementations
 before configuration replacement, and retains individual failure states. This
@@ -105,6 +106,11 @@ global configuration was not redirected or synchronized.
 The original implementation review and verification-US records remain dated,
 fingerprinted historical evidence. This review supersedes their conclusions for
 the corrected candidate, without rewriting their observations or closing US10.
+
+The first published candidate completed 601 local tests with its normal commit
+hook. Its initial remote macOS job then exposed F6 (54 passed, 1 failed); the PR
+records the subsequent candidate and matrix results. Offline CI observations do
+not change the six native cells from `not_run`.
 
 Ignored local evidence: `.cache/lab-pr/` contains CLI receipts, report screenshots,
 and the candidate inventory; the existing diagram cache retains render and browser

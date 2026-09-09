@@ -67,7 +67,7 @@ The "Suggested skills to Read (for delegation)" column lists `.claude/skills/<na
 
 | Signal | Execution | Skill/Mode | Suggested skills to Read (Arch H) | Fallback |
 |--------|-----------|------------|-------------------------------------------|----------|
-| implement, create, fix, build | inline ALWAYS (`Skill('build')` in /flow) — write fan-out solo con opt-in explícito del usuario | (by prompt) | (match domain via skill-matching) | — |
+| implement, create, fix, build | `build` inline by default; authorized Orca teams use its supervised-worker branch | (by prompt) | (match domain via skill-matching) | — |
 | refactor, extract, simplify, restructure | inline | review-patterns | review-patterns | — |
 | merge conflict, git conflict | inline | (prompt context) | — | — |
 | docs, sync, documentation | inline | (doc task) | — | — |
@@ -96,11 +96,16 @@ The "Suggested skills to Read (for delegation)" column lists `.claude/skills/<na
 
 ### Workflow wiring
 
+For a supervised Orca team, use `orca-workflow` instead of the native Workflow/Team
+recipes below. Its approved roster and real dependencies determine concurrency;
+its shared-worktree reservations serialize collisions. The default thresholds
+and per-worker isolation examples here do not apply to that route.
+
 How the capabilities of the custom agents (cut in feature 008) map onto the current model, and where `Workflow` fan-out is the right primitive:
 
 | Capability (historical agent) | Now | Fan-out trigger |
 |---|---|---|
-| implement (was `builder`) | `build` skill inline — ALL write work, any HU count | write fan-out ONLY with explicit user opt-in (ultracode) → `Workflow` + per-unit `isolation: 'worktree'` on file overlap |
+| implement (was `builder`) | `build` inline by default; supervised-worker branch for an approved Orca team | Native Workflow uses explicit opt-in; Orca uses its shared-worktree contract |
 | validate (was `reviewer`) | `critic` skill inline | standard/full code review → **ONE fresh-context read-only reviewer** (correctness/requirements only — P1 exception, 018 W1 D1/D3); decision review → panel via `decide` (heavy tier) |
 | explore (was `scout`) | `Explore` (built-in) | ≥4 independent exploration sweeps → `Workflow` (read-only) |
 | generator→validator | `pipeline(items, find, verify)` inside one `Workflow` | intra-workflow Four-Eyes — NOT a new spawn decision (spawn-tree P7) |
@@ -155,6 +160,9 @@ Full LSP reference: skill `lsp-operations`.
 ---
 
 ## Anti-Patterns
+
+The agent-count examples below describe default native delegation. They do not
+prohibit the explicitly authorized `orca-workflow` route.
 
 | Anti-Pattern | Problem | Use Instead |
 |--------------|---------|-------------|

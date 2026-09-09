@@ -2,7 +2,10 @@
 
 # Error Recovery
 
-When a build step fails (inline, 1-3 units) or a `Workflow` unit fails (≥4 fan-out), the Lead diagnoses inline (loading `diagnostic-patterns` if needed) and decides: retry, re-plan, or escalate. No dedicated diagnosis agent — the Lead handles it.
+The Lead diagnoses failures inline with `diagnostic-patterns` when needed, then
+retries, replans or escalates. For Orca teams, load `orca-workflow` recovery:
+timeouts do not prove failure or release reservations. Inspect uncertain writers
+before replacement. Retry only proven failures within the approved allowance.
 
 ## Retry Budget
 

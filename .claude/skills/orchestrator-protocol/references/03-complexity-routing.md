@@ -63,7 +63,11 @@ Each factor contributes a maximum of ~33 points (value=3 × 20% × 33.3). Total 
 | > 60 | 3+ domains (4-gate pass) | Yes | **team** (experimental) | 3-7x |
 | > 60 | 3+ (4-gate fail) | — | **inline / Workflow (read-only)** | 1x+ |
 
-Default is ALWAYS inline. Write work stays inline regardless of unit count unless the user explicitly opts in (delegation doctrine — SKILL.md P8: token multiplication, summary degradation, context loss).
+Default is inline. An explicitly authorized supervised Orca team uses
+`orca-workflow` instead of this native Workflow/Team routing matrix. It selects
+concurrency from real dependencies and uses coordinator reservations in one shared
+worktree; the thresholds and isolation table below do not apply to that route.
+Other write fan-out still needs explicit opt-in (SKILL.md P8).
 
 ## Tiered Mode
 

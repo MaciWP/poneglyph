@@ -6,6 +6,10 @@ description: Mermaid rendering of the spawn decision tree (three axes) — the P
 
 # Spawn decision tree — diagram
 
+An explicitly authorized supervised Orca team routes to `orca-workflow` first.
+The diagram below describes default native delegation, not that shared-worktree
+exception. Permission and model choice remain owned by CLAUDE.md §Agent spawn.
+
 Relocated verbatim from `SKILL.md` §Step 1 on 2026-09-03 (plan 032/WP4 — the table of principles P1–P8 stays inline; the diagram duplicated it). Applies only **after** the user approved spawn and model (CLAUDE.md §Agent spawn).
 
 ```mermaid

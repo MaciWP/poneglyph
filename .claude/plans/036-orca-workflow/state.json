@@ -1,0 +1,293 @@
+{
+  "spec_slug": "036-orca-workflow",
+  "mode": "full",
+  "current_phase": 5,
+  "phases_completed": [
+    1,
+    2,
+    2.5,
+    3,
+    4
+  ],
+  "gates_approved": {
+    "1->2": true,
+    "2->3": true
+  },
+  "us_completed": [
+    "US1",
+    "US2",
+    "US3"
+  ],
+  "us_pending": [],
+  "us_history": [
+    {
+      "us": "US1",
+      "completed_at": "2026-09-08",
+      "tests_passed": true,
+      "verification": {
+        "checks": [
+          {
+            "status": "passed",
+            "evidence": "bun run check:config: 32 skills, 0 errors; cooperative roles, startup, reservations and recovery reviewed inline",
+            "name": "source structure and references"
+          },
+          {
+            "status": "passed",
+            "evidence": "92/92 affected tests; real loader finds one orca-workflow and ranks it first; isolated Codex profile includes every source skill",
+            "name": "catalog and adapter compatibility"
+          },
+          {
+            "status": "passed",
+            "evidence": "bun run doctor --ci: 546/546, exit 0; no live activation claim",
+            "name": "project regression suite"
+          },
+          {
+            "status": "passed",
+            "evidence": "budget ratchet passed; source and installed native-hook --check passed",
+            "name": "size and secret checks"
+          }
+        ],
+        "revision": "1ca2c86ea0d6cdf5f6548548512f550bde7a877e:orca-workflow-sha256:e267371737bfeab21dc8517a1e10d5ec9a965574ad8d8b2bf9dc230a48e86bb4",
+        "tests_passed": true,
+        "us": "US1"
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US1",
+      "completed_at": "2026-09-09",
+      "tests_passed": true,
+      "verification": {
+        "checks": [
+          {
+            "status": "passed",
+            "evidence": "check:config: 32 skills, zero errors; portable doctor and budget passed",
+            "name": "source structure and references"
+          },
+          {
+            "status": "passed",
+            "evidence": "76/76 focused tests including isolated profile discovery and config preservation",
+            "name": "adapter and config regressions"
+          },
+          {
+            "status": "passed",
+            "evidence": "Normal pre-commit: 547/547, staged source and native plugin validation passed; subsequent prose compaction checked separately",
+            "name": "project suite and staged source"
+          },
+          {
+            "status": "passed",
+            "evidence": "Installed native-hook --check passed on candidate",
+            "name": "native secret heuristic"
+          }
+        ],
+        "revision": "5ebbe2b9833f22ea175dfcea5c72925e457ff599:candidate-source-sha256:8d45e7ac56785c75fc96f9cf70500cb597dc2646970e5c843e984cbde6d32707",
+        "tests_passed": true,
+        "us": "US1"
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US2",
+      "completed_at": "2026-09-09",
+      "tests_passed": true,
+      "verification": {
+        "checks": [
+          {
+            "status": "passed",
+            "evidence": "check:config: 32 skills, zero errors; portable doctor and budget passed",
+            "name": "source structure and references"
+          },
+          {
+            "status": "passed",
+            "evidence": "76/76 focused tests including isolated profile discovery and config preservation",
+            "name": "adapter and config regressions"
+          },
+          {
+            "status": "passed",
+            "evidence": "Normal pre-commit: 547/547, staged source and native plugin validation passed; subsequent prose compaction checked separately",
+            "name": "project suite and staged source"
+          },
+          {
+            "status": "passed",
+            "evidence": "Installed native-hook --check passed on candidate",
+            "name": "native secret heuristic"
+          }
+        ],
+        "revision": "5ebbe2b9833f22ea175dfcea5c72925e457ff599:candidate-source-sha256:8d45e7ac56785c75fc96f9cf70500cb597dc2646970e5c843e984cbde6d32707",
+        "tests_passed": true,
+        "us": "US2"
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US2",
+      "completed_at": "2026-09-09",
+      "tests_passed": true,
+      "verification": {
+        "checks": [
+          {
+            "status": "passed",
+            "evidence": "check:config: 32 skills, zero errors; portable doctor and budget passed",
+            "name": "source structure and references"
+          },
+          {
+            "status": "passed",
+            "evidence": "76/76 focused tests including isolated profile discovery and config preservation",
+            "name": "adapter and config regressions"
+          },
+          {
+            "status": "passed",
+            "evidence": "Normal pre-commit: 547/547, staged source and native plugin validation passed; subsequent prose compaction checked separately",
+            "name": "project suite and staged source"
+          },
+          {
+            "status": "passed",
+            "evidence": "Installed native-hook --check passed on candidate",
+            "name": "native secret heuristic"
+          },
+          {
+            "name": "fresh review follow-up",
+            "status": "passed",
+            "evidence": "system-inventory now identifies the authorized Orca exception; source validator passes and stale unconditional-inline sweep is empty"
+          }
+        ],
+        "revision": "5ebbe2b9833f22ea175dfcea5c72925e457ff599:candidate-source-sha256:8d45e7ac56785c75fc96f9cf70500cb597dc2646970e5c843e984cbde6d32707",
+        "tests_passed": true,
+        "us": "US2"
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US3",
+      "completed_at": "2026-09-09",
+      "tests_passed": true,
+      "verification": {
+        "checks": [
+          {
+            "status": "passed",
+            "evidence": "19/19 tests after both writer handoffs; independently rerun by a fresh reviewer",
+            "name": "assembled fixture"
+          },
+          {
+            "status": "passed",
+            "evidence": "Live disjoint writes, canonical thread, reservation request and explicit handoff, red evidence held unaccepted, downstream ready state held for coordinator verification",
+            "name": "coordination and acceptance"
+          },
+          {
+            "status": "passed",
+            "evidence": "Timed-out asks resumed by ID; same pending Delivery replayed after Run rebind; no duplicate worker or grant; no stronger crash recovery claim",
+            "name": "controlled recovery"
+          },
+          {
+            "status": "passed",
+            "evidence": "No blockers; inventory, state and timing findings resolved inline; source and pilot scope verified",
+            "name": "fresh independent review"
+          },
+          {
+            "status": "passed",
+            "evidence": "Reused inspection terminals retained explicitly; fresh owned reviewer terminal released with captured output",
+            "name": "resource ownership"
+          }
+        ],
+        "revision": "pilot-fixture-sha256:dc3eb9368422ca78939d70c52a27414df56efc8bdff749ce204170685d67b391",
+        "tests_passed": true,
+        "us": "US3"
+      },
+      "files_touched": [],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    }
+  ],
+  "gate_history": [
+    {
+      "gate": "1->2",
+      "at": "2026-09-08",
+      "reference": "conversation: 2026-09-08 approved plan and Implement the plan",
+      "artifacts": [
+        "spec.md"
+      ]
+    },
+    {
+      "gate": "2->3",
+      "at": "2026-09-08",
+      "reference": "conversation: 2026-09-08 Implement the plan, including its validation scope; pilot launch permission remains pending",
+      "artifacts": [
+        "tasks/index.md",
+        "tasks/US1.md",
+        "tasks/US2.md",
+        "tasks/US3.md",
+        "validations.md"
+      ]
+    }
+  ],
+  "boundary_checks": [
+    {
+      "phase": "1",
+      "item": "scope: approved conversation plan persisted; no repeated intent questions",
+      "at": "2026-09-08"
+    },
+    {
+      "phase": "2",
+      "item": "tech-plan: existing Orca, shared flow-build partition and adapters inspected",
+      "at": "2026-09-08"
+    },
+    {
+      "phase": "2.5",
+      "item": "tdd-design: documentation validations plus live pilot oracle approved by implementation request; launch grant pending",
+      "at": "2026-09-08"
+    },
+    {
+      "phase": "3",
+      "item": "build: inline implementation; no agent launched; team models remain proposed",
+      "at": "2026-09-08"
+    },
+    {
+      "phase": "3",
+      "item": "verify: US1 source accepted; US2 portable checks pass but live machine doctor fails; US3 pilot not run",
+      "at": "2026-09-08"
+    },
+    {
+      "phase": "3",
+      "item": "Publication scope: candidate validation passes; installed global profile differences remain outside PR-only delivery",
+      "at": "2026-09-09"
+    },
+    {
+      "phase": "4",
+      "item": "critic: 547 project tests and 19 pilot checks pass; fresh reviewer findings resolved; PR CI remains a separate publication gate",
+      "at": "2026-09-09"
+    }
+  ],
+  "feature_closed": false,
+  "review_verdict": "APPROVED",
+  "retro_status": "pending",
+  "started_at": "2026-09-08",
+  "updated_at": "2026-09-09",
+  "reopen_history": [
+    {
+      "us": "US1",
+      "reason": "Publication fixes: native readiness, canonical thread IDs and Windows argv transport",
+      "at": "2026-09-09"
+    },
+    {
+      "us": "US2",
+      "reason": "Fresh review found one stale unconditional inline claim in system-inventory; corrected before publication",
+      "at": "2026-09-09"
+    }
+  ],
+  "review_assessment": {
+    "blockers": 0,
+    "majors": 0,
+    "minors": 0,
+    "nits": 0,
+    "checks": "passed",
+    "coverageMet": true
+  }
+}

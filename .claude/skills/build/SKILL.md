@@ -1,7 +1,10 @@
 ---
 name: build
 description: |
-  Implementa UNA HU aprobada (Fase 3 del workflow de 5 fases). Lee tasks/USX.md + tests.md/validations.md + state.json, identifica la siguiente HU (o una concreta vía /build US{id}), busca ejemplos del proyecto para el estilo, honra el TDD-mode (red→green si forced; impl + verificación de suite si optional). Invoca AskUserQuestion ante dudas concretas (nunca improvisa). Actualiza state.json al cerrar. Corre INLINE en la sesión principal.
+  Implement one approved HU using its task and oracle. Follow project style and
+  TDD/validation policy. Run inline by default. In an authorized Orca team, a
+  worker implements only its assignment and returns evidence; the coordinator
+  verifies and records HU closure.
   Úsala cuando: tasks/ aprobado + oracle de Fase 2.5 aprobado + HU pendiente en state.json, "build", "implementa", "ejecuta", "construye", "siguiente HU", tras /tdd-design y antes de /critic.
 metadata:
   keywords: >
@@ -15,7 +18,26 @@ when_to_use: |
 
 # Build (Phase 3)
 
-Implements ONE HU at a time from an approved `tasks/` + Phase 2.5 oracle. Each HU closes red→green (or impl + suite verify when policy allows) before the next HU starts. **HU-atomic** — never opens two HUs in parallel.
+Implements ONE HU per executor from approved tasks and a Phase 2.5 oracle.
+The default inline path closes that HU before selecting another. An authorized
+Orca coordinator can assign independent HUs to separate workers.
+
+## Supervised Orca worker
+
+When the current prompt has a live Orca Dispatch under an approved `orca-workflow`
+team, read its [worker contract](../orca-workflow/references/coordination.md).
+Execute only the assigned HU in the shared worktree. Follow the implementation
+steps below, but ask the coordinator about gaps and reserve resources before
+edits or checks. Do not choose another HU or create a team.
+
+Run scoped checks on stable inputs. Ask the coordinator to schedule shared checks
+that conflict with another writer or resource. Return actual evidence and remaining
+checks instead of inventing a pass. **Do not run Step 9 or the next-HU actions in
+Step 10**: only the coordinator closes state and approval frontmatter. Send the
+result through the current Orca lifecycle and stop writing.
+
+The inline-only and agent-count guidance below applies to the default executor;
+it does not override this explicitly authorized branch.
 
 ## Underlying principle
 
@@ -201,7 +223,7 @@ Next HU available: US{M} (depends_on satisfied)
 
 If all HUs closed → flag `state.json.current_phase: 4` and report "Phase 3 complete. Hard gate 3->4 — review/critic pending."
 
-## Execution model: inline
+## Execution model: inline by default
 
 The `builder` agent was cut in feature 008 (1 agent forbidden; "context isolation" is not a reason). A single HU runs inline; a ≥4-HU parallel wave may fan out via `Workflow` with the `default` subagent (`orchestrator-protocol` spawn tree). History: `references/01-history.md`.
 

@@ -90,7 +90,7 @@ Canonical per-turn checklist: `orchestrator-protocol` skill §1.
 
 | Mode | When | Cost |
 |------|------|------|
-| **Inline** (default) | ALL build/write work, any size — delegation doctrine (orchestrator-protocol §P8) | 1x |
+| **Inline** (default) | Build/write by default; an explicitly approved `orca-workflow` team uses the bounded shared-worktree exception | 1x |
 | **Workflow read-only fan-out** | ≥4 independent read-only units (research sweeps, decision-review panels) | scales w/ agent count |
 | **Workflow write fan-out** | explicit user opt-in only ("ultracode" / direct ask; "workflow" keyword no longer triggers since CC 2.1.160); per-unit `isolation: 'worktree'` on collision | scales |
 | **Tiered** | Complexity 45-60 with 2-3 domains sharing interfaces — contracts inline via tech-plan Mode B | ~2x |

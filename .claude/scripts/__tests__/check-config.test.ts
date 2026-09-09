@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { check, frontmatter, privacyMatches, readSource, render, validate, type Source } from "../check-config";
+import { check, frontmatter, privacyMatches, readSource, render, validate, withoutGitEnv, type Source } from "../check-config";
 
 const skill = (name = "sample", description = "A valid task-specific description.", extra = "", body = "Read the relevant source.") => `---\nname: ${name}\ndescription: ${JSON.stringify(description)}\n${extra}---\n${body}\n`;
 const source = (entries: Record<string, string> = {}): Source => ({ files: new Map(Object.entries({ ".claude/skills/sample/SKILL.md": skill(), ...entries })), links: [] });
@@ -16,7 +16,8 @@ it("checks the shared action manifest as YAML configuration", () => {
   expect(errors(source({ "action.yml": "name: Static gate\nruns:\n  using: composite\n  steps: []\n" }))).toEqual([]);
 });
 const write = (root: string, p: string, text: string) => { mkdirSync(dirname(join(root, p)), { recursive: true }); writeFileSync(join(root, p), text); };
-const git = (root: string, ...args: string[]) => execFileSync("git", ["-C", root, ...args], { stdio: ["pipe", "pipe", "pipe"] });
+// Hermetic: an inherited GIT_DIR/GIT_INDEX_FILE (Git exports them to hooks) would make these fixtures rewrite the real index.
+const git = (root: string, ...args: string[]) => execFileSync("git", ["-C", root, ...args], { env: withoutGitEnv(process.env), stdio: ["pipe", "pipe", "pipe"] });
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), "poneglyph-config-test-")); roots.push(root);
   git(root, "init", "--quiet"); git(root, "config", "core.autocrlf", "false");
@@ -220,5 +221,8 @@ describe("real Git snapshot input", () => {
   it("rejects non-root directories and reports a missing private policy honestly", () => {
     const root = fixture(); expect(() => readSource(join(root, ".claude"))).toThrow();
     expect(check(root).report.findings).toContainEqual(expect.objectContaining({ rule: "privacy.unchecked", severity: "warning" }));
+  });
+  it("hands the test runner an environment without the hook's Git variables", () => {
+    expect(withoutGitEnv({ GIT_DIR: "/repo/.git", GIT_INDEX_FILE: "/repo/.git/index", PATH: "/bin", HOME: undefined })).toEqual({ PATH: "/bin" });
   });
 });

@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 // The same hook can serve the core and an addon. No copied validator in the addon.
 import { resolve } from "node:path";
-import { check, render } from "./check-config";
+import { check, render, withoutGitEnv } from "./check-config";
 
 try {
   const { report, terms } = check(process.cwd(), true);
@@ -10,7 +10,7 @@ try {
   if (report.kind === "core") {
     // Keep the existing project tests. They test working source; check() above
     // independently validates exactly the staged configuration snapshot.
-    const tests = Bun.spawnSync([process.execPath, "test", "./.claude/"], { cwd: process.cwd(), stdout: "inherit", stderr: "inherit" });
+    const tests = Bun.spawnSync([process.execPath, "test", "./.claude/"], { cwd: process.cwd(), env: withoutGitEnv(process.env), stdout: "inherit", stderr: "inherit" });
     if (tests.exitCode !== 0) process.exit(tests.exitCode || 1);
     if (Bun.which("claude")) {
       const validation = Bun.spawnSync(["claude", "plugin", "validate", resolve(".claude")], { stdout: "inherit", stderr: "inherit" });

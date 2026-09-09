@@ -46,7 +46,7 @@ Until the root problem and out-of-scope are explicit, no technical work proceeds
 
 Before opening the questionnaire:
 
-0. **Plans-dir git policy (once per project)** — `git check-ignore -q .claude/plans`: exit 0 → company policy already set (plans never enter the shared repo; nothing to do). Else, `.claude/plans/.gitignore` exists → personal policy already set. Else `AskUserQuestion`: *company/shared repo* → append `.claude/plans/` to `.git/info/exclude` (machine-local, no repo footprint); *personal repo* → write `.claude/plans/.gitignore` containing `_archive/`. Never write either silently. Rule and rationale: `plans/README.md` §Other projects.
+0. **Plans-dir git policy (once per project)** — `git check-ignore -q .claude/plans` exits 0 → company policy set, nothing to do. Else `git check-ignore -q .claude/plans/_archive` exits 0 → personal policy set. Else `AskUserQuestion` (company / personal) and write it: company → append `.claude/plans/` to `$(git rev-parse --git-path info/exclude)` (never a hardcoded `.git/info/exclude`: in a linked worktree `.git` is a file); personal → `.claude/plans/.gitignore` with `_archive/`. Never write silently. Rule: `plans/README.md` §Other projects.
 1. `Glob .claude/plans/*-*/spec.md` — ¿hay specs activas (`status: draft|approved|implementing`)?
 2. Si hay una `implementing` reciente → preguntar al usuario: "¿Continúas con `<slug>` o es feature nuevo?"
 3. Si no hay nada → calcular `NNN` siguiente disponible + derivar `slug` (kebab-case, ≤30 chars) del prompt.

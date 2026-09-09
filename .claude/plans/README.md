@@ -55,6 +55,9 @@ working set out of git (rule decided 2026-09-09):
 | Closed (`close-feature` done, retro ratified) | `spec.md` (definition) + `retro.md` (outcome, lessons, verdict) | `tasks/`, `tests.md`, `validations.md`, `state.json`, `review.md`, baselines, JSON evidence, research notes |
 | Plan-mode artefact (no `state.json`) | `plan.md` (decisions + results) | everything else |
 
+Exception: a file that a tracked script or skill still reads stays in git and is
+named in the table below (today only `032-polish-pass/activation/*.json`).
+
 Why: this repository is public and the working set is scratch — it exposes
 detail without adding context. The industry keeps the short durable record in
 the repo (ADRs, Kiro/spec-kit specs) and the working plan outside it (Claude
@@ -90,10 +93,11 @@ once per project (Initial detection, step 0) and never writes it silently:
 | Project type | Policy | Mechanism |
 |---|---|---|
 | Personal | Same rule as this repo: open = everything, closed = `spec.md` + `retro.md` | `.claude/plans/.gitignore` containing `_archive/` |
-| Company / shared | Nothing from `.claude/plans/` enters the shared repo; the durable outcome goes to the team's system of record (ticket, wiki) | `.git/info/exclude` gets `.claude/plans/` — machine-local, zero footprint in the repo |
+| Company / shared | Nothing from `.claude/plans/` enters the shared repo; the durable outcome goes to the team's system of record (ticket, wiki) | The file `git rev-parse --git-path info/exclude` returns gets `.claude/plans/` — machine-local, zero footprint in the repo, shared by every worktree of that checkout (in a linked worktree `.git` is a file, so never hardcode `.git/info/exclude`) |
 
 Detection: `git check-ignore -q .claude/plans` exits 0 → company policy set;
-`.claude/plans/.gitignore` present → personal policy set; neither → ask.
+`git check-ignore -q .claude/plans/_archive` exits 0 → personal policy set (this
+repo's root `.gitignore` already does it); neither → ask.
 Under the company policy plans do not travel between machines, the same as
 Claude Code's own `~/.claude/plans/`; accepted trade-off.
 

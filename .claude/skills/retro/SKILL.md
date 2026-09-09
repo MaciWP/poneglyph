@@ -256,7 +256,7 @@ Read `state.json` and the per-HU verification history. Pending HUs, missing evid
 
 **13d. Archive the working set (authorized move, only after `close-feature` succeeded)**:
 
-- Ask the user before moving anything. With their authorization: create `.claude/plans/_archive/{NNN}-{slug}/`, move everything except `spec.md` and `retro.md` there (`tasks/`, `tests.md`, `validations.md`, `state.json`, `review.md`, evidence files), run `git rm --cached -r` on the moved paths (files stay on disk; `_archive/` is gitignored) and add the plan's row to `plans/README.md` §Closed features.
+- Ask the user before moving anything. With their authorization: create `.claude/plans/_archive/{NNN}-{slug}/`, move everything except `spec.md` and `retro.md` there (`tasks/`, `tests.md`, `validations.md`, `state.json`, `review.md`, evidence files); a file that a tracked script or skill still reads stays and is named in the README row. Then run `git rm --cached -r` on the moved paths (files stay on disk; `_archive/` is gitignored) and, when the project keeps a plans README (this repo does), add the plan's row to its §Closed features table.
 - Without authorization: record the action item "archive working set" — never move silently.
 - Under a company plans policy (`.claude/plans/` excluded from git) nothing is tracked; report where the durable outcome went (ticket, wiki). Rule and rationale: `plans/README.md` §Closed features.
 

@@ -75,4 +75,4 @@ Las 5 preguntas obligatorias, etiquetadas con las 4 categorías canónicas del S
 - [ ] State and document statuses agree; sync-artifacts repairs stale projections
 - [ ] Never close unfinished HUs residually or infer permission from a document
 - [ ] Publication follows its separate authorization; closure does not request a commit
-- [ ] After close-feature and with the user's authorization, the working set moved to `_archive/{NNN}-{slug}/`; only `spec.md` and `retro.md` stay in git
+- [ ] Working set handled per the project's plans policy after close-feature: moved to `_archive/{NNN}-{slug}/` with the user's authorization (only `spec.md` + `retro.md` stay in git), nothing tracked under a company policy, or the deferral recorded as an action item with the user's decision

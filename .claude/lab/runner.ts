@@ -1,6 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { homedir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
 import { atomicJSON, hash, loadVersion, saveVersion, schedule, validateRecipe, within, type Recipe, type RunRecord, type Assignment } from "./store";
 import { inventory, installProfile, validateProfile, assertProfileInventory, prepareCore } from "./profiles";
@@ -12,7 +12,7 @@ import { commandFor, decode } from "./adapters";
 
 export interface Experiment { version: 1; recipe: Recipe; scenarios: Record<string,string>; environment: Record<string,unknown>; engine: string; nativeCommon: string }
 export interface Results { version: 1; id: string; experiment: string; kind: "evaluation" | "drill"; state: string; startedAt: string; finishedAt: string | null; elapsedSeconds: number | null; setupSeconds: number; rows: RunRecord[]; profileChecks: {condition:string;installedHash:string}[]; error: string | null }
-export interface RunOptions { home?: string; roots?: Partial<Record<Recipe["host"],string>>; binary?: string; signal?: AbortSignal; onTrial?: (a: Assignment) => void; drill?: boolean }
+export interface RunOptions { home?: string; roots?: Partial<Record<Recipe["host"],string>>; binary?: string; signal?: AbortSignal; onTrial?: (a: Assignment, work: string) => void; drill?: boolean }
 export const engineHash = () => hash(["catalog.ts","oracle.ts","worker.ts","store.ts","profiles.ts","process.ts","adapters.ts","runner.ts","transaction.ts"].map(n=>[n,fs.readFileSync(path.join(import.meta.dir,n),"utf8")]));
 export function prepareExperiment(root: string, input: unknown, environment: Record<string,unknown>): string {
  const recipe=validateRecipe(input), versions: Record<string,string>={}; let common: string | undefined;
@@ -76,7 +76,9 @@ export async function runExperiment(root: string, experimentId: string, options:
  const file=path.join(dir,"results.json"), save=()=>atomicJSON(file,{...output,integrity:hash(output)}); save();
  const stateDir=path.join(home,".poneglyph-lab");
  const baselines=new Map<string,ReturnType<typeof evaluate> extends Promise<infer T>?T:never>();
- let tx: Transaction | undefined;
+ let tx: Transaction | undefined, pendingWork: { from: string; to: string } | undefined;
+ // Copy the agent's temporary tree into its run directory, then drop the temporary copy.
+ const retain=()=>{ if(!pendingWork) return; const {from,to}=pendingWork; pendingWork=undefined; if(!exists(from)) return; fs.cpSync(from,to,{recursive:true}); fs.rmSync(from,{recursive:true,force:true}); };
  const preparation=performance.now();
  try {
   for (const [name,s] of options.drill?[]:definitions) {
@@ -100,16 +102,20 @@ export async function runExperiment(root: string, experimentId: string, options:
    if(p.mode==="live"&&activeAgents()) throw new Error("An affected agent started during the experiment");
    tx.captureCreated();
    for(const entry of tx.journal.entries) tx.quarantine(entry.target);
-   const run=path.join(dir,"runs",assignment.id), work=path.join(run,"work"), core=within(root,path.join("cores",p.conditions.find(c=>c.id===assignment.condition)!.profile));
+   const run=path.join(dir,"runs",assignment.id), core=within(root,path.join("cores",p.conditions.find(c=>c.id===assignment.condition)!.profile));
    const profile=profiles.get(assignment.condition)!, s=definitions.get(assignment.scenario)!;
    installProfile(inv,profile,core);
    const expected=new Map(inv.targets.filter(t=>t.snapshot).map(t=>[t.path,digest(t.path)]));
    const coreHash=exists(core)?digest(core):null;
    if(options.drill) { output.profileChecks.push({condition:assignment.condition,installedHash:hash(Object.fromEntries(expected))}); save(); continue; }
+   // The agent works in an opaque OS temporary directory: laboratory objects, other runs and condition labels are not reachable by relative path.
+   const work=fs.realpathSync(fs.mkdtempSync(path.join(tmpdir(),"poneglyph-trial-")));
+   if(p.mode==="live") assertCleanAncestors(work,home);
+   pendingWork={from:work,to:path.join(run,"work")};
    materializeScenario(work,s);
-   const row: RunRecord={...assignment,status:"running",accepted:false,seconds:null,verifierSeconds:null,checks:[],regressions:0,model:null,usage:null,apiEquivalentUsd:null}; output.rows.push(row); save();
+   const row: RunRecord={...assignment,status:"running",accepted:false,seconds:null,verifierSeconds:null,checks:[],regressions:0,model:null,usage:null,apiEquivalentUsd:null,numTurns:null,apiSeconds:null,modelUsage:null,permissionDenials:null}; output.rows.push(row); save();
    atomicJSON(path.join(run,"configuration.json"),{profile:p.conditions.find(c=>c.id===assignment.condition)!.profile,installed:Object.fromEntries(expected),coreHash,control:e.environment.control??"simulation"});
-   options.onTrial?.(assignment);
+   options.onTrial?.(assignment,work);
    if(options.signal?.aborted) { row.status="cancelled"; save(); break; }
    if(p.mode==="live" && p.host==="grok") {
     const inspected=await execute([options.binary??p.host,"inspect","--json"],work,10,options.signal,pid=>tx!.recordChild(pid));
@@ -124,8 +130,12 @@ export async function runExperiment(root: string, experimentId: string, options:
    const cmd=p.mode==="simulation"?[process.execPath,"-e",'console.log("synthetic process")']:commandFor(p.host,options.binary??p.host,p.model,prompt);
    const processResult=await execute(cmd,work,Math.min(p.limits.secondsPerRun,remaining),options.signal,pid=>tx!.recordChild(pid));
    row.seconds=processResult.seconds;
-   const measured=p.mode==="simulation"?{terminal:true,text:"Synthetic result",model:"simulation",usage:null,apiEquivalentUsd:null}:decode(p.host,processResult.stdout);
+   const measured=p.mode==="simulation"?{terminal:true,text:"Synthetic result",model:"simulation",usage:null,apiEquivalentUsd:null,numTurns:null,apiSeconds:null,modelUsage:null,permissionDenials:null}:decode(p.host,processResult.stdout);
+   // Raw host stream and final text are private evidence for later trace review; stderr is still dropped (may contain secrets).
+   fs.writeFileSync(path.join(run,"stream.jsonl"),processResult.stdout,{mode:0o600});
+   if(measured.terminal&&measured.text.trim()) fs.writeFileSync(path.join(run,"final.txt"),measured.text,{mode:0o600});
    row.model=measured.model; row.usage=measured.usage; row.apiEquivalentUsd=measured.apiEquivalentUsd;
+   row.numTurns=measured.numTurns; row.apiSeconds=measured.apiSeconds; row.modelUsage=measured.modelUsage; row.permissionDenials=measured.permissionDenials;
    row.status=processResult.cancelled?"cancelled":processResult.timedOut?"timeout":processResult.outputLimit?"output-limit":processResult.code!==0?"agent-error":!measured.terminal?"invalid-output":"completed";
    if([...expected].some(([file,h])=>digest(file)!==h) || (coreHash!==null && digest(core)!==coreHash)) { row.status="configuration-invalid"; save(); throw new Error("Frozen configuration changed during the trial"); }
    const checked=await evaluate(work,s,p.seed,options.signal,pid=>tx!.recordChild(pid));
@@ -133,11 +143,12 @@ export async function runExperiment(root: string, experimentId: string, options:
    row.regressions=checked.checks.filter(c=>!c.passed && baselines.get(s.id)!.checks.some(b=>b.name===c.name && b.passed)).length;
    row.accepted=row.status==="completed"&&checked.accepted;
    if(checked.status!=="evaluated"&&row.status==="completed") row.status=checked.status;
-   atomicJSON(path.join(run,"evaluation.json"),checked); save();
+   atomicJSON(path.join(run,"evaluation.json"),checked); save(); retain();
   }
   output.state=options.drill?(output.profileChecks.length===planned.length?"drill-restored":"interrupted-restored"):output.rows.length===assignments.length&&output.rows.every(r=>r.status!=="cancelled"&&r.status!=="running"&&r.status!=="budget-exhausted")?"finished-restored":"interrupted-restored";
  } catch(error) { output.error=error instanceof Error?error.message:"Experiment failed"; output.state="failed-restored"; for(const row of output.rows) if(row.status==="running") row.status=options.signal?.aborted?"cancelled":"execution-error"; }
  finally {
+  try { retain(); } catch(error) { output.error??=error instanceof Error?error.message:"Work retention failed"; }
   if(tx) {
    try { if(p.mode==="live"&&activeAgents()) throw new Error("An affected agent is still active; close it before recovery"); tx.restore(); }
    catch(error) { output.state="recovery-required"; output.error=error instanceof Error?error.message:"Recovery failed"; }

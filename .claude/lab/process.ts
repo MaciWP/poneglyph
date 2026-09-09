@@ -23,6 +23,7 @@ export async function execute(command: string[], cwd: string, seconds: number, s
     const timer = setTimeout(() => { timedOut = true; stop(); }, seconds * 1000);
     const collect = (chunk: string, out: boolean) => {
       bytes += Buffer.byteLength(chunk);
+      // ponytail: 8 MB stream cap; raise it when verbose K6-K8 traces hit `output-limit`.
       if (bytes > 8 * 1024 * 1024) { outputLimit = true; stop(); return; }
       if (out) stdout += chunk; // stderr drained but never persisted; may contain secrets
     };

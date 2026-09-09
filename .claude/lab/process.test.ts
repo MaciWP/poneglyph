@@ -10,9 +10,12 @@ test("bounded commands drain pipes and preserve nonzero exit",async()=>{
  expect(noisy.outputLimit).toBe(true);
 });
 test("Claude requires successful completion and extracts only assistant prose",()=>{
- const cmd=commandFor("claude","claude","explicit-model","task"); expect(cmd).toContain("--model"); expect(cmd).toContain("explicit-model");
- const raw=[{type:"system",text:"not prose"},{type:"assistant",message:{content:[{type:"text",text:"Answer"}]}},{type:"result",subtype:"success",is_error:false,result:"Answer",usage:{input_tokens:3},modelUsage:{chosen:{}},total_cost_usd:0.1}].map(x=>JSON.stringify(x)).join("\n");
- expect(decode("claude",raw).text).toBe("Answer"); expect(decode("claude",raw).terminal).toBe(true);
+ const cmd=commandFor("claude","claude","explicit-model","task"); expect(cmd).toContain("--model"); expect(cmd).toContain("explicit-model"); expect(cmd).toContain("Skill");
+ const result={type:"result",subtype:"success",is_error:false,result:"Answer",usage:{input_tokens:3},modelUsage:{chosen:{}},total_cost_usd:0.1,num_turns:4,duration_api_ms:1500,permission_denials:[{tool_name:"Agent"}]};
+ const raw=[{type:"system",text:"not prose"},{type:"assistant",message:{content:[{type:"text",text:"Answer"}]}},result].map(x=>JSON.stringify(x)).join("\n");
+ const one=decode("claude",raw); expect(one.text).toBe("Answer"); expect(one.terminal).toBe(true); expect(one.model).toBe("chosen");
+ expect(one.numTurns).toBe(4); expect(one.apiSeconds).toBe(1.5); expect(one.permissionDenials).toHaveLength(1); expect(Object.keys(one.modelUsage!)).toEqual(["chosen"]);
+ const two=decode("claude",raw.replace('"modelUsage":{"chosen":{}}','"modelUsage":{"chosen":{},"fallback":{}}')); expect(two.model).toBeNull(); expect(Object.keys(two.modelUsage!)).toEqual(["chosen","fallback"]);
  for(const bad of ["", "{}", raw.split("\n").slice(0,-1).join("\n"),JSON.stringify({type:"result",subtype:"error",result:"Answer"})]) expect(decode("claude",bad).terminal).toBe(false);
  expect(()=>commandFor("claude","claude","","task")).toThrow();
 });

@@ -17,6 +17,7 @@ export interface RunRecord extends Assignment {
   status: string; accepted: boolean; seconds: number | null; verifierSeconds: number | null;
   checks: Check[]; regressions: number; model: string | null;
   usage: Record<string, number> | null; apiEquivalentUsd: number | null;
+  numTurns: number | null; apiSeconds: number | null; modelUsage: Record<string, unknown> | null; permissionDenials: unknown[] | null;
 }
 export const identifier = (s: unknown): s is string => typeof s === "string" && /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,95}$/.test(s);
 export const hashId = (s: unknown): s is string => typeof s === "string" && /^[a-f0-9]{64}$/.test(s);

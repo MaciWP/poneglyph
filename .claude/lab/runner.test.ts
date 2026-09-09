@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test";
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, renameSync, existsSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, renameSync, rmSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { inventory, captureProfile, deriveProfile } from "./profiles";
 import { saveVersion, type Recipe } from "./store";
 import { prepareExperiment, runExperiment } from "./runner";
@@ -16,9 +16,16 @@ function fixture() {
 }
 test("frozen experiments repeat with fresh attempts and restore original configuration",async()=>{
  const f=fixture(), id=prepareExperiment(f.data,f.recipe,{platform:process.platform,hostVersion:"simulation"});
- const a=await runExperiment(f.data,id,{home:f.home}), b=await runExperiment(f.data,id,{home:f.home});
+ const works:string[]=[];
+ const a=await runExperiment(f.data,id,{home:f.home,onTrial:(_,work)=>works.push(work)}), b=await runExperiment(f.data,id,{home:f.home});
  expect(a.id).not.toBe(b.id); expect(a.state).toBe("finished-restored"); expect(a.rows).toHaveLength(4);
  expect(a.rows.filter(r=>r.accepted)).toHaveLength(2);
+ // Opaque temporary work directories outside the laboratory, removed after retention.
+ expect(works).toHaveLength(4); expect(works.every(w=>basename(w).startsWith("poneglyph-trial-")&&!w.startsWith(f.data)&&!existsSync(w))).toBe(true);
+ const run=join(f.data,"executions",a.id,"runs",a.rows[0].id);
+ expect(readFileSync(join(run,"stream.jsonl"),"utf8")).toContain("synthetic process");
+ expect(readFileSync(join(run,"final.txt"),"utf8")).toBe("Synthetic result");
+ expect(existsSync(join(run,"work","src","service.ts"))).toBe(true);
  expect(a.rows.filter(r=>r.condition==="base").every(r=>!r.accepted)).toBe(true);
  expect(readFileSync(join(f.home,".claude","CLAUDE.md"),"utf8")).toBe("Original configuration");
  expect(JSON.parse(readFileSync(join(f.data,"executions",a.id,"results.json"),"utf8")).rows).toHaveLength(4);
@@ -48,15 +55,15 @@ test("cancellation restores the original profile",async()=>{
 test("a real spawn failure restores the profile and records an execution error",async()=>{
  const f=fixture(); f.recipe.conditions=f.recipe.conditions.filter(c=>c.id==="base");
  const id=prepareExperiment(f.data,f.recipe,{platform:process.platform,hostVersion:"simulation"});
- const r=await runExperiment(f.data,id,{home:f.home,onTrial:assignment=>{
-  const execution=readdirSync(join(f.data,"executions"))[0];
-  const work=join(f.data,"executions",execution,"runs",assignment.id,"work");
+ let moved="";
+ const r=await runExperiment(f.data,id,{home:f.home,onTrial:(_,work)=>{
   // Removing the cwd through a reversible rename forces spawn itself to fail.
-  renameSync(work,work+"-moved");
+  moved=work+"-moved"; renameSync(work,moved);
  }});
  expect(r.state).toBe("failed-restored"); expect(r.rows).toHaveLength(1);
  expect(r.rows[0].status).toBe("execution-error"); expect(r.rows[0].accepted).toBe(false);
  expect(r.error).toContain("spawn");
  expect(readFileSync(join(f.home,".claude","CLAUDE.md"),"utf8")).toBe("Original configuration");
  expect(existsSync(join(f.home,".poneglyph-lab","active.json"))).toBe(false);
+ rmSync(moved,{recursive:true,force:true});
 },30000);

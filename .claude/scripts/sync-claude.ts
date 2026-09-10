@@ -939,11 +939,14 @@ function determineLinkMethod(
   return info.canSymlink ? "symlink" : "copy";
 }
 
+// Returns the number of links that failed: the caller turns it into exit 1 so an
+// orchestrator (sync-poneglyph) never reads a partial Claude layer as success.
 async function createSymlinks(
   links: LinkInfo[],
   config: Config,
   info: SystemInfo,
-): Promise<void> {
+): Promise<number> {
+  let failed = 0;
   const homeDir = getHomeDir();
   const destBase = path.join(homeDir, ".claude");
   const backupDir = path.join(
@@ -1070,6 +1073,7 @@ async function createSymlinks(
         `${icon} Created: ${path.basename(link.dest)} → ${link.source}`,
       );
     } catch (error) {
+      failed++;
       if (error instanceof Error) {
         if (error.message.includes("EPERM")) {
           console.error(
@@ -1082,6 +1086,7 @@ async function createSymlinks(
       }
     }
   }
+  return failed;
 }
 
 function printPermissionHelp(info: SystemInfo): void {
@@ -1564,11 +1569,8 @@ Requirements per OS:
     }
   }
 
-  if (toModify.length > 0) {
-    await createSymlinks(links, config, systemInfo);
-  } else {
-    console.log("\n✅ All symlinks already linked correctly");
-  }
+  const failedLinks = toModify.length > 0 ? await createSymlinks(links, config, systemInfo) : 0;
+  if (toModify.length === 0) console.log("\n✅ All symlinks already linked correctly");
 
   // Regenerate the body-only twin from the style SSOT (grok/codex/compare consume it).
   const twinResult = generateSpTwin(projectRoot, true);
@@ -1583,6 +1585,10 @@ Requirements per OS:
         ? "❌"
         : "📄";
   console.log(`${sIcon} settings.json: ${settingsResult.message}`);
+  if (settingsResult.status === "error") {
+    console.error("❌ settings.json was not regenerated — the Claude layer is incomplete (exit 1).");
+    process.exit(1);
+  }
 
   // Acceptance check, not a file check (audit 010 regression: a boolean where the
   // schema wants a string made Claude Code drop the WHOLE user profile while this
@@ -1606,6 +1612,11 @@ Requirements per OS:
     }
   }
 
+  if (failedLinks > 0) {
+    console.error(`\n❌ ${failedLinks} link(s) failed — see the errors above (exit 1).`);
+    process.exit(1);
+  }
+
   console.log("\n✅ Sync completed");
 
   if (config.backup) {
@@ -1624,5 +1635,8 @@ Requirements per OS:
 }
 
 if (import.meta.main) {
-  main().catch(console.error);
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
 }

@@ -33,12 +33,12 @@ describe("selectHosts", () => {
 });
 
 describe("planRuns", () => {
-  const selected = [host("claude", true), host("codex", true, ["/orca/home", "/home/u/.codex"]), host("grok", true)];
+  const selected = [host("claude", true), host("codex", true, ["/home/u/.codex", "/orca/home"]), host("grok", true)];
 
   it("one run per host, Codex once per profile with its CODEX_HOME, always --force", () => {
     const runs = planRuns(selected, flags({ execute: true, backup: true }), ROOT);
-    expect(runs.map((r) => r.label)).toEqual(["claude", "codex (/orca/home)", "codex (/home/u/.codex)", "grok"]);
-    expect(runs.map((r) => r.env)).toEqual([{}, { CODEX_HOME: "/orca/home" }, { CODEX_HOME: "/home/u/.codex" }, {}]);
+    expect(runs.map((r) => r.label)).toEqual(["claude", "codex (/home/u/.codex)", "codex (/orca/home)", "grok"]);
+    expect(runs.map((r) => r.env)).toEqual([{}, { CODEX_HOME: "/home/u/.codex" }, { CODEX_HOME: "/orca/home" }, {}]);
     for (const run of runs) {
       expect(run.cmd[0]).toBe(process.execPath);
       expect(run.cmd[1].startsWith(ROOT)).toBe(true);

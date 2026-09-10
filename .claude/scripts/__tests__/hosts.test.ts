@@ -39,10 +39,10 @@ describe("detectHosts", () => {
 describe("codexTargets (one run per profile)", () => {
   const exists = (dirs: string[]) => (p: string) => dirs.map((d) => path.resolve(d)).includes(path.resolve(p));
 
-  it("CODEX_HOME first, then ~/.codex, when both profiles exist", () => {
+  it("shared ~/.codex first, then CODEX_HOME, when both profiles exist (account links may point at the shared AGENTS.md)", () => {
     const orca = path.resolve("/apps/orca/codex-accounts/x/home");
     const targets = codexTargets(HOME, { CODEX_HOME: orca }, exists([orca, path.join(HOME, ".codex")]));
-    expect(targets).toEqual([orca, path.join(HOME, ".codex")]);
+    expect(targets).toEqual([path.join(HOME, ".codex"), orca]);
   });
 
   it("de-duplicates when CODEX_HOME is the default profile", () => {

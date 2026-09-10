@@ -223,7 +223,7 @@ bun .claude/commands/sync-poneglyph.ts --execute --backup --force
 `/sync-poneglyph` detects which harnesses are installed (CLI on PATH or config home
 present), shows the set, asks once and runs the per-host engines in dependency
 order: `.claude/scripts/sync-claude.ts`, `sync-codex.ts` (once per Codex profile:
-`$CODEX_HOME` and `~/.codex`) and `sync-grok.ts`. Each engine keeps its own flags
+`~/.codex`, then `$CODEX_HOME`) and `sync-grok.ts`. Each engine keeps its own flags
 (`--check`, `--unlink`, `--validate-hooks`, `--method`, `--home-dir`) for per-host work.
 
 The Claude engine (`.claude/scripts/sync-claude.ts`) generates `~/.claude/settings.json` from

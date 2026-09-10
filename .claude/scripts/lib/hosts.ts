@@ -28,15 +28,16 @@ export interface DetectedHost {
 
 const CLI: Record<HostName, string> = { claude: "claude", codex: "codex", grok: "grok" };
 
-// CODEX_HOME first (the profile an interactive `codex` actually uses when the variable is
-// set), then the default profile; de-duplicated when both resolve to the same directory.
-// Nothing installed yet → the single default target, so a fresh machine still gets one run.
+// The shared default profile (~/.codex) first: an account profile in CODEX_HOME may link its
+// AGENTS.md to the shared one, and sync-codex only preserves that link when the shared target
+// is already current. De-duplicated when both resolve to the same directory. Nothing
+// installed yet → the single profile an interactive `codex` would use (CODEX_HOME, else ~/.codex).
 export function codexTargets(home: string, env: NodeJS.ProcessEnv, exists: HostProbe["exists"]): string[] {
-  const candidates = [env.CODEX_HOME ? path.resolve(env.CODEX_HOME) : null, path.join(home, ".codex")]
+  const candidates = [path.join(home, ".codex"), env.CODEX_HOME ? path.resolve(env.CODEX_HOME) : null]
     .filter((p): p is string => p !== null);
   const unique = candidates.filter((p, i) => candidates.findIndex((q) => samePath(p, q)) === i);
   const existing = unique.filter(exists);
-  return existing.length ? existing : [unique[0]];
+  return existing.length ? existing : [unique[unique.length - 1]];
 }
 
 function samePath(a: string, b: string): boolean {

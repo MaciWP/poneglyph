@@ -22,7 +22,7 @@ A host counts as **installed** when its CLI resolves on PATH **or** its config h
 | Host | CLI | Config home(s) | Engine |
 |------|-----|----------------|--------|
 | Claude Code | `claude` | `~/.claude` | `.claude/scripts/sync-claude.ts` |
-| Codex | `codex` | `$CODEX_HOME` and `~/.codex` — one run per existing profile | `.claude/scripts/sync-codex.ts` |
+| Codex | `codex` | `~/.codex`, then `$CODEX_HOME` — one run per existing profile (the shared default first: an account profile may link its `AGENTS.md` to it) | `.claude/scripts/sync-codex.ts` |
 | Grok Build | `grok` | `~/.grok` | `.claude/scripts/sync-grok.ts` |
 
 The command prints the detected set as a table (host · CLI · targets · action) before doing
@@ -37,7 +37,8 @@ Engines run sequentially, fail-fast, always in this order:
    overlay, validated by `claude doctor`) and regenerates the style twin
    `.claude/system-prompts/poneglyph-sp.md`.
 2. **Codex** — generates `AGENTS.md` (doctrine + twin), links the core skills, generates
-   `$name` command entrypoints and the native hooks. Once per profile.
+   `$name` command entrypoints and the native hooks; removes generated wrappers whose
+   command no longer exists. Once per profile.
 3. **Grok** — links the style twin and installs its native hook. Grok reuses `~/.claude`, so
    selecting Grok always syncs Claude first (the command tells you).
 

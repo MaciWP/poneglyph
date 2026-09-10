@@ -76,7 +76,8 @@ installation-backups directory. Backups are not auto-deleted.
 `/sync-poneglyph` is the single entrypoint. A host counts as installed when its CLI
 resolves on PATH or its config home exists (`~/.claude`; `$CODEX_HOME` and `~/.codex`;
 `~/.grok`). It shows the detected set, asks once, and runs the engines in dependency
-order — `sync-claude`, then `sync-codex` once per existing Codex profile, then
+order — `sync-claude`, then `sync-codex` once per existing Codex profile (`~/.codex`
+first, then `$CODEX_HOME`; generated wrappers of removed commands are pruned), then
 `sync-grok`. `--hosts claude,codex,grok|all` overrides detection; selecting Grok always
 syncs Claude first because Grok reuses `~/.claude`. Engine-only flags (`--check`,
 `--unlink`, `--validate-hooks`, `--method`, `--home-dir`) stay on the engines.

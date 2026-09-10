@@ -99,7 +99,7 @@ Options:
   -h, --help      Show this help
 
 Detection: a host counts as installed when its CLI resolves on PATH or its config home exists
-(~/.claude · $CODEX_HOME and ~/.codex · ~/.grok). Codex runs once per existing profile.
+(~/.claude · ~/.codex and $CODEX_HOME · ~/.grok). Codex runs once per existing profile, ~/.codex first.
 Order: claude → codex → grok (Codex embeds the style twin Claude regenerates; Grok reuses ~/.claude).
 
 Per-host engines keep their own flags (--check, --unlink, --validate-hooks, --method, --home-dir):

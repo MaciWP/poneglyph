@@ -135,10 +135,10 @@ async function main(): Promise<void> {
   const mdFile = mdIdx >= 0 ? argv[mdIdx + 1] : undefined;
   const checks: Check[] = [];
 
+  // Same detector as /sync-poneglyph: a host that is not installed is skipped, not red.
+  const hosts = new Map(detectHosts(realProbe()).map((h) => [h.name, h]));
+  const skipped = (name: string): Check => ({ name, status: "🟡", detail: "not installed on this machine — skipped" });
   if (!ci) {
-    // Same detector as /sync-poneglyph: a host that is not installed is skipped, not red.
-    const hosts = new Map(detectHosts(realProbe()).map((h) => [h.name, h]));
-    const skipped = (name: string): Check => ({ name, status: "🟡", detail: "not installed on this machine — skipped" });
     if (hosts.get("claude")!.installed) {
       const sc = await run(["bun", ".claude/scripts/sync-claude.ts", "--status"]);
       checks.push({ name: "Claude layer (sync-claude --status)", status: statusFromSyncOutput(sc.out, sc.code), detail: summarizeSyncOutput(sc.out) });
@@ -158,8 +158,10 @@ async function main(): Promise<void> {
     checks.push({ name: "Native execution evidence", status: "🟡", detail: "Configuration checks do not establish Codex hook trust, model activation, or MCP connectivity; inspect the native UI and report those gates separately." });
   }
 
-  const v = await run(["claude", "plugin", "validate", ".claude"]);
-  checks.push({ name: "Structure (claude plugin validate)", ...summarizeValidate(v.out, v.code) });
+  if (hosts.get("claude")!.cli) {
+    const v = await run(["claude", "plugin", "validate", ".claude"]);
+    checks.push({ name: "Structure (claude plugin validate)", ...summarizeValidate(v.out, v.code) });
+  } else checks.push({ name: "Structure (claude plugin validate)", status: "🟡", detail: "claude CLI not on PATH — structural validation skipped" });
 
   if (!fast) {
     const t = await run(["bun", "test", "./.claude/"]);

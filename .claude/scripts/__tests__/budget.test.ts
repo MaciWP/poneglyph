@@ -67,6 +67,28 @@ describe("measure", () => {
     mkdirSync(join(root, ".claude"), { recursive: true });
     expect(measure(root, home).alwaysLoaded["installed plugins: description + when_to_use (this machine)"]).toBe("  desc\n".length + "  wtu\n".length);
   });
+
+  it("counts CRLF and LF checkouts as the same source size", () => {
+    const skill = ["---", "name: a", "description: |", "  ab", "when_to_use: |", "  cd", "---", "BODY"].join("\n");
+    const writeTree = (nl: string) => {
+      const root = mkdtempSync(join(tmpdir(), "budget-eol-"));
+      mkdirSync(join(root, ".claude", "rules"), { recursive: true });
+      mkdirSync(join(root, ".claude", "output-styles"), { recursive: true });
+      mkdirSync(join(root, ".claude", "skills", "a"), { recursive: true });
+      writeFileSync(join(root, "CLAUDE.md"), "hello\nworld".replace(/\n/g, nl));
+      writeFileSync(join(root, ".claude", "output-styles", "poneglyph.md"), "style\n".replace(/\n/g, nl));
+      writeFileSync(join(root, ".claude", "rules", "error-recovery.md"), "rule\n".replace(/\n/g, nl));
+      writeFileSync(join(root, ".claude", "skills", "a", "SKILL.md"), skill.replace(/\n/g, nl));
+      return root;
+    };
+    const home = mkdtempSync(join(tmpdir(), "budget-home-"));
+    const lf = measure(writeTree("\n"), home);
+    const crlf = measure(writeTree("\r\n"), home);
+    expect(crlf.alwaysLoaded["CLAUDE.md"]).toBe(lf.alwaysLoaded["CLAUDE.md"]);
+    expect(crlf.alwaysLoaded["rules/error-recovery.md"]).toBe(lf.alwaysLoaded["rules/error-recovery.md"]);
+    expect(crlf.alwaysLoaded["skills: description + when_to_use"]).toBe(lf.alwaysLoaded["skills: description + when_to_use"]);
+    expect(crlf.skillBodies.a).toBe(lf.skillBodies.a);
+  });
 });
 
 describe("the real layer stays within its snapshot (ratchet — Cmd IX)", () => {

@@ -11,7 +11,7 @@
 // size grows more than TOLERANCE over its snapshot. Lowering is free; raising is a
 // deliberate `bun .claude/scripts/budget.ts --update` after a decision.
 
-import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -40,8 +40,18 @@ export function frontmatterField(skillMd: string, key: string): string {
   return m ? m[1] : "";
 }
 
+// Logical UTF-8 size with LF newlines. `statSync().size` follows the checkout
+// (CRLF on Windows autocrlf), so the ratchet would fail CI while Ubuntu passed.
+function readSource(path: string): string {
+  return readFileSync(path, "utf8").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+}
+
+function utf8Len(text: string): number {
+  return Buffer.byteLength(text, "utf8");
+}
+
 function bytes(path: string): number {
-  return existsSync(path) ? statSync(path).size : 0;
+  return existsSync(path) ? utf8Len(readSource(path)) : 0;
 }
 
 // Installed plugins load their skills' description + when_to_use on every turn too —
@@ -65,8 +75,8 @@ export function measurePluginSurface(homeDir: string): number {
       for (const s of readdirSync(skillsDir)) {
         const file = join(skillsDir, s, "SKILL.md");
         if (!existsSync(file)) continue;
-        const text = readFileSync(file, "utf8");
-        sum += Buffer.byteLength(frontmatterField(text, "description") + frontmatterField(text, "when_to_use"), "utf8");
+        const text = readSource(file);
+        sum += utf8Len(frontmatterField(text, "description") + frontmatterField(text, "when_to_use"));
       }
     }
   }
@@ -93,9 +103,9 @@ export function measure(repoRoot: string, homeDir: string = homedir()): Measurem
     for (const s of readdirSync(skillsDir).sort()) {
       const file = join(skillsDir, s, "SKILL.md");
       if (!existsSync(file)) continue;
-      const text = readFileSync(file, "utf8");
-      skillBodies[s] = Buffer.byteLength(text, "utf8");
-      surface += Buffer.byteLength(frontmatterField(text, "description") + frontmatterField(text, "when_to_use"), "utf8");
+      const text = readSource(file);
+      skillBodies[s] = utf8Len(text);
+      surface += utf8Len(frontmatterField(text, "description") + frontmatterField(text, "when_to_use"));
     }
   }
   alwaysLoaded["skills: description + when_to_use"] = surface;

@@ -254,7 +254,7 @@ The current bridge topology and verification commands live in
 | `.claude/settings.json` | Hook-free project profile |
 | `.claude/skills/` | Shared core skill source; linked directories retain their supporting resources |
 | `.claude/hooks/` | Shared hook logic, native event adapters and tests |
-| `.claude/commands/` | `/flow`, `/role`, `/sync-claude`, `/commit-message`, `/pr-description` |
+| `.claude/commands/` | `/flow`, `/role`, `/sync-claude` |
 | `.claude/plans/` | `/flow` feature lifecycles (`{NNN}-{slug}/`) |
 | `docs/` | Machine bootstrap records (git, statusline) |
 

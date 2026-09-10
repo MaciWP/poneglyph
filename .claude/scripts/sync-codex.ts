@@ -213,6 +213,33 @@ function printStatus(links: CodexLink[]): void {
   }
 }
 
+// Generated command wrappers whose shared command no longer exists (removed or renamed):
+// `$name` would still be advertised but read a missing file. Only files carrying
+// GENERATED_MARK qualify — linked skill directories and foreign skills never match.
+export function staleWrappers(codexHome: string, links: CodexLink[]): string[] {
+  const skillsDir = path.join(codexHome, "skills");
+  if (!fs.existsSync(skillsDir)) return [];
+  const managed = new Set(links.filter((l) => l.content !== undefined).map((l) => path.resolve(l.dest)));
+  return fs.readdirSync(skillsDir)
+    .map((name) => path.join(skillsDir, name, "SKILL.md"))
+    .filter((file) => {
+      if (managed.has(path.resolve(file))) return false;
+      try {
+        return fs.statSync(file).isFile() && fs.readFileSync(file, "utf8").includes(GENERATED_MARK);
+      } catch {
+        return false;
+      }
+    });
+}
+
+function removeStaleWrappers(codexHome: string, links: CodexLink[]): void {
+  for (const file of staleWrappers(codexHome, links)) {
+    fs.rmSync(file);
+    try { fs.rmdirSync(path.dirname(file)); } catch { /* directory not empty: leave it */ }
+    console.log(`removed  ${file} (generated wrapper; its command no longer exists)`);
+  }
+}
+
 function usage(): void {
   console.log(`
 sync-codex - install Poneglyph's portable Codex adapter
@@ -258,15 +285,17 @@ async function main(): Promise<void> {
 
   const projectRoot = fs.realpathSync.native(path.resolve(import.meta.dir, "../.."));
   const codexHome = process.env.CODEX_HOME ? path.resolve(process.env.CODEX_HOME) : undefined;
+  const profile = codexHome ?? path.join(os.homedir(), ".codex");
   const links = buildCodexLinks(projectRoot, os.homedir(), codexHome);
-  const hookFile = path.join(codexHome ?? path.join(os.homedir(), ".codex"), "hooks.json");
+  const hookFile = path.join(profile, "hooks.json");
   const hooks = nativeHookConfig("codex", projectRoot);
   hookFilePlan(hookFile, hooks); // Validate configuration before any mutation.
   // Context/effort policy keys in the profile's config.toml (plan 037); other keys are preserved.
-  const configFile = path.join(codexHome ?? path.join(os.homedir(), ".codex"), "config.toml");
+  const configFile = path.join(profile, "config.toml");
   const configPlan = () => codexConfigPlan(fs.existsSync(configFile) ? fs.readFileSync(configFile, "utf8") : "");
   const status = () => {
     printStatus(links);
+    for (const file of staleWrappers(profile, links)) console.log(`stale    ${file} (generated wrapper; its command no longer exists)`);
     console.log(`${hookFilePlan(hookFile, hooks).status.padEnd(8)} ${hookFile}`);
     console.log(`${(configPlan().changed ? "stale" : "linked").padEnd(8)} ${configFile} (${describePolicy("codex")})`);
     console.log("Native hook execution requires Codex /hooks trust; registration alone is not activation evidence.");
@@ -303,6 +332,7 @@ async function main(): Promise<void> {
   const plan = configPlan();
   if (plan.changed && fs.existsSync(configFile) && !values.backup) throw new Error("Context policy change in config.toml requires --backup.");
   for (const link of links) createLink(link, values.backup ?? false);
+  removeStaleWrappers(profile, links);
   installHookFile(hookFile, hooks);
   if (plan.changed) {
     if (fs.existsSync(configFile)) {

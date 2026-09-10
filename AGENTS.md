@@ -8,8 +8,9 @@ doctrine is not injected twice when developing Poneglyph itself.
   project `.claude/settings.json` must stay hook-free.
 - Run `bun run doctor` (suite, `claude plugin validate .claude`, sync status, budget ratchet, privacy grep) after behavioral
   configuration changes.
-- Use `bun .claude/commands/sync-claude.ts --status` to inspect the Claude layer
-  and `bun .claude/scripts/sync-codex.ts --status` to inspect the Codex layer.
+- Use `bun .claude/commands/sync-poneglyph.ts --status` to inspect every installed
+  harness; per host, `bun .claude/scripts/sync-claude.ts --status` (Claude) and
+  `bun .claude/scripts/sync-codex.ts --status` (Codex).
 - Codex links the shared core skill catalog and generates entrypoints for shared
   commands. Native hook adapters reuse shared logic; host permissions stay native.
 - Inspect Grok with `bun .claude/scripts/sync-grok.ts --status`. Registration is

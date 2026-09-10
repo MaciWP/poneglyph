@@ -18,7 +18,7 @@ guarantee identical model decisions or permission systems.
 The adapter discovers core skill directories from source, excluding links into
 optional addons. The 2026-09-07 source review found 30 skills and five commands;
 commit-message and pr-description later moved to the private work plugin as skills,
-leaving three core commands (`flow`, `role`, `sync-claude`).
+leaving three core commands (`flow`, `role`, `sync-poneglyph`).
 References and scripts stay with their skill. Generated wrappers contain
 invocation glue, not independently maintained command bodies.
 
@@ -75,13 +75,21 @@ Preview before execution. Preserve matching links, native settings and other
 hooks. Recovery copies stay outside skill discovery roots in the user's Poneglyph
 installation-backups directory. Backups are not auto-deleted.
 
+`/sync-poneglyph` is the single entrypoint. A host counts as installed when its CLI
+resolves on PATH or its config home exists (`~/.claude`; `$CODEX_HOME` and `~/.codex`;
+`~/.grok`). It shows the detected set, asks once, and runs the engines in dependency
+order — `sync-claude`, then `sync-codex` once per existing Codex profile (`~/.codex`
+first, then `$CODEX_HOME`; generated wrappers of removed commands are pruned), then
+`sync-grok`. `--hosts claude,codex,grok|all` overrides detection; selecting Grok always
+syncs Claude first because Grok reuses `~/.claude`. Engine-only flags (`--check`,
+`--unlink`, `--validate-hooks`, `--method`, `--home-dir`) stay on the engines.
+
 ```bash
-bun .claude/commands/sync-claude.ts --status
+bun .claude/commands/sync-poneglyph.ts --status
+bun .claude/commands/sync-poneglyph.ts --execute --backup --force
+bun .claude/scripts/sync-claude.ts --status      # one host at a time
 bun .claude/scripts/sync-codex.ts --status
 bun .claude/scripts/sync-grok.ts --status
-bun .claude/commands/sync-claude.ts --execute --backup --force
-bun .claude/scripts/sync-codex.ts --execute --backup --force
-bun .claude/scripts/sync-grok.ts --execute --backup --force
 bun run check:config
 bun run doctor --ci
 bun run doctor

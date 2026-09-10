@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-// .claude/commands/sync-claude.ts
+// .claude/scripts/sync-claude.ts — Claude-layer engine; /sync-poneglyph orchestrates it with sync-codex and sync-grok
 // Syncs .claude/ from poneglyph to ~/.claude/ via symlinks
 // Supports: Windows (junction/symlink), macOS, Linux
 
@@ -939,11 +939,14 @@ function determineLinkMethod(
   return info.canSymlink ? "symlink" : "copy";
 }
 
+// Returns the number of links that failed: the caller turns it into exit 1 so an
+// orchestrator (sync-poneglyph) never reads a partial Claude layer as success.
 async function createSymlinks(
   links: LinkInfo[],
   config: Config,
   info: SystemInfo,
-): Promise<void> {
+): Promise<number> {
+  let failed = 0;
   const homeDir = getHomeDir();
   const destBase = path.join(homeDir, ".claude");
   const backupDir = path.join(
@@ -1070,6 +1073,7 @@ async function createSymlinks(
         `${icon} Created: ${path.basename(link.dest)} → ${link.source}`,
       );
     } catch (error) {
+      failed++;
       if (error instanceof Error) {
         if (error.message.includes("EPERM")) {
           console.error(
@@ -1082,6 +1086,7 @@ async function createSymlinks(
       }
     }
   }
+  return failed;
 }
 
 function printPermissionHelp(info: SystemInfo): void {
@@ -1352,7 +1357,7 @@ function validateHooks(): void {
 
 // === CONFIRMATION ===
 
-async function askConfirmation(message: string): Promise<boolean> {
+export async function askConfirmation(message: string): Promise<boolean> {
   const rl = await import("readline");
   const readline = rl.createInterface({
     input: process.stdin,
@@ -1390,7 +1395,7 @@ async function main(): Promise<void> {
 sync-claude - Syncs .claude/ from poneglyph to ~/.claude/ via symlinks
 
 Usage:
-  bun run scripts/sync-claude.ts [options]
+  bun .claude/scripts/sync-claude.ts [options]
 
 Options:
   --check           Verify system and permissions (recommended first)
@@ -1411,14 +1416,14 @@ Link methods:
   copy        Copies files (does not sync changes)
 
 Examples:
-  bun run scripts/sync-claude.ts --check           # Verify system first
-  bun run scripts/sync-claude.ts                   # Preview
-  bun run scripts/sync-claude.ts --status          # See current state
-  bun run scripts/sync-claude.ts --execute         # Create symlinks
-  bun run scripts/sync-claude.ts --execute --backup  # With backup
-  bun run scripts/sync-claude.ts --method junction --execute  # Force junction
-  bun run scripts/sync-claude.ts --unlink          # Remove symlinks
-  bun run scripts/sync-claude.ts --validate-hooks  # Verify hook accessibility
+  bun .claude/scripts/sync-claude.ts --check           # Verify system first
+  bun .claude/scripts/sync-claude.ts                   # Preview
+  bun .claude/scripts/sync-claude.ts --status          # See current state
+  bun .claude/scripts/sync-claude.ts --execute         # Create symlinks
+  bun .claude/scripts/sync-claude.ts --execute --backup  # With backup
+  bun .claude/scripts/sync-claude.ts --method junction --execute  # Force junction
+  bun .claude/scripts/sync-claude.ts --unlink          # Remove symlinks
+  bun .claude/scripts/sync-claude.ts --validate-hooks  # Verify hook accessibility
 
 Requirements per OS:
   Windows:  Developer Mode enabled, or use junction, or Admin
@@ -1451,7 +1456,7 @@ Requirements per OS:
     console.error(
       "\n❌ No interactive terminal and --force not set — this would hang on the\n" +
         "   confirmation prompt. Re-run non-interactively with --force:\n" +
-        "     bun .claude/commands/sync-claude.ts --execute --backup --force\n",
+        "     bun .claude/commands/sync-poneglyph.ts --execute --backup --force\n",
     );
     process.exit(2);
   }
@@ -1564,11 +1569,8 @@ Requirements per OS:
     }
   }
 
-  if (toModify.length > 0) {
-    await createSymlinks(links, config, systemInfo);
-  } else {
-    console.log("\n✅ All symlinks already linked correctly");
-  }
+  const failedLinks = toModify.length > 0 ? await createSymlinks(links, config, systemInfo) : 0;
+  if (toModify.length === 0) console.log("\n✅ All symlinks already linked correctly");
 
   // Regenerate the body-only twin from the style SSOT (grok/codex/compare consume it).
   const twinResult = generateSpTwin(projectRoot, true);
@@ -1583,6 +1585,10 @@ Requirements per OS:
         ? "❌"
         : "📄";
   console.log(`${sIcon} settings.json: ${settingsResult.message}`);
+  if (settingsResult.status === "error") {
+    console.error("❌ settings.json was not regenerated — the Claude layer is incomplete (exit 1).");
+    process.exit(1);
+  }
 
   // Acceptance check, not a file check (audit 010 regression: a boolean where the
   // schema wants a string made Claude Code drop the WHOLE user profile while this
@@ -1606,6 +1612,11 @@ Requirements per OS:
     }
   }
 
+  if (failedLinks > 0) {
+    console.error(`\n❌ ${failedLinks} link(s) failed — see the errors above (exit 1).`);
+    process.exit(1);
+  }
+
   console.log("\n✅ Sync completed");
 
   if (config.backup) {
@@ -1624,5 +1635,8 @@ Requirements per OS:
 }
 
 if (import.meta.main) {
-  main().catch(console.error);
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
 }

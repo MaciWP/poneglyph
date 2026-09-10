@@ -7,10 +7,10 @@ On-demand reference. CLAUDE.md keeps only always-needed behavior; everything her
 The intended normal case is working in **another** project while poneglyph runs underneath through `~/.claude/`. Install once per machine:
 
 ```bash
-bun .claude/commands/sync-claude.ts --execute --backup --force
+bun .claude/commands/sync-poneglyph.ts --execute --backup --force
 ```
 
-- Links `skills/commands/rules/docs/hooks/output-styles/workflows/scripts` into `~/.claude/` (authoritative folder list = `LINK_FOLDERS` in `commands/sync-claude.ts`; rules link per-entry, with `test-policy.md` excluded from the global layer — 021 decision; scripts synced since 027/US2) (junctions on Windows — no admin; symlinks on macOS/Linux) and regenerates `~/.claude/settings.json` from `settings.global.json` deep-merged with `settings.machine.json` (gitignored, per-machine; hook groups are unioned per event and de-duplicated by `command`, so the overlay only adds machine-specific handlers — plan 038), then validates the result with `claude doctor` ("Invalid settings" section; 032/WP1) — a rejected file fails the sync and the backup is restored.
+- Links `skills/commands/rules/docs/hooks/output-styles/workflows/scripts` into `~/.claude/` (authoritative folder list = `LINK_FOLDERS` in `scripts/sync-claude.ts`; rules link per-entry, with `test-policy.md` excluded from the global layer — 021 decision; scripts synced since 027/US2) (junctions on Windows — no admin; symlinks on macOS/Linux) and regenerates `~/.claude/settings.json` from `settings.global.json` deep-merged with `settings.machine.json` (gitignored, per-machine; hook groups are unioned per event and de-duplicated by `command`, so the overlay only adds machine-specific handlers — plan 038), then validates the result with `claude doctor` ("Invalid settings" section; 032/WP1) — a rejected file fails the sync and the backup is restored.
 - **macOS**: also create `.claude/settings.machine.json` carrying that machine's `env.PATH` — the GUI app launches with a minimal PATH, so linking alone leaves hooks/statusline broken; the PATH overlay fixes it (separate cause from linking).
 - **Scope boundary**: the global (`~/.claude/skills`, link → repo) and project (`./.claude/skills`, real) paths expose the same skills, which Claude deduplicates by name. Only the user profile registers hooks; `.claude/settings.json` is hook-free, so a Poneglyph maintenance session cannot double-fire them.
 - Settings load at session start → a fresh sync takes effect on the NEXT session.
@@ -148,7 +148,7 @@ Test: "does the agent need this in EVERY prompt?" — no → skill.
 
 ## When to use a command vs a skill (same layer, different trigger)
 
-**Default to a skill.** Reach for a command only for (a) a script entrypoint (`sync-claude.ts`) or (b) a pure prompt-macro that orchestrates skills with `$ARGUMENTS`/`allowed-tools` (`flow`, `role`). Command = user invokes `/x [args]` explicitly; skill = model auto-invokes on keyword/description match (no `$ARGUMENTS`). A command may invoke skills; a skill never needs `$ARGUMENTS`. Live commands: `flow`, `role`, `sync-claude` — everything else is a skill.
+**Default to a skill.** Reach for a command only for (a) a script entrypoint (`sync-poneglyph.ts`) or (b) a pure prompt-macro that orchestrates skills with `$ARGUMENTS`/`allowed-tools` (`flow`, `role`). Command = user invokes `/x [args]` explicitly; skill = model auto-invokes on keyword/description match (no `$ARGUMENTS`). A command may invoke skills; a skill never needs `$ARGUMENTS`. Live commands: `flow`, `role`, `sync-poneglyph` — everything else is a skill.
 
 ## Component inventory
 
@@ -157,7 +157,7 @@ Test: "does the agent need this in EVERY prompt?" — no → skill.
 | Agents | 7 + 1 meta | 3 | **0 custom** | builder/reviewer/scout cut in feature 008; work runs inline (delegation doctrine), read-only fan-out via Workflow/`Explore`. The ONE sanctioned single-agent dispatch is critic's fresh-context reviewer (P1 exception, feature 019) — ad-hoc, no agent file |
 | Skills | 28 | 14 | **count `ls .claude/skills`** (30 snapshot 2026-08-06) | 6 phase skills + `drillme` + `html-report` (003); 031: `best-of-n` + `project-onboard` CUT, `decision-stress-test` MERGED into `decide` (heavy tier), `escalate`→`unstuck`, `codex-consult`→`consult` (multi-model), +`pr-review` (new); `skill-advisor` restored in 023, auto-invoke-the-obvious since 031 |
 | Hooks | 15+ | 6 | **the ones `settings.global.json.hooks` registers** (5 handlers over 4 events, snapshot 2026-09-09/037 — `bash-output-shaper` added: second PreToolUse/Bash handler, denies whole-file dumps and bounds unbounded listings, after tool output measured at 56 % of context; `headless-model-gate` added 033 after 82 headless sessions on Opus/Fable in one day; `post-compact` cut: CLAUDE.md reloads on compaction; `workspace-hint` moved to the private plugin `poneglyph-work`; earlier: `auto-approve` + `session-start-plans` cut 2026-08-07, `code-validator` + `learning-inbox` cut in 030) | authoritative list = user profile source; event table with per-hook detail: `rules/paths/hooks.md` |
-| Slash commands | 10 | 4 | **count `ls .claude/commands/*.md`** (3 snapshot 2026-07-07) | `flow`, `sync-claude`, `role` (decide/explain-changes were thin command wrappers → pruned; they remain as skills) |
+| Slash commands | 10 | 4 | **count `ls .claude/commands/*.md`** (3 snapshot 2026-07-07) | `flow`, `sync-poneglyph`, `role` (decide/explain-changes were thin command wrappers → pruned; they remain as skills) |
 | Rules | 7 | 2 + paths/ | **count `ls .claude/rules`** (3 + paths/ snapshot 2026-08-05) | `error-recovery.md`, `test-policy.md`, `skill-routing.md` (030 — replaced `model-uplift.md`) + `paths/{hooks,orchestration}.md` |
 | Output-styles | 1 (caveman) | 1 | **1 (poneglyph)** | SSOT: `output-styles/poneglyph.md`. Claude loads via `outputStyle: Poneglyph`. Grok has no output-style feature → always-on `~/.grok/rules/poneglyph-sp.md` **symlink (Windows: copy) to the generated twin** (do not also link the style); the rest of the layer reaches Grok through `[compat.claude]`. |
 

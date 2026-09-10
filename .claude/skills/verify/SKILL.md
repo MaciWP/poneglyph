@@ -50,8 +50,8 @@ report (`Skill(lessons)` G2/G6 — a merge gate red is never a nit).
 
 ### 2. Impact sweep
 
-For every touched symbol/component, enumerate what ELSE uses it — LSP references
-first, Grep fallback — and name the affected files/screens/flows. This is the
+For every touched symbol/component, enumerate what ELSE uses it — Grep
+the symbol, then Read the hits — and name the affected files/screens/flows. This is the
 "¿dónde más se usan estos badges?" question, asked proactively instead of by the
 user. A shared symbol changed without its usages checked is not verified.
 

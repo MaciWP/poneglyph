@@ -17,7 +17,7 @@ when_to_use: |
 
 ## §0 Verify First
 
-Before asserting anything exists, verify with tools (Glob/LSP/Grep/Read); confidence < 70% → `AskUserQuestion`, don't guess. Tool hierarchy, confidence levels and the validation pipeline are the `anti-hallucination` skill's (canonical — not restated here).
+Before asserting anything exists, verify with tools (Glob/Grep/Read); confidence < 70% → `AskUserQuestion`, don't guess. Tool hierarchy, confidence levels and the validation pipeline are the `anti-hallucination` skill's (canonical — not restated here).
 
 ---
 

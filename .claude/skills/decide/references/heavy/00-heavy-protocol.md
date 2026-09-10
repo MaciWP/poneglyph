@@ -39,7 +39,7 @@ Steel-Man First · Assumption Audit (Likelihood × Impact, shared assumptions fl
 
 **Triangulation**: ≥2 perspectives independently surfacing the same finding → HIGH confidence, annotated `[triangulated by N]`. Caveat: triangulation can amplify shared bias (Assumption Audit groupthink flag; anti-pattern #8 in `04-anti-patterns.md`).
 
-**Verification gate** (per finding, before it enters the output): Glob for file claims, Grep/Read for function/pattern claims, Context7/WebSearch for version/CVE/benchmark claims, LSP hover for signatures. Unverifiable → tag `UNKNOWN` + state what verification is needed. Confidence tags: HIGH (tool-verified or triangulated) / MEDIUM (informed inference) / LOW (bare inference) / UNKNOWN.
+**Verification gate** (per finding, before it enters the output): Glob for file claims, Grep/Read for function/pattern/signature claims, Context7/WebSearch for version/CVE/benchmark claims. Unverifiable → tag `UNKNOWN` + state what verification is needed. Confidence tags: HIGH (tool-verified or triangulated) / MEDIUM (informed inference) / LOW (bare inference) / UNKNOWN.
 
 ## Phase 4 — validation (blocking quality gate)
 

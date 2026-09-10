@@ -14,7 +14,6 @@ description: Keywords→skills table, task type detection, priority scoring, syn
 | refactor, extract, SOLID, clean, simplify | `review-patterns` |
 | error, retry, circuit, fallback, recovery | `diagnostic-patterns` |
 | performance, memory, optimization, bottleneck, slow, n+1 | `review-patterns` |
-| definition, references, hover, symbols, lsp | `lsp-operations` |
 | code quality, code smells, SOLID, complexity, duplication | `review-patterns` |
 | validate, verify, check, exists, hallucination, confidence | `anti-hallucination` |
 | decide, decision, choose, evaluate, trade-off | `decide` |

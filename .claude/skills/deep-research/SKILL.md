@@ -53,7 +53,7 @@ that any research would miss, one `AskUserQuestion` round — then continue.
 
 No `Agent` / Workflow. The Lead uses tools directly:
 
-1. **Codebase first** (T1): Grep / Read / Glob / LSP when the question touches this repo.
+1. **Codebase first** (T1): Grep / Read / Glob when the question touches this repo.
 2. **Web when needed**: WebSearch → WebFetch primary sources (official docs, RFCs, release
    notes, reputable posts). Prefer fewer high-quality fetches over many shallow hits.
 3. **Stop conditions for this pass** (any one is enough to move to the gate):

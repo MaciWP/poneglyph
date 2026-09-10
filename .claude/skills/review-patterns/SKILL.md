@@ -93,7 +93,6 @@ Both modes produce structured output. Quality mode uses `Code Quality Review: [C
 ## Related
 
 - `critic` — Phase 4 owner that dispatches this skill (quality + performance lenses).
-- `lsp-operations` — navigate the call graph while reviewing.
 
 ---
 

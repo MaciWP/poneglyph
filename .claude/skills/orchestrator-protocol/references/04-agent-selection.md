@@ -18,11 +18,11 @@ description: Signal→agent selection matrix, multi-agent patterns, anti-pattern
 
 ## Exploration Decision Matrix (Volume × Complexity)
 
-Before any exploration, decide HOW to read the codebase. **The exploration primitive is `Explore`** (built-in; inherits the session model since CC 2.1.198; empirical score 83). The custom `scout` agent was **cut in feature 008** — deeper single-unit synthesis runs inline (Lead `Read`/LSP); ≥4 independent exploration sweeps fan out via `Workflow`.
+Before any exploration, decide HOW to read the codebase. **The exploration primitive is `Explore`** (built-in; inherits the session model since CC 2.1.198; empirical score 83). The custom `scout` agent was **cut in feature 008** — deeper single-unit synthesis runs inline (Lead `Read`/Grep); ≥4 independent exploration sweeps fan out via `Workflow`.
 
-| | LOW complexity (direct read, no semantics) | HIGH complexity (relationships, LSP, architecture) |
+| | LOW complexity (direct read) | HIGH complexity (relationships, architecture) |
 |---|---|---|
-| **LOW volume** (1-2 files) | Lead `Read` directly — no delegation | Lead `Read`/LSP inline, or `Explore` |
+| **LOW volume** (1-2 files) | Lead `Read` directly — no delegation | Lead `Read`/Grep inline, or `Explore` |
 | **HIGH volume** (≥3 files) | `Explore` — best fit | `Explore`; ≥4 independent sweeps → `Workflow` |
 
 Plus: design-doc audits, cross-file consistency checks, and full-file reads → `Explore` (≥4 independent units → `Workflow`). WebSearch/WebFetch is **not** a discriminator (both have those tools).
@@ -34,7 +34,7 @@ Plus: design-doc audits, cross-file consistency checks, and full-file reads → 
 | The Lead reads 1-2 files inline | For bulk read-only exploration, use `Explore` (not a work-spawn). |
 | LOW Volume + LOW Complexity = direct Read | Cost of delegation > cost of direct Read. |
 | Exploration primitive = `Explore` (inherits session model) | Empirical score 83; the custom `scout` was cut in feature 008. |
-| Deeper synthesis past Explore's window | Runs inline (Lead `Read`/LSP); ≥4 independent sweeps → `Workflow`. |
+| Deeper synthesis past Explore's window | Runs inline (Lead `Read`/Grep); ≥4 independent sweeps → `Workflow`. |
 | Parallel axis: "change difficulty" | If after exploring you must implement a difficult change, invoke `tech-plan` skill (independent of the exploration axis). |
 
 ### Primitive by context need (CC ≥2.1.232)
@@ -123,8 +123,7 @@ When delegating or reading, decide PARALLEL vs SEQUENTIAL per call, not per sess
 | 3+ independent Reads | Edit after Read on the same file |
 | 2+ different Glob patterns | Write that depends on Read |
 | 2+ independent Agent spawns | Agent that needs prior agent's output |
-| Multiple LSP queries on different symbols | LSP query after creating a file |
-| LSP + Grep for comprehensive search | Bash on a newly-created file |
+| Multiple Grep queries on different symbols | Grep after creating a file |
 | WebSearch + WebFetch (read-only fetches) | Any tool consuming previous output |
 
 **Anti-pattern**: reading files one by one or spawning agents sequentially when independent → batch in one message.
@@ -143,19 +142,6 @@ When a message contains N parallel tool-calls and **one fails**, the others in t
 **Safe example**: `Read(a.ts) + Read(b.ts) + Grep("foo") + Glob("**/*.test.ts")` in one message — read-only, independent, disjoint paths.
 
 **Risky example**: `Edit(file.ts) + WebFetch(url) + Bash("git push")` — if `WebFetch` fails, the `Edit` is cancelled and `git push` does not run. Split into 3 sequential messages.
-
-### LSP — semantic over text
-
-| Task | LSP operation | Fallback |
-|------|--------------|----------|
-| Where is X defined? | `goToDefinition` | Grep declaration |
-| Where is X used? | `findReferences` | Grep usages |
-| What parameters does X accept? | `hover` | Read signature |
-| What functions does file F have? | `documentSymbol` | Read + skim |
-| Who calls function F? | `incomingCalls` | Grep + verify |
-| What does function F call? | `outgoingCalls` | Read body |
-
-Full LSP reference: skill `lsp-operations`.
 
 ---
 

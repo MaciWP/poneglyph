@@ -84,7 +84,7 @@ call, plugin or CLI. Specific to consult:
 ## Integration rule (non-negotiable)
 
 External output is **another model's hypothesis**. Before acting on any factual claim it
-makes about this repo or an API: verify with LSP/Grep/Read or docs (primary artifact wins —
+makes about this repo or an API: verify with Grep/Read or docs (primary artifact wins —
 `docs/model-uplift-playbook.md`). Report unverified claims with a confidence label
 (`[Probable — según codex/grok, sin verificar]`), never as bare fact. The plugin commands
 tell Claude to return the output "verbatim, without commentary": in Poneglyph that
@@ -98,7 +98,7 @@ errors and quotes stay verbatim.
 - Letting the `codex-rescue` or `grok-delegate` subagents fire on the model's initiative
   — the spawn gate needs Oriol's this-turn permission.
 - Quoting external output as verified fact without an independent check.
-- Using it as an oracle for repo facts that Grep/LSP answer faster and reliably.
+- Using it as an oracle for repo facts that Grep/Read answer faster and reliably.
 - Firing it on trivial questions Claude answers directly — each call costs ~15-90s wall-clock.
 
 ## Commandments cubiertos

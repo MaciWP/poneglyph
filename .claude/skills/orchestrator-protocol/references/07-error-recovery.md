@@ -35,7 +35,7 @@ When a build step or Workflow unit fails, the Lead:
 
 1. Read the error from the failure report (full message + stack).
 2. Invoke `Skill('diagnostic-patterns')` if the error type is non-obvious (cascading failures, retry storms, timeouts, transient errors).
-3. Apply a recovery strategy from the skill (5 Whys, stack-trace analysis, classification) using `Read`/`Grep`/`LSP` directly — no separate diagnosis subagent.
+3. Apply a recovery strategy from the skill (5 Whys, stack-trace analysis, classification) using `Read`/`Grep` directly — no separate diagnosis subagent.
 4. Decide: fix inline, SendMessage to the live Workflow unit with the fix, re-run with full diagnosis, or escalate to user.
 
 ## Recovery Prompt Template

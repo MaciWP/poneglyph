@@ -21,7 +21,7 @@ Educational walkthrough of code changes. Reads the target, investigates the surr
 
 > The user learns by being walked through the code, not by being given the answer.
 
-Every claim is grounded — in the codebase via Read/Grep/LSP, or in canonical documentation via WebFetch. Vague summaries are forbidden; each numbered point links back to the logical chain that justifies it.
+Every claim is grounded — in the codebase via Read/Grep, or in canonical documentation via WebFetch. Vague summaries are forbidden; each numbered point links back to the logical chain that justifies it.
 
 ## When to Use
 
@@ -82,7 +82,7 @@ graph TD
 Before writing the report:
 
 1. **Read the target completely** — never skim. If the target is a diff, read both pre and post versions of each touched hunk.
-2. **For each logical change**, batch in parallel: Grep for symbol usages, LSP `findReferences` if symbol-level, Read associated tests (tests reveal intent).
+2. **For each logical change**, batch in parallel: Grep for symbol usages, Read associated tests (tests reveal intent).
 3. **Get the commit message** when applicable (`git log -1 <hash>` or `git log -- <file>`). The message often holds the WHY.
 4. **Compare with project pattern**: Grep similar code elsewhere in the repo to confirm whether this change is canonical or novel.
 5. **Confidence gate**: if uncertainty about library/framework behavior is >= 30% (i.e. confidence < 70%), WebFetch the official doc.
@@ -126,7 +126,7 @@ Full template, good vs bad examples, and the "professor-mode" rationale: `${CLAU
 | Claim type | Required verification |
 |---|---|
 | "file X exists" | Glob/Read before citing |
-| "function Y behaves like this" | Grep/LSP in codebase |
+| "function Y behaves like this" | Grep in codebase |
 | "Django/Postgres/lib does Z" | WebFetch to official doc; literal quote with URL |
 | "this is the project pattern" | Grep for >=2 other files showing the pattern |
 | "this is a known bug" | Cite issue tracker / changelog / PR with URL |
@@ -165,7 +165,7 @@ Detail per pattern (focused Q&A, re-scope, cancel, reformulation): `${CLAUDE_SKI
 | Topic | File | Contents |
 |---|---|---|
 | Input resolution | `${CLAUDE_SKILL_DIR}/references/input-resolution.md` | Full algorithm with edge cases (ambiguous hash, clean working tree, remote-only branch, multi-match glob) and the exact git commands per case. Read in step 1 of the workflow when the argument is non-trivial. |
-| Investigation checklist | `${CLAUDE_SKILL_DIR}/references/investigation-checklist.md` | Step-by-step exploration: read target, batch greps/LSP, read tests, get commit message, compare with project pattern. Includes WebFetch trigger rules and parallel-batching guidance. Read in step 3 before composing the report. |
+| Investigation checklist | `${CLAUDE_SKILL_DIR}/references/investigation-checklist.md` | Step-by-step exploration: read target, batch greps, read tests, get commit message, compare with project pattern. Includes WebFetch trigger rules and parallel-batching guidance. Read in step 3 before composing the report. |
 | Output template | `${CLAUDE_SKILL_DIR}/references/output-template.md` | Literal "professor-mode" template + condensed worked example (good) + bad example with annotations of what's wrong. Read in step 5 when composing the report. |
 | Verification rules | `${CLAUDE_SKILL_DIR}/references/verification-rules.md` | Reputable-source table per stack (Django, DRF, Python, Postgres, TypeScript, React, Anthropic, OWASP), canonical citation format, anti-patterns, and the "100% certeza" override that forces WebFetch. Read in step 4 when verifying any non-trivial framework behavior. |
 | Interaction patterns | `${CLAUDE_SKILL_DIR}/references/interaction-patterns.md` | Follow-up patterns: focused Q&A, re-scope, apply-to-other-case, cancel, reformulation with analogies. Read after emitting the first report when the user asks a follow-up question. |
@@ -182,7 +182,7 @@ Detail per pattern (focused Q&A, re-scope, cancel, reformulation): `${CLAUDE_SKI
 ## Related
 
 - `build` (Phase 3) — the write path; this skill explains, it never edits.
-- `anti-hallucination` / `lsp-operations` — the verification and navigation layers used during investigation.
+- `anti-hallucination` — verify file/symbol claims during investigation.
 
 ---
 

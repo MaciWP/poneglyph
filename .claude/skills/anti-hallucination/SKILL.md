@@ -37,7 +37,7 @@ Validation patterns to ensure claims are based on verified facts, not assumption
 | File exists? | `Glob` | `Glob("**/helper.ts")` |
 | Symbol exists? | `Grep` | `Grep("function calculateTotal")` |
 | Content matches? | `Read` | Read then quote |
-| Type signature? | `LSP hover` | Get exact params |
+| Type signature? | `Read` | Quote exact params |
 
 ## Quick Reference
 
@@ -55,9 +55,9 @@ Validation patterns to ensure claims are based on verified facts, not assumption
 | Need | Primary | Fallback |
 |------|---------|----------|
 | File exists? | Glob | Bash ls |
-| Symbol exists? | LSP/Grep | Read + search |
+| Symbol exists? | Grep | Read |
 | Content? | Read | - |
-| Type info? | LSP hover | Grep |
+| Type info? | Read signature | Grep |
 
 ## Validation Patterns
 
@@ -139,7 +139,7 @@ The file contains formatDate at line 45: `export function formatDate(date: Date)
 
 - [ ] Used Glob to verify file exists
 - [ ] Used Read to verify content
-- [ ] Used Grep/LSP to find specific patterns
+- [ ] Used Grep to find specific patterns
 - [ ] Confidence level is HIGH before asserting
 
 ### Before Suggesting Changes
@@ -175,10 +175,9 @@ graph TD
 | Gotcha | Why | Workaround |
 |--------|-----|------------|
 | Glob may not find recently created file (filesystem cache or timing) | File system events may not be flushed immediately after Write | After Write, wait before Glob; prefer Read with exact path if known |
-| LSP results stale after Write (language server hasn't reindexed) | Language servers reindex asynchronously after file changes | Re-run LSP query after file modifications, don't reuse previous results |
 | `Read` of non-existent file returns error, not empty content | Tool returns error object, not empty string | Check Glob first or handle error gracefully, don't assume empty = not found |
-| Grep finds text in comments/strings, not just code (false positives) | Grep is text-based, has no semantic understanding | Use LSP for semantic queries; Grep is text-only fallback |
-| Assuming function exists because it's imported (import might be hallucinated) | Import statement doesn't prove the target module exports that symbol | Verify with `goToDefinition` or `Grep` in the source module |
+| Grep finds text in comments/strings, not just code (false positives) | Grep is text-based, has no semantic understanding | Read the hit and keep only real usages; a comment or string match is not a reference |
+| Assuming function exists because it's imported (import might be hallucinated) | Import statement doesn't prove the target module exports that symbol | Grep the export in the source module |
 
 ---
 
@@ -217,13 +216,12 @@ If Stage 2 returns multiple matches, ask user which one. If Stage 3 also fails, 
 | # | Cómo |
 |---|---|
 | III | Below the confidence threshold → ask, never assume (the whole skill is "ask when in doubt") |
-| II | Verify a file/function/import/endpoint exists (LSP > Grep > Glob) before asserting it does |
+| II | Verify a file/function/import/endpoint exists (Grep > Glob > Read) before asserting it does |
 | I | Forces context-gathering (Read before Edit) before acting on code |
 | VI | Destructive-keyword triggers force verification regardless of confidence |
 
 ## Related
 
-- `lsp-operations` — the semantic verification layer this skill prefers over text search.
 - `diagnostic-patterns` — when a verified assertion still produces wrong behavior, diagnose there.
 
 ---

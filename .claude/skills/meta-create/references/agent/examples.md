@@ -166,7 +166,7 @@ description: |
   REST API implementation specialist. Builds endpoints following project patterns.
   Use proactively when: implementing API routes, endpoints, handlers.
   Keywords - api, endpoint, route, handler, implement, REST
-tools: Read, Write, Edit, Bash, Grep, Glob, LSP
+tools: Read, Write, Edit, Bash, Grep, Glob
 disallowedTools: Task
 permissionMode: acceptEdits
 color: blue

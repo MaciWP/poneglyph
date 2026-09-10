@@ -11,12 +11,14 @@ guarantee identical model decisions or permission systems.
 | Doctrine | Linked core CLAUDE.md | Generated AGENTS.md: doctrine, style, runtime contract | Existing Claude compatibility loads shared doctrine and rules |
 | Style | Poneglyph output style | Included once in AGENTS.md | Generated style twin, linked or checked Windows copy |
 | Skills | Shared .claude/skills | Each core skill directory links into the selected profile | Existing Claude discovery, without another set of links |
-| Commands | Five shared markdown commands | Generated $name skills read the original command | Existing Claude command discovery exposes /name |
+| Commands | Three shared markdown commands | Generated $name skills read the original command | Existing Claude command discovery exposes /name |
 | Lifecycle | Shared flow.md | Same phases, artifacts and human gates through $flow | Same phases, artifacts and human gates through /flow |
 | Permissions and authentication | Native profile plus ignored overlay | Native Codex configuration | Native Grok configuration and enabled compatibility sources |
 
 The adapter discovers core skill directories from source, excluding links into
-optional addons. The 2026-09-07 source review found 30 skills and five commands.
+optional addons. The 2026-09-07 source review found 30 skills and five commands;
+commit-message and pr-description later moved to the private work plugin as skills,
+leaving three core commands (`flow`, `role`, `sync-poneglyph`).
 References and scripts stay with their skill. Generated wrappers contain
 invocation glue, not independently maintained command bodies.
 

@@ -21,7 +21,7 @@ Four canonical agent types. Actual template files live in `${CLAUDE_SKILL_DIR}/t
 | Type | File | Tools | permissionMode | Best For |
 |------|------|-------|----------------|----------|
 | reader | `templates/reader.md` | Read, Grep, Glob | plan | Code review, analysis, audits |
-| builder | `templates/builder.md` | Read, Write, Edit, Bash, Grep, Glob, LSP | acceptEdits | Implementation, refactoring |
+| builder | `templates/builder.md` | Read, Write, Edit, Bash, Grep, Glob | acceptEdits | Implementation, refactoring |
 | executor | `templates/executor.md` | Bash, Read | default | Running tests, deployments |
 | researcher | `templates/researcher.md` | Read, Grep, Glob, WebSearch, WebFetch | plan | Investigation, documentation |
 
@@ -74,7 +74,7 @@ description: |
   {{DESCRIPTION}}.
   Use proactively when: {{TRIGGER_CONDITION}}.
   Keywords - {{KEYWORDS}}
-tools: Read, Write, Edit, Bash, Grep, Glob, LSP
+tools: Read, Write, Edit, Bash, Grep, Glob
 disallowedTools: Task
 permissionMode: acceptEdits
 color: blue

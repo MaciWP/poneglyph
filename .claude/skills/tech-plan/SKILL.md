@@ -186,7 +186,7 @@ parallelism quota. See `references/04-classification-waves.md`.
    - Commandments cubiertos.
    - Verificación post-implementación.
 
-**Anti-hallucination obligatoria** (auxiliary `anti-hallucination`): cada HU referencia archivos/funciones/módulos verificados con Glob/Grep/LSP previo. Nunca inventar.
+**Anti-hallucination obligatoria** (auxiliary `anti-hallucination`): cada HU referencia archivos/funciones/módulos verificados con Glob/Grep previo. Nunca inventar.
 
 ### Step 11 — Team mode (Full + complexity >60)
 
@@ -230,7 +230,7 @@ Present tasks + oracle once at gate 2->3. Record the applicable user decision wi
 
 ## Auxiliary skills
 
-Wiring and manual fallbacks for this phase (anti-hallucination, drillme, decide, lsp-operations, prompt-engineer, meta-create, meta-settings-cookbook, downstream tdd-design): `.claude/docs/auxiliary-skills-matrix.md` §Fallbacks per phase. Skill-to-skill invocation is probabilistic (issue #59968) — when an auxiliary does not fire, apply its fallback row. Step 13's `tdd-design` invocation is critical: verify post-skill that tests.md/validations.md exists; re-invoke manually if missing.
+Wiring and manual fallbacks for this phase (anti-hallucination, drillme, decide, prompt-engineer, meta-create, meta-settings-cookbook, downstream tdd-design): `.claude/docs/auxiliary-skills-matrix.md` §Fallbacks per phase. Skill-to-skill invocation is probabilistic (issue #59968) — when an auxiliary does not fire, apply its fallback row. Step 13's `tdd-design` invocation is critical: verify post-skill that tests.md/validations.md exists; re-invoke manually if missing.
 
 ## Adaptation intra-phase (Principio 2 — "no siempre más es más")
 
@@ -277,7 +277,7 @@ Declare adaptation in `tasks/index.md`: "Level X — modo Y por motivo Z. Saltad
 
 | # | Cómo |
 |---|---|
-| II | Context7/Grep/WebFetch + LSP before asserting any technical claim |
+| II | Context7/Grep/WebFetch before asserting any technical claim |
 | V | Drillme drills 1 + 3 detect over-engineering and non-atomicity |
 | I | Obligatory research = understand before planning |
 | X | DAG exposes real dependencies and opportunities without forced parallelism |

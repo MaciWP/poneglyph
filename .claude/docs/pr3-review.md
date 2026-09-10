@@ -90,7 +90,7 @@ the gate does not execute them.
 |---|---|---|
 | Shared development | anti-hallucination, dev, drillme, lessons, verify | Keep current workflow. Only lessons' optional-private boundary changes. |
 | Feature lifecycle | scope, tech-plan, tdd-design, build, critic, retro | Validate metadata; defer lifecycle changes. |
-| Review and diagnostics | diagnostic-patterns, explain-changes, lsp-operations, pr-conventional-comments, pr-review, review-patterns, security-audit | Validate metadata/references; do not claim helper bugs are repaired. |
+| Review and diagnostics | diagnostic-patterns, explain-changes, pr-conventional-comments, pr-review, review-patterns, security-audit | Validate metadata/references; do not claim helper bugs are repaired. |
 | Research and orchestration | consult, decide, deep-research, orchestrator-protocol, prompt-engineer, skill-advisor, unstuck | Validate structure; do not launch workers or change model policy. |
 | Authoring and presentation | frontend-craft, graphify, html-report, meta-create, meta-settings-cookbook | Validate structure; graphify's 674-line body warns without an arbitrary rewrite. |
 

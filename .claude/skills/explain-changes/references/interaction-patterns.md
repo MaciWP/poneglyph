@@ -56,7 +56,7 @@ When the user asks "profundiza en cambio N":
 
 **Pregunta planteada**: <restate>.
 
-[Re-run investigation: read more lines around the target, follow LSP references, fetch deeper doc section if needed]
+[Re-run investigation: read more lines around the target, Grep references, fetch deeper doc section if needed]
 
 **Respuesta detallada**:
 <2-4 paragraphs with verifications and citations>

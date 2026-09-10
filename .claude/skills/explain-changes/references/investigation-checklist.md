@@ -1,7 +1,7 @@
 ---
 parent: explain-changes
 name: investigation-checklist
-description: Step-by-step investigation protocol — reads, greps, LSP, tests, commit message, project pattern comparison, WebFetch triggers
+description: Step-by-step investigation protocol — reads, greps, tests, commit message, project pattern comparison, WebFetch triggers
 ---
 
 # Investigation Checklist
@@ -14,7 +14,7 @@ Run before composing the report. Skipping steps is the #1 source of vague or hal
 |---|---|---|---|
 | 1 | Read the target completely | Read | Skimming misses subtle changes (renames, decorator removal, default arg flips) |
 | 2 | Identify each LOGICAL change (not each line) | mental | Group hunks that serve the same intent into one numbered point |
-| 3 | For each change, locate references | Grep + LSP `findReferences` | Confirms blast radius and consumers |
+| 3 | For each change, locate references | Grep | Confirms blast radius and consumers |
 | 4 | Read the associated test file(s) | Read | Tests reveal intent better than the implementation |
 | 5 | Get the commit message if applicable | `git log -1 <hash>` or `git log -- <file>` | The WHY often lives only in the message |
 | 6 | Compare with the project pattern | Grep similar code | Confirms whether the change is canonical or novel |
@@ -27,7 +27,7 @@ When investigating, BATCH parallel-safe operations in one message:
 | Parallel (same message) | Sequential |
 |---|---|
 | 3+ Reads on independent files | Read after Glob (depends on result) |
-| Grep + LSP `findReferences` for the same symbol | Edit after Read on the same file |
+| Grep the same symbol in source and tests | Edit after Read on the same file |
 | WebFetch + local Grep | Second WebFetch that depends on first's result |
 | `git show <hash>` + Read of related test file | — |
 

@@ -16,7 +16,7 @@ Read this to decide which of the 5 skill types fits your use case, and what deta
 | `encoded-preference` | Behavioral rules, standards | Code quality, security review, formatting rules |
 | `workflow` | Interactive step-by-step processes | Deploy, migration, scaffolding |
 | `reference` | Lookup material, cheat sheets | Quick reference, checklists |
-| `capability-uplift` | Tool guidance, advanced usage | LSP operations, advanced git |
+| `capability-uplift` | Tool guidance, advanced usage | advanced git, regex patterns |
 
 ## Comparison Matrix
 
@@ -35,9 +35,9 @@ Read this to decide which of the 5 skill types fits your use case, and what deta
 Once the user has picked a type, ask the relevant questions to fill the template placeholders.
 
 ### capability-uplift
-- Tool/capability: (e.g., LSP operations, advanced git, regex patterns)
-- When to trigger: (e.g., when navigating code, when searching)
-- Key techniques to include: (e.g., goToDefinition, findReferences)
+- Tool/capability: (e.g., advanced git, regex patterns)
+- When to trigger: (e.g., when navigating history, when searching)
+- Key techniques to include: (e.g., rebase, bisect, capture groups)
 
 ### workflow
 - Purpose: (e.g., deploy application, run migrations)

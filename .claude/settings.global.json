@@ -8,7 +8,6 @@
   ],
   "env": {
     "BASH_DEFAULT_TIMEOUT_MS": "300000",
-    "ENABLE_LSP_TOOL": "1",
     "CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS": "50000",
     "CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD": "1",
     "ENABLE_PROMPT_CACHING_1H": "1",
@@ -26,7 +25,6 @@
       "WebSearch",
       "Skill",
       "AskUserQuestion",
-      "LSP",
       "NotebookEdit",
       "SendMessage",
       "mcp__plugin_context7_context7__*"
@@ -127,7 +125,6 @@
     "refreshInterval": 10
   },
   "enabledPlugins": {
-    "typescript-lsp@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true,
     "context7@claude-plugins-official": true

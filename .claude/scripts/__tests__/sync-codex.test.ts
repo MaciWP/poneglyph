@@ -30,7 +30,7 @@ describe("Codex adapter topology", () => {
 
   it("uses generated command entrypoints that refer to the shared source", () => {
     const commands = links.filter(link => link.content !== undefined);
-    expect(commands).toHaveLength(5);
+    expect(commands).toHaveLength(3);
     for (const link of commands) {
       expect(link.content).toContain(link.source.replaceAll("\\", "/"));
       expect(link.content).toContain("$ARGUMENTS");

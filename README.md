@@ -189,7 +189,7 @@ If `bun` is "not found" inside Claude Code's Bash tool: you skipped the
 ## How global hooks resolve
 
 Hooks run from the synced **user** layer through `$HOME/.claude/hooks/`. This
-keeps them available in every project and gives `sync-claude.ts --validate-hooks`
+keeps them available in every project and gives `scripts/sync-claude.ts --validate-hooks`
 one deterministic target to verify:
 
 ```json
@@ -217,12 +217,16 @@ Claude synchronizer owns links plus the generated user settings profile; it does
 not copy those hooks into the project scope.
 
 ```bash
-bun .claude/commands/sync-claude.ts --execute --backup --force
-bun .claude/scripts/sync-codex.ts --execute --backup --force
-bun .claude/scripts/sync-grok.ts --execute --backup --force
+bun .claude/commands/sync-poneglyph.ts --execute --backup --force
 ```
 
-`sync-claude.ts` generates `~/.claude/settings.json` from
+`/sync-poneglyph` detects which harnesses are installed (CLI on PATH or config home
+present), shows the set, asks once and runs the per-host engines in dependency
+order: `.claude/scripts/sync-claude.ts`, `sync-codex.ts` (once per Codex profile:
+`$CODEX_HOME` and `~/.codex`) and `sync-grok.ts`. Each engine keeps its own flags
+(`--check`, `--unlink`, `--validate-hooks`, `--method`, `--home-dir`) for per-host work.
+
+The Claude engine (`.claude/scripts/sync-claude.ts`) generates `~/.claude/settings.json` from
 `.claude/settings.global.json` plus `.claude/settings.machine.json` (hook groups are
 unioned per event and de-duplicated by `command`, so the overlay only adds
 machine-specific handlers), then runs `claude doctor` on the result: a file Claude
@@ -254,7 +258,7 @@ The current bridge topology and verification commands live in
 | `.claude/settings.json` | Hook-free project profile |
 | `.claude/skills/` | Shared core skill source; linked directories retain their supporting resources |
 | `.claude/hooks/` | Shared hook logic, native event adapters and tests |
-| `.claude/commands/` | `/flow`, `/role`, `/sync-claude`, `/commit-message`, `/pr-description` |
+| `.claude/commands/` | `/flow`, `/role`, `/sync-poneglyph`, `/commit-message`, `/pr-description` |
 | `.claude/plans/` | `/flow` feature lifecycles (`{NNN}-{slug}/`) |
 | `docs/` | Machine bootstrap records (git, statusline) |
 

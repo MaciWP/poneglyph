@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-// .claude/commands/sync-claude.ts
+// .claude/scripts/sync-claude.ts — Claude-layer engine; /sync-poneglyph orchestrates it with sync-codex and sync-grok
 // Syncs .claude/ from poneglyph to ~/.claude/ via symlinks
 // Supports: Windows (junction/symlink), macOS, Linux
 
@@ -1352,7 +1352,7 @@ function validateHooks(): void {
 
 // === CONFIRMATION ===
 
-async function askConfirmation(message: string): Promise<boolean> {
+export async function askConfirmation(message: string): Promise<boolean> {
   const rl = await import("readline");
   const readline = rl.createInterface({
     input: process.stdin,
@@ -1390,7 +1390,7 @@ async function main(): Promise<void> {
 sync-claude - Syncs .claude/ from poneglyph to ~/.claude/ via symlinks
 
 Usage:
-  bun run scripts/sync-claude.ts [options]
+  bun .claude/scripts/sync-claude.ts [options]
 
 Options:
   --check           Verify system and permissions (recommended first)
@@ -1411,14 +1411,14 @@ Link methods:
   copy        Copies files (does not sync changes)
 
 Examples:
-  bun run scripts/sync-claude.ts --check           # Verify system first
-  bun run scripts/sync-claude.ts                   # Preview
-  bun run scripts/sync-claude.ts --status          # See current state
-  bun run scripts/sync-claude.ts --execute         # Create symlinks
-  bun run scripts/sync-claude.ts --execute --backup  # With backup
-  bun run scripts/sync-claude.ts --method junction --execute  # Force junction
-  bun run scripts/sync-claude.ts --unlink          # Remove symlinks
-  bun run scripts/sync-claude.ts --validate-hooks  # Verify hook accessibility
+  bun .claude/scripts/sync-claude.ts --check           # Verify system first
+  bun .claude/scripts/sync-claude.ts                   # Preview
+  bun .claude/scripts/sync-claude.ts --status          # See current state
+  bun .claude/scripts/sync-claude.ts --execute         # Create symlinks
+  bun .claude/scripts/sync-claude.ts --execute --backup  # With backup
+  bun .claude/scripts/sync-claude.ts --method junction --execute  # Force junction
+  bun .claude/scripts/sync-claude.ts --unlink          # Remove symlinks
+  bun .claude/scripts/sync-claude.ts --validate-hooks  # Verify hook accessibility
 
 Requirements per OS:
   Windows:  Developer Mode enabled, or use junction, or Admin
@@ -1451,7 +1451,7 @@ Requirements per OS:
     console.error(
       "\n❌ No interactive terminal and --force not set — this would hang on the\n" +
         "   confirmation prompt. Re-run non-interactively with --force:\n" +
-        "     bun .claude/commands/sync-claude.ts --execute --backup --force\n",
+        "     bun .claude/commands/sync-poneglyph.ts --execute --backup --force\n",
     );
     process.exit(2);
   }

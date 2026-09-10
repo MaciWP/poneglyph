@@ -14,6 +14,7 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { compare, loadSnapshot, measure, total } from "./lib/budget";
+import { detectHosts, realProbe } from "./lib/hosts";
 import { check, type Report } from "./check-config";
 import { collectTranscripts, contextRow, loadTranscripts, summarizeContext } from "./usage-profile";
 
@@ -115,9 +116,9 @@ export function exitCodeFor(checks: Check[]): number {
 
 // --- runners ------------------------------------------------------------------
 
-async function run(cmd: string[], cwd = REPO): Promise<{ out: string; code: number }> {
+async function run(cmd: string[], cwd = REPO, env: Record<string, string> = {}): Promise<{ out: string; code: number }> {
   try {
-    const proc = Bun.spawn(cmd, { cwd, stdout: "pipe", stderr: "pipe", stdin: "ignore" });
+    const proc = Bun.spawn(cmd, { cwd, env: { ...process.env, ...env }, stdout: "pipe", stderr: "pipe", stdin: "ignore" });
     const [o, e] = await Promise.all([new Response(proc.stdout as ReadableStream).text(), new Response(proc.stderr as ReadableStream).text()]);
     const code = await proc.exited;
     return { out: `${o}\n${e}`, code };
@@ -135,13 +136,25 @@ async function main(): Promise<void> {
   const checks: Check[] = [];
 
   if (!ci) {
-    const sc = await run(["bun", ".claude/commands/sync-claude.ts", "--status"]);
-    checks.push({ name: "Claude layer (sync-claude --status)", status: statusFromSyncOutput(sc.out, sc.code), detail: summarizeSyncOutput(sc.out) });
-    const cx = await run(["bun", ".claude/scripts/sync-codex.ts", "--status"]);
-    const cxBad = (cx.out.match(/missing|stale|conflict/gi) ?? []).length;
-    checks.push({ name: "Codex adapter (sync-codex --status)", status: statusFromSyncOutput(cx.out, cx.code), detail: cxBad ? `${cxBad} entries not linked` : `${(cx.out.match(/linked/g) ?? []).length} linked` });
-    const gx = await run(["bun", ".claude/scripts/sync-grok.ts", "--status"]);
-    checks.push({ name: "Grok adapter (configuration)", status: statusFromSyncOutput(gx.out, gx.code), detail: "Style, native hook configuration, and Claude compatibility; no model or MCP connection." });
+    // Same detector as /sync-poneglyph: a host that is not installed is skipped, not red.
+    const hosts = new Map(detectHosts(realProbe()).map((h) => [h.name, h]));
+    const skipped = (name: string): Check => ({ name, status: "🟡", detail: "not installed on this machine — skipped" });
+    if (hosts.get("claude")!.installed) {
+      const sc = await run(["bun", ".claude/scripts/sync-claude.ts", "--status"]);
+      checks.push({ name: "Claude layer (sync-claude --status)", status: statusFromSyncOutput(sc.out, sc.code), detail: summarizeSyncOutput(sc.out) });
+    } else checks.push(skipped("Claude layer (sync-claude --status)"));
+    const codex = hosts.get("codex")!;
+    if (codex.installed) {
+      for (const profile of codex.targets) {
+        const cx = await run(["bun", ".claude/scripts/sync-codex.ts", "--status"], REPO, { CODEX_HOME: profile });
+        const cxBad = (cx.out.match(/missing|stale|conflict/gi) ?? []).length;
+        checks.push({ name: `Codex adapter (${profile})`, status: statusFromSyncOutput(cx.out, cx.code), detail: cxBad ? `${cxBad} entries not linked` : `${(cx.out.match(/linked/g) ?? []).length} linked` });
+      }
+    } else checks.push(skipped("Codex adapter (sync-codex --status)"));
+    if (hosts.get("grok")!.installed) {
+      const gx = await run(["bun", ".claude/scripts/sync-grok.ts", "--status"]);
+      checks.push({ name: "Grok adapter (configuration)", status: statusFromSyncOutput(gx.out, gx.code), detail: "Style, native hook configuration, and Claude compatibility; no model or MCP connection." });
+    } else checks.push(skipped("Grok adapter (configuration)"));
     checks.push({ name: "Native execution evidence", status: "🟡", detail: "Configuration checks do not establish Codex hook trust, model activation, or MCP connectivity; inspect the native UI and report those gates separately." });
   }
 

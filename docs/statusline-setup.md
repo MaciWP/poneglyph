@@ -122,7 +122,7 @@ cost+reset layout used here:
 ### Step 5 — Point settings at it
 
 Add the `statusLine` block (section 1) to `.claude/settings.global.json`, then
-re-run `bun .claude/commands/sync-claude.ts --execute` — it regenerates the
+re-run `bun .claude/commands/sync-poneglyph.ts --execute` — it regenerates the
 global `~/.claude/settings.json` from that source. The project
 `.claude/settings.json` stays hook- and statusline-free (scope separation).
 

@@ -56,7 +56,7 @@ TUI edits (`ccstatusline --tui`) write through the symlink/junction directly to 
 To set up on a new machine:
 
 ```bash
-bun .claude/commands/sync-claude.ts --execute --backup
+bun .claude/commands/sync-poneglyph.ts --execute --backup
 ```
 
 `--backup` is required when `~/.config/ccstatusline` already exists as a real directory (status `exists`). Without it, the sync removes the directory with `rmSync` before linking — only local scratch files not present in the committed copy would be lost, but `--backup` preserves them safely.

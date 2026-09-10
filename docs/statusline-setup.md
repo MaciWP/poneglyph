@@ -151,7 +151,6 @@ Then reload Claude Code to see the live status bar.
   the session JSON to stdin.
 - **Cross-machine cleanup.** This setup also removed `Maci`-specific paths from
   the project `settings.json`: stale segments in `env.PATH` and the dead
-  `mcpServers.cclsp` entry (pointed at an uninstalled node + Maci paths; LSP is
-  covered by the `typescript-lsp` plugin + `ENABLE_LSP_TOOL=1`).
+  `mcpServers.cclsp` entry (pointed at an uninstalled node + Maci paths).
 - **Uninstall.** Remove `%USERPROFILE%\.bun`, `%USERPROFILE%\.config\ccstatusline`,
   strip `…\.bun\bin` from the user PATH, and delete the `statusLine` blocks.

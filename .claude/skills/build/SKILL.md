@@ -108,7 +108,7 @@ Before any Edit/Write:
 
 5. **Lessons pass**: `Skill(lessons)` — the cross-repo guards plus the `references/<stack>-*.md` matching the HU's stack (Django, React, …). Mandatory when the HU touches code recovered from a stash or an old branch (lesson G3).
 
-Anti-hallucination auxiliary fires here automatically; if it doesn't, the Lead runs Glob/Grep/LSP manually before claiming any path exists.
+Anti-hallucination auxiliary fires here automatically; if it doesn't, the Lead runs Glob/Grep manually before claiming any path exists.
 
 ### Step 5 — Honor TDD-mode per HU
 
@@ -229,7 +229,7 @@ The `builder` agent was cut in feature 008 (1 agent forbidden; "context isolatio
 
 ## Auxiliary skills
 
-Wiring and manual fallbacks for this phase (anti-hallucination, drillme, diagnostic-patterns must fire on every HU; lsp-operations, review-patterns, meta-create, meta-settings-cookbook conditional): `.claude/docs/auxiliary-skills-matrix.md` §Fallbacks per phase. Skill-to-skill invocation is probabilistic (issue #59968) — when an auxiliary does not fire, apply its fallback row.
+Wiring and manual fallbacks for this phase (anti-hallucination, drillme, diagnostic-patterns must fire on every HU; review-patterns, meta-create, meta-settings-cookbook conditional): `.claude/docs/auxiliary-skills-matrix.md` §Fallbacks per phase. Skill-to-skill invocation is probabilistic (issue #59968) — when an auxiliary does not fire, apply its fallback row.
 
 ## SIEMPRE rules
 

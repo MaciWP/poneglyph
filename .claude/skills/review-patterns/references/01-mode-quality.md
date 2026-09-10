@@ -148,7 +148,7 @@ For the full template with all sections, load `${CLAUDE_SKILL_DIR}/templates/rev
 | `\|\|` fallback chains inflate complexity score (14 fallbacks = 14 points) | Each `\|\|` is counted as a separate complexity point per-file | Use spread with defaults object: `{...defaults, ...input}` |
 | Linter auto-reformats on edit | Exact string matching in subsequent edits will fail if linter changed whitespace/formatting | Always re-read file after edit for exact string matching in subsequent edits |
 | Extracting a function doesn't reduce total complexity, just distributes it | Complexity is counted per-file, so moving code within the same file changes nothing | Split into separate files if per-file threshold matters |
-| Renaming during refactor may break imports silently | Static imports are string-based; rename won't auto-update other files | Use LSP findReferences before renaming to verify all usages |
+| Renaming during refactor may break imports silently | Static imports are string-based; rename won't auto-update other files | Grep the old symbol before renaming to verify all usages |
 
 ## Refactoring Safety Classification
 

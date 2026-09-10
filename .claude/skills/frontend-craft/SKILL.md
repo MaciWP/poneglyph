@@ -40,7 +40,7 @@ skill points there instead of duplicating it.
 **Before the first edit to any shared UI element:**
 
 1. **Usage sweep**: enumerate every usage of the touched component/token
-   (Grep/LSP references) and NAME the affected screens — proactively, without
+   (Grep references) and NAME the affected screens — proactively, without
    being asked. A shared symbol changed without its usages checked is the
    measured failure mode (a badge restyle ticket: 3 rounds + 3 follow-up sessions).
 2. **Pattern extraction**: read 2-3 sibling components — hover/focus behavior,

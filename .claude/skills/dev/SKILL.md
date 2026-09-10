@@ -40,7 +40,7 @@ know that after investigating.
 - Read the full problem statement and the surrounding code before forming an opinion.
   Laziness applies to the SOLUTION, never to comprehension.
 - Reuse scan (before writing anything): Glob for similar filenames, Grep for
-  functions/classes doing the same job, LSP references on touched symbols.
+  functions/classes doing the same job, Grep references on touched symbols.
   Found something → reuse or extend it; write new code only when the scan comes up dry.
 - External research pays when: the domain is unfamiliar, an external API is involved,
   or the pattern smells standard (someone solved it well already). Sources in order:

@@ -36,7 +36,6 @@ Extracted verbatim from `SKILL.md` (017/US9 — mechanical move, no content rede
 | `anti-hallucination` | Before reporting any finding — verify file/line/symbol actually exists in the diff (no invented findings) | Lead Reads/Greps the file before the finding is finalized |
 | `drillme` | Before declaring verdict (Step 9 — 4 questions across `[context]`/`[failure]`/`[approach]`) | Lead invokes `/drillme "Phase 4 review of <NNN-slug>"` manually before verdict |
 | `diagnostic-patterns` | When Step 4 base checks fail — 5-whys, stack-trace analysis, retry budget per error-recovery.md | Lead reads error output manually + applies retry policy |
-| `lsp-operations` | During Step 5 Correctness/Quality — `findReferences`/`callHierarchy` to verify blast radius of changed symbols | Lead uses Grep + Read manually as fallback |
 | `review-patterns` | Step 6 — MANDATORY catalog invocation in standard/full levels (quality or performance mode per diff content) | Lead Reads `references/01-mode-quality.md` or `02-mode-performance.md` manually |
 | `security-audit` | Step 7 — MANDATORY dispatch when diff touches auth/payments/secrets/credentials/crypto (gate, not advisory; Cmd VI) | Lead invokes `/security-audit` manually before declaring verdict if auto-fire missed |
 | `decide` (heavy tier) | ⚠️ Conditional — if Step 5 reveals an architectural decision that merits adversarial challenge (e.g., questionable abstraction or library choice) | Lead invokes `/decide (heavy tier)` manually if doubt warrants it |

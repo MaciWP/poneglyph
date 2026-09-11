@@ -40,8 +40,10 @@ Scan branch name + PR title for `[A-Z]{2,}-\d+`:
 Never invent ticket content (protocol: `references/02-ticket-trace.md`).
 
 ### 3. Gather the diff + read changed files FULLY
-`git log --oneline <base>..HEAD` + `git diff --stat` + full diff, then Read every changed
-file whole — findings need surrounding context, not hunks.
+`<target>` is what step 1 resolved, not the local checkout: PR → `gh pr diff <n>` or its
+fetched head ref; branch → that branch; local mode → the current branch. Run
+`git log --oneline <base>..<target>` + `git diff --stat <base>...<target>` + full diff, state
+the range, then Read every changed file whole — findings need context, not hunks.
 
 ### 4. Discover and RUN the project checks (requisito 9.1)
 Find the check command per `references/03-check-discovery.md` (project CLAUDE.md
@@ -50,10 +52,9 @@ Find the check command per `references/03-check-discovery.md` (project CLAUDE.md
 
 ### 5. Criteria pass (core + project extension)
 Apply `references/01-criteria-core.md` (Correctness / Tests / Security / Style /
-Scope-discipline) plus any project-specific criteria found in the repo's rules. Scoring
-default: Critical×10 / Major×5 / Minor×1; `Score = 100 − Σ`;
-verdict: APPROVE (0 critical, ≤2 major) / NEEDS_CHANGES (0 critical, >2 major) /
-BLOCK (≥1 critical). Before scoring, run the **lessons pass**: `Skill(lessons)` — cross-repo
+Scope-discipline) plus any project-specific criteria found in the repo's rules. It owns the
+weights, the score and the verdict — consequence floor included: a required AC at `✗` or a red
+gate forbids APPROVE. Read it there. Before scoring, run the **lessons pass**: `Skill(lessons)` — cross-repo
 guards (G6 forbids APPROVE while a merge gate is red) plus the `references/<stack>` file
 matching the diff (Django, React, …). A lesson violated in the diff is a finding like any
 other, quoted with its rule.

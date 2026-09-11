@@ -2,7 +2,7 @@
   "takenAt": "2026-09-11",
   "alwaysLoaded": {
     "CLAUDE.md": 13996,
-    "output-styles/poneglyph.md": 12423,
+    "output-styles/poneglyph.md": 12631,
     "rules/error-recovery.md": 2495,
     "rules/harness-runtime.md": 1745,
     "rules/skill-routing.md": 956,
@@ -22,7 +22,7 @@
     "explain-changes": 9768,
     "frontend-craft": 4482,
     "graphify": 38455,
-    "html-report": 21847,
+    "html-report": 21792,
     "lessons": 13014,
     "meta-harness": 6432,
     "orca-workflow": 6383,

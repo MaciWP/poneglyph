@@ -1,0 +1,22 @@
+{
+  "us": "US13",
+  "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:9222724034a0983805061f0fdaf5ca3ab49dffe4+untracked:meta-harness",
+  "tests_passed": true,
+  "checks": [
+    {
+      "name": "live path t10-settings; cookbook 02 stub",
+      "status": "passed",
+      "evidence": "t10-settings.md: Claude settings.json (this-repo project $schema+respectGitignore), Codex config.toml, Grok config.toml + pager.toml appearance. cookbook 02 is Redirect stub"
+    },
+    {
+      "name": "no sync-script edits",
+      "status": "passed",
+      "evidence": "Pack names install/sync; D12 absences. No sync-*.ts in this HU's files"
+    },
+    {
+      "name": "check:config",
+      "status": "passed",
+      "evidence": "rc=0; 0 errors"
+    }
+  ]
+}

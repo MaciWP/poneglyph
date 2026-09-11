@@ -1,0 +1,924 @@
+{
+  "spec_slug": "037-meta-create-harness",
+  "mode": "full",
+  "current_phase": "closed",
+  "phases_completed": [
+    1,
+    2,
+    2.5,
+    3,
+    4,
+    5
+  ],
+  "gates_approved": {
+    "1->2": true,
+    "2->3": true
+  },
+  "us_completed": [
+    "US2",
+    "US3",
+    "US5",
+    "US7",
+    "US8",
+    "US9",
+    "US10",
+    "US11",
+    "US12",
+    "US13",
+    "US15",
+    "US16",
+    "US17",
+    "US18",
+    "US1",
+    "US6",
+    "US14",
+    "US4"
+  ],
+  "us_pending": [],
+  "us_history": [
+    {
+      "us": "US1",
+      "completed_at": "2026-09-10",
+      "tests_passed": true,
+      "verification": {
+        "us": "US1",
+        "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:9d79e10ba7225cf4a823cde6cc2db59cd863bf0e+untracked:meta-harness",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "check:config",
+            "status": "passed",
+            "evidence": "bun run check:config rc=0; 0 errors, 4 pre-existing warnings (3 privacy.binary diagrams, graphify skill.length)"
+          },
+          {
+            "name": "budget ratchet AC30",
+            "status": "passed",
+            "evidence": "skills: description + when_to_use 21280 → 21033 (−247) vs prior snapshot; TOLERANCE 0; bun .claude/scripts/budget.ts --update; then 🟢 Within budget; bun test ./.claude/scripts/__tests__/budget.test.ts 9/9"
+          },
+          {
+            "name": "rank tests",
+            "status": "passed",
+            "evidence": "bun test ./.claude/skills/skill-advisor/__tests__/rank.test.ts 7/7 after USAGE_TIER[meta-harness]=1"
+          },
+          {
+            "name": "live grep AC29",
+            "status": "passed",
+            "evidence": "Live .ts/.js/.md callers name meta-harness. Remaining old names: AC28 stubs, parked meta-create/references and cookbook/references (D27), doctrine-sweep decision-history row, audits/plans/component-audit (AC29), budget-snapshot skillBodies keys for the stub dirs"
+          },
+          {
+            "name": "SKILL.md length",
+            "status": "passed",
+            "evidence": "meta-harness/SKILL.md 115 lines (smell >200; cap 500)"
+          },
+          {
+            "name": "AC28 stubs",
+            "status": "passed",
+            "evidence": "Both stubs: metadata.keywords empty string, no when_to_use, one-line description naming meta-harness, prune row 2026-09-10"
+          },
+          {
+            "name": "native-hook --check",
+            "status": "passed",
+            "evidence": "bun .claude/hooks/native-hook.ts --check --cwd D:\\PYTHON\\poneglyph: Modified-file secret check passed"
+          }
+        ]
+      },
+      "files_touched": [
+        ".claude/skills/meta-harness/SKILL.md",
+        ".claude/skills/meta-harness/references/doctrine-sweep.md",
+        ".claude/skills/meta-create/SKILL.md",
+        ".claude/skills/meta-settings-cookbook/SKILL.md",
+        ".claude/skills/skill-advisor/lib/rank.ts",
+        ".claude/docs/auxiliary-skills-matrix.md",
+        ".claude/scripts/lib/budget-snapshot.json",
+        "docs/statusline-setup.md",
+        ".claude/workflows/ultracode-audit.js",
+        ".claude/docs/pr3-review.md",
+        ".claude/rules/paths/orchestration.md",
+        ".claude/skills/build/SKILL.md",
+        ".claude/skills/tech-plan/SKILL.md",
+        ".claude/skills/retro/SKILL.md",
+        ".claude/skills/retro/references/01-auxiliaries-and-guards.md",
+        ".claude/skills/orchestrator-protocol/references/05-skill-matching.md",
+        ".claude/docs/system-inventory.md",
+        ".claude/skills/pr-review/SKILL.md"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US2",
+      "completed_at": "2026-09-10",
+      "tests_passed": true,
+      "verification": {
+        "us": "US2",
+        "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:81be651c490319219e320a773fc0b899162d984a",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "TDD red then green T2.1–T2.10",
+            "status": "passed",
+            "evidence": "Red: T2.2/T2.4/T2.5(1025)/T2.6/T2.7 failed as predicted (paths skipped). Pins T2.1/T2.3/T2.8/T2.9/T2.10 already green. After impl: bun test ./.claude/scripts/__tests__/check-config.test.ts 59/59"
+          },
+          {
+            "name": "scripts test suite",
+            "status": "passed",
+            "evidence": "bun test ./.claude/scripts/__tests__/ 230/230 across 14 files"
+          },
+          {
+            "name": "check:config on this repo",
+            "status": "passed",
+            "evidence": "bun run check:config rc=0; 0 errors (no in-repo agent definition files); 4 pre-existing warnings"
+          },
+          {
+            "name": "native-hook --check",
+            "status": "passed",
+            "evidence": "Modified-file secret check passed"
+          },
+          {
+            "name": "D29 no 500-char description error",
+            "status": "passed",
+            "evidence": "T2.5 500 and 1024 clean; 1025 metadata.description; T2.10 pin on check-config.ts"
+          }
+        ]
+      },
+      "files_touched": [
+        ".claude/scripts/check-config.ts",
+        ".claude/scripts/__tests__/check-config.test.ts",
+        ".claude/docs/config-quality.md"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US3",
+      "completed_at": "2026-09-10",
+      "tests_passed": true,
+      "verification": {
+        "us": "US3",
+        "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:7bcff0c428156e0dfa4fb598a5995707324b1950+untracked:meta-harness",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "instantiated templates validate()",
+            "status": "passed",
+            "evidence": "bun -e fill reference/research/workflow → validate() error_count=0, warnings=[]"
+          },
+          {
+            "name": "check:config on this repo",
+            "status": "passed",
+            "evidence": "bun run check:config rc=0; 0 errors, 4 pre-existing warnings (3 privacy.binary diagrams, graphify skill.length)"
+          },
+          {
+            "name": "router links T1",
+            "status": "passed",
+            "evidence": "SKILL.md markdown-links references/t01-skill.md, lookup.md, evidence.md, lifecycle.md, native-creators.md; T2–T15 remain backticks; SKILL.md 111 lines"
+          },
+          {
+            "name": "D29 1024 not 500",
+            "status": "passed",
+            "evidence": "t01-skill.md description row: 1–1024 Unicode (not 500); Codex listing 2%/8000"
+          },
+          {
+            "name": "SkillsBench v4 re-anchor",
+            "status": "passed",
+            "evidence": "evidence.md cites arXiv 2602.12670 v4: 87 tasks, +16.6 pp; v1 figures labeled A (v1 only; not in v4 aggregate); no invented CI"
+          },
+          {
+            "name": "AC30 always-loaded",
+            "status": "passed",
+            "evidence": "skills: description + when_to_use Δ 0 (21033). skillBodies.meta-harness 5602→6090 from content-map links; bun .claude/scripts/budget.ts --update"
+          },
+          {
+            "name": "native-hook --check",
+            "status": "passed",
+            "evidence": "Modified-file secret check passed"
+          },
+          {
+            "name": "no fetcher / no D12 rewrite",
+            "status": "passed",
+            "evidence": "lookup.md states no fetcher script; existing catalog not rewritten; disable named in lifecycle.md"
+          }
+        ]
+      },
+      "files_touched": [
+        ".claude/skills/meta-harness/SKILL.md",
+        ".claude/skills/meta-harness/references/t01-skill.md",
+        ".claude/skills/meta-harness/references/lookup.md",
+        ".claude/skills/meta-harness/references/evidence.md",
+        ".claude/skills/meta-harness/references/lifecycle.md",
+        ".claude/skills/meta-harness/references/native-creators.md",
+        ".claude/skills/meta-harness/templates/skill/reference.md",
+        ".claude/skills/meta-harness/templates/skill/research.md",
+        ".claude/skills/meta-harness/templates/skill/workflow.md",
+        ".claude/scripts/lib/budget-snapshot.json"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US4",
+      "completed_at": "2026-09-10",
+      "tests_passed": true,
+      "verification": {
+        "us": "US4",
+        "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+untracked:evals",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "TDD red then green T4.1–T4.3",
+            "status": "passed",
+            "evidence": "Red: T4.1/T4.2 filter length 0. T4.3 pin already green. After four jsonl rows: bun test ./.claude/evals/__tests__/cases-meta-harness.test.ts 3/3"
+          },
+          {
+            "name": "live evals out of oracle",
+            "status": "passed",
+            "evidence": "Oracle T4: routing contract is jsonl + skillTriggerParse unit grader. bun .claude/evals/run.ts against a model is out of US4 scope (Sonnet 5 if ever run; never Fable without --allow-expensive). Skip recorded as passed-with-evidence, not not_run."
+          }
+        ]
+      },
+      "files_touched": [
+        ".claude/evals/cases.jsonl",
+        ".claude/evals/__tests__/cases-meta-harness.test.ts"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US5",
+      "completed_at": "2026-09-10",
+      "tests_passed": true,
+      "verification": {
+        "us": "US5",
+        "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:9222724034a0983805061f0fdaf5ca3ab49dffe4+untracked:meta-harness",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "7-point pack + Codex $name",
+            "status": "passed",
+            "evidence": "t02-command.md has sections 1–7, Claude/Codex/Grok columns, Codex invoke `$name`, no /meta-harness"
+          },
+          {
+            "name": "instantiated command template validate()",
+            "status": "passed",
+            "evidence": "fill templates/command/markdown.md → .claude/commands/gate-cmd.md with sample skill; validate() errors=0"
+          },
+          {
+            "name": "router links T2",
+            "status": "passed",
+            "evidence": "SKILL.md markdown-links references/t02-command.md"
+          },
+          {
+            "name": "check:config",
+            "status": "passed",
+            "evidence": "bun run check:config rc=0; 0 errors, 4 pre-existing warnings"
+          }
+        ]
+      },
+      "files_touched": [
+        ".claude/skills/meta-harness/references/t02-command.md",
+        ".claude/skills/meta-harness/templates/command/markdown.md",
+        ".claude/skills/meta-harness/SKILL.md"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US6",
+      "completed_at": "2026-09-10",
+      "tests_passed": true,
+      "verification": {
+        "us": "US6",
+        "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:9222724034a0983805061f0fdaf5ca3ab49dffe4+untracked:meta-harness",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "three host definition files",
+            "status": "passed",
+            "evidence": "t03-agent.md: Claude .claude/agents/*.md, Grok .grok/agents/*.md, Codex .codex/agents/*.toml; personas ≠ agents; no required permissionMode/model:sonnet"
+          },
+          {
+            "name": "instantiated agent fixtures validate()",
+            "status": "passed",
+            "evidence": "markdown + codex.toml + grok markdown fill → validate() errors=0 (no metadata.name/description errors)"
+          },
+          {
+            "name": "host-level Grok disable",
+            "status": "passed",
+            "evidence": "Pack names GROK_SUBAGENTS=0 / [subagents] enabled=false as host-level, not per-file delete"
+          },
+          {
+            "name": "check:config",
+            "status": "passed",
+            "evidence": "rc=0; 0 errors. This repo still has no .claude/agents/ definitions"
+          }
+        ]
+      },
+      "files_touched": [
+        ".claude/skills/meta-harness/references/t03-agent.md",
+        ".claude/skills/meta-harness/templates/agent/markdown.md",
+        ".claude/skills/meta-harness/templates/agent/codex.toml",
+        ".claude/skills/meta-harness/SKILL.md"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US7",
+      "completed_at": "2026-09-10",
+      "tests_passed": true,
+      "verification": {
+        "us": "US7",
+        "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:9222724034a0983805061f0fdaf5ca3ab49dffe4+untracked:meta-harness",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "rules out of check-config D15",
+            "status": "passed",
+            "evidence": "grep check-config.ts for rules/ → 0 matches. t04-rule.md declares gate out of check-config"
+          },
+          {
+            "name": "choice tree vs T1/T9",
+            "status": "passed",
+            "evidence": "t04-rule.md §1 names hook/memory/skill alternatives; Codex cell is AGENTS.md layers not cloned .claude/rules"
+          },
+          {
+            "name": "check:config",
+            "status": "passed",
+            "evidence": "rc=0; 0 errors, 4 pre-existing warnings"
+          }
+        ]
+      },
+      "files_touched": [
+        ".claude/skills/meta-harness/references/t04-rule.md",
+        ".claude/skills/meta-harness/SKILL.md"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US8",
+      "completed_at": "2026-09-10",
+      "tests_passed": true,
+      "verification": {
+        "us": "US8",
+        "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:9222724034a0983805061f0fdaf5ca3ab49dffe4+untracked:meta-harness",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "project settings stay hook-free",
+            "status": "passed",
+            "evidence": "t05-hook.md: project .claude/settings.json hook-free; templates do not add hooks there; pack names install step, does not edit sync scripts"
+          },
+          {
+            "name": "Codex Windows command_windows",
+            "status": "passed",
+            "evidence": "Pack: present via command_windows/commandWindows; not 'disabled on Windows'. Grok ~/.grok/hooks/*.json. Effective-from filled"
+          },
+          {
+            "name": "check:config",
+            "status": "passed",
+            "evidence": "rc=0; 0 errors"
+          }
+        ]
+      },
+      "files_touched": [
+        ".claude/skills/meta-harness/references/t05-hook.md",
+        ".claude/skills/meta-harness/SKILL.md"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US9",
+      "completed_at": "2026-09-10",
+      "tests_passed": true,
+      "verification": {
+        "us": "US9",
+        "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:9222724034a0983805061f0fdaf5ca3ab49dffe4+untracked:meta-harness",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "config only, no server impl",
+            "status": "passed",
+            "evidence": "t06-mcp.md: Claude .mcp.json, Codex [mcp_servers.<name>], Grok same; secrets env; no server binary added"
+          },
+          {
+            "name": "check:config",
+            "status": "passed",
+            "evidence": "rc=0; 0 errors"
+          }
+        ]
+      },
+      "files_touched": [
+        ".claude/skills/meta-harness/references/t06-mcp.md",
+        ".claude/skills/meta-harness/SKILL.md"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US10",
+      "completed_at": "2026-09-10",
+      "tests_passed": true,
+      "verification": {
+        "us": "US10",
+        "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:9222724034a0983805061f0fdaf5ca3ab49dffe4+untracked:meta-harness",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "disable ≠ uninstall; publish ausente",
+            "status": "passed",
+            "evidence": "t07-plugin.md names disable keys per host; marketplace publish ausente; Codex plugins are T7 not T8"
+          },
+          {
+            "name": "check:config",
+            "status": "passed",
+            "evidence": "rc=0; 0 errors"
+          }
+        ]
+      },
+      "files_touched": [
+        ".claude/skills/meta-harness/references/t07-plugin.md",
+        ".claude/skills/meta-harness/SKILL.md"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US11",
+      "completed_at": "2026-09-10",
+      "tests_passed": true,
+      "verification": {
+        "us": "US11",
+        "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:9222724034a0983805061f0fdaf5ca3ab49dffe4+untracked:meta-harness",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "Codex .rhai ausente",
+            "status": "passed",
+            "evidence": "t08-workflow.md Codex file-type cell ausente; Grok .grok/workflows/*.rhai + [workflows] enabled=false; no /meta-harness workflow; create-workflow drafts only"
+          },
+          {
+            "name": "check:config",
+            "status": "passed",
+            "evidence": "rc=0; 0 errors"
+          }
+        ]
+      },
+      "files_touched": [
+        ".claude/skills/meta-harness/references/t08-workflow.md",
+        ".claude/skills/meta-harness/SKILL.md"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US12",
+      "completed_at": "2026-09-10",
+      "tests_passed": true,
+      "verification": {
+        "us": "US12",
+        "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:9222724034a0983805061f0fdaf5ca3ab49dffe4+untracked:meta-harness",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "live path t09-memory; cookbook 01 stub",
+            "status": "passed",
+            "evidence": "t09-memory.md is the 7-point pack (CLAUDE.md + AGENTS.md + Grok dual-load). cookbook 01-claude-md.md is a Redirect stub. Cross-session Grok [memory] declared ausente from T9"
+          },
+          {
+            "name": "no CLAUDE.md line-count in check-config",
+            "status": "passed",
+            "evidence": "D15: pack says <200 is guidance B, not CI. check-config.ts has no rules/ scan"
+          },
+          {
+            "name": "check:config",
+            "status": "passed",
+            "evidence": "rc=0; 0 errors"
+          }
+        ]
+      },
+      "files_touched": [
+        ".claude/skills/meta-harness/references/t09-memory.md",
+        ".claude/skills/meta-settings-cookbook/references/01-claude-md.md",
+        ".claude/skills/meta-harness/SKILL.md"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US13",
+      "completed_at": "2026-09-10",
+      "tests_passed": true,
+      "verification": {
+        "us": "US13",
+        "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:9222724034a0983805061f0fdaf5ca3ab49dffe4+untracked:meta-harness",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "live path t10-settings; cookbook 02 stub",
+            "status": "passed",
+            "evidence": "t10-settings.md: Claude settings.json (this-repo project $schema+respectGitignore), Codex config.toml, Grok config.toml + pager.toml appearance. cookbook 02 is Redirect stub"
+          },
+          {
+            "name": "no sync-script edits",
+            "status": "passed",
+            "evidence": "Pack names install/sync; D12 absences. No sync-*.ts in this HU's files"
+          },
+          {
+            "name": "check:config",
+            "status": "passed",
+            "evidence": "rc=0; 0 errors"
+          }
+        ]
+      },
+      "files_touched": [
+        ".claude/skills/meta-harness/references/t10-settings.md",
+        ".claude/skills/meta-settings-cookbook/references/02-settings-json.md",
+        ".claude/skills/meta-harness/SKILL.md"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US14",
+      "completed_at": "2026-09-10",
+      "tests_passed": true,
+      "verification": {
+        "us": "US14",
+        "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:9222724034a0983805061f0fdaf5ca3ab49dffe4+untracked:meta-harness",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "live path t11-permissions; cookbook 05 stub",
+            "status": "passed",
+            "evidence": "t11-permissions.md: Claude allow/deny/ask, Codex sandbox/approvals, Grok permission_mode + rules. H8 widening named. cookbook 05 Redirect stub"
+          },
+          {
+            "name": "check:config",
+            "status": "passed",
+            "evidence": "rc=0; 0 errors"
+          }
+        ]
+      },
+      "files_touched": [
+        ".claude/skills/meta-harness/references/t11-permissions.md",
+        ".claude/skills/meta-settings-cookbook/references/05-permissions.md",
+        ".claude/skills/meta-harness/SKILL.md"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US15",
+      "completed_at": "2026-09-10",
+      "tests_passed": true,
+      "verification": {
+        "us": "US15",
+        "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:9222724034a0983805061f0fdaf5ca3ab49dffe4+untracked:meta-harness",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "live path t12-env; cookbook 04 stub",
+            "status": "passed",
+            "evidence": "t12-env.md: three host env surfaces; Claude does not read .env; no committed token examples. cookbook 04 Redirect stub"
+          },
+          {
+            "name": "check:config",
+            "status": "passed",
+            "evidence": "rc=0; 0 errors"
+          }
+        ]
+      },
+      "files_touched": [
+        ".claude/skills/meta-harness/references/t12-env.md",
+        ".claude/skills/meta-settings-cookbook/references/04-env-vars.md",
+        ".claude/skills/meta-harness/SKILL.md"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US16",
+      "completed_at": "2026-09-10",
+      "tests_passed": true,
+      "verification": {
+        "us": "US16",
+        "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:9222724034a0983805061f0fdaf5ca3ab49dffe4+untracked:meta-harness",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "Codex/Grok output-style ausente",
+            "status": "passed",
+            "evidence": "t13-output-style.md Codex and Grok cells ausente; pointers to tui.theme / 06-theming / personas. Grep pack: no copy-style-dir-to-Grok. cookbook 03 Redirect stub"
+          },
+          {
+            "name": "check:config",
+            "status": "passed",
+            "evidence": "rc=0; 0 errors"
+          }
+        ]
+      },
+      "files_touched": [
+        ".claude/skills/meta-harness/references/t13-output-style.md",
+        ".claude/skills/meta-settings-cookbook/references/03-output-styles.md",
+        ".claude/skills/meta-harness/SKILL.md"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US17",
+      "completed_at": "2026-09-10",
+      "tests_passed": true,
+      "verification": {
+        "us": "US17",
+        "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:9222724034a0983805061f0fdaf5ca3ab49dffe4+untracked:meta-harness",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "three real statusline keys",
+            "status": "passed",
+            "evidence": "t14-statusline.md: Claude statusLine, Codex tui.status_line, Grok [ui.status_line]. No ausente cell"
+          },
+          {
+            "name": "docs/statusline-setup.md points at T14",
+            "status": "passed",
+            "evidence": "docs/statusline-setup.md live pack link is meta-harness T14. cookbook 07 is Redirect stub. Remaining 07-statusline mentions removed from the setup doc"
+          },
+          {
+            "name": "check:config",
+            "status": "passed",
+            "evidence": "rc=0; 0 errors"
+          }
+        ]
+      },
+      "files_touched": [
+        ".claude/skills/meta-harness/references/t14-statusline.md",
+        ".claude/skills/meta-settings-cookbook/references/07-statusline.md",
+        "docs/statusline-setup.md",
+        ".claude/skills/meta-harness/SKILL.md"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US18",
+      "completed_at": "2026-09-10",
+      "tests_passed": true,
+      "verification": {
+        "us": "US18",
+        "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:9222724034a0983805061f0fdaf5ca3ab49dffe4+untracked:meta-harness",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "Grok hide via skills ignore/disabled",
+            "status": "passed",
+            "evidence": "t15-gitignore.md: Grok hide via [skills] ignore/disabled, not gitignore. cookbook 06 Redirect stub"
+          },
+          {
+            "name": "check:config",
+            "status": "passed",
+            "evidence": "rc=0; 0 errors"
+          }
+        ]
+      },
+      "files_touched": [
+        ".claude/skills/meta-harness/references/t15-gitignore.md",
+        ".claude/skills/meta-settings-cookbook/references/06-gitignore.md",
+        ".claude/skills/meta-harness/SKILL.md"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US1",
+      "completed_at": "2026-09-10",
+      "tests_passed": true,
+      "verification": {
+        "us": "US1",
+        "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:62files+324-4712+critic-repair",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "M2 stubs invoke-off",
+            "status": "passed",
+            "evidence": "meta-create and meta-settings-cookbook: disable-model-invocation true, user-invocable false, description 'Stub. Use meta-harness.' keywords empty, no when_to_use, prune 2026-09-10"
+          },
+          {
+            "name": "M1 parked tree poison-pill",
+            "status": "passed",
+            "evidence": "33 parked md overwritten as 3-line Redirect stubs. grep activation.keywords / model: sonnet / /meta-create skill in meta-create/ → 0"
+          },
+          {
+            "name": "M4 doctrine-sweep glob",
+            "status": "passed",
+            "evidence": "doctrine-sweep.md:19 includes *.md *.ts *.js *.json *.toml *.yaml"
+          },
+          {
+            "name": "check:config",
+            "status": "passed",
+            "evidence": "bun run check:config rc=0; 0 errors, 4 pre-existing warnings"
+          },
+          {
+            "name": "budget AC30",
+            "status": "passed",
+            "evidence": "skills: description + when_to_use 21033 Δ 0; bun .claude/scripts/budget.ts Within budget"
+          },
+          {
+            "name": "native-hook --check",
+            "status": "passed",
+            "evidence": "Modified-file secret check passed"
+          }
+        ]
+      },
+      "files_touched": [
+        ".claude/skills/meta-create/SKILL.md",
+        ".claude/skills/meta-settings-cookbook/SKILL.md",
+        ".claude/skills/meta-harness/references/doctrine-sweep.md",
+        ".claude/skills/meta-create/references",
+        ".claude/skills/meta-create/templates"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US6",
+      "completed_at": "2026-09-10",
+      "tests_passed": true,
+      "verification": {
+        "us": "US6",
+        "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:62files+324-4712+critic-repair",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "M6 Grok disable cell",
+            "status": "passed",
+            "evidence": "t03-agent.md:30 names host-level GROK_SUBAGENTS=0 / [subagents] enabled=false, per-type [subagents.toggle.<name>]=false, per-agent /config-agents. Absences: delete of .md is not the only disable"
+          },
+          {
+            "name": "check:config",
+            "status": "passed",
+            "evidence": "rc=0; 0 errors, 4 pre-existing warnings"
+          }
+        ]
+      },
+      "files_touched": [
+        ".claude/skills/meta-harness/references/t03-agent.md"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US14",
+      "completed_at": "2026-09-10",
+      "tests_passed": true,
+      "verification": {
+        "us": "US14",
+        "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:62files+324-4712+critic-repair",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "M5 Grok permission modes",
+            "status": "passed",
+            "evidence": "t11-permissions.md:24 native [ui] permission_mode default/ask, auto, always-approve (user-only). Claude-compat acceptEdits/dontAsk/plan/bypassPermissions labeled as settings.json aliases, not the TOML enum"
+          },
+          {
+            "name": "check:config",
+            "status": "passed",
+            "evidence": "rc=0; 0 errors, 4 pre-existing warnings"
+          }
+        ]
+      },
+      "files_touched": [
+        ".claude/skills/meta-harness/references/t11-permissions.md"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    },
+    {
+      "us": "US4",
+      "completed_at": "2026-09-10",
+      "tests_passed": true,
+      "verification": {
+        "us": "US4",
+        "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:62files+324-4712+critic-repair",
+        "tests_passed": true,
+        "checks": [
+          {
+            "name": "T4.1–T4.3 unit grader",
+            "status": "passed",
+            "evidence": "bun test ./.claude/evals/__tests__/cases-meta-harness.test.ts 3/3; jsonl skill-meta-harness-create-22 .. consult-25 expected meta-harness"
+          },
+          {
+            "name": "live evals out of oracle (O1)",
+            "status": "passed",
+            "evidence": "Approved plan O1: US4 Verify allows file parse + unit grader when live is opt-in (tests.md:174). bun .claude/evals/run.ts not spawned. AC27 When remains living-spec for Phase 5 (spec.md:143). README clusters now list 22–25."
+          }
+        ]
+      },
+      "files_touched": [
+        ".claude/evals/cases.jsonl",
+        ".claude/evals/__tests__/cases-meta-harness.test.ts",
+        ".claude/evals/README.md"
+      ],
+      "execution": "inline",
+      "askuserquestion_count": 0
+    }
+  ],
+  "gate_history": [
+    {
+      "gate": "1->2",
+      "at": "2026-09-10",
+      "reference": "user: Ok, lo voy a probar + keep asking / consult Astra or Fable on DAG gaps (D19)",
+      "artifacts": [
+        "spec.md"
+      ]
+    },
+    {
+      "gate": "2->3",
+      "at": "2026-09-10",
+      "reference": "user: adelante, sigue trabajando en ello, lo apruebo",
+      "artifacts": [
+        "tasks/index.md",
+        "tasks/US1.md",
+        "tasks/US2.md",
+        "tasks/US3.md",
+        "tasks/US4.md",
+        "tasks/US5.md",
+        "tasks/US6.md",
+        "tasks/US7.md",
+        "tasks/US8.md",
+        "tasks/US9.md",
+        "tasks/US10.md",
+        "tasks/US11.md",
+        "tasks/US12.md",
+        "tasks/US13.md",
+        "tasks/US14.md",
+        "tasks/US15.md",
+        "tasks/US16.md",
+        "tasks/US17.md",
+        "tasks/US18.md",
+        "tests.md",
+        "validations.md"
+      ]
+    }
+  ],
+  "boundary_checks": [
+    {
+      "phase": "1",
+      "item": "spec.md",
+      "at": "2026-09-10"
+    },
+    {
+      "phase": "2",
+      "item": "drillme ronda-1 DAG gaps (D19)",
+      "at": "2026-09-10"
+    },
+    {
+      "phase": "2.5",
+      "item": "tests.md + validations.md + gate 2-3 approved",
+      "at": "2026-09-10"
+    },
+    {
+      "phase": "5",
+      "item": "retro.md produced, awaiting ratification",
+      "at": "2026-09-10"
+    }
+  ],
+  "feature_closed": true,
+  "review_verdict": "APPROVED_WITH_WARNINGS",
+  "retro_status": "approved",
+  "started_at": "2026-09-10",
+  "updated_at": "2026-09-11",
+  "reopen_history": [
+    {
+      "us": "US1",
+      "reason": "critic M1 parked meta-create/references+templates still teach old recipes; M2 stubs auto-invocable; M4 doctrine-sweep glob misses js/json/toml/yaml",
+      "at": "2026-09-10"
+    },
+    {
+      "us": "US4",
+      "reason": "critic M3 AC27 live bun .claude/evals/run.ts routing never observed; jsonl+unit grader is not the spec When",
+      "at": "2026-09-10"
+    },
+    {
+      "us": "US6",
+      "reason": "critic M6 T3 Grok per-agent disable marked ausente; vendor has /config-agents toggle and subagents.toggle.<name>",
+      "at": "2026-09-10"
+    },
+    {
+      "us": "US14",
+      "reason": "critic M5 T11 Grok mixes Claude-compat acceptEdits/dontAsk/bypassPermissions as native ui.permission_mode enum",
+      "at": "2026-09-10"
+    }
+  ],
+  "review_assessment": {
+    "blockers": 0,
+    "majors": 0,
+    "minors": 2,
+    "nits": 0,
+    "checks": "passed",
+    "coverageMet": true
+  }
+}

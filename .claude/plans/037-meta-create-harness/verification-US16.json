@@ -1,0 +1,17 @@
+{
+  "us": "US16",
+  "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:9222724034a0983805061f0fdaf5ca3ab49dffe4+untracked:meta-harness",
+  "tests_passed": true,
+  "checks": [
+    {
+      "name": "Codex/Grok output-style ausente",
+      "status": "passed",
+      "evidence": "t13-output-style.md Codex and Grok cells ausente; pointers to tui.theme / 06-theming / personas. Grep pack: no copy-style-dir-to-Grok. cookbook 03 Redirect stub"
+    },
+    {
+      "name": "check:config",
+      "status": "passed",
+      "evidence": "rc=0; 0 errors"
+    }
+  ]
+}

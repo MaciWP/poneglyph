@@ -1,11 +1,20 @@
 import { afterEach, describe, expect, it } from "bun:test";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync, symlinkSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { check, frontmatter, privacyMatches, readSource, render, validate, withoutGitEnv, type Source } from "../check-config";
 
 const skill = (name = "sample", description = "A valid task-specific description.", extra = "", body = "Read the relevant source.") => `---\nname: ${name}\ndescription: ${JSON.stringify(description)}\n${extra}---\n${body}\n`;
+const claudeAgent = (stem = "reviewer", description = "Reviews diffs.", extra = "", body = "Review the diff.") => `---\nname: ${stem}\ndescription: ${JSON.stringify(description)}\n${extra}---\n${body}\n`;
+const grokAgent = (stem = "reviewer", description = "Reviews diffs.", extra = "", body = "Review the diff.") => `---\nname: ${stem}\ndescription: ${JSON.stringify(description)}\n${extra}---\n${body}\n`;
+const codexAgent = (fields: { name?: string; description?: string; developer_instructions?: string }) => {
+  const lines: string[] = [];
+  if (fields.name !== undefined) lines.push(`name = ${JSON.stringify(fields.name)}`);
+  if (fields.description !== undefined) lines.push(`description = ${JSON.stringify(fields.description)}`);
+  if (fields.developer_instructions !== undefined) lines.push(`developer_instructions = ${JSON.stringify(fields.developer_instructions)}`);
+  return `${lines.join("\n")}\n`;
+};
 const source = (entries: Record<string, string> = {}): Source => ({ files: new Map(Object.entries({ ".claude/skills/sample/SKILL.md": skill(), ...entries })), links: [] });
 const errors = (s: Source, options = {}) => validate(s, options).findings.filter(f => f.severity === "error").map(f => f.rule);
 const roots: string[] = [];
@@ -81,6 +90,64 @@ describe("configuration metadata contracts", () => {
     expect(errors(s)).toEqual(["reference.missing"]);
   });
   it("does not pass an empty inventory", () => { expect(errors({ files: new Map(), links: [] })).toContain("inventory.empty"); });
+});
+
+describe("three-host agent definition files (AC20)", () => {
+  const validCodex = { name: "reviewer", description: "Reviews diffs.", developer_instructions: "Review the diff." };
+
+  it("T2.1 accepts valid Claude and Grok markdown agents", () => {
+    expect(errors(source({
+      ".claude/agents/reviewer.md": claudeAgent("reviewer"),
+      ".grok/agents/reviewer.md": grokAgent("reviewer"),
+    })).filter(r => r.startsWith("metadata."))).toEqual([]);
+  });
+
+  it("T2.2 rejects missing YAML and empty description (A3)", () => {
+    expect(errors(source({ ".claude/agents/bare.md": "No YAML frontmatter.\n" }))).toContain("metadata.parse");
+    expect(errors(source({ ".grok/agents/reviewer.md": grokAgent("reviewer", "") }))).toContain("metadata.description");
+  });
+
+  it("T2.3 missing agent files is a no-op, not inventory.empty", () => {
+    expect(errors(source())).toEqual([]);
+  });
+
+  it("T2.4 markdown name must match the filename stem (A1)", () => {
+    expect(errors(source({ ".claude/agents/reviewer.md": claudeAgent("other") }))).toContain("metadata.name");
+    expect(errors(source({ ".grok/agents/reviewer.md": grokAgent("other") }))).toContain("metadata.name");
+  });
+
+  it.each([500, 1024, 1025])("T2.5 D29: %s code points on a Claude agent", length => {
+    const result = errors(source({ ".claude/agents/reviewer.md": claudeAgent("reviewer", "x".repeat(length)) }));
+    expect(result.includes("metadata.description")).toBe(length === 1025);
+  });
+
+  it("T2.6 agent names collide with skills on every host (A4)", () => {
+    expect(errors(source({ ".claude/agents/sample.md": claudeAgent("sample") }))).toContain("metadata.collision");
+    expect(errors(source({ ".codex/agents/other.toml": codexAgent({ ...validCodex, name: "sample" }) }))).toContain("metadata.collision");
+  });
+
+  it("T2.7 Codex TOML required fields (A2/A3)", () => {
+    expect(errors(source({ ".codex/agents/other.toml": codexAgent(validCodex) })).filter(r => r.startsWith("metadata."))).toEqual([]);
+    expect(errors(source({ ".codex/agents/reviewer.toml": codexAgent({ name: "reviewer", developer_instructions: "Review." }) }))).toContain("metadata.description");
+    expect(errors(source({ ".codex/agents/reviewer.toml": codexAgent({ name: "reviewer", description: "Reviews diffs." }) }))).toContain("metadata.instructions");
+    expect(errors(source({ ".codex/agents/reviewer.toml": codexAgent({ ...validCodex, name: "Reviewer" }) }))).toContain("metadata.name");
+    expect(errors(source({ ".codex/agents/reviewer.toml": codexAgent({ ...validCodex, name: "pr_explorer" }) }))).toContain("metadata.name");
+  });
+
+  it("T2.8 [agents] in config.toml is not this scan", () => {
+    expect(errors(source({ ".codex/config.toml": "[agents]\nmax_threads = 6\n" })).filter(r => r === "metadata.name" || r === "metadata.description")).toEqual([]);
+  });
+
+  it("T2.9 Grok personas are not agents", () => {
+    expect(errors(source({ ".grok/personas/researcher.toml": 'description = ""\n' })).filter(r => r.startsWith("metadata."))).toEqual([]);
+  });
+
+  it("T2.10 no 500-character description error rule (D29)", () => {
+    const src = readFileSync(join(import.meta.dir, "../check-config.ts"), "utf8");
+    expect(src).toContain("chars(fields.description) > 1024");
+    expect(src).not.toMatch(/description[^;\n]{0,80}>\s*500/);
+    expect(errors(source({ ".claude/skills/sample/SKILL.md": skill("sample", "x".repeat(1024)) }))).toEqual([]);
+  });
 });
 
 describe("native configuration structure", () => {

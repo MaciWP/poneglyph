@@ -10,8 +10,11 @@ installed and configured on Windows.
 > user, configure widgets, and fix `settings.json`.
 
 The tool is **`ccstatusline`** (not `ccusage`). It renders model, git branch,
-session cost, 5h-block reset timer, and session/weekly usage. Reference:
-`.claude/skills/meta-settings-cookbook/references/07-statusline.md`.
+session cost, 5h-block reset timer, and session/weekly usage. Live pack:
+[`meta-harness` T14](../.claude/skills/meta-harness/references/t14-statusline.md).
+This file keeps the machine install. Pin **ccstatusline@2.2.19** (not `@latest`).
+Widget names below were checked against v2.2.10; schema v3 is stable through 2.2.19.
+Tracked widget config: `.claude/ccstatusline/settings.json` (sync-poneglyph links it).
 
 ---
 
@@ -21,7 +24,7 @@ session cost, 5h-block reset timer, and session/weekly usage. Reference:
 |------|-------|
 | Runtime | Bun 1.3.6 portable |
 | Bun binary | `%USERPROFILE%\.bun\bin\bun.exe` |
-| Statusline tool | ccstatusline 2.2.10 (`bun install -g`) |
+| Statusline tool | ccstatusline 2.2.19 (`bun install -g`, pinned) |
 | Statusline shim | `%USERPROFILE%\.bun\bin\ccstatusline.exe` |
 | Widget config | `%USERPROFILE%\.config\ccstatusline\settings.json` |
 | PATH | `…\.bun\bin` added to the **user** PATH (persistent) |
@@ -49,7 +52,7 @@ session cost, 5h-block reset timer, and session/weekly usage. Reference:
 ```
 
 `model · git-branch · session-cost · reset-timer · session-usage · weekly-usage`
-— all widget types verified against `07-statusline.md` for v2.2.10.
+— host keys live in the T14 pack; this file is the ccstatusline machine install.
 
 ---
 
@@ -89,13 +92,13 @@ $env:Path = "$env:Path;$binDir"   # current session
 ### Step 3 — Install ccstatusline globally
 
 ```powershell
-& "$env:USERPROFILE\.bun\bin\bun.exe" install -g ccstatusline@latest
+& "$env:USERPROFILE\.bun\bin\bun.exe" install -g ccstatusline@2.2.19
 ```
 
 ### Step 4 — Configure widgets
 
 Write `%USERPROFILE%\.config\ccstatusline\settings.json` (schema `version: 3`,
-see `07-statusline.md` for the full verified widget catalog). The 1-line
+see the T14 pack for host keys). The 1-line
 cost+reset layout used here:
 
 ```json

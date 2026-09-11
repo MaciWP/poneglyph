@@ -1,0 +1,17 @@
+{
+  "us": "US6",
+  "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:62files+324-4712+critic-repair",
+  "tests_passed": true,
+  "checks": [
+    {
+      "name": "M6 Grok disable cell",
+      "status": "passed",
+      "evidence": "t03-agent.md:30 names host-level GROK_SUBAGENTS=0 / [subagents] enabled=false, per-type [subagents.toggle.<name>]=false, per-agent /config-agents. Absences: delete of .md is not the only disable"
+    },
+    {
+      "name": "check:config",
+      "status": "passed",
+      "evidence": "rc=0; 0 errors, 4 pre-existing warnings"
+    }
+  ]
+}

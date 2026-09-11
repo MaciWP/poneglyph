@@ -1,0 +1,19 @@
+name = "{{AGENT_NAME}}"
+description = "{{DESCRIPTION}}"
+developer_instructions = """
+You are a specialized agent for {{DOMAIN}}.
+
+Instantiate: kebab `name` 1–64 (underscores fail). Filename match is optional.
+`description` 1–1024. `developer_instructions` must be nonempty. Do not copy Claude permissionMode here.
+
+## When NOT to use
+- The work belongs in a skill (T1).
+
+## Responsibilities
+- {{Responsibility 1}}
+- {{Responsibility 2}}
+
+## Constraints
+- Do not spawn further agents.
+- Cite file:line for findings.
+"""

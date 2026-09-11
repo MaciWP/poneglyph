@@ -1,0 +1,47 @@
+{
+  "us": "US3",
+  "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:7bcff0c428156e0dfa4fb598a5995707324b1950+untracked:meta-harness",
+  "tests_passed": true,
+  "checks": [
+    {
+      "name": "instantiated templates validate()",
+      "status": "passed",
+      "evidence": "bun -e fill reference/research/workflow → validate() error_count=0, warnings=[]"
+    },
+    {
+      "name": "check:config on this repo",
+      "status": "passed",
+      "evidence": "bun run check:config rc=0; 0 errors, 4 pre-existing warnings (3 privacy.binary diagrams, graphify skill.length)"
+    },
+    {
+      "name": "router links T1",
+      "status": "passed",
+      "evidence": "SKILL.md markdown-links references/t01-skill.md, lookup.md, evidence.md, lifecycle.md, native-creators.md; T2–T15 remain backticks; SKILL.md 111 lines"
+    },
+    {
+      "name": "D29 1024 not 500",
+      "status": "passed",
+      "evidence": "t01-skill.md description row: 1–1024 Unicode (not 500); Codex listing 2%/8000"
+    },
+    {
+      "name": "SkillsBench v4 re-anchor",
+      "status": "passed",
+      "evidence": "evidence.md cites arXiv 2602.12670 v4: 87 tasks, +16.6 pp; v1 figures labeled A (v1 only; not in v4 aggregate); no invented CI"
+    },
+    {
+      "name": "AC30 always-loaded",
+      "status": "passed",
+      "evidence": "skills: description + when_to_use Δ 0 (21033). skillBodies.meta-harness 5602→6090 from content-map links; bun .claude/scripts/budget.ts --update"
+    },
+    {
+      "name": "native-hook --check",
+      "status": "passed",
+      "evidence": "Modified-file secret check passed"
+    },
+    {
+      "name": "no fetcher / no D12 rewrite",
+      "status": "passed",
+      "evidence": "lookup.md states no fetcher script; existing catalog not rewritten; disable named in lifecycle.md"
+    }
+  ]
+}

@@ -86,7 +86,7 @@ no hay ticket en la rama y el usuario no aportó ACs"). A silent skip is a revie
 - Outside-the-diff observations stay in their own unscored section (Cmd V — scope).
 - Defer to the project's own review command when it exists (reuse over reinvention).
 
-## Verificación (eval-first scenarios — meta-create rubric)
+## Verificación (eval-first scenarios — authoring rubric)
 
 1. Repo de trabajo, rama `feature/<TICKET>-...`, ticket con ACs parcialmente implementados →
    digest jira + AC-trace con al menos un `✗` evidenciado + checks ejecutados.

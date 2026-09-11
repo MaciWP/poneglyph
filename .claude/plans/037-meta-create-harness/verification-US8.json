@@ -1,0 +1,22 @@
+{
+  "us": "US8",
+  "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:9222724034a0983805061f0fdaf5ca3ab49dffe4+untracked:meta-harness",
+  "tests_passed": true,
+  "checks": [
+    {
+      "name": "project settings stay hook-free",
+      "status": "passed",
+      "evidence": "t05-hook.md: project .claude/settings.json hook-free; templates do not add hooks there; pack names install step, does not edit sync scripts"
+    },
+    {
+      "name": "Codex Windows command_windows",
+      "status": "passed",
+      "evidence": "Pack: present via command_windows/commandWindows; not 'disabled on Windows'. Grok ~/.grok/hooks/*.json. Effective-from filled"
+    },
+    {
+      "name": "check:config",
+      "status": "passed",
+      "evidence": "rc=0; 0 errors"
+    }
+  ]
+}

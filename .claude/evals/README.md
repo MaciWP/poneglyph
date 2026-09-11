@@ -38,13 +38,14 @@ Exit code ≠ 0 on any case failure.
 
 `source` is non-negotiable: a case without a traceable real-failure origin is synthetic and gets cut (spec 019 out-of-scope).
 
-## Clusters (20 cases: 18 from the 2026-06-10 harvest + calque-19 and devloop-20 added in 024-029)
+## Clusters (24 cases: 18 from the 2026-06-10 harvest + calque-19 and devloop-20 from 024-029 + skill-meta-harness-22..25 from 037)
 
 Declared count matches documented real failures only — no filler added (the original harvest was honestly 18, not a round 20). `devloop-trivial-21` (expected `no-ceremony` on a typo fix) was cut in audit 010 (2026-09-02): commit `ca797ff` (2026-08-10) made the full KNOW→LEARN loop mandatory on every coding task, so the case contradicted the doctrine it was meant to guard. The grader's `no-ceremony` mode stays available for a future, doctrine-consistent case.
 
 | Cluster | Cases | Grader | Failure origin |
 |---|---|---|---|
 | Skill triggering | skill-01..04 | `skillTriggerParse` | Native under-triggering verified in `_research-skill-activation-2026-06-09.md`; wiring lesson = `lessons` G12 (skill wiring over auto-trigger) |
+| meta-harness routing | skill-meta-harness-create-22 .. consult-25 | `skillTriggerParse` | 037 AC27: create/modify/delete/consult must route to `meta-harness`, not the stubs |
 | Anti-sycophancy openers | opener-05..09 | `bannedOpeners` | poneglyph.md kill-list (distilled from real feedback); hook-reliability false-claim case |
 | es-ES register | eses-10..12 | `esEsDetect` | CLAUDE.md language convention; 017 translated-English debt |
 | BLUF position | bluf-13..15 | `blufPosition` | poneglyph.md §2 Glance anti-examples; `lessons` G11 (brief by default, no bureaucracy) |

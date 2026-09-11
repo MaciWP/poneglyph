@@ -1,7 +1,7 @@
 ---
 name: critic
 description: |
-  Revisión end-to-end tras completar todas las HUs (Fase 4 del workflow de 5 fases). Valida que el problema original de spec.md se resolvió de verdad. Produce review.md con checklist de 5 secciones (Correctness/Quality/Security/Performance/Maintainability) + findings con severidad + veredicto (APPROVED/WITH_WARNINGS/NEEDS_CHANGES/BLOCKED). Despacha UN reviewer de contexto fresco (read-only) y dispara security-audit en auth/pagos/credenciales.
+  Revisión end-to-end tras completar todas las HUs (Fase 4 del workflow `/flow`). Valida que el problema original de spec.md se resolvió de verdad. Produce review.md con checklist de 5 secciones (Correctness/Quality/Security/Performance/Maintainability) + findings con severidad + veredicto (APPROVED/WITH_WARNINGS/NEEDS_CHANGES/BLOCKED). Despacha UN reviewer de contexto fresco (read-only) y dispara security-audit en auth/pagos/credenciales.
   Úsala cuando: feature completo, todas las HUs cerradas en state.json, revisión antes de retro, tras /build, "revisa", "critica", "valida", "audita", "veredicto".
 metadata:
   keywords: >

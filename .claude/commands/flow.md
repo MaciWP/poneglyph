@@ -74,7 +74,9 @@ Resolve shared resources through the installed `rules/harness-runtime.md`.
 host's real search and question tools. Codex's generated `$flow` reads this same
 source. Claude metadata does not provide another host with Claude APIs.
 
-Build runs inline by default. For a user-authorized supervised Orca team, invoke
+Build runs inline by default. This command's `allowed-tools` is a harness permission
+list, not a spawn approval: every agent launch, in any phase, still needs the per-task
+user gate in CLAUDE.md. For a user-authorized supervised Orca team, invoke
 `orca-workflow`: one shared worktree, coordinator-owned reservations and explicit
 worker roles. CLAUDE.md's Agent spawn section owns team approval and its validity
 on resume. Task decomposition never grants permission.

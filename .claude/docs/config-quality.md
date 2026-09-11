@@ -57,6 +57,7 @@ cannot pass.
 | Description | Non-whitespace string, 1-1024 Unicode code points after YAML decoding | [Agent Skills specification](https://agentskills.io/specification); no invented 150-character target |
 | Optional metadata | String-to-string `metadata`, compatibility up to 500 characters, documented field types | Agent Skills baseline plus [Claude fields](https://code.claude.com/docs/en/skills) |
 | Commands | Description and metadata types; derived filename allowed as name; no skill shadowing | Project contract for existing Claude Markdown commands |
+| Agents (three hosts) | Claude `.claude/agents/*.md` and Grok `.grok/agents/*.md`: YAML mapping, kebab `name` 1–64 matching the filename stem, description 1–1024, nonempty body. Codex `.codex/agents/*.toml`: kebab `name` 1–64 (filename match optional; underscores fail), description 1–1024, nonempty `developer_instructions`. Agent names collide with skills and commands, not with the same agent name on another host. Missing agent dirs are a no-op. Not scanned: `[agents]` in `config.toml` (global caps), `.grok/personas/*.toml`. | Vendor definition files (Claude/Grok markdown; Codex standalone TOML). Same `name`/`description` floor as skills (AC20). |
 | References | Explicit relative Markdown links outside code examples resolve within the snapshot | Project consistency check; arbitrary prose, computed paths and shell arguments need review |
 | JSON/YAML/TOML | Parse configuration as a mapping | Native JSON/Bun YAML; pinned `smol-toml` for TOML |
 | Claude settings | Hook registration shape, handler types, timeout/async types, explicit core script targets, permission/env/plugin map types | [Claude hooks](https://code.claude.com/docs/en/hooks); project settings stay hook-free |
@@ -93,7 +94,20 @@ the hook keeps the first entry with usable keywords. Missing or unreadable entri
 allow a later directory to supply the skill. Ranking and matching rules are unchanged.
 
 A body of at least 500 lines is a **warning**, not a failure. It is progressive
-disclosure guidance, not evidence of poor reasoning. Unknown metadata also warns:
+disclosure guidance, not evidence of poor reasoning. Description length stays
+**1–1024 Unicode code points**. There is no 500-character description error.
+
+### Promoting a new limit (AC19)
+
+A number becomes a blocking standard only with evidence A/B/T1. Then, in one HU:
+
+1. One row in this table (surface, rule, basis).
+2. One rule id in `check-config.ts` (error or warning).
+3. One fixture in `scripts/__tests__/check-config.test.ts`.
+4. The matching template or pack default.
+5. Run the new rule against the existing catalog **before** it is a CI error. If a D12 artefact would fail, ship a warning or fix those files in the same HU. Never merge known red. Never relax the rule in silence.
+
+A heading in a skill is not a standard. Invented counts (word targets, “32”, “150 characters”) stay out. Unknown metadata also warns:
 a host extension needs review, but the gate must not forbid valid future fields.
 Claude's default description/when_to_use listing budget is separate from the
 portable description limit. Do not confuse bytes on disk, available context,

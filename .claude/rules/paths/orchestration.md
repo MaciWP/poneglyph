@@ -4,7 +4,7 @@ paths:
   - ".claude/agents/**"
 ---
 
-<!-- Last verified: 2026-06-22 (021 — globs→paths fix: CC honors `paths` not `globs`, so this rule was eager-loaded every session; now lazy-scoped to skill/agent authoring. agents-dir glob kept future-proof — harmless when the dir is absent, matches when meta-create adds one in any repo) -->
+<!-- Last verified: 2026-06-22 (021 — globs→paths fix: CC honors `paths` not `globs`, so this rule was eager-loaded every session; now lazy-scoped to skill/agent authoring. agents-dir glob kept future-proof — harmless when the dir is absent, matches when meta-harness adds one in any repo) -->
 
 ## Orchestration Context
 

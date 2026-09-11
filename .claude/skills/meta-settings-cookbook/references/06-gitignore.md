@@ -1,22 +1,5 @@
-# .gitignore Patterns for Claude Code
+# 06-gitignore (stub)
 
-## Template
+Redirect: `meta-harness` pack [t15-gitignore.md](../../meta-harness/references/t15-gitignore.md).
 
-```gitignore
-# Claude Code local settings (not shared)
-.claude/settings.local.json
-CLAUDE.local.md
-
-# Claude Code auto-generated
-.claude/agent-memory/*/MEMORY.md
-```
-
-## What to Commit vs Gitignore
-
-| Commit (shared) | Gitignore (personal) |
-|-----------------|---------------------|
-| `.claude/settings.json` | `.claude/settings.local.json` |
-| `.claude/agents/*.md` | `CLAUDE.local.md` |
-| `.claude/skills/` | Agent memory files |
-| `CLAUDE.md` | |
-| `.mcp.json` | |
+Prune: 2026-09-10. Live path is under meta-harness. Delete when live grep of this filename is zero outside this stub and historical audits/plans.

@@ -1,0 +1,22 @@
+{
+  "us": "US12",
+  "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:9222724034a0983805061f0fdaf5ca3ab49dffe4+untracked:meta-harness",
+  "tests_passed": true,
+  "checks": [
+    {
+      "name": "live path t09-memory; cookbook 01 stub",
+      "status": "passed",
+      "evidence": "t09-memory.md is the 7-point pack (CLAUDE.md + AGENTS.md + Grok dual-load). cookbook 01-claude-md.md is a Redirect stub. Cross-session Grok [memory] declared ausente from T9"
+    },
+    {
+      "name": "no CLAUDE.md line-count in check-config",
+      "status": "passed",
+      "evidence": "D15: pack says <200 is guidance B, not CI. check-config.ts has no rules/ scan"
+    },
+    {
+      "name": "check:config",
+      "status": "passed",
+      "evidence": "rc=0; 0 errors"
+    }
+  ]
+}

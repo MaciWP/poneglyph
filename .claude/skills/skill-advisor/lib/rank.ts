@@ -34,8 +34,8 @@ export const SHORTLIST_MAX = 5;
 export const USAGE_TIER: Record<string, number> = {
   "tech-plan": 2, scope: 2, drillme: 2, "tdd-design": 2, "prompt-engineer": 2,
   build: 2, critic: 2, retro: 2,
-  "html-report": 1, "skill-advisor": 1, "meta-settings-cookbook": 1,
-  "meta-create": 1, graphify: 1,
+  "html-report": 1, "skill-advisor": 1, "meta-harness": 1,
+  graphify: 1,
   "diagnostic-patterns": 1, consult: 1, "anti-hallucination": 1,
 };
 const STOP = new Set([

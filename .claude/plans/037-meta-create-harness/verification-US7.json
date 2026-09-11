@@ -1,0 +1,22 @@
+{
+  "us": "US7",
+  "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:9222724034a0983805061f0fdaf5ca3ab49dffe4+untracked:meta-harness",
+  "tests_passed": true,
+  "checks": [
+    {
+      "name": "rules out of check-config D15",
+      "status": "passed",
+      "evidence": "grep check-config.ts for rules/ → 0 matches. t04-rule.md declares gate out of check-config"
+    },
+    {
+      "name": "choice tree vs T1/T9",
+      "status": "passed",
+      "evidence": "t04-rule.md §1 names hook/memory/skill alternatives; Codex cell is AGENTS.md layers not cloned .claude/rules"
+    },
+    {
+      "name": "check:config",
+      "status": "passed",
+      "evidence": "rc=0; 0 errors, 4 pre-existing warnings"
+    }
+  ]
+}

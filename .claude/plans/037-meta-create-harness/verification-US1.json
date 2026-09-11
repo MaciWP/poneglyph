@@ -1,0 +1,37 @@
+{
+  "us": "US1",
+  "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:62files+324-4712+critic-repair",
+  "tests_passed": true,
+  "checks": [
+    {
+      "name": "M2 stubs invoke-off",
+      "status": "passed",
+      "evidence": "meta-create and meta-settings-cookbook: disable-model-invocation true, user-invocable false, description 'Stub. Use meta-harness.' keywords empty, no when_to_use, prune 2026-09-10"
+    },
+    {
+      "name": "M1 parked tree poison-pill",
+      "status": "passed",
+      "evidence": "33 parked md overwritten as 3-line Redirect stubs. grep activation.keywords / model: sonnet / /meta-create skill in meta-create/ → 0"
+    },
+    {
+      "name": "M4 doctrine-sweep glob",
+      "status": "passed",
+      "evidence": "doctrine-sweep.md:19 includes *.md *.ts *.js *.json *.toml *.yaml"
+    },
+    {
+      "name": "check:config",
+      "status": "passed",
+      "evidence": "bun run check:config rc=0; 0 errors, 4 pre-existing warnings"
+    },
+    {
+      "name": "budget AC30",
+      "status": "passed",
+      "evidence": "skills: description + when_to_use 21033 Δ 0; bun .claude/scripts/budget.ts Within budget"
+    },
+    {
+      "name": "native-hook --check",
+      "status": "passed",
+      "evidence": "Modified-file secret check passed"
+    }
+  ]
+}

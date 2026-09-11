@@ -1,0 +1,17 @@
+{
+  "us": "US4",
+  "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:62files+324-4712+critic-repair",
+  "tests_passed": true,
+  "checks": [
+    {
+      "name": "T4.1–T4.3 unit grader",
+      "status": "passed",
+      "evidence": "bun test ./.claude/evals/__tests__/cases-meta-harness.test.ts 3/3; jsonl skill-meta-harness-create-22 .. consult-25 expected meta-harness"
+    },
+    {
+      "name": "live evals out of oracle (O1)",
+      "status": "passed",
+      "evidence": "Approved plan O1: US4 Verify allows file parse + unit grader when live is opt-in (tests.md:174). bun .claude/evals/run.ts not spawned. AC27 When remains living-spec for Phase 5 (spec.md:143). README clusters now list 22–25."
+    }
+  ]
+}

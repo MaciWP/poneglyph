@@ -1,0 +1,17 @@
+{
+  "us": "US14",
+  "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:62files+324-4712+critic-repair",
+  "tests_passed": true,
+  "checks": [
+    {
+      "name": "M5 Grok permission modes",
+      "status": "passed",
+      "evidence": "t11-permissions.md:24 native [ui] permission_mode default/ask, auto, always-approve (user-only). Claude-compat acceptEdits/dontAsk/plan/bypassPermissions labeled as settings.json aliases, not the TOML enum"
+    },
+    {
+      "name": "check:config",
+      "status": "passed",
+      "evidence": "rc=0; 0 errors, 4 pre-existing warnings"
+    }
+  ]
+}

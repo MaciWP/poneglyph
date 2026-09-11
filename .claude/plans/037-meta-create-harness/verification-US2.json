@@ -1,0 +1,32 @@
+{
+  "us": "US2",
+  "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:81be651c490319219e320a773fc0b899162d984a",
+  "tests_passed": true,
+  "checks": [
+    {
+      "name": "TDD red then green T2.1–T2.10",
+      "status": "passed",
+      "evidence": "Red: T2.2/T2.4/T2.5(1025)/T2.6/T2.7 failed as predicted (paths skipped). Pins T2.1/T2.3/T2.8/T2.9/T2.10 already green. After impl: bun test ./.claude/scripts/__tests__/check-config.test.ts 59/59"
+    },
+    {
+      "name": "scripts test suite",
+      "status": "passed",
+      "evidence": "bun test ./.claude/scripts/__tests__/ 230/230 across 14 files"
+    },
+    {
+      "name": "check:config on this repo",
+      "status": "passed",
+      "evidence": "bun run check:config rc=0; 0 errors (no in-repo agent definition files); 4 pre-existing warnings"
+    },
+    {
+      "name": "native-hook --check",
+      "status": "passed",
+      "evidence": "Modified-file secret check passed"
+    },
+    {
+      "name": "D29 no 500-char description error",
+      "status": "passed",
+      "evidence": "T2.5 500 and 1024 clean; 1025 metadata.description; T2.10 pin on check-config.ts"
+    }
+  ]
+}

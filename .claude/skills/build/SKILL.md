@@ -92,7 +92,7 @@ The HU is implemented **inline in the main session**. Per the canonical spawn de
 |---|---|---|
 | Any single HU (1..N files, bounded change) | **Inline** (Lead in skill) | Default-allow gate covers it; spawning 1 agent for isolation is forbidden (P1/P2) |
 | HU touches sensitive paths (`.env`, `*.lock`, `package.json`, `.claude/settings*.json`, `secrets/`) | **Inline** + declare `sensitive: <reason ≥8 chars>` | CLAUDE.md sensitive-paths rule |
-| HU is "create extension" (new skill/hook/rule/MCP/plugin) | Lead invokes `meta-create` first; then inline | Meta-context requires `meta-create` consultation |
+| HU is "create extension" (new skill/hook/rule/MCP/plugin) | Lead invokes `meta-harness` first; then inline | Meta-context requires `meta-harness` consultation |
 | The wave has **≥4 independent HUs** with disjoint files and no shared state | **Workflow** fan-out (opt-in) | Only at ≥4 parallel units does delegation pay off (P3); `isolation: 'worktree'` per unit on collision |
 
 > A single HU is NEVER a reason to spawn. Fan-out is decided at the WAVE level (≥4 independent HUs), not per-HU — and it is user opt-in (Workflow). See `orchestrator-protocol` §Step 1 spawn decision tree + `references/04-agent-selection.md` §Workflow wiring.
@@ -229,7 +229,7 @@ The `builder` agent was cut in feature 008 (1 agent forbidden; "context isolatio
 
 ## Auxiliary skills
 
-Wiring and manual fallbacks for this phase (anti-hallucination, drillme, diagnostic-patterns must fire on every HU; review-patterns, meta-create, meta-settings-cookbook conditional): `.claude/docs/auxiliary-skills-matrix.md` §Fallbacks per phase. Skill-to-skill invocation is probabilistic (issue #59968) — when an auxiliary does not fire, apply its fallback row.
+Wiring and manual fallbacks for this phase (anti-hallucination, drillme, diagnostic-patterns must fire on every HU; review-patterns, meta-harness conditional): `.claude/docs/auxiliary-skills-matrix.md` §Fallbacks per phase. Skill-to-skill invocation is probabilistic (issue #59968) — when an auxiliary does not fire, apply its fallback row.
 
 ## SIEMPRE rules
 
@@ -290,7 +290,7 @@ Wiring and manual fallbacks for this phase (anti-hallucination, drillme, diagnos
 | I | Read AC + tests/validations + ejemplos del proyecto BEFORE writing |
 | VI | Sensitive paths require inline declaration; destructive ops never run by this skill |
 | X | Inline execution avoids wasteful 1-agent spawns; fan-out only at ≥4 independent HUs (P1/P3) |
-| IX | Meta-extensions go through `meta-create` skill consultation (extensible meta-system) |
+| IX | Meta-extensions go through `meta-harness` skill consultation (extensible meta-system) |
 
 ## References
 

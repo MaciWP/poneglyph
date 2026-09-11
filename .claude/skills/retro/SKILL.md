@@ -152,7 +152,7 @@ For each reusable pattern surfaced in Step 5/7 — plus each entry in `.claude/l
 - Do NOT auto-promote — produce candidates only; the user approves.
 - Each candidate MUST cite the concrete evidence from this feature that motivated it (a finding, a recurring drillme question, a lesson).
 - `anti-hallucination`: verify the proposed path does NOT collide with an existing file. If collision → propose rename or merge.
-- If `meta-create` auxiliary is invoked → the proposal sketch follows the official frontmatter spec for that extension type.
+- If `meta-harness` auxiliary is invoked → the proposal sketch follows the official frontmatter spec for that extension type.
 - **Failure → eval case**: for each REAL documented failure surfaced in §Lessons ❌, also propose its golden-prompt case for `.claude/evals/cases.jsonl` (growth rule in `.claude/evals/README.md`: one new case per new real failure, deterministic grader, `source` cites this retro). The failure becomes a permanent regression check (Cmd VII).
 
 If zero promotion candidates emerge → declare honestly: "Zero promotions this cycle. Reasons: <list>." If this happens in 3+ consecutive retros → smell signal (Step 12).
@@ -311,7 +311,7 @@ Report using the block in §Output format reminder (end of this skill) — same 
 | V | Promotions for genuinely reusable patterns only; no premature abstraction |
 | IV | retro.md is the closure gate; lifecycle closes only after retro produced |
 | I | Read ALL inputs (spec/tasks/tests/review/state) BEFORE producing retro |
-| VIII | Promotion candidates that involve extensions go through `meta-create` for spec-compliant scaffolding |
+| VIII | Promotion candidates that involve extensions go through `meta-harness` for spec-compliant scaffolding |
 | VII | Process audit + commandments audit feed self-improvement (the loop's whole purpose) |
 | IX | Promotions to global ~/.claude/ keep poneglyph healthy; never duplicate or contradict existing |
 

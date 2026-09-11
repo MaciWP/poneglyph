@@ -125,7 +125,7 @@ export function validate(source: Source, options: { addon?: boolean; privacyTerm
     const name = fields.name ?? (command ? posix.basename(p, ".md") : undefined);
     if (typeof name !== "string" || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name) || chars(name) > 64 || (skill && name !== skill[1])) add(p, "metadata.name", "Use a matching kebab-case name of 1–64 characters (project convention).");
     if (typeof name === "string") {
-      if (names.has(name)) add(p, "metadata.collision", "A skill and command cannot shadow each other in this repository.");
+      if (names.has(name)) add(p, "metadata.collision", "A skill, command and agent cannot shadow each other in this repository.");
       names.add(name);
       if (addon && options.baseSkills?.has(name)) add(p, "addon.duplicate", "The addon must not copy or override a core skill.");
     }
@@ -150,6 +150,33 @@ export function validate(source: Source, options: { addon?: boolean; privacyTerm
       try { target = decodeURIComponent(target); } catch { add(p, "reference.path", "Malformed local reference."); continue; }
       const resolved = posix.normalize(posix.join(posix.dirname(p), target));
       if (resolved.startsWith("../") || ![...files.keys()].some(f => f === resolved || f.startsWith(resolved.replace(/\/$/, "") + "/"))) add(p, "reference.missing", `Missing local Markdown target: ${target}`);
+    }
+  }
+
+  const kebabName = (value: unknown): value is string =>
+    typeof value === "string" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) && chars(value) <= 64;
+
+  if (!addon) {
+    for (const [p, text] of files) {
+      const agent = /^\.(?:claude|grok)\/agents\/([^/]+)\.md$/.exec(p);
+      if (!agent) continue;
+      let fields, body;
+      try { ({ fields, body } = frontmatter(text)); } catch { add(p, "metadata.parse", "Invalid YAML frontmatter; source content is withheld."); continue; }
+      const name = fields.name;
+      if (!kebabName(name) || name !== agent[1]) add(p, "metadata.name", "Use a matching kebab-case name of 1–64 characters (project convention).");
+      else if (names.has(name)) add(p, "metadata.collision", "A skill, command and agent cannot shadow each other in this repository.");
+      if (typeof fields.description !== "string" || !fields.description.trim() || chars(fields.description) > 1024) add(p, "metadata.description", "description must contain 1–1024 characters.");
+      if (!body.trim()) add(p, "skill.body", "Instructions must not be empty.");
+    }
+    for (const [p, text] of files) {
+      if (!/^\.codex\/agents\/[^/]+\.toml$/.test(p)) continue;
+      let data: unknown;
+      try { data = parseToml(text); } catch { add(p, "metadata.parse", "Invalid TOML; source content is withheld."); continue; }
+      if (!object(data)) { add(p, "metadata.parse", "Agent configuration must be a mapping."); continue; }
+      if (!kebabName(data.name)) add(p, "metadata.name", "Use a kebab-case name of 1–64 characters (project convention). Filename match is optional.");
+      else if (names.has(data.name)) add(p, "metadata.collision", "A skill, command and agent cannot shadow each other in this repository.");
+      if (typeof data.description !== "string" || !data.description.trim() || chars(data.description) > 1024) add(p, "metadata.description", "description must contain 1–1024 characters.");
+      if (typeof data.developer_instructions !== "string" || !data.developer_instructions.trim()) add(p, "metadata.instructions", "developer_instructions must be a non-empty string.");
     }
   }
 

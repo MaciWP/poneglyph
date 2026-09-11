@@ -1,0 +1,22 @@
+{
+  "us": "US17",
+  "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:9222724034a0983805061f0fdaf5ca3ab49dffe4+untracked:meta-harness",
+  "tests_passed": true,
+  "checks": [
+    {
+      "name": "three real statusline keys",
+      "status": "passed",
+      "evidence": "t14-statusline.md: Claude statusLine, Codex tui.status_line, Grok [ui.status_line]. No ausente cell"
+    },
+    {
+      "name": "docs/statusline-setup.md points at T14",
+      "status": "passed",
+      "evidence": "docs/statusline-setup.md live pack link is meta-harness T14. cookbook 07 is Redirect stub. Remaining 07-statusline mentions removed from the setup doc"
+    },
+    {
+      "name": "check:config",
+      "status": "passed",
+      "evidence": "rc=0; 0 errors"
+    }
+  ]
+}

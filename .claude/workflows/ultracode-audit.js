@@ -168,7 +168,7 @@ const DEFAULT_DOMAINS = [
     focus:
       'Refs muertas a agentes cortados (builder/reviewer/scout/planner) en prosa de skills. Links references/ rotos. ' +
       'Keywords solapados entre skills. Refs a skills inexistentes. Excluir falsos positivos (Builder pattern de diseno, ' +
-      'arquetipos meta-create templates/agent/*, nombres legacy de skill-roles).',
+      'arquetipos parked templates/agent/*, nombres legacy de skill-roles).',
   },
   {
     key: 'rules-and-docs',
@@ -181,7 +181,7 @@ const DEFAULT_DOMAINS = [
   {
     key: 'claude-md-consistency',
     corpus: 'CLAUDE.md (raiz)',
-    skills: ['anti-hallucination', 'meta-settings-cookbook'],
+    skills: ['anti-hallucination', 'meta-harness'],
     focus:
       'Inventario declarado (skills/hooks/commands/rules/agents counts) vs realidad. Drift de baseline de tests (numero hardcoded stale). ' +
       'Refs internas rotas. Contradicciones entre secciones. NO inventar claims; citar linea exacta.',

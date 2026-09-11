@@ -20,8 +20,7 @@ description: Keywords→skills table, task type detection, priority scoring, syn
 | stress-test, devil's advocate, challenge decision, pre-mortem | `decide` (heavy tier) |
 | explain, walkthrough, diff, learn, onboarding | `explain-changes` |
 | prompt, generar prompt, refine, vague, agent prompt, meta-prompting | `prompt-engineer` |
-| CLAUDE.md, settings.json, permissions, env vars | `meta-settings-cookbook` |
-| create agent, new skill, add hook, scaffold extension, MCP server, plugin | `meta-create` |
+| CLAUDE.md, settings, permissions, env, skill, agent, hook, rule, MCP, plugin, consult/create/modify/disable/delete harness config | `meta-harness` |
 
 ## Task Type Detection
 

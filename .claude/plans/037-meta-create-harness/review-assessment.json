@@ -1,0 +1,8 @@
+{
+  "blockers": 0,
+  "majors": 0,
+  "minors": 2,
+  "nits": 0,
+  "checks": "passed",
+  "coverageMet": true
+}

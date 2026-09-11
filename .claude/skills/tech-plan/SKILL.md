@@ -230,7 +230,7 @@ Present tasks + oracle once at gate 2->3. Record the applicable user decision wi
 
 ## Auxiliary skills
 
-Wiring and manual fallbacks for this phase (anti-hallucination, drillme, decide, prompt-engineer, meta-create, meta-settings-cookbook, downstream tdd-design): `.claude/docs/auxiliary-skills-matrix.md` §Fallbacks per phase. Skill-to-skill invocation is probabilistic (issue #59968) — when an auxiliary does not fire, apply its fallback row. Step 13's `tdd-design` invocation is critical: verify post-skill that tests.md/validations.md exists; re-invoke manually if missing.
+Wiring and manual fallbacks for this phase (anti-hallucination, drillme, decide, prompt-engineer, meta-harness, downstream tdd-design): `.claude/docs/auxiliary-skills-matrix.md` §Fallbacks per phase. Skill-to-skill invocation is probabilistic (issue #59968) — when an auxiliary does not fire, apply its fallback row. Step 13's `tdd-design` invocation is critical: verify post-skill that tests.md/validations.md exists; re-invoke manually if missing.
 
 ## Adaptation intra-phase (Principio 2 — "no siempre más es más")
 

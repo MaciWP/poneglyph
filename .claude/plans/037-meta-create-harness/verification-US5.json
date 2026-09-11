@@ -1,0 +1,27 @@
+{
+  "us": "US5",
+  "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:9222724034a0983805061f0fdaf5ca3ab49dffe4+untracked:meta-harness",
+  "tests_passed": true,
+  "checks": [
+    {
+      "name": "7-point pack + Codex $name",
+      "status": "passed",
+      "evidence": "t02-command.md has sections 1–7, Claude/Codex/Grok columns, Codex invoke `$name`, no /meta-harness"
+    },
+    {
+      "name": "instantiated command template validate()",
+      "status": "passed",
+      "evidence": "fill templates/command/markdown.md → .claude/commands/gate-cmd.md with sample skill; validate() errors=0"
+    },
+    {
+      "name": "router links T2",
+      "status": "passed",
+      "evidence": "SKILL.md markdown-links references/t02-command.md"
+    },
+    {
+      "name": "check:config",
+      "status": "passed",
+      "evidence": "bun run check:config rc=0; 0 errors, 4 pre-existing warnings"
+    }
+  ]
+}

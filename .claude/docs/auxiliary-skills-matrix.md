@@ -13,22 +13,21 @@
 | `review-patterns` | Quality (SOLID/DRY/complexity) + Performance (N+1/leaks/async) modes | false |
 | `prompt-engineer` | Prompt quality (refinar / generar / review delegation / audit) | false |
 | `explain-changes` | Educational walkthrough de cambios para entender / aprender | false |
-| `meta-create` | Crear extensiones Claude Code (skills/commands/hooks/rules/MCP/plugin) | false |
-| `meta-settings-cookbook` | Reference rápido para CLAUDE.md/settings.json/output styles/permissions | true (manual) |
+| `meta-harness` | Configuración nativa de los tres arneses (consultar, crear, modificar, desactivar, borrar) | false |
 | `security-review` (native built-in — NOT our skill; ours is `security-audit`) | Security review del branch pendiente | (native) |
 | `simplify` (plugin) | Review code for reuse/quality/efficiency + fix | (plugin) |
 
 ## Cruce: qué phase skill invoca a qué auxiliary
 
-| Phase skill | anti-hallucination | drillme | decide (heavy tier) | diagnostic-patterns | review-patterns | prompt-engineer | explain-changes | meta-create | meta-settings-cookbook | security-audit | simplify |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| **scope** (F1) | ✅ premisas factuales del brief | ✅ cierre fase | ⚠️ modo full (perspectives producto) | — | — | ✅ brief vago → refinar | — | — | — | — | — |
-| **tech-plan** (F2) | ✅ archivos/funciones/patrones del proyecto | ✅ cierre fase | ✅ modo full (2+ alternativas técnicas) | — | — | ✅ review delegation prompts | — | ✅ si plan crea skills/hooks/rules | ✅ si plan toca CLAUDE.md/settings | — | — |
-| **tdd-design** (F2.5) | ✅ funciones/módulos referenciados | ✅ cierre fase | — | — | — | — | — | — | — | — | — |
-| **build** (F3) | ✅ cada Edit/Write previa verificación | ✅ intra-HU | — | ✅ tests fallan → 5-whys | ⚠️ opcional — quality durante escritura | — | — | ✅ si HU = crear extensión | ✅ si HU toca config | — | — |
-| **critic** (F4) | ✅ findings antes de reportar | ✅ cierre fase | ⚠️ si revela decisión arquitectónica | ✅ tests fallan en ejecución | ✅ modo quality/performance según contenido | — | ⚠️ si reviewer humano necesita walkthrough | — | — | ✅ auth/payments/secrets/credentials | ⚠️ refactor opcional |
-| **retro** (F5) | ✅ promociones — paths existen | ✅ cierre feature | — | — | — | — | ⚠️ si retro produce doc educativo | ⚠️ si retro propone nueva skill/rule | ⚠️ si retro propone setting | — | — |
-| **drillme** (transversal) | ✅ premisas en respuestas factuales | — | ✅ escalación cuando alcanza techo | — | — | — | — | — | — | — | — |
+| Phase skill | anti-hallucination | drillme | decide (heavy tier) | diagnostic-patterns | review-patterns | prompt-engineer | explain-changes | meta-harness | security-audit | simplify |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **scope** (F1) | ✅ premisas factuales del brief | ✅ cierre fase | ⚠️ modo full (perspectives producto) | — | — | ✅ brief vago → refinar | — | — | — | — |
+| **tech-plan** (F2) | ✅ archivos/funciones/patrones del proyecto | ✅ cierre fase | ✅ modo full (2+ alternativas técnicas) | — | — | ✅ review delegation prompts | — | ✅ si plan crea o toca config nativa | — | — |
+| **tdd-design** (F2.5) | ✅ funciones/módulos referenciados | ✅ cierre fase | — | — | — | — | — | — | — | — |
+| **build** (F3) | ✅ cada Edit/Write previa verificación | ✅ intra-HU | — | ✅ tests fallan → 5-whys | ⚠️ opcional — quality durante escritura | — | — | ✅ si HU crea o toca config nativa | — | — |
+| **critic** (F4) | ✅ findings antes de reportar | ✅ cierre fase | ⚠️ si revela decisión arquitectónica | ✅ tests fallan en ejecución | ✅ modo quality/performance según contenido | — | ⚠️ si reviewer humano necesita walkthrough | — | ✅ auth/payments/secrets/credentials | ⚠️ refactor opcional |
+| **retro** (F5) | ✅ promociones — paths existen | ✅ cierre feature | — | — | — | — | ⚠️ si retro produce doc educativo | ⚠️ si retro propone skill/config nativa | — | — |
+| **drillme** (transversal) | ✅ premisas en respuestas factuales | — | ✅ escalación cuando alcanza techo | — | — | — | — | — | — | — |
 
 Leyenda: ✅ = invocación canónica esperada · ⚠️ = condicional según contexto · — = no aplica
 
@@ -65,8 +64,7 @@ The downstream `tech-plan` skill (Phase 2) is NOT invoked by scope — it waits 
 | `drillme` | Before closing Phase 2 (hard gate 2->3) — applies 6 phase questions + canonical 4 Socratic categories | Lead invokes `/drillme "Phase 2 plan closing for <NNN-slug>"` manually before approving |
 | `decide` (heavy tier) | Full mode + 2+ technically reasonable alternatives surfaced — stress-test before committing | Lead invokes `/decide "<the choice>"` manually (its classifier lands on the heavy tier); downgrade plan confidence one tier if skipped |
 | `prompt-engineer` | When reviewing delegation prompts that the plan will hand off to `build` skill in Phase 3 (Arch H compliance) | Lead applies 5-criteria rubric inline to the delegation prompts |
-| `meta-create` | When any HU plans to create a Claude Code extension (skill/command/hook/rule/MCP/plugin/agent) | Lead reads `meta-create` references manually to validate canon before HU is finalized |
-| `meta-settings-cookbook` | When any HU plans to touch CLAUDE.md / settings.json / output-styles / env-vars / permissions | Lead reads relevant `meta-settings-cookbook` reference manually |
+| `meta-harness` | When any HU plans to create or touch native harness config (skill/command/hook/rule/MCP/plugin/agent/settings/permissions) | Lead reads `meta-harness` and the matching type pack (when present) before the HU is finalized |
 | `tdd-design` (downstream) | Step 13 — invoke explicitly after producing tasks/ to generate tests.md/validations.md | Lead invokes `/tdd-design` manually; the human hard gate 2->3 requires both tasks/ AND tests/validations |
 
 `tdd-design` invocation in Step 13 is critical — Lead MUST verify post-skill that tests.md/validations.md was produced; re-invoke manually if missing.
@@ -89,10 +87,9 @@ Phase 2.5 is the most focused phase — only 2 auxiliaries truly apply. Other au
 | `drillme` | Intra-HU before declaring done (Step 7 — 4 `[approach]` questions) | Lead invokes `/drillme "Phase 3 HU US{N}"` manually before closing the HU |
 | `diagnostic-patterns` | When tests fail in Step 8 verification (5-whys, retry budget, stack-trace analysis) | Lead reads error output manually + applies error-recovery.md retry policy |
 | `review-patterns` | ⚠️ Optional — during impl if quality concern emerges (SOLID violation suspected, performance bottleneck) | Lead invokes `/critic` review-patterns mode in Phase 4 anyway; intra-impl invocation is opportunistic |
-| `meta-create` | When HU's `files` field includes new `.claude/skills/`, `.claude/hooks/`, `.claude/rules/`, `.claude/plugins/`, `.mcp.json` | Lead reads `meta-create/SKILL.md` manually before designing the extension (Commandment IX — meta-system maintainability) |
-| `meta-settings-cookbook` | When HU touches `CLAUDE.md`, `.claude/settings.json`, output styles, permissions, env vars | Lead reads `meta-settings-cookbook/SKILL.md` references manually |
+| `meta-harness` | When HU's `files` field includes new `.claude/skills/`, `.claude/hooks/`, `.claude/rules/`, `.claude/plugins/`, `.mcp.json`, or touches `CLAUDE.md` / settings / output styles / permissions / env | Lead reads `meta-harness/SKILL.md` (and the matching type pack when present) before designing the change (Commandment IX — meta-system maintainability) |
 
-For Phase 3, the canonical auxiliaries (anti-hallucination, drillme, diagnostic-patterns) MUST fire on every HU — the fallback column documents the Lead's manual recovery if auto-fire misses. `review-patterns` is opportunistic (⚠️); `meta-create`/`meta-settings-cookbook` are conditional on HU content.
+For Phase 3, the canonical auxiliaries (anti-hallucination, drillme, diagnostic-patterns) MUST fire on every HU — the fallback column documents the Lead's manual recovery if auto-fire misses. `review-patterns` is opportunistic (⚠️); `meta-harness` is conditional on HU content.
 
 ### critic (Phase 4) and retro (Phase 5)
 

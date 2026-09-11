@@ -1,0 +1,17 @@
+{
+  "us": "US15",
+  "revision": "f229e34b54b1bd3d3977966ec727c66c0e1caaf9+diff:9222724034a0983805061f0fdaf5ca3ab49dffe4+untracked:meta-harness",
+  "tests_passed": true,
+  "checks": [
+    {
+      "name": "live path t12-env; cookbook 04 stub",
+      "status": "passed",
+      "evidence": "t12-env.md: three host env surfaces; Claude does not read .env; no committed token examples. cookbook 04 Redirect stub"
+    },
+    {
+      "name": "check:config",
+      "status": "passed",
+      "evidence": "rc=0; 0 errors"
+    }
+  ]
+}

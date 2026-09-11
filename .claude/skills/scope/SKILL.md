@@ -108,7 +108,7 @@ Cost: ~3-5K tokens extra. Default-on only in `full` mode; user can override with
 
 ### Step 4 — Produce `spec.md`
 
-1. `Read .claude/plans/templates/spec.template.md`, falling back to `~/.claude/plans/templates/spec.template.md` (anti-hallucination: confirm the template exists; outside poneglyph only the global copy does).
+1. `Read .claude/plans/templates/spec.template.md`, falling back to `~/.claude/plans/templates/spec.template.md` (confirm the template exists before reading; outside poneglyph only the global copy does).
 2. Create `.claude/plans/{NNN}-{slug}/spec.md` filling required fields:
    - `# Problema` — one sentence, root cause.
    - `# Resultado esperado` — 2-4 measurable outcomes from the questionnaire.

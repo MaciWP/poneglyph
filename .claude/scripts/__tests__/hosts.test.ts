@@ -61,3 +61,29 @@ describe("codexTargets (one run per profile)", () => {
     expect(codexTargets(HOME, { CODEX_HOME: orca }, () => false)).toEqual([orca]);
   });
 });
+
+// Quality review 2026-09-11, finding H67. sync-codex concatenates the style twin that the
+// Claude engine regenerates, so a Codex-only run can install a stale twin. Grok already
+// pulls Claude in for the same reason; Codex must too.
+import { selectHosts } from "../../commands/sync-poneglyph";
+describe("host selection respects the twin dependency (H67)", () => {
+  const detected = [
+    { name: "claude" as const, cli: "claude", targets: ["/h/.claude"], installed: true },
+    { name: "codex" as const, cli: "codex", targets: ["/h/.codex"], installed: true },
+    { name: "grok" as const, cli: "grok", targets: ["/h/.grok"], installed: true },
+  ];
+
+  it("pulls Claude in when only Codex is selected", () => {
+    const { selected, notes } = selectHosts(detected, "codex");
+    expect(selected.map((h) => h.name)).toEqual(["claude", "codex"]);
+    expect(notes.join(" ")).toMatch(/twin|Claude/i);
+  });
+
+  it("still pulls Claude in when only Grok is selected", () => {
+    expect(selectHosts(detected, "grok").selected.map((h) => h.name)).toEqual(["claude", "grok"]);
+  });
+
+  it("does not duplicate Claude when it is already selected", () => {
+    expect(selectHosts(detected, "claude,codex").selected.map((h) => h.name)).toEqual(["claude", "codex"]);
+  });
+});

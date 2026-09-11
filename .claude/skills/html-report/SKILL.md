@@ -146,7 +146,7 @@ When asked to **critique/audit** an HTML/CSS or a render: load `references/criti
 
 | Precedent | What it provides | How html-report extends it |
 |---|---|---|
-| `.claude/skills/decide/templates/memo.html` | Self-contained pattern: inline CSS, `prefers-color-scheme` flip, `@media print`, radius/shadow scale, `--color-*` naming | html-report's `tokens.css` is a **superset** of memo's token architecture (same naming, same flip mechanism). `/decide` and `/html-report` must read as ONE design family (Commandment IX). |
+| The `decide` skill's HTML memo | Inline CSS, `prefers-color-scheme` flip, `@media print`, radius/shadow scale, `--color-*` naming | html-report's `tokens.css` is a **superset** of that token architecture (same naming, same flip mechanism). `/decide` and `/html-report` must read as ONE design family (Commandment IX). |
 | builtin `frontend-design` skill | Distinctive, production-grade frontend that avoids generic AI aesthetics | Invoked in Step 3 as the design-quality gate (AC5). |
 | `references/` taste corpus | Sourced hard rules + bans + pre-flight + critique mode | The measurable bar + the review side, layered above frontend-design. |
 
@@ -156,7 +156,7 @@ When asked to **critique/audit** an HTML/CSS or a render: load `references/criti
 |---|---|---|
 | **V** | Delivered code quality — simple by default, best practices, no over-engineering | One self-contained HTML, no JS framework, no build step, no CDN. Charts via plain SVG + CSS, not a charting library. System stack fonts, not embedded webfonts. Critique is markdown-mode, no helper unless justified. |
 | **IV** | Blocking quality gates | The pre-flight checklist (Step 5a) gates the write; critique emits a verdict. |
-| **VIII** | Optimal output — invoke the right capability well | Explicitly leverages the builtin `frontend-design` skill + a sourced taste corpus instead of hand-rolling mediocre CSS; reuses the `decide/memo.html` precedent. Good output by composition, not improvisation. |
+| **VIII** | Optimal output — invoke the right capability well | Explicitly leverages the builtin `frontend-design` skill + a sourced taste corpus instead of hand-rolling mediocre CSS; reuses the decide memo precedent. Good output by composition, not improvisation. |
 | **IX** | Poneglyph maintainability | `tokens.css` is the single source of truth for the report template (inlined byte-identical); the dashboard owns its dark-native palette by design; bans/tells live once in `references/anti-slop.md` (no dual source); `/decide` + `/html-report` share one design language. |
 
 ## Verification (smoke test)

@@ -49,6 +49,12 @@ export function selectHosts(detected: DetectedHost[], hostsFlag?: string): { sel
     names.push("claude");
     notes.push("Grok reuses the shared Claude layer (~/.claude): Claude is synced first.");
   }
+  // sync-codex embeds the style twin that the Claude engine regenerates, so a Codex-only
+  // run would install whatever twin happens to be on disk (H67, quality review 2026-09-11).
+  if (names.includes("codex") && !names.includes("claude")) {
+    names.push("claude");
+    notes.push("Codex embeds the style twin the Claude engine regenerates: Claude is synced first.");
+  }
   const selected = HOST_ORDER.filter((n) => names.includes(n)).map((n) => byName.get(n)!);
   return { selected, notes };
 }

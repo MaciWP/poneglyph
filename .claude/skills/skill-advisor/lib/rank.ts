@@ -27,16 +27,18 @@ export const SHORTLIST_MAX = 5;
  * Census-derived usage tiers (031): 2 = high (≥5 launches), 1 = some use,
  * 0 (absent) = zero recorded launches. Used ONLY as a tie-breaker — lexical
  * score always dominates. Static by design (no I/O per invocation); refresh
- * this map at each skills census (source: skills-census docs, archived under
- * plans/_archive/029-workflow-uplift/ — closed plans keep only spec.md + retro.md in git).
- * Snapshot: 2026-08-05 census + 031 renames (codex-consult→consult, escalate→unstuck).
+ * this map from MEASURED invocations, not from a hand-kept census. Source: the Claude Code
+ * Stats tab (the former /skill-doctor), which reports uses and last-used per skill.
+ * Snapshot: 2026-09-11. A skill with no recorded invocation is simply absent.
  */
 export const USAGE_TIER: Record<string, number> = {
-  "tech-plan": 2, scope: 2, drillme: 2, "tdd-design": 2, "prompt-engineer": 2,
-  build: 2, critic: 2, retro: 2,
-  "html-report": 1, "skill-advisor": 1, "meta-harness": 1,
-  graphify: 1,
-  "diagnostic-patterns": 1, consult: 1,
+  // Tier 2 — invoked five or more times in the last seven days.
+  dev: 2, drillme: 2, scope: 2, "tech-plan": 2, lessons: 2,
+  critic: 2, "tdd-design": 2, "prompt-engineer": 2,
+  // Tier 1 — invoked at least once.
+  build: 1, retro: 1, consult: 1, "pr-review": 1, "orchestrator-protocol": 1,
+  "deep-research": 1, "pr-conventional-comments": 1, "skill-advisor": 1,
+  // Skills with no recorded invocation carry no boost; absence is the default.
 };
 const STOP = new Set([
   "the", "and", "for", "with", "que", "los", "las", "una", "del", "por", "con",

@@ -159,7 +159,7 @@ Detalle completo en `build/inventory.md`. Counts verificados via Glob, coinciden
 | Hooks (main) | 4 (+5 lib/tests) | Scripts untracked | 1 |
 | Rules | 4 | | |
 
-**Discrepancias vs CLAUDE.md**: ninguna en counts principales. Adiciones documentadas: a token-trend script (untracked, Observability), `state.template.json` (8º template). Cobertura 14 categorías: completa, ninguna huérfana.
+**Discrepancias vs CLAUDE.md**: ninguna en counts principales. Adiciones documentadas: un script de tendencia de tokens (untracked, Observability), `state.template.json` (8º template). Cobertura 14 categorías: completa, ninguna huérfana.
 
 **Meta-componentes documentados**: frontmatter conventions (`activation.keywords` NO oficial), state.json schema, drillme integration (4 categorías auto-invocadas), hard gates protocol (1→2, 2→3 humanos; sin gate auto 3→4).
 

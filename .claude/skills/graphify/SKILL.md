@@ -203,7 +203,10 @@ Path('graphify-out/.graphify_semantic.json').write_text(json.dumps({'nodes':[],'
 "
 ```
 
-**MANDATORY: You MUST use the Agent tool here. Reading files yourself one-by-one is forbidden - it is 5-10x slower. If you do not use the Agent tool you are doing this wrong.**
+**This step needs the Agent tool: reading the corpus file by file is 5-10x slower.**
+A spawn is gated on the user's this-turn approval (CLAUDE.md §Agent spawn), so ask for
+the agent count and the model before dispatching, and state the cost class. Without that
+approval, run the step inline and say the run will be slower.
 
 Before dispatching subagents, print a timing estimate:
 - Load `total_words` and file counts from `graphify-out/.graphify_detect.json`

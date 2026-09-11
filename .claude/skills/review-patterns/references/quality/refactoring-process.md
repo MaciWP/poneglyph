@@ -15,9 +15,12 @@ graph LR
 
 ## Before Starting
 
+Git mutations are gated on the user's this-turn authorization (CLAUDE.md §Git / PR).
+Propose them; never run them because a checklist says so.
+
 1. Ensure tests exist and pass
-2. Commit current state to version control
-3. Create a feature branch for the refactoring work
+2. Ask whether to save the current state before touching it
+3. Ask whether the work goes on a branch, and which
 
 ## During Refactoring
 
@@ -27,15 +30,14 @@ graph LR
 | 2 | Write test if missing | Test passes |
 | 3 | Make ONE small change | Code compiles |
 | 4 | Run tests | All green |
-| 5 | Commit with message | Version controlled |
+| 5 | Offer a commit message | The user decides when to record it |
 | 6 | Repeat 2-5 | Until complete |
 
 ## After Completion
 
 1. Run full test suite
 2. Review changes (diff against main branch)
-3. Squash if many small commits
-4. Create PR for review
+3. Report what is ready to publish; the user decides on squash and PR
 
 ## Characterization Tests
 

@@ -9,7 +9,7 @@ Patterns that indicate code quality problems, ordered by severity.
 | Function > 50 lines | High | Hard to understand/test | Count lines |
 | Class > 500 lines | High | God class, too many responsibilities | Count lines |
 | > 5 parameters | High | Complex interface, hard to use | Count params |
-| Cyclomatic complexity > 15 | High | Too many paths, untestable | Count branches |
+| Cyclomatic complexity > 10 | High | Too many paths, untestable | Count branches |
 | Nesting depth > 4 | High | Hard to follow logic | Count indentation |
 | Duplicate code blocks | High | Maintenance nightmare | Compare blocks |
 | Untyped escape hatches | Medium | Type safety disabled | Search for "any" equivalents |
@@ -24,6 +24,6 @@ Patterns that indicate code quality problems, ordered by severity.
 | Level | Definition | Examples |
 |-------|------------|----------|
 | Critical | Code is broken or will fail | Unreachable code, infinite loops, null dereference |
-| High | Significant maintainability issue | God class, complexity > 15, duplicate code blocks |
+| High | Significant maintainability issue | God class, complexity > 10, duplicate code blocks |
 | Medium | Noticeable code smell | Long methods, magic numbers, deep nesting |
 | Low | Minor improvement opportunity | Naming, comments, organization |

@@ -113,15 +113,22 @@ function getAccessLevel(user, resource) -> AccessLevel:
             return "read"
     return "none"
 
-// AFTER: Extracted with early returns
+// AFTER: Extracted with early returns.
+// The role check survives the refactor ON PURPOSE: dropping it and ending in
+// `return "read"` would grant read access to every unknown role, which the BEFORE
+// code denied. An extraction that changes the default is not a refactor.
 function getAccessLevel(user, resource) -> AccessLevel:
     if isAdmin(user): return "full"
     if isModerator(user): return getModeratorAccess(resource)
+    if not isUser(user): return "none"
     if isOwner(user, resource): return "full"
     return "read"
 
 function isAdmin(user) -> boolean:
     return user.role == "admin"
+
+function isUser(user) -> boolean:
+    return user.role == "user"
 
 function isModerator(user) -> boolean:
     return user.role == "moderator"

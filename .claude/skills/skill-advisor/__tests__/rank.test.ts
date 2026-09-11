@@ -73,3 +73,23 @@ describe("usage tie-breaker (031 — census-derived)", () => {
     expect(USAGE_TIER["explain-changes"] ?? 0).toBe(0);
   });
 });
+
+// Quality review 2026-09-11, finding H46. USAGE_TIER was a hand-kept census snapshot. It
+// named skills that no longer exist and omitted six that the sessions actually use, so the
+// shortlist it ranks was scored against a catalog from another month.
+import { readdirSync, existsSync } from "node:fs";
+import { join, resolve } from "node:path";
+const repoRoot = resolve(import.meta.dir, "..", "..", "..", "..");
+const catalog = readdirSync(join(repoRoot, ".claude", "skills"), { withFileTypes: true })
+  .filter((e) => e.isDirectory() && existsSync(join(repoRoot, ".claude", "skills", e.name, "SKILL.md")))
+  .map((e) => e.name);
+
+describe("the usage tier map tracks the real catalog (H46)", () => {
+  test("finds the catalog", () => {
+    expect(catalog.length).toBeGreaterThan(20);
+  });
+
+  test("names no skill that is gone", () => {
+    expect(Object.keys(USAGE_TIER).filter((n) => !catalog.includes(n))).toEqual([]);
+  });
+});

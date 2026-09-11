@@ -293,3 +293,27 @@ describe("real Git snapshot input", () => {
     expect(withoutGitEnv({ GIT_DIR: "/repo/.git", GIT_INDEX_FILE: "/repo/.git/index", PATH: "/bin", HOME: undefined })).toEqual({ PATH: "/bin" });
   });
 });
+
+// Quality review 2026-09-11, finding H64 — REFUTED, and locked so it is not "fixed".
+// An external reviewer read the agent branch, saw that it checks `names.has(name)` without
+// calling `names.add(name)`, and reported a missing collision. Adding the name breaks the
+// documented three-host pattern: ONE agent declared for Claude and for Grok shares a name
+// on purpose (AC20). The case that matters — an agent shadowing a skill or command — is
+// already caught, because skills and commands are scanned into the set first.
+describe("agent name collisions, by design (H64 refuted)", () => {
+  it("flags an agent that shadows a skill", () => {
+    const s = source({
+      ".claude/skills/reviewer/SKILL.md": skill("reviewer"),
+      ".claude/agents/reviewer.md": grokAgent("reviewer", "An agent reusing a skill name."),
+    });
+    expect(errors(s)).toContain("metadata.collision");
+  });
+
+  it("accepts the SAME agent declared for Claude and for Grok", () => {
+    const s = source({
+      ".claude/agents/reviewer.md": grokAgent("reviewer", "One agent, two hosts."),
+      ".grok/agents/reviewer.md": grokAgent("reviewer", "One agent, two hosts."),
+    });
+    expect(errors(s)).not.toContain("metadata.collision");
+  });
+});

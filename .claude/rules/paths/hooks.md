@@ -42,7 +42,7 @@ Reliability matters because PreToolUse/PostToolUse may silently fail to fire (op
 | MessageDisplay | Assistant text about to render | — | — (can transform/hide assistant message text, CC ≥2.1.152) |
 | PreModelSwitch / PostModelSwitch | Before (sequential, can block) / after (async) a model switch | — | — (none registered; CC ≥2.1.251. Declined in audit 010: a switch guard would be over-engineering) |
 
-> **Stdout contract (CC ≥2.1.248)**: a stdout that starts with `{` and ends with `}` but is not valid JSON is now a reported hook error, not plain text. `security-gate.ts` prints one `JSON.stringify` object; `skill-activation.ts`, `post-compact.ts` and `workspace-hint.ts` print prose that never starts with `{`.
+> **Stdout contract (CC ≥2.1.248)**: a stdout that starts with `{` and ends with `}` but is not valid JSON is now a reported hook error, not plain text. `security-gate.ts` prints one `JSON.stringify` object; `skill-activation.ts` prints prose that never starts with `{`.
 
 There is no automatic test-pass validator — the Lead verifies tests manually after each build step (Stop test-gate declined, 017/US4). Never rely solely on PostToolUse for security enforcement.
 

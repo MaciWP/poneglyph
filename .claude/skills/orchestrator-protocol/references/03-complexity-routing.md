@@ -45,12 +45,15 @@ Each factor contributes a maximum of ~33 points (value=3 × 20% × 33.3). Total 
 
 ## Routing by Complexity
 
+Five factors at Low already score ~33, so the scale runs 33-100, not 0-100. Bands below
+that floor could never fire (finding H23, quality review 2026-09-11). A task that is
+obviously trivial is not scored at all — scoring it is the ceremony the score exists to avoid.
+
 | Score | Routing | Reason |
 |-------|---------|--------|
-| **< 15** | inline, skip scoring/skills | Trivial task (rename, typo, single-line) |
-| **15-30** | inline | Simple task, no planning needed |
-| **30-60** | tech-plan optional | Consider plan if there is uncertainty |
-| **> 60** | tech-plan mandatory | Requires structured roadmap |
+| **33-45** | inline, no plan | Every factor Low, or one Medium |
+| **45-60** | tech-plan optional | Consider a plan if there is uncertainty; matches tiered mode below |
+| **> 60** | tech-plan mandatory | Requires a structured roadmap; also the team-mode gate |
 
 ## Mode Selection Table
 
@@ -161,12 +164,12 @@ Effort scale: `low < medium < high < xhigh`
 
 ## Calculation Examples
 
-### Low Complexity (< 30)
+### Low Complexity (33-45)
 > "Add email validation to the registration endpoint"
 
 - Files: 1-2 (Low=1) → ~7 | Domains: 1 (Low=1) → ~7 | Dependencies: 1 (Low=1) → ~7
 - Security: Data (Medium=2) → ~13 | Integrations: 0 (Low=1) → ~7
-- **Total: ~41** → planner optional
+- **Total: ~41** → inline, no plan
 
 ### High Complexity (> 60)
 > "Implement OAuth authentication system with Google and GitHub"

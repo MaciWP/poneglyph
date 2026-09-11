@@ -64,12 +64,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun $HOME/.claude/hooks/headless-model-gate.ts",
+            "command": "bun \"$HOME/.claude/hooks/headless-model-gate.ts\"",
             "timeout": 5
           },
           {
             "type": "command",
-            "command": "bun $HOME/.claude/hooks/bash-output-shaper.ts",
+            "command": "bun \"$HOME/.claude/hooks/bash-output-shaper.ts\"",
             "timeout": 5
           }
         ]
@@ -80,7 +80,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun $HOME/.claude/hooks/skill-activation.ts",
+            "command": "bun \"$HOME/.claude/hooks/skill-activation.ts\"",
             "timeout": 10
           }
         ]
@@ -91,7 +91,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun $HOME/.claude/hooks/instructions-loaded.ts",
+            "command": "bun \"$HOME/.claude/hooks/instructions-loaded.ts\"",
             "timeout": 10,
             "async": true
           }
@@ -104,7 +104,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun $HOME/.claude/hooks/security-gate.ts",
+            "command": "bun \"$HOME/.claude/hooks/security-gate.ts\"",
             "timeout": 10
           }
         ]

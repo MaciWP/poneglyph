@@ -14,7 +14,7 @@ description: Reputable sources by stack, canonical citation format, anti-pattern
 - [Verification Procedure](#verification-procedure)
 - [Override: "100% certeza" Mode](#override-100-certeza-mode)
 - [Anti-Patterns](#anti-patterns)
-- [Confidence Calibration Table (inherits anti-hallucination)](#confidence-calibration-table-inherits-anti-hallucination)
+- [Confidence Calibration Table](#confidence-calibration-table)
 
 Citing matters. A wrong URL or a non-canonical source destroys the educational value of the report.
 
@@ -102,7 +102,7 @@ Force WebFetch on EVERY non-trivial claim, regardless of confidence. Do not skip
 | Citing a version different from the project's | Pin to project version (Django 5.0 in this codebase) |
 | One source for a claim across stacks | One source per stack |
 
-## Confidence Calibration Table (inherits anti-hallucination)
+## Confidence Calibration Table
 
 | Domain | Ask < | Verify | Auto > |
 |---|---|---|---|

@@ -140,7 +140,7 @@ Numeric claims: quote-anchor or `[Probable]` / `UNVERIFIED` (research-rigor P1).
 - Spawning without `Skill(prompt-engineer)` Context 3 on the delegation prompts.
 - Re-researching exclusion-list sources “to be sure” without a concrete dispute.
 - Treating agent output as truth without verifying decision-grade claims.
-- Turning this into a second `ultracode-audit` (domain audit ≠ open research).
+- Turning this into a harness config audit (domain audit ≠ open research).
 
 ## Commandments
 

@@ -99,3 +99,34 @@ describe("the real layer stays within its snapshot (ratchet — Cmd IX)", () => 
     expect(violations, violations.map((v) => `${v.key}: ${v.snapshot} → ${v.current}`).join("; ")).toEqual([]);
   });
 });
+
+// Quality review 2026-09-11 — H74. The ratchet measures the activation surface, but
+// `frontmatterField` returned only the INDENTED continuation of a block scalar, so a
+// one-line `description: "..."` counted as zero bytes and the guard could not see it
+// grow. `measure` also counted skills Claude Code never lists.
+describe("activation surface is measured as the host loads it (H74)", () => {
+  it("counts a single-line description", () => {
+    expect(frontmatterField('---\ndescription: a short one-liner\n---\nbody\n', "description")).toContain("a short one-liner");
+  });
+
+  it("still counts a block description", () => {
+    expect(frontmatterField('---\ndescription: |\n  first line\n  second line\n---\nbody\n', "description")).toContain("second line");
+  });
+
+  it("returns nothing for a key that is absent", () => {
+    expect(frontmatterField('---\nname: x\n---\nbody\n', "description")).toBe("");
+  });
+
+  it("excludes a skill the model never sees from the listing surface", () => {
+    const root = mkdtempSync(join(tmpdir(), "budget-surface-"));
+    const skill = (name: string, extra: string) => {
+      mkdirSync(join(root, ".claude", "skills", name), { recursive: true });
+      writeFileSync(join(root, ".claude", "skills", name, "SKILL.md"), `---\nname: ${name}\ndescription: ${"d".repeat(100)}\n${extra}---\nbody\n`, "utf8");
+    };
+    skill("listed", "");
+    skill("hidden", "disable-model-invocation: true\n");
+    const surface = measure(root).alwaysLoaded["skills: description + when_to_use"];
+    expect(surface).toBeGreaterThan(99);
+    expect(surface).toBeLessThan(200);
+  });
+});

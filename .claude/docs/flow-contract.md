@@ -5,6 +5,27 @@ validates verification records and classifies reviews. State is authoritative;
 Markdown status is a repairable projection. The helper records actual decisions,
 not inferred permission. It does not authenticate callers or run their checks.
 
+## What `current_phase` means
+
+`current_phase` names the phase that is **ready to run**, never the phase that
+finished. This file is its single owner: a skill cites this table and states no
+number of its own. Before this was written down, `build` handed over `4`, `critic`
+asked for `3`, `retro` asked for `4` while the helper had already written `5`, so
+each phase entry check contradicted the state the previous phase produced
+(findings H24 and H71, quality review 2026-09-11).
+
+| Value | Ready to run | Written by |
+|---|---|---|
+| `2` | Technical plan | `approve-gate 1-2` |
+| `2.5` | Test and oracle design | `complete-phase 2` |
+| `3` | Build | `approve-gate 2-3`, `reopen-us`, `verdict NEEDS_CHANGES` |
+| `4` | Review and critique | the last `close-us`, `complete-phase 3` |
+| `5` | Retrospective | `verdict` with an approving value |
+| `closed` | Nothing; the feature is finished | `close-feature` |
+
+A phase entry check therefore reads its **own** number: `build` starts at `3`,
+`critic` at `4`, `retro` at `5`.
+
 ## Commands
 
 Resolve the helper from the installed shared root (`rules/harness-runtime.md`).

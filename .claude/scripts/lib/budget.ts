@@ -34,10 +34,16 @@ export interface Snapshot extends Measurement {
   takenAt: string;
 }
 
+// The value of a one-line `description: "..."` sits ON the key line. Capturing only the
+// indented continuation counted every such skill as zero bytes, so the ratchet was blind to
+// the largest single description in the catalog (H74, quality review 2026-09-11).
 export function frontmatterField(skillMd: string, key: string): string {
   const fm = skillMd.split(/^---\s*$/m)[1] ?? "";
-  const m = fm.match(new RegExp(`^${key}:[^\\n]*\\n((?:[ \\t]+[^\\n]*\\n?)*)`, "m"));
-  return m ? m[1] : "";
+  const m = fm.match(new RegExp(`^${key}:([^\\n]*)\\n((?:[ \\t]+[^\\n]*\\n?)*)`, "m"));
+  if (!m) return "";
+  const inline = m[1].trim();
+  // A block scalar (`|`, `>`) carries no value of its own: only its indented body counts.
+  return (/^[|>][-+0-9]*$/.test(inline) ? "" : inline) + m[2];
 }
 
 // Logical UTF-8 size with LF newlines. `statSync().size` follows the checkout
@@ -105,6 +111,9 @@ export function measure(repoRoot: string, homeDir: string = homedir()): Measurem
       if (!existsSync(file)) continue;
       const text = readSource(file);
       skillBodies[s] = utf8Len(text);
+      // `disable-model-invocation: true` keeps the description out of the model's context,
+      // so the skill costs nothing per turn: the budget must not charge for it (H74).
+      if (/^disable-model-invocation:\s*true\s*$/m.test(text.split(/^---\s*$/m)[1] ?? "")) continue;
       surface += utf8Len(frontmatterField(text, "description") + frontmatterField(text, "when_to_use"));
     }
   }

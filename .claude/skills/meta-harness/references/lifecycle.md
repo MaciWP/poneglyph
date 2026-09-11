@@ -26,7 +26,7 @@ Name the verb **before** acting. Impact is a step, not a sixth verb (D16).
 
 | Host | Disable (skill stays on disk) | Effective when |
 |---|---|---|
-| Claude Code | `skillOverrides.<name>: "off"` in settings (or `"user-invocable-only"` to hide from the model). Frontmatter `disable-model-invocation: true` only blocks auto-invoke. `disableBundledSkills` is bundled-only — it does **not** disable project skills. | Live for `SKILL.md` text; settings need the session to pick them up (`/skills` writes local settings) |
+| Claude Code | `skillOverrides.<name>: "off"` in settings (or `"user-invocable-only"` to hide from the model). Frontmatter `disable-model-invocation: true` blocks auto-invoke AND takes the description out of the model context (`/name` still works); `user-invocable: false` alone keeps the listing. `disableBundledSkills` is bundled-only — it does **not** disable project skills. | Live for `SKILL.md` text; settings need the session to pick them up (`/skills` writes local settings) |
 | Codex | `[[skills.config]]` with `path` + `enabled = false` in `~/.codex/config.toml` | Restart Codex |
 | Grok Build | `[skills] disabled = ["name"]` in `~/.grok/config.toml`. `[skills] ignore` hides the path entirely (not the same as disable). | Next session / `grok inspect` shows `[disabled]` |
 

@@ -9,7 +9,7 @@ metadata:
     informe-visual, pásalo-a-html, self-contained, gauge, scoring, findings, audit-html,
     retro-html, review-html, critique, audit, design-review, anti-slop, taste, wcag,
     contrast
-disable-model-invocation: false
+disable-model-invocation: true
 argument-hint: "<markdown file or 'report'|'dashboard' + content, or 'critique' + target>"
 when_to_use: |
   "pásalo a HTML", "informe visual", "dashboard", "visualiza esto", "render to HTML", "critica este diseño", "audita el HTML"

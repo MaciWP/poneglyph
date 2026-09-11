@@ -52,7 +52,7 @@ In parallel:
 3. Read `tasks/index.md` + `tasks/US{N}.md` (decomposition + DAG).
 4. Read `tests.md` and/or `validations.md` (oracle).
 5. Read `review.md` — particularly `frontmatter.verdict` + `frontmatter.spec_drift` + findings count.
-6. Read `state.json` — confirm `current_phase: 4` complete.
+6. Read `state.json` — confirm `current_phase: 5` (flow-contract.md).
 7. Read `.claude/plans/templates/retro.template.md` (project-local first, then `~/.claude/plans/templates/retro.template.md` — outside poneglyph only the global copy exists) + `CLAUDE.md` §"The 10 Commandments" (for Step 9 audit).
 8. Read `.claude/learned/inbox.md` if present — legacy auto-captured candidates (the `learning-inbox` Stop hook was cut 2026-08-05/030; the file no longer grows), input for Step 8.
 
@@ -151,7 +151,7 @@ For each reusable pattern surfaced in Step 5/7 — plus each entry in `.claude/l
 
 - Do NOT auto-promote — produce candidates only; the user approves.
 - Each candidate MUST cite the concrete evidence from this feature that motivated it (a finding, a recurring drillme question, a lesson).
-- `anti-hallucination`: verify the proposed path does NOT collide with an existing file. If collision → propose rename or merge.
+- Verify the proposed path does NOT collide with an existing file. If collision → propose rename or merge.
 - If `meta-harness` auxiliary is invoked → the proposal sketch follows the official frontmatter spec for that extension type.
 - **Failure → eval case**: for each REAL documented failure surfaced in §Lessons ❌, also propose its golden-prompt case for `.claude/evals/cases.jsonl` (growth rule in `.claude/evals/README.md`: one new case per new real failure, deterministic grader, `source` cites this retro). The failure becomes a permanent regression check (Cmd VII).
 
@@ -282,7 +282,7 @@ Report using the block in §Output format reminder (end of this skill) — same 
 - NEVER auto-apply promotions — produce candidates; user approves before any file is written.
 - Cite concrete evidence per lesson, per promotion, per commandment violation. No abstract claims.
 - Close lifecycle only after retro.md is reviewed; promotions may remain as carried action items.
-- `anti-hallucination` before promoting: verify target path does not collide with existing file/skill/rule (Globs/Reads, not assumes).
+- Before promoting: verify the target path does not collide with an existing file/skill/rule (Glob/Read, never assume).
 
 ## Adaptation intra-phase (Principio 2 — "no siempre más es más")
 
@@ -307,7 +307,7 @@ Report using the block in §Output format reminder (end of this skill) — same 
 | # | Cómo |
 |---|---|
 | III | Honest about failures, friction, and commandment violations — no softening |
-| II | Each promotion cites concrete evidence; anti-hallucination verifies paths exist |
+| II | Each promotion cites concrete evidence; every path is verified to exist |
 | V | Promotions for genuinely reusable patterns only; no premature abstraction |
 | IV | retro.md is the closure gate; lifecycle closes only after retro produced |
 | I | Read ALL inputs (spec/tasks/tests/review/state) BEFORE producing retro |

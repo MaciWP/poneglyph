@@ -26,9 +26,13 @@ export interface Resolved {
 // Pure. `argv` is the script's own argv (without bun/script). `--model X` overrides the
 // kind default; X matching /fable|opus/ throws unless `--allow-expensive` is present too.
 export function resolveHeadlessModel(argv: string[], kind: HeadlessKind): Resolved {
+  // Both spellings are the same flag to every CLI that accepts it. Reading only the
+  // space-separated form let `--model=claude-opus-5` walk past the expensive-tier refusal
+  // and silently run on the cheap default instead (H34, quality review 2026-09-11).
+  const equals = argv.find((a) => a.startsWith("--model="));
   const i = argv.indexOf("--model");
-  const explicit = i >= 0 && typeof argv[i + 1] === "string";
-  const model = explicit ? argv[i + 1] : DEFAULT_MODEL[kind];
+  const explicit = equals !== undefined || (i >= 0 && typeof argv[i + 1] === "string");
+  const model = equals !== undefined ? equals.slice("--model=".length) : explicit ? argv[i + 1] : DEFAULT_MODEL[kind];
   if (EXPENSIVE_MODEL_RE.test(model) && !argv.includes("--allow-expensive")) {
     throw new ExpensiveModelRefused(
       `refusing headless run on "${model}": Fable/Opus cost several times the cheap tiers and are never the default (plan 033). ` +

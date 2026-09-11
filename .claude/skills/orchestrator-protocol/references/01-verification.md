@@ -1,9 +1,9 @@
 ---
 parent: orchestrator-protocol
 name: verification
-description: Verification before asserting — canonical source is the `anti-hallucination` skill.
+description: Verification before asserting — the tool traps live in verify/references/existence-checks.md.
 ---
 
 # Verification Before Asserting
 
-> **Canonical source: the `anti-hallucination` skill.** Tool hierarchy (Grep > Glob > Read), confidence levels, domain-adaptive thresholds, the staged validation pipeline, critical-keyword forcing and the common hallucination patterns all live there. This reference previously duplicated them verbatim — collapsed to a pointer to kill the duplication (Commandment IX). Load `anti-hallucination` for the full patterns.
+> **Owner: the always-loaded style.** Verify before asserting, and tag what you did not verify. What the tools do NOT prove, and the ladder to follow when a path does not resolve, live in `verify/references/existence-checks.md`. This reference stays a pointer so the rule has one source (Commandment IX).

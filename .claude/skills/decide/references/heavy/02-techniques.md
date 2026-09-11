@@ -14,7 +14,7 @@ description: 5 adversarial techniques applied as synthesis phase across all pers
 - [3. Pre-Mortem](#3-pre-mortem)
 - [4. Inversion](#4-inversion)
 - [5. Second-Order Effects](#5-second-order-effects)
-- [High-Risk Areas (inherited from anti-hallucination)](#high-risk-areas-inherited-from-anti-hallucination)
+- [High-Risk Areas](#high-risk-areas)
 - [Output Checklist (synthesis phase)](#output-checklist-synthesis-phase)
 - [Gotchas](#gotchas)
 
@@ -174,7 +174,7 @@ Beyond the direct outcome, what does this decision **enable** or **prevent** tha
 
 ---
 
-## High-Risk Areas (inherited from anti-hallucination)
+## High-Risk Areas
 
 When applying these techniques, certain claim types must be verified before being used:
 

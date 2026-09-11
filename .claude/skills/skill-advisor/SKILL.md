@@ -1,18 +1,14 @@
 ---
 name: skill-advisor
 description: |
-  Propone un shortlist ratificable de las skills más relevantes para la tarea actual ("un drillme de skills") y pregunta al humano cuáles activar — el backstop determinista contra el undertrigger estructural de skills del modelo. Lee skills de disco (.claude/skills + ~/.claude/skills), rankea un shortlist ≤5 y lo presenta vía AskUserQuestion. NO re-implementa el matching del modelo ni fuerza ninguna invocación: surface y el humano decide.
-  Úsala cuando: empiezas una tarea no trivial y dudas qué skills aplican, en fronteras de fase de /flow (donde la auto-activación es ~0%), cuando las skills "parecen que deberían dispararse pero no", o on-demand. "qué skills uso", "qué skill aplica", "no sé qué activar", "propón skills", "drillme de skills".
+  Propone un shortlist ratificable de las skills relevantes y pregunta cuáles activar.
+  Úsala cuando dos o más skills podrían aplicar y la tarea no nombra ninguna, en fronteras de fase de /flow, o a petición.
 metadata:
   keywords: >
-    Keywords - skill-advisor, skills, qué skill, qué skills, propón skills, suggest skills,
-    which skills, no sé qué activar, drillme de skills, activar skill, skill routing,
-    shortlist
-when_to_use: |
-  "qué skills uso para esto", "qué skill aplica aquí", "no sé qué activar",
-  "propón las skills relevantes", "drillme de skills", "which skills apply",
-  "suggest relevant skills", "what skill should I use here";
-  at every /flow phase boundary; when the Lead is about to act without considering skills.
+    Keywords - skill-advisor, skill routing, shortlist, activar skill, propón skills,
+    propón las skills relevantes, qué skills uso, qué skills uso para esto, qué skill aplica,
+    qué skill aplica aquí, no sé qué activar, drillme de skills, which skills apply,
+    suggest relevant skills, what skill should I use here, qué skills necesito
 disable-model-invocation: false
 ---
 

@@ -497,8 +497,15 @@ export function mergeHookEvents(base: unknown, overlay: unknown): unknown {
   for (const [event, groups] of Object.entries(overlay)) {
     const seen = new Set<string>();
     const all = [...((base[event] as HookGroup[] | undefined) ?? []), ...(groups as HookGroup[])];
+    // The identity of a registration is matcher + command: the same script deliberately
+    // registered under `Bash` and under `Write` is two hooks, and de-duplicating on the
+    // command alone silently dropped the second one (H32, quality review 2026-09-11).
     out[event] = all.flatMap((group) => {
-      const hooks = group.hooks.filter((h) => !seen.has(h.command) && !!seen.add(h.command));
+      const matcher = typeof group.matcher === "string" ? group.matcher : "";
+      const hooks = group.hooks.filter((h) => {
+        const key = `${matcher}::${h.command}`;
+        return !seen.has(key) && !!seen.add(key);
+      });
       return hooks.length ? [{ ...group, hooks }] : [];
     });
   }
@@ -643,6 +650,14 @@ export interface SettingsValidation {
   ok: boolean;
   problems: string[];
   skipped?: string; // why the check could not run (CLI missing, timeout)
+}
+
+// `--status` printed the rejection and returned 0, so every caller that reads exit codes
+// instead of parsing icons — /sync-poneglyph, CI, an agent — saw a broken layer as success
+// (H63, quality review 2026-09-11). A skipped validation is not a failure: it is unknown,
+// and the yellow line already says so.
+export function statusExitCode(v: SettingsValidation): number {
+  return v.ok ? 0 : 1;
 }
 
 export function formatSettingsValidationLine(v: SettingsValidation): string {
@@ -1499,7 +1514,11 @@ Requirements per OS:
     if (config.validate) {
       const destPath = path.join(homeDir, ".claude", MERGED_SETTINGS.dest);
       if (fs.existsSync(destPath) && !isSymlink(destPath)) {
-        console.log(formatSettingsValidationLine(await validateGeneratedSettings(destPath)));
+        const validation = await validateGeneratedSettings(destPath);
+        console.log(formatSettingsValidationLine(validation));
+        // The exit code carries the verdict too: /sync-poneglyph --status and CI read it
+        // instead of parsing the icons (H63).
+        if (statusExitCode(validation) !== 0) process.exit(1);
       }
     }
     return;

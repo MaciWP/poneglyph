@@ -180,7 +180,7 @@ Coverage: 2/4 canonical Socratic categories. Acceptable — Phase 2.5 is focused
 Frontmatter of `tests.md`: `spec`, `tasks`, `phase: 2.5`, `test_mode: tdd`, `tdd_policy: <forced|adaptive|optional>`.
 Frontmatter of `validations.md`: `spec`, `tasks`, `phase: 2.5`, `validation_mode: validation`, `test_policy: <project policy>`.
 
-Anti-hallucination (auxiliary `anti-hallucination`): every function/module/path referenced in a test or validation must exist or be planned to exist in the corresponding HU's `files` field. Never invent references.
+Verified references: every function/module/path referenced in a test or validation must exist or be planned to exist in the corresponding HU's `files` field. Never invent references.
 
 ### Step 8 — Present the joint approval package
 
@@ -203,7 +203,7 @@ Tasks may remain draft during oracle design. Record phases 2 and 2.5 complete on
 
 ## Auxiliary skills
 
-Wiring and manual fallbacks for this phase (anti-hallucination, drillme, the project's test-conventions skill): `.claude/docs/auxiliary-skills-matrix.md` §Fallbacks per phase. Skill-to-skill invocation is probabilistic (issue #59968) — when an auxiliary does not fire, apply its fallback row.
+Wiring and manual fallbacks for this phase (drillme, the project's test-conventions skill): `.claude/docs/auxiliary-skills-matrix.md` §Fallbacks per phase. Skill-to-skill invocation is probabilistic (issue #59968) — when an auxiliary does not fire, apply its fallback row.
 
 ## Adaptation intra-phase (Principio 2 — "no siempre más es más")
 

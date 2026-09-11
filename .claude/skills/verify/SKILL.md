@@ -28,6 +28,8 @@ stage (CLAUDE.md §The dev loop); `critic` invokes it for the happy-path E2E row
 
 For authorized publication, read [the publication protocol](references/publication.md)
 in KNOW. It coordinates local checks, candidate CI, and verified integration.
+A claim resting on a file, symbol or route existing →
+[existence checks](references/existence-checks.md): what the tools do NOT prove.
 
 ## Anti-trigger (proportionality)
 

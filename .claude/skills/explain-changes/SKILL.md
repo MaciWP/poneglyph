@@ -7,7 +7,7 @@ metadata:
   keywords: >
     Keywords - explain, explicar, learn, understand, walkthrough, diff, changes, what does
     this do, why this change, onboarding, code review educational, ensename
-disable-model-invocation: false
+disable-model-invocation: true
 argument-hint: "[file | commit-hash | branch | --pending (default)]"
 when_to_use: |
   "explícame este cambio", "qué hace este diff", "enséñame", "explain this change", "walk me through", "onboarding"
@@ -133,7 +133,7 @@ Full template, good vs bad examples, and the "professor-mode" rationale: `${CLAU
 
 Reputable sources by stack, citation format, override rules ("100% certeza" forces WebFetch): `${CLAUDE_SKILL_DIR}/references/verification-rules.md`.
 
-> **Confidence formula** (inherited from `anti-hallucination`): file verified (+30%) + symbol verified (+25%) + clear requirements (+20%) + past success (+25%). Below 70% → verify; below domain ask-threshold → AskUserQuestion.
+> **State what you checked**: name the file you opened and the symbol you read. An unread claim carries a certainty tag; an unresolved one is a question, not a guess.
 
 ## Interaction Pattern
 
@@ -182,7 +182,7 @@ Detail per pattern (focused Q&A, re-scope, cancel, reformulation): `${CLAUDE_SKI
 ## Related
 
 - `build` (Phase 3) — the write path; this skill explains, it never edits.
-- `anti-hallucination` — verify file/symbol claims during investigation.
+- Verify file/symbol claims during investigation (`verify` → existence checks).
 
 ---
 

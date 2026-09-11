@@ -3,7 +3,7 @@ export const meta = {
   description:
     'Ciclo trasero de /flow COMPLETO y determinista: preflight del plan, build por waves con la disciplina de la skill build (style anchors, oracle red→green, drillme intra-HU, docs-sync, retry con diagnóstico), fase 4 estilo critic (base checks + fresh reviewer + review-patterns + security condicional + spec-drift) y review.md escrito desde el template con veredicto PROPUESTO. Los gates humanos (ratificar veredicto, retro, state.json) quedan fuera.',
   whenToUse:
-    'Plan /flow con tasks/ aprobado y fase 2.5 cerrada, cuando quieres el ciclo trasero COMPLETO — build + fase 4 con artefacto review.md — y no solo ejecutar las HUs. Para el camino barato (build + suite + UN reviewer, sin artefacto) usa flow-build. Opt-in explícito: ~2x el coste de flow-build por la fase 4 instrumentada.',
+    'Plan /flow con tasks/ aprobado y fase 2.5 cerrada, cuando quieres el ciclo trasero COMPLETO — build + fase 4 con artefacto review.md — y no solo ejecutar las HUs. Opt-in explícito: ~2x el coste de un build directo por la fase 4 instrumentada.',
   phases: [
     { title: 'Preflight', detail: 'readiness del plan + comandos de verificación + review_level + fecha (1 agente lector)' },
     { title: 'Build', detail: 'HUs por waves del DAG con la disciplina de build/SKILL.md; 1 retry con diagnóstico', model: 'sonnet' },

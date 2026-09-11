@@ -167,12 +167,6 @@ Covers: Error Analysis, Root Cause Analysis, Logging, Debugging Techniques, Post
 | Saga compensation must run in reverse order of original steps | Forward-order compensation can violate dependencies between steps | Maintain ordered compensation stack, not unordered cleanup |
 | Logging the error object directly may miss nested cause chains | Many runtimes don't serialize `.cause` or nested errors by default | Always log `error.message`, `error.cause`, and full stack separately |
 
-## Scripts
-
-| Script | Input | Output | Usage |
-|--------|-------|--------|-------|
-| `scripts/analyze-error.ts` | error message (args) | JSON `{ matched, pattern?, bestFix?, confidence? }` | `bun .claude/skills/diagnostic-patterns/scripts/analyze-error.ts <error message>` |
-
 ## Commandments cubiertos
 
 | # | Cómo |
@@ -185,7 +179,7 @@ Covers: Error Analysis, Root Cause Analysis, Logging, Debugging Techniques, Post
 ## Related
 
 - `unstuck` — orchestrates this skill at xhigh when the same error repeats.
-- `anti-hallucination` — verify the failing symbol/path exists before diagnosing.
+- Verify the failing symbol/path exists before diagnosing (`verify` → existence checks).
 - `.claude/rules/error-recovery.md` — retry budgets and stuck-detection thresholds.
 
 ---

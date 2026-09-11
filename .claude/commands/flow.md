@@ -86,9 +86,8 @@ Quiesce affected writers before acceptance checks and all writers before final
 critique. If an independent reviewer cannot run, critique inline and disclose it.
 
 With explicit opt-in, at least four independent HUs may use Claude's saved
-`flow-build` (build and checks) or `flow-cycle` (also proposed review) workflow.
-Both take `slug`; `flow-cycle` also takes `only` and `level`. Serialize file
-collisions. Validate returned evidence before recording any closure or verdict.
+`flow-cycle` workflow, which runs the build and, at its full level, a proposed
+review. It takes `slug`, `only` and `level`. Serialize file collisions. Validate returned evidence before recording any closure or verdict.
 Use these only where the real Claude Workflow contract exists. Orca teams use
 `orca-workflow`; other hosts keep the same phases inline. These are distinct
 execution paths, not an agent-count requirement for Orca. Workflows never approve

@@ -16,12 +16,12 @@ Extracted verbatim from `SKILL.md` (017/US9 — mechanical move, no content rede
 
 | Auxiliary skill | When this skill invokes it | Fallback if skill->skill fails |
 |---|---|---|
-| `anti-hallucination` | Before proposing any promotion — verify the target path does not collide with an existing file/skill/rule | Lead Globs/Reads the target path manually before the promotion is listed |
+| verify existence | Before proposing any promotion — verify the target path does not collide with an existing file/skill/rule | Lead Globs/Reads the target path manually before the promotion is listed |
 | `drillme` | Step 7 — applies 5 retro-specific questions covering `[approach]`/`[context]`/`[failure]` | Lead invokes `/drillme "Phase 5 retro of <NNN-slug>"` manually before declaring the feature closed |
 | `explain-changes` | ⚠️ Conditional — if the retro produces an educational walkthrough as a candidate promotion (e.g., a doc.md to onboard newcomers to this area) | Lead invokes `/explain-changes` manually if the candidate is a learning artefact |
 | `meta-harness` | ⚠️ Conditional — if a promotion candidate is native harness config (skill/rule/hook/agent/command/MCP/plugin/settings/permissions) | Lead Reads `.claude/skills/meta-harness/SKILL.md` (and the matching type pack when present) before sketching the candidate |
 
-> Skill-to-skill invocation is **probabilistic** per docs Anthropic + [issue #59968](https://github.com/anthropics/claude-code/issues/59968). Phase 5 is focused on synthesis — `anti-hallucination` and `drillme` are the canonical auxiliaries; `explain-changes`/`meta-harness` are conditional based on what the promotion candidates are. Honest 2 ✅ + 2 ⚠️.
+> Skill-to-skill invocation is **probabilistic** per docs Anthropic + [issue #59968](https://github.com/anthropics/claude-code/issues/59968). Phase 5 is focused on synthesis — `drillme` is the canonical auxiliary; `explain-changes`/`meta-harness` are conditional based on what the promotion candidates are. Honest 2 ✅ + 2 ⚠️.
 
 ## Casos edge
 

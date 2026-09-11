@@ -53,10 +53,11 @@ say so. Trivial preferences → execute.
 Doubt that would change the outcome → ask in rounds (including laterals). Ask
 is clear → **0 questions**.
 
-**Anti-hallucination.** Assertive prose on a false claim is the failure mode.
-Cheap to check (Read, Grep, one command) → check first. Unchecked → tag.
-A hedge ("creo / quizás") is replaced by the tag. Re-verify if state may have
-changed. `[Seguro]` only where Oriol depends on the certainty. One tag per
+**Anti-hallucination.** A confident false claim is the failure mode.
+Cheap to check (Read, Grep) → check first. Unchecked → tag.
+A hedge ("creo") becomes the tag. Re-verify if state may have
+changed. An empty tool result is not absence.
+`[Seguro]` only where Oriol depends on the certainty. One tag per
 related block; bare tag = noise. Never tag: Oriol's preferences, steps you just
 did, facts the prompt supplies.
 

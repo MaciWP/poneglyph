@@ -8,6 +8,8 @@ import {
   expandFolderLinks,
   formatGrokTwinLine,
   formatSettingsValidationLine,
+  mergeHookEvents,
+  statusExitCode,
   formatSpTwinStatusLine,
   generateSettings,
   generateSpTwin,
@@ -422,5 +424,41 @@ describe("LINK_FOLDERS", () => {
     expect(LINK_FOLDERS).toContain("plans/templates");
     expect(LINK_FOLDERS).not.toContain("plans");
     expect(path.join("/home", ".claude", "plans/templates")).toBe(path.join("/home", ".claude", "plans", "templates"));
+  });
+});
+
+// Quality review 2026-09-11 — H32 (hook dedup ignores the matcher) and H63 (--status
+// reports a rejected settings.json as success).
+describe("hook merge is matcher-aware (H32)", () => {
+  const group = (matcher: string, command: string) => ({ matcher, hooks: [{ type: "command", command }] });
+
+  it("keeps the same script registered under two different matchers", () => {
+    const merged = mergeHookEvents(
+      { PreToolUse: [group("Bash", "bun hook.ts")] },
+      { PreToolUse: [group("Write", "bun hook.ts")] },
+    ) as Record<string, { matcher: string }[]>;
+    expect(merged.PreToolUse.map((g) => g.matcher).sort()).toEqual(["Bash", "Write"]);
+  });
+
+  it("still drops a true duplicate: same matcher, same command", () => {
+    const merged = mergeHookEvents(
+      { PreToolUse: [group("Bash", "bun hook.ts")] },
+      { PreToolUse: [group("Bash", "bun hook.ts")] },
+    ) as Record<string, { hooks: unknown[] }[]>;
+    expect(merged.PreToolUse.flatMap((g) => g.hooks)).toHaveLength(1);
+  });
+});
+
+describe("--status tells the truth through its exit code (H63)", () => {
+  it("fails when claude doctor rejected the generated settings.json", () => {
+    expect(statusExitCode({ ok: false, problems: ["settings.json: invalid key"] })).toBe(1);
+  });
+
+  it("succeeds when the file was accepted", () => {
+    expect(statusExitCode({ ok: true, problems: [] })).toBe(0);
+  });
+
+  it("does not fail when validation was skipped, and says so", () => {
+    expect(statusExitCode({ ok: true, problems: [], skipped: "claude CLI not runnable" })).toBe(0);
   });
 });

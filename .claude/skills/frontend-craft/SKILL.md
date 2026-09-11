@@ -17,7 +17,7 @@ metadata:
     Keywords - frontend craft, ui compartida, cambia el hover, ajusta el badge, donde mas se
     usa, dónde más se usa, mismo estilo que la app, consistencia visual, superficie nueva,
     parece generico, parece genérico, no queda profesional, craft floor, diseño de interfaz
-disable-model-invocation: false
+disable-model-invocation: true
 when_to_use: |
   "cambia el hover de este componente", "¿dónde más se usan estos badges?",
   "que use el mismo estilo que el resto de la app", "diseña la pantalla nueva",

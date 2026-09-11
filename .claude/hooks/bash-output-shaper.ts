@@ -63,8 +63,17 @@ function denial(cmd: string, file: string, size: number): string {
 }
 
 // Pure. One Bash command line (plus the session cwd) in, a verdict out.
+// A heredoc body is DATA the shell feeds to a command, not a list of commands. The line
+// splitter below runs before any per-segment check, so a body line reading `cat plan.md`
+// used to be shaped as if the user had typed it (H22, quality review 2026-09-11). The whole
+// command line is left alone whenever a heredoc opens it: a heredoc is a write.
+export function hasHeredoc(command: string): boolean {
+  return /<<-?\s*['"]?\w+/.test(command);
+}
+
 export function shapeCommand(command: string, cwd: string, fileSize: FileSize = realFileSize): Shape {
   if (/#\s*raw\s*$/.test(command.trim())) return { action: "allow" };
+  if (hasHeredoc(command)) return { action: "allow" };
   const parts = command.split(SEPARATOR_RE);
   let dir = cwd;
   let rewritten = false;

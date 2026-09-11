@@ -40,7 +40,7 @@ Fetch now. Recipe and last-fetch table: [lookup.md](lookup.md).
 | `description` | **1–1024** Unicode (not 500) | Listing truncates `description`+`when_to_use` at **1536** | Listing budget **2% / 8000 chars**; listing truncates (~1024). Load parser does not cap length | Used for auto-invoke; omit → first body paragraph |
 | Trigger extra | **ausente** | `when_to_use` | Keep scope in `description`; `$name` explicit | `when-to-use` (extra hyphen) |
 | Reload | **ausente** | `SKILL.md` live in session | Auto-detect; else restart | Disk change; `grok inspect` |
-| Disable | **ausente** | `skillOverrides.<name>: "off"` (not a delete). `disableBundledSkills` is bundled-only | `[[skills.config]]` with `path` + `enabled = false` (restart) | `[skills] disabled = ["name"]` |
+| Disable | **ausente** | `skillOverrides.<name>: "off"` (not a delete) or frontmatter `disable-model-invocation: true`, which also drops the description from the listing. `disableBundledSkills` is bundled-only | `[[skills.config]]` with `path` + `enabled = false` (restart) | `[skills] disabled = ["name"]` |
 | Native creator | **ausente** | `skill-creator` drafts | `$skill-creator` drafts | `/create-skill` drafts |
 
 ## 4. Min template

@@ -15,7 +15,6 @@ description: Keywords→skills table, task type detection, priority scoring, syn
 | error, retry, circuit, fallback, recovery | `diagnostic-patterns` |
 | performance, memory, optimization, bottleneck, slow, n+1 | `review-patterns` |
 | code quality, code smells, SOLID, complexity, duplication | `review-patterns` |
-| validate, verify, check, exists, hallucination, confidence | `anti-hallucination` |
 | decide, decision, choose, evaluate, trade-off | `decide` |
 | stress-test, devil's advocate, challenge decision, pre-mortem | `decide` (heavy tier) |
 | explain, walkthrough, diff, learn, onboarding | `explain-changes` |
@@ -51,7 +50,7 @@ Some skills reinforce each other — both receive +1 when paired:
 
 | Pair | Synergy |
 |------|---------|
-| `diagnostic-patterns` + `anti-hallucination` | Error tracing with verified claims |
+| `diagnostic-patterns` + `verify` | Error tracing with verified claims |
 | `review-patterns` + `security-audit` | Quality + threat surface in one pass |
 
 ## Conflict Rules
@@ -66,6 +65,6 @@ If two skills compete for the same slot and one is more specific, discard the ge
 
 > Historical: the custom `builder`/`reviewer`/`scout` agents carried always-loaded skill baselines — they were **cut in feature 008** (work runs inline; see the delegation doctrine in SKILL.md).
 
-Today the only preload surface is a custom Workflow `agentType` with `skills:` frontmatter — declare there the 1-2 skills EVERY unit of that type needs (e.g. `anti-hallucination` for any unit asserting facts about code). Preloaded skills do NOT count against the 3-skill Arch H limit.
+Today the only preload surface is a custom Workflow `agentType` with `skills:` frontmatter — declare there the 1-2 skills EVERY unit of that type needs (e.g. `verify` for any unit asserting facts about code). Preloaded skills do NOT count against the 3-skill Arch H limit.
 
 > The Lead loads `diagnostic-patterns` itself when diagnosing failures, and `tech-plan` when planning — no dedicated agents.

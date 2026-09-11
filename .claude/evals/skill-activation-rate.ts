@@ -12,6 +12,7 @@
 import { readdirSync, readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { loadSkills, analyzePayload } from "../hooks/skill-activation";
+import { frontmatterField } from "../scripts/lib/budget";
 
 const skills = loadSkills([".claude/skills"]);
 
@@ -52,12 +53,14 @@ let maxCombined = 0, over = 0, total = 0;
 for (const d of readdirSync(".claude/skills")) {
   const f = join(".claude/skills", d, "SKILL.md");
   if (!existsSync(f)) continue;
-  const fm = readFileSync(f, "utf8").match(/^---\n([\s\S]*?)\n---/);
+  // An LF-only frontmatter regex matched nothing on a CRLF checkout, so this check
+  // reported 0 chars for every skill and could never fail (H74, quality review
+  // 2026-09-11). Measure it the way the budget does, and skip skills the model never sees.
+  const text = readFileSync(f, "utf8").replace(/\r\n/g, "\n");
+  const fm = text.match(/^---\n([\s\S]*?)\n---/);
   if (!fm) continue;
-  // description block + when_to_use block lengths (approx — body of each scalar)
-  const desc = fm[1].match(/description:[\s\S]*?(?=\nwhen_to_use:|\n[a-z_-]+:|$)/i)?.[0] ?? "";
-  const wtu = fm[1].match(/when_to_use:[\s\S]*?(?=\n[a-z_-]+:|$)/i)?.[0] ?? "";
-  const combined = desc.length + wtu.length;
+  if (/^disable-model-invocation:\s*true\s*$/m.test(fm[1])) continue;
+  const combined = (frontmatterField(text, "description") + frontmatterField(text, "when_to_use")).length;
   total += combined;
   if (combined > maxCombined) maxCombined = combined;
   if (combined > CAP) over++;

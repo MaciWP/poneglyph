@@ -430,3 +430,30 @@ describe("git discipline — cross-repo exclusion (audit 2026-08-07)", () => {
     expect(buildGitDisciplineWarning("arregla el bug", ["cd /tmp/x && git commit -m wip"])).not.toBeNull();
   });
 });
+
+// Quality review 2026-09-11 — H18 (quoted keys never matched) and H54 (dotted .env variants).
+describe("secret detection — key shapes and file shapes (H18, H54)", () => {
+  const SECRET = "y".repeat(24);
+
+  test("H18 — matches a quoted JSON key, which .json files always use", () => {
+    expect(lineHasSecret(`  "password": "${SECRET}",`)).toBe(true);
+  });
+
+  test("H18 — matches a quoted YAML/JSON api_key", () => {
+    expect(lineHasSecret(`  "api_key": "${SECRET}"`)).toBe(true);
+  });
+
+  test("H18 — still matches the unquoted env form", () => {
+    expect(lineHasSecret(`API_KEY=${SECRET}`)).toBe(true);
+  });
+
+  test("H18 — still ignores a line with no credential", () => {
+    expect(lineHasSecret(`  "timeout": 30000,`)).toBe(false);
+  });
+
+  test("H54 — accepts dotted .env variants", () => {
+    for (const f of [".env.local", ".env.production", "app/.env.development"]) {
+      expect(hasTextExtension(f)).toBe(true);
+    }
+  });
+});

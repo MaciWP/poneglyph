@@ -94,3 +94,20 @@ describe("bash-output-shaper — hook output shapes", () => {
     expect(out.hookSpecificOutput.updatedInput).toEqual({ command: "git log --oneline -n 30", description: "d", timeout: 5 });
   });
 });
+
+// Quality review 2026-09-11 — H22: the command is split on newlines BEFORE the heredoc
+// check, so a heredoc BODY line is shaped as if it were a command. Heredocs are writes:
+// the shaper must never touch them.
+describe("heredoc bodies are data, not commands (H22)", () => {
+  it("allows a heredoc whose body line starts with cat", () => {
+    expect(shape("cat > notes.md <<'EOF'\ncat plan.md\nEOF").action).toBe("allow");
+  });
+
+  it("allows a heredoc whose body line starts with a bare find", () => {
+    expect(shape("cat > notes.md <<'EOF'\nfind . -name '*.ts'\nEOF").action).toBe("allow");
+  });
+
+  it("still denies a real unbounded cat on a big file", () => {
+    expect(shape("cat plan.md").action).toBe("deny");
+  });
+});

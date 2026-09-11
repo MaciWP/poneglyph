@@ -18,7 +18,7 @@ Relocated verbatim from `SKILL.md` §Content Map on 2026-09-03 (plan 032/WP4).
 
 ## 2026-09-03 (plan 032)
 
-- `§0 Verify First` reduced to a pointer: `anti-hallucination` is the canonical owner of the tool hierarchy and confidence levels.
+- `§0 Verify First` reduced to a pointer: the always-loaded style owns the rule and confidence levels.
 - The model-routing tier table moved to CLAUDE.md §Agent spawn (single owner); this skill keeps only the two rules it adds.
 - The spawn-tree mermaid diagram moved to `references/10-spawn-decision-tree-diagram.md`; the P1–P8 table stays inline as the executable rule.
 - The multi-round questioning paragraph (006) became a pointer to `drillme` (owner of the rounds mechanics).

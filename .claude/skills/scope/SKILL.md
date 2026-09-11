@@ -195,7 +195,7 @@ Adaptación se declara honestamente en el output (`# Open questions` section o n
 
 ## Auxiliary skills
 
-Wiring and manual fallbacks for this phase (anti-hallucination, drillme, prompt-engineer, decide catalog in `full` mode): `.claude/docs/auxiliary-skills-matrix.md` §Fallbacks per phase. Skill-to-skill invocation is probabilistic (issue #59968) — when an auxiliary does not fire, apply its fallback row. `tech-plan` is NOT invoked here; it waits on the human hard gate 1->2.
+Wiring and manual fallbacks for this phase (drillme, prompt-engineer, decide catalog in `full` mode): `.claude/docs/auxiliary-skills-matrix.md` §Fallbacks per phase. Skill-to-skill invocation is probabilistic (issue #59968) — when an auxiliary does not fire, apply its fallback row. `tech-plan` is NOT invoked here; it waits on the human hard gate 1->2.
 
 ## Consumer downstream
 

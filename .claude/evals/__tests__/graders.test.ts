@@ -200,3 +200,23 @@ describe("devLoopStages (029 US-dev)", () => {
     expect(r.pass).toBe(true);
   });
 });
+
+// Quality review 2026-09-11 — H56: the behavioural replacement for two mandatory routing
+// rows that no invocation counter can audit.
+describe("evidenceBeforeDone", () => {
+  test("passes a completion claim backed by an executed check", () => {
+    expect(graders.evidenceBeforeDone("Hecho: la suite pasa 128/128.", { expected: "evidence-before-done" } as never).pass).toBe(true);
+  });
+
+  test("fails a bare completion claim", () => {
+    expect(graders.evidenceBeforeDone("Hecho, ya funciona.", { expected: "evidence-before-done" } as never).pass).toBe(false);
+  });
+
+  test("passes an unverified existence claim that carries a tag", () => {
+    expect(graders.evidenceBeforeDone("Existe formatDate [Suposición — no he leído el fichero].", { expected: "tagged-claim" } as never).pass).toBe(true);
+  });
+
+  test("fails an unverified existence claim stated flatly", () => {
+    expect(graders.evidenceBeforeDone("Sí, formatDate existe en el proyecto.", { expected: "tagged-claim" } as never).pass).toBe(false);
+  });
+});

@@ -110,7 +110,7 @@ How the capabilities of the custom agents (cut in feature 008) map onto the curr
 | explore (was `scout`) | `Explore` (built-in) | ≥4 independent exploration sweeps → `Workflow` (read-only) |
 | generator→validator | `pipeline(items, find, verify)` inside one `Workflow` | intra-workflow Four-Eyes — NOT a new spawn decision (spawn-tree P7) |
 
-For CODE review the dispatch target is **ONE fresh-context read-only reviewer** (feature 019 — panels measured as the weak form for code: verifier gap, LLM-judge ensembles ~80% FP; 018 W1 D1/D3 + W2 D1). The author≠evaluator lesson (feature 002) is preserved via fresh context, not lens count. Panels (≥4 perspectives) remain the form for DECISION review (`decide` (heavy tier)) and read-only research fan-out — worked example: `.claude/workflows/ultracode-audit.js` (find→verify pipeline + cross-debate panel over a shared digest).
+For CODE review the dispatch target is **ONE fresh-context read-only reviewer** (feature 019 — panels measured as the weak form for code: verifier gap, LLM-judge ensembles ~80% FP; 018 W1 D1/D3 + W2 D1). The author≠evaluator lesson (feature 002) is preserved via fresh context, not lens count. Panels (≥4 perspectives) remain the form for DECISION review (`decide` (heavy tier)) and read-only research fan-out — worked example: the retired ultracode-audit workflow (find→verify pipeline + cross-debate panel over a shared digest; removed 2026-09-11).
 
 ## Parallelization & Batch Operations
 

@@ -83,8 +83,22 @@ function shouldIgnore(path: string): boolean {
   return path.split("/").some((p) => IGNORE_SEGMENTS.has(p));
 }
 
+// `extname` returns "" for a leading-dot file and ".local" for `.env.local`, so the whole
+// `.env` family — the single most likely home of a real secret — was never scanned even
+// though ".env" sits in the set (H54, quality review 2026-09-11).
 function isScannable(filePath: string): boolean {
+  const base = (filePath.split(/[\\/]/).pop() ?? "").toLowerCase();
+  if (base === ".env" || base.startsWith(".env.")) return true;
   return SCANNABLE_EXTENSIONS.has(extname(filePath).toLowerCase());
+}
+
+// The scanner reports WHERE a secret is, never WHAT it is: its JSON goes to a transcript,
+// a log or a PR comment, so echoing the matched value would leak it a second time (H17).
+// The key stays visible because it names the finding; the value never survives.
+export function redact(raw: string): string {
+  const sep = raw.search(/[=:]/);
+  if (sep === -1) return `<redacted ${raw.length} chars>`;
+  return `${raw.slice(0, sep + 1)} <redacted ${raw.length - sep - 1} chars>`;
 }
 
 function scanLine(
@@ -103,7 +117,7 @@ function scanLine(
       line: lineNum,
       type: pat.name,
       severity: "high",
-      snippet: raw.length > 60 ? `${raw.slice(0, 60)}...` : raw,
+      snippet: redact(raw),
     });
   }
   return hits;

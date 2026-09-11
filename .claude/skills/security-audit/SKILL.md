@@ -194,7 +194,7 @@ Supporting files loaded on demand based on task context. Consult the Contents co
 ## Related
 
 - `critic` — Phase 4 owner that dispatches this skill on sensitive surfaces.
-- `anti-hallucination` — verify the vulnerable path/symbol exists before reporting it.
+- Verify the vulnerable path/symbol exists before reporting it (`verify` → existence checks).
 
 ---
 

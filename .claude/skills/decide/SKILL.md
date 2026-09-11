@@ -74,7 +74,7 @@ Full protocol in `references/heavy/00-heavy-protocol.md`. Shape:
 2. **Stakes calibration** → 5/8/11/12 perspectives (`references/heavy/03-stakes-calibration.md`).
 3. **Phase 1** — perspectives in parallel subagents (Outsider context-isolated; Linus/Karpathy personas in `prompts/`).
 4. **Phase 2** — adaptive cross-debate gated by a Step-back Judge (max 3 cycles; Medium+ only).
-5. **Phase 3** — synthesis with the 5 adversarial techniques + triangulation + per-finding anti-hallucination verification gate.
+5. **Phase 3** — synthesis with the 5 adversarial techniques + triangulation + per-finding verification gate.
 6. **Phase 4** — BLOCKING validation gate (findings/debate/verdict/self-meta; failures reported, never suppressed).
 7. **Phase 5** — final recommendation with per-perspective vote, verbatim dissents, consensus level.
 

@@ -69,7 +69,7 @@ Watchpoints where smaller models historically relapse in this setup — each map
 | Silent completion claims | "Hecho/completado" without a test command in the same turn | 2.8; never report done without the check's output |
 | Inherited-number repetition | Quoting counts/stats from an agent or old doc verbatim | 2.3: recompute before repeating |
 | Identical retry | Re-running the same failing call unchanged | 2.6: one retry, changed hypothesis, else stop |
-| Path/API invention | Citing a file/function you haven't opened this session | anti-hallucination skill (doctrine) — Grep/Read first, no exceptions |
+| Path/API invention | Citing a file/function you haven't opened this session | Verify first (doctrine): Grep/Read before citing, no exceptions |
 | Findings inflation | Verification pass that confirms 100% of candidates | 2.1: a refute pass that kills nothing probably didn't refute |
 | es-ES calques / telegraphic relapse | "Voy a proceder a…", fragment-style output | output-style poneglyph (doctrine) — re-read its examples when drifting |
 

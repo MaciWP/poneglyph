@@ -130,13 +130,31 @@ export async function runLive(casesPath: string, argv: string[] = []): Promise<R
     const cmd = ["claude", "-p", c.prompt ?? "", "--output-format", "stream-json", "--verbose", "--model", model, ...proseFlags];
     if (dryRun) {
       console.log(`DRY  ${c.id}  ×${trials}  ${cmd.map((a) => (/\s/.test(a) ? JSON.stringify(a) : a)).join(" ")}`);
-      results.push({ id: c.id!, grader: c.grader!, trials: 0, pass: true, model, detail: "dry-run — not executed" });
+      // A command that was never executed has not passed anything. Reporting it as a PASS
+      // made `--dry-run` print a green suite (H34, quality review 2026-09-11): it is an
+      // ERROR-class outcome — no behaviour observed — exactly like a quota abort.
+      results.push({ id: c.id!, grader: c.grader!, trials: 0, pass: false, errored: true, model, detail: "dry-run — not executed" });
       continue;
     }
+    let failedExit: { code: number; stderr: string } | null = null;
     for (let i = 0; i < trials; i++) {
       const proc = Bun.spawn(cmd, { stdout: "pipe", stderr: "pipe" });
-      transcripts.push(await new Response(proc.stdout).text());
-      await proc.exited;
+      const [out, err] = await Promise.all([
+        new Response(proc.stdout).text(),
+        new Response(proc.stderr).text(),
+      ]);
+      transcripts.push(out);
+      // A non-zero exit means the CLI itself failed (auth, quota, a bad flag). Its empty
+      // transcript used to be graded as a plain FAIL of the case under test (H34).
+      const code = await proc.exited;
+      if (code !== 0 && !failedExit) failedExit = { code, stderr: err.trim().slice(0, 200) };
+    }
+    if (failedExit) {
+      results.push({
+        id: c.id!, grader: c.grader!, trials, pass: false, errored: true, model,
+        detail: `claude exited ${failedExit.code}${failedExit.stderr ? `: ${failedExit.stderr}` : ""}`,
+      });
+      continue;
     }
     results.push({ ...gradeTranscripts(c, transcripts), model });
   }

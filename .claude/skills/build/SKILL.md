@@ -103,7 +103,7 @@ Before any Edit/Write:
 
 1. `Glob` patrón similar al output esperado (`.claude/skills/*/SKILL.md` for new skills, `.claude/hooks/*.ts` for new hooks, etc.).
 2. `Read` 1-3 ejemplos cercanos en estilo y dominio.
-3. `Grep` referencias a las funciones/módulos/patrones que la HU usará (`anti-hallucination`).
+3. `Grep` referencias a las funciones/módulos/patrones que la HU usará.
 4. **When the HU writes tests**: Glob the existing test infrastructure (`**/conftest.py`, `**/factory*.py`, `**/fixtures/**`, shared test helpers) and load the project's test-conventions skill if present (e.g. `django-testing-patterns`). Reuse existing fixtures/factories by name — **never duplicate data an existing fixture provides**; add a new fixture only at the correct shared level (closest conftest / shared helper), per the oracle's "new fixture needed" flag from Phase 2.5.
 
 5. **Lessons pass**: `Skill(lessons)` — the cross-repo guards plus the `references/<stack>-*.md` matching the HU's stack (Django, React, …). Mandatory when the HU touches code recovered from a stash or an old branch (lesson G3).
@@ -221,7 +221,7 @@ Next HU available: US{M} (depends_on satisfied)
   → /critic si todas las HUs cerradas (Phase 4)
 ```
 
-If all HUs closed → flag `state.json.current_phase: 4` and report "Phase 3 complete. Hard gate 3->4 — review/critic pending."
+If all HUs closed → the helper sets `current_phase: 4` (flow-contract.md); report "Phase 3 complete. Hard gate 3->4 — review/critic pending."
 
 ## Execution model: inline by default
 
@@ -229,7 +229,7 @@ The `builder` agent was cut in feature 008 (1 agent forbidden; "context isolatio
 
 ## Auxiliary skills
 
-Wiring and manual fallbacks for this phase (anti-hallucination, drillme, diagnostic-patterns must fire on every HU; review-patterns, meta-harness conditional): `.claude/docs/auxiliary-skills-matrix.md` §Fallbacks per phase. Skill-to-skill invocation is probabilistic (issue #59968) — when an auxiliary does not fire, apply its fallback row.
+Wiring and manual fallbacks for this phase (drillme and diagnostic-patterns must fire on every HU; review-patterns and meta-harness conditional): `.claude/docs/auxiliary-skills-matrix.md` §Fallbacks per phase. Skill-to-skill invocation is probabilistic (issue #59968) — when an auxiliary does not fire, apply its fallback row.
 
 ## SIEMPRE rules
 
@@ -284,7 +284,7 @@ Wiring and manual fallbacks for this phase (anti-hallucination, drillme, diagnos
 
 | # | Cómo |
 |---|---|
-| II | `anti-hallucination` before every Edit/Write — no invented references |
+| II | Every Edit/Write targets a verified path — no invented references |
 | V | Smallest diff that satisfies AC; over-engineering caught by drillme Q3 |
 | IV | Tests pass before "completed"; no exceptions (blocking gate per HU) |
 | I | Read AC + tests/validations + ejemplos del proyecto BEFORE writing |

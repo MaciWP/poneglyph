@@ -36,7 +36,7 @@ export const USAGE_TIER: Record<string, number> = {
   build: 2, critic: 2, retro: 2,
   "html-report": 1, "skill-advisor": 1, "meta-harness": 1,
   graphify: 1,
-  "diagnostic-patterns": 1, consult: 1, "anti-hallucination": 1,
+  "diagnostic-patterns": 1, consult: 1,
 };
 const STOP = new Set([
   "the", "and", "for", "with", "que", "los", "las", "una", "del", "por", "con",

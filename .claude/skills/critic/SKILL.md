@@ -53,7 +53,7 @@ In parallel:
 2. Read `spec.md` (problem statement + acceptance criteria + out-of-scope).
 3. Read `tasks/index.md` + all `tasks/US{N}.md`.
 4. Read `tests.md` and/or `validations.md`.
-5. Read `state.json` — confirm `current_phase: 3` complete + all `us_pending == []`.
+5. Read `state.json` — confirm `current_phase: 4` (flow-contract.md) + `us_pending == []`.
 6. Read `.claude/plans/templates/review.template.md` (project-local first, then `~/.claude/plans/templates/review.template.md`; the output template).
 7. Read `.claude/rules/test-policy.md` (coverage policy).
 8. Resolve the approved starting revision. Inspect committed and working-tree
@@ -295,7 +295,7 @@ Declare adaptation in `review.md` frontmatter (`review_level` + reason).
 
 - ⚠️ Verdict always APPROVED with zero findings → review theater; the skill is missing rigor. Inspect Step 5 checklist application.
 - ⚠️ NEEDS_CHANGES on >3 consecutive critic runs of the same feature → spec.md or HUs are poorly defined; reopen Phase 1/2.
-- ⚠️ Findings cite line numbers that don't exist in the file → anti-hallucination skipped; redo with verification.
+- ⚠️ Findings cite line numbers that don't exist in the file → the line was never opened; redo with verification.
 - ⚠️ `spec_drift: legitimate` proposed in >50% of reviews → planning is not capturing emergent requirements; review the planning process in Phase 5.
 - ⚠️ A ≥4 deliberative panel launched for code review → doctrine regression (019 demotion, W1 D1/D3); panels belong to decision review via `decide` (heavy tier) only.
 
@@ -324,7 +324,7 @@ Critical invariants kept in this body: `review-patterns` is MANDATORY in standar
 | # | Cómo |
 |---|---|
 | III | Honest findings sin softening; BLOCKED if BLOCKER exists; residual author-bias declared when no fresh reviewer ran |
-| II | `anti-hallucination` before every finding — no invented file:line |
+| II | Every finding opens the line it cites — no invented file:line |
 | V | Severity inflation anti-pattern blocked; simple by default |
 | IV | APPROVED only if tests pass on assembled branch (blocking gate) |
 | I | Read spec.md + tasks/ + tests/validations BEFORE producing review.md |

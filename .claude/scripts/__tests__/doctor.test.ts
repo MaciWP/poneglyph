@@ -85,3 +85,20 @@ describe("doctor — pure summaries", () => {
     expect(worstOf(["🟢", "🟡"])).toBe("🟡");
   });
 });
+
+// Quality review 2026-09-11 — H66: sync-claude prints an unlinked local copy as
+// `🔵 <name>: local folder/file`. The parser did not know 🔵, so a layer holding a stale
+// local copy instead of a link was reported green.
+describe("doctor — local copies are not green (H66)", () => {
+  it("degrades to yellow when the engine reports a local folder", () => {
+    expect(statusFromSyncOutput("🟢 skills: linked\n🔵 CLAUDE.md: local folder/file\n")).toBe("🟡");
+  });
+
+  it("stays green when every entry is linked", () => {
+    expect(statusFromSyncOutput("🟢 skills: linked\n🟢 CLAUDE.md: linked\n")).toBe("🟢");
+  });
+
+  it("stays red when an entry is missing", () => {
+    expect(statusFromSyncOutput("🟢 skills: linked\n🔴 CLAUDE.md: missing\n")).toBe("🔴");
+  });
+});

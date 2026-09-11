@@ -50,7 +50,7 @@ Never cross an un-approved hard gate — if one is pending, stop and report.
 ### ✅ R2 — Recurring read-only research/audit (medium-high value, low risk)
 Read-only ⇒ no destructive-mutation risk ⇒ no human gate needed. The video's "leave it marked for the morning", minus the write risk.
 ```
-/loop 2h Re-run a read-only ultracode-audit pass and append new findings to the audit report.
+/loop 2h Re-run a read-only consistency pass over .claude/ and append new findings to the audit report.
 ```
 
 ### ✅ R3 — `ScheduleWakeup` / `/loop` to await background work (medium value, ~zero risk)

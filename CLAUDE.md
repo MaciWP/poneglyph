@@ -30,10 +30,11 @@ Language & communication: **es-ES** with Oriol · **English** for everything wri
 
 ### Agent spawn — hard gate (permission + model)
 
-**Never launch agents without explicit user approval.** By default, approval is
-required THIS turn. This covers every host and spawn surface: native subagents,
+**Never launch agents without explicit user approval.** Ask before a task's
+FIRST spawn and wait; it holds only for that task. The gate
+reaches every host and spawn surface: native subagents,
 Workflow/Team workers, Orca terminals, external model CLIs and headless evals or
-activation probes. Messages into other live agent sessions require authorization too.
+activation probes. Messages into other live agent sessions need authorization too.
 
 **Authorized Orca team exception:** `orca-workflow` uses one recorded approval for
 the named workflow: objective/tasks, roles, concrete models, concurrency and
@@ -44,8 +45,8 @@ a document or agent assertion alone is not consent. Changed scope, roster/models
 or limits require approval. Workers cannot spawn more agents. Native permissions
 and project constraints remain authoritative.
 
-Without an applicable recorded team approval, before the **first** spawn call of
-a turn, ask **both** questions and **WAIT**:
+Without an applicable recorded team approval, before a task's **first** spawn
+call, ask **both** questions and **WAIT**:
 
 1. **Permission** — may I spawn N agents? State why (axes), count, and rough cost class.
 2. **Model** — which model for those agents? Propose a host-appropriate default and wait for the pick. Set the model **explicitly** on every spawn — never inherit the Lead's model by silence.
@@ -71,8 +72,7 @@ a turn, ask **both** questions and **WAIT**:
 | Yes, no model picked | Use the recommended default stated in the question |
 | No / silence / not yet asked | **Inline only** (Lead `Read` / `Grep` / `Bash`). Zero agents. |
 
-Ordinary approval covers this conversation. Recorded Orca team approval survives
-resumption only within its agreed scope.
+Recorded Orca team approval survives resumption only within its agreed scope.
 
 Build/write stays **inline by default**. Authorized `orca-workflow` collaborators
 share a worktree; the coordinator owns reservations, acceptance and flow state.
@@ -118,7 +118,7 @@ Also: no unprompted full test-suite runs in shared work repos (collisions). Mech
 
 ### Skill routing
 
-Honor the `skill-activation.ts` hook hints and the mandatory dispatch table in `rules/skill-routing.md` (skill-advisor at task start, drillme on gaps, anti-hallucination before existence claims, verify before "done"). Skipping a matching row requires a stated reason. Workspace- or company-specific skills arrive through installed plugins and route themselves (their own hooks and descriptions).
+Honor the `skill-activation.ts` hook hints and the mandatory dispatch table in `rules/skill-routing.md` (skill-advisor when the skill is unclear, drillme on gaps, verify before "done"). Skipping a matching row requires a stated reason. Workspace- or company-specific skills arrive through installed plugins and route themselves (their own hooks and descriptions).
 
 ## Principles
 

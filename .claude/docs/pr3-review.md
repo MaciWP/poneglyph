@@ -88,7 +88,7 @@ the gate does not execute them.
 
 | Component group | Skills | Action in this candidate |
 |---|---|---|
-| Shared development | anti-hallucination, dev, drillme, lessons, verify | Keep current workflow. Only lessons' optional-private boundary changes. |
+| Shared development | dev, drillme, lessons, verify | Keep current workflow. Only lessons' optional-private boundary changes. |
 | Feature lifecycle | scope, tech-plan, tdd-design, build, critic, retro | Validate metadata; defer lifecycle changes. |
 | Review and diagnostics | diagnostic-patterns, explain-changes, pr-conventional-comments, pr-review, review-patterns, security-audit | Validate metadata/references; do not claim helper bugs are repaired. |
 | Research and orchestration | consult, decide, deep-research, orchestrator-protocol, prompt-engineer, skill-advisor, unstuck | Validate structure; do not launch workers or change model policy. |

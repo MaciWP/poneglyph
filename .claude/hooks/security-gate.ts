@@ -12,11 +12,15 @@ import {
 } from "node:path";
 import { readHookStdin } from "./lib/hook-stdin";
 
+// The optional quote after the key is what makes JSON and quoted YAML match: `"password":
+// "..."` puts a closing quote between the key and the separator, so without it every .json
+// file walked past the gate although .json is a scanned extension (H54, quality review
+// 2026-09-11).
 export const SECRET_PATTERN =
-  /(?:API_KEY|SECRET|TOKEN|PASSWORD|PRIVATE_KEY)\s*[=:]\s*['"]?[A-Za-z0-9_\-\.]{16,}['"]?/gi;
+  /(?:API_KEY|SECRET|TOKEN|PASSWORD|PRIVATE_KEY)['"]?\s*[=:]\s*['"]?[A-Za-z0-9_\-\.]{16,}['"]?/gi;
 
 export const SECRET_PATTERN_CI =
-  /(?:password|passwd|secret|api_key|apikey|access_token|accesstoken|private_key|privatekey)\s*[=:]\s*.{8,}/i;
+  /(?:password|passwd|secret|api_key|apikey|access_token|accesstoken|private_key|privatekey)['"]?\s*[=:]\s*.{8,}/i;
 
 // Markdown is documentation/illustration by nature: how-tos, skill references,
 // and PR reports routinely contain `SECRET_KEY=...` / `password: ...` as EXAMPLES.
@@ -29,6 +33,10 @@ const TEXT_EXTENSIONS = new Set([
 ]);
 
 export function hasTextExtension(filePath: string): boolean {
+  // A dotted environment file (.env.local, .env.production) holds the same class of secret
+  // as .env, but its last dot yields ".local" / ".production" and misses the set (H54).
+  const base = (filePath.split(/[\\/]/).pop() ?? "").toLowerCase();
+  if (base === ".env" || base.startsWith(".env.")) return true;
   const dot = filePath.lastIndexOf(".");
   if (dot === -1) return false;
   return TEXT_EXTENSIONS.has(filePath.slice(dot).toLowerCase());
@@ -68,7 +76,7 @@ export function isApiSpecDocument(content: string): boolean {
 // Keys aligned with SECRET_PATTERN + SECRET_PATTERN_CI. Longer tokens first so
 // `access_token` wins over a trailing `token` substring when extracting RHS.
 const SECRET_RHS_EXTRACT =
-  /(?:access_token|accesstoken|private_key|privatekey|api_key|apikey|password|passwd|secret|API_KEY|PRIVATE_KEY|PASSWORD|TOKEN|SECRET)\s*[=:]\s*(.*)$/i;
+  /(?:access_token|accesstoken|private_key|privatekey|api_key|apikey|password|passwd|secret|API_KEY|PRIVATE_KEY|PASSWORD|TOKEN|SECRET)['"]?\s*[=:]\s*(.*)$/i;
 
 const TYPE_KEYWORDS = new Set([
   "string",

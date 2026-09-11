@@ -33,7 +33,7 @@ Extracted verbatim from `SKILL.md` (017/US9 — mechanical move, no content rede
 
 | Auxiliary skill | When this skill invokes it | Fallback if skill->skill fails |
 |---|---|---|
-| `anti-hallucination` | Before reporting any finding — verify file/line/symbol actually exists in the diff (no invented findings) | Lead Reads/Greps the file before the finding is finalized |
+| verify existence | Before reporting any finding — verify file/line/symbol actually exists in the diff (no invented findings) | Lead Reads/Greps the file before the finding is finalized |
 | `drillme` | Before declaring verdict (Step 9 — 4 questions across `[context]`/`[failure]`/`[approach]`) | Lead invokes `/drillme "Phase 4 review of <NNN-slug>"` manually before verdict |
 | `diagnostic-patterns` | When Step 4 base checks fail — 5-whys, stack-trace analysis, retry budget per error-recovery.md | Lead reads error output manually + applies retry policy |
 | `review-patterns` | Step 6 — MANDATORY catalog invocation in standard/full levels (quality or performance mode per diff content) | Lead Reads `references/01-mode-quality.md` or `02-mode-performance.md` manually |

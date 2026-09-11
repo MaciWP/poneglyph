@@ -144,7 +144,7 @@ Start with drillme; if it surfaces a genuine disagreement or won't crystallize a
 | # | Cómo |
 |---|---|
 | III | Honest about known vs unknown; irreducible gaps marked `[OPEN]`, no forced concretion |
-| II | Premises that cite files/functions are verified (anti-hallucination) before treating an answer as Concrete |
+| II | Premises that cite files/functions are verified before treating an answer as Concrete |
 | V | Hybrid gate: 0 questions on trivial = zero ceremony; anti-padding keeps exhaustive ≠ bloated |
 | I | Exhaustive gap-closing IS understand-before-acting |
 | VIII | The coverage checklist + funnel IS structured meta-prompting |

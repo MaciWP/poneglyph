@@ -73,8 +73,7 @@ tmpclaude-*-cwd
 
 # Learning inbox + load-layer log (may contain transcript snippets — never commit).
 # Exception: best-of-n-log.md is versioned pilot evidence (feature 019).
-.claude/learned/*
-!.claude/learned/best-of-n-log.md
+.claude/learned/*
 
 # Runtime data directories
 data/

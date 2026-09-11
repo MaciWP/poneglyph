@@ -5,10 +5,8 @@ in `.claude/docs/model-uplift-playbook.md`.
 
 | Situation | Skill |
 |---|---|
-| Non-trivial task starting, or more than one skill could apply | `skill-advisor` |
+| Two or more skills could apply and the task does not name one | `skill-advisor` |
 | A decision with gaps, doubts or under-specified points | `drillme` |
-| About to assert a file/function/signature exists | `anti-hallucination` |
-| Any coding task | `dev` (the loop — CLAUDE.md §The dev loop) |
 | Supervised Orca team: shared worktree, reservations, messages or resume | `orca-workflow` (handoffs: `orca-cli`) |
 | Interactive technical diagram or standalone explorable architecture/flow; simple inline diagrams keep Mermaid | `archify` |
 | Approved spec needs technical decomposition | `tech-plan` |

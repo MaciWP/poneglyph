@@ -17,7 +17,7 @@ when_to_use: |
 
 ## §0 Verify First
 
-Before asserting anything exists, verify with tools (Glob/Grep/Read); confidence < 70% → `AskUserQuestion`, don't guess. Tool hierarchy, confidence levels and the validation pipeline are the `anti-hallucination` skill's (canonical — not restated here).
+Before asserting anything exists, verify with tools (Glob/Grep/Read); unresolved → `AskUserQuestion`, don't guess. What the tools do not prove, and the search ladder, live in `verify/references/existence-checks.md` (not restated here).
 
 ---
 
@@ -160,7 +160,7 @@ Retry budget, stuck detection, escalation rung → `error-recovery.md` rule (pro
 
 | Topic | File |
 |---|---|
-| Verification, confidence levels, validation pipeline | the `anti-hallucination` skill (canonical; `references/01-verification.md` is a pointer) |
+| Verification and the search ladder | `verify/references/existence-checks.md` (`references/01-verification.md` is a pointer) |
 | Complexity factors × weight, mode selection, worktree, effort/model routing | `references/03-complexity-routing.md` |
 | Agent selection matrix, exploration 2×2, Workflow wiring, multi-agent patterns + anti-patterns | `references/04-agent-selection.md` |
 | Keywords→skills mapping, priority scoring, synergy/conflict rules | `references/05-skill-matching.md` |

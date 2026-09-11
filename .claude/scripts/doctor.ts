@@ -48,12 +48,15 @@ export function summarizeSyncOutput(output: string): Check["detail"] & string {
 // prints "🔴 …" / "STALE symlink", sync-codex prints "missing  <path>". The bare word
 // "missing" inside a detail sentence must not turn the doctor red.
 export function statusFromSyncOutput(output: string, exitCode = 0): Status {
-  if (exitCode !== 0 || !/^\s*(?:🟢|🟡|🔴|⚪|linked\s|missing\s|stale\s|conflict\s|local\s)/m.test(output)) return "🔴";
+  if (exitCode !== 0 || !/^\s*(?:🟢|🟡|🔵|🔴|⚪|linked\s|missing\s|stale\s|conflict\s|local\s)/m.test(output)) return "🔴";
   let worst: Status = "🟢";
   for (const raw of output.split(/\r?\n/)) {
     const line = raw.trim();
     if (/^(🔴|missing\b|stale\b|conflict\b|local\b)/.test(line) || /REJECTED|STALE symlink/.test(line)) return "🔴";
-    if (/^(🟡|⚪)/.test(line)) worst = "🟡";
+    // 🔵 is sync-claude's "local folder/file": the entry exists but is NOT linked, so the
+    // layer is not what the repository says it is. Unknown to this parser until H66
+    // (quality review 2026-09-11), which let a stale local copy read as green.
+    if (/^(🟡|🔵|⚪)/.test(line)) worst = "🟡";
   }
   return worst;
 }

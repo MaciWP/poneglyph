@@ -80,7 +80,7 @@ The bounded case. Stop condition is objective and external: `bun test ./.claude/
 - **Note**: this is essentially the philosophy of the retired `best-of-n` pilot (test-selected attempts; archived 031, pattern preserved in `plans/_archive/031-skill-cuts/`) in a sequential loop. Possibly already covered — check before adding anything.
 
 ### ✅ 2 — Unattended read-only research/audit loops (MEDIUM-HIGH value, LOW risk)
-Re-run `ultracode-audit` or `deep-research` periodically. **Read-only ⇒ no destructive-mutation risk ⇒ no human gate needed** (the gate exists to guard writes). Output is a report the human reads when convenient — the video's own "leave it marked for the morning" use case, minus the write risk.
+Re-run a read-only consistency pass or `deep-research` periodically. **Read-only ⇒ no destructive-mutation risk ⇒ no human gate needed** (the gate exists to guard writes). Output is a report the human reads when convenient — the video's own "leave it marked for the morning" use case, minus the write risk.
 - **Mechanism (native)**: `schedule`/cron for a daily/hourly routine, or `/loop 1h`.
 - **Why it's safe**: nothing is mutated; worst case is wasted tokens, capped by the cost guardrail.
 

@@ -167,7 +167,7 @@ $real = "$bun;$git;" + [Environment]::GetEnvironmentVariable("PATH","Machine") +
 ### 5. ccstatusline (optional)
 
 ```powershell
-& "$env:USERPROFILE\.bun\bin\bun.exe" install -g ccstatusline@latest
+& "$env:USERPROFILE\.bun\bin\bun.exe" install -g ccstatusline@2.2.19
 ```
 
 Then add the `statusLine` block + widget config — full steps in

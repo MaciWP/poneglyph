@@ -1,5 +1,5 @@
 {
-  "takenAt": "2026-09-11",
+  "takenAt": "2026-09-12",
   "alwaysLoaded": {
     "CLAUDE.md": 13996,
     "output-styles/poneglyph.md": 12631,
@@ -23,7 +23,7 @@
     "frontend-craft": 4482,
     "graphify": 38455,
     "html-report": 21792,
-    "lessons": 13014,
+    "lessons": 14608,
     "meta-harness": 6432,
     "orca-workflow": 6383,
     "orchestrator-protocol": 15313,

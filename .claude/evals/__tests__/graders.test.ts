@@ -163,9 +163,9 @@ describe("runOffline (T3.10)", () => {
 });
 
 describe("devLoopStages (029 US-dev)", () => {
-  test("passes stages-visible when PLAN-stage signals are in prose", () => {
+  test("passes stages-visible when the five stage names are in prose", () => {
     const r = devLoopStages(
-      "Objetivo: añadir paginación al listado. Asunciones: (1) el dataset cabe en memoria. Riesgos: los consumidores parsean stdout. Plan: tocar report.ts y sus tests.",
+      "KNOW: report.ts ya pagina el listado. PLAN: reutilizar esa función. BUILD: hecho en dos líneas. REVIEW: suite verde. LEARN: nada no obvio.",
       { expected: "stages-visible" },
     );
     expect(r.pass).toBe(true);
@@ -186,7 +186,7 @@ describe("devLoopStages (029 US-dev)", () => {
 
   test("fails no-ceremony when a trivial task gets the full block", () => {
     const r = devLoopStages(
-      "Objetivo: corregir el typo. Asunciones: ninguna. Riesgos: ninguno. Plan: editar README.",
+      "KNOW: es un typo. PLAN: editarlo. BUILD: hecho. REVIEW: nada que ejecutar. LEARN: nada.",
       { expected: "no-ceremony" },
     );
     expect(r.pass).toBe(false);
@@ -194,7 +194,7 @@ describe("devLoopStages (029 US-dev)", () => {
 
   test("code fences never poison the signal count", () => {
     const r = devLoopStages(
-      "Listo.\n```py\nrisk = plan.goal(assumption)\n```",
+      "Listo.\n```py\nplan = build(know, review, learn)\n```",
       { expected: "no-ceremony" },
     );
     expect(r.pass).toBe(true);
@@ -218,5 +218,35 @@ describe("evidenceBeforeDone", () => {
 
   test("fails an unverified existence claim stated flatly", () => {
     expect(graders.evidenceBeforeDone("Sí, formatDate existe en el proyecto.", { expected: "tagged-claim" } as never).pass).toBe(false);
+  });
+});
+
+// Quality review 2026-09-11 — H69. The grader passed on two PLAN-stage words while
+// CLAUDE.md §The dev loop demands the five stages visible in the answer. It measured
+// less than the rule it guards, so a reply that skipped BUILD, REVIEW and LEARN scored
+// as compliant.
+describe("devLoopStages grades the five stages the doctrine names (H69)", () => {
+  test("a PLAN-only reply is not a visible dev loop", () => {
+    const r = devLoopStages(
+      "Objetivo: añadir paginación. Plan: tocar report.ts y sus tests.",
+      { expected: "stages-visible" },
+    );
+    expect(r.pass).toBe(false);
+  });
+
+  test("the compact scan line counts as the five stages", () => {
+    const r = devLoopStages(
+      "🟢 KNOW · 🟢 PLAN · 🟢 BUILD · 🟢 REVIEW · 🟢 LEARN\n\nHecho.",
+      { expected: "stages-visible" },
+    );
+    expect(r.pass).toBe(true);
+  });
+
+  test("four of five is still a missing stage", () => {
+    const r = devLoopStages(
+      "KNOW: leído. PLAN: claro. BUILD: hecho. REVIEW: suite verde.",
+      { expected: "stages-visible" },
+    );
+    expect(r.pass).toBe(false);
   });
 });

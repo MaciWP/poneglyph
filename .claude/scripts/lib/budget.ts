@@ -14,6 +14,7 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { frontmatter } from "./skill-metadata";
 
 // 0 since plan 037 (2026-09-09): every byte of always-loaded growth is a decision taken with
 // `--update`, never a rounding allowance. 89 % of this machine's tokens went to meta-work on
@@ -26,24 +27,18 @@ export const SNAPSHOT_FILE = "budget-snapshot.json";
 const NON_GLOBAL_RULES = new Set(["test-policy.md"]);
 
 export interface Measurement {
-  alwaysLoaded: Record<string, number>; // label → bytes
+  alwaysLoaded: Record<string, number>; // label → bytes; the ratcheted layer
   skillBodies: Record<string, number>; // skill name → SKILL.md bytes
+  // Measured and printed, never ratcheted: what the host loads from INSTALLED PLUGINS is a
+  // property of this machine, not of this repository, so a laptop with more plugins must not
+  // turn the guard red where CI is green (H35, quality review 2026-09-11).
+  informative?: Record<string, number>;
 }
+
+export const PLUGIN_SURFACE_LABEL = "installed plugins: description + when_to_use (this machine)";
 
 export interface Snapshot extends Measurement {
   takenAt: string;
-}
-
-// The value of a one-line `description: "..."` sits ON the key line. Capturing only the
-// indented continuation counted every such skill as zero bytes, so the ratchet was blind to
-// the largest single description in the catalog (H74, quality review 2026-09-11).
-export function frontmatterField(skillMd: string, key: string): string {
-  const fm = skillMd.split(/^---\s*$/m)[1] ?? "";
-  const m = fm.match(new RegExp(`^${key}:([^\\n]*)\\n((?:[ \\t]+[^\\n]*\\n?)*)`, "m"));
-  if (!m) return "";
-  const inline = m[1].trim();
-  // A block scalar (`|`, `>`) carries no value of its own: only its indented body counts.
-  return (/^[|>][-+0-9]*$/.test(inline) ? "" : inline) + m[2];
 }
 
 // Logical UTF-8 size with LF newlines. `statSync().size` follows the checkout
@@ -58,6 +53,34 @@ function utf8Len(text: string): number {
 
 function bytes(path: string): number {
   return existsSync(path) ? utf8Len(readSource(path)) : 0;
+}
+
+// One decoder for the whole layer. A private regex reader here duplicated
+// `lib/skill-metadata.frontmatter` and measured YAML punctuation instead of the value the
+// host actually loads (H35, quality review 2026-09-11). A SKILL.md can also come from an
+// installed plugin, which `check:config` never validates, so a parse failure reads as an
+// absent field instead of aborting the whole measurement.
+function fieldsOf(skillMd: string): Record<string, unknown> {
+  try {
+    return frontmatter(skillMd).fields;
+  } catch {
+    return {};
+  }
+}
+
+const stringField = (fields: Record<string, unknown>, key: string): string =>
+  typeof fields[key] === "string" ? (fields[key] as string) : "";
+
+export function frontmatterField(skillMd: string, key: string): string {
+  return stringField(fieldsOf(skillMd), key);
+}
+
+// What the host lists for one skill on every turn. `disable-model-invocation: true` keeps
+// the skill out of the model listing, so it costs nothing per turn (H74).
+export function activationSurface(skillMd: string): number {
+  const fields = fieldsOf(skillMd);
+  if (fields["disable-model-invocation"] === true) return 0;
+  return utf8Len(stringField(fields, "description") + stringField(fields, "when_to_use"));
 }
 
 // Installed plugins load their skills' description + when_to_use on every turn too —
@@ -81,8 +104,7 @@ export function measurePluginSurface(homeDir: string): number {
       for (const s of readdirSync(skillsDir)) {
         const file = join(skillsDir, s, "SKILL.md");
         if (!existsSync(file)) continue;
-        const text = readSource(file);
-        sum += utf8Len(frontmatterField(text, "description") + frontmatterField(text, "when_to_use"));
+        sum += activationSurface(readSource(file));
       }
     }
   }
@@ -111,15 +133,11 @@ export function measure(repoRoot: string, homeDir: string = homedir()): Measurem
       if (!existsSync(file)) continue;
       const text = readSource(file);
       skillBodies[s] = utf8Len(text);
-      // `disable-model-invocation: true` keeps the description out of the model's context,
-      // so the skill costs nothing per turn: the budget must not charge for it (H74).
-      if (/^disable-model-invocation:\s*true\s*$/m.test(text.split(/^---\s*$/m)[1] ?? "")) continue;
-      surface += utf8Len(frontmatterField(text, "description") + frontmatterField(text, "when_to_use"));
+      surface += activationSurface(text);
     }
   }
   alwaysLoaded["skills: description + when_to_use"] = surface;
-  alwaysLoaded["installed plugins: description + when_to_use (this machine)"] = measurePluginSurface(homeDir);
-  return { alwaysLoaded, skillBodies };
+  return { alwaysLoaded, skillBodies, informative: { [PLUGIN_SURFACE_LABEL]: measurePluginSurface(homeDir) } };
 }
 
 export function total(m: Record<string, number>): number {
@@ -134,6 +152,19 @@ export interface Violation {
 
 // Pure: every tracked size that grew beyond tolerance, plus files new since the
 // snapshot (a new always-loaded piece or a new skill is a budget decision too).
+// Pure: the snapshot rows that the current measurement still tracks.
+const trackedOnly = (base: Record<string, number>, current: Record<string, number>): Record<string, number> =>
+  Object.fromEntries(Object.entries(base).filter(([k]) => k in current));
+
+/**
+ * What the snapshot allows today: its total over the rows the current measurement still
+ * ratchets. Every caller that SHOWS a snapshot total must use this one, or the report
+ * announces headroom the guard would never grant.
+ */
+export function ratchetedSnapshotTotal(current: Measurement, snapshot: Measurement): number {
+  return total(trackedOnly(snapshot.alwaysLoaded, current.alwaysLoaded));
+}
+
 export function compare(current: Measurement, snapshot: Measurement, tolerance = TOLERANCE): Violation[] {
   const out: Violation[] = [];
   const check = (group: Record<string, number>, base: Record<string, number>, prefix: string) => {
@@ -148,7 +179,10 @@ export function compare(current: Measurement, snapshot: Measurement, tolerance =
   };
   check(current.alwaysLoaded, snapshot.alwaysLoaded, "");
   check(current.skillBodies, snapshot.skillBodies, "skill ");
-  const totalBefore = total(snapshot.alwaysLoaded);
+  // Only the rows the current measurement still ratchets. A retired key (the machine-
+  // dependent plugin surface, H35) is then neutral instead of a phantom shrink that would
+  // buy that many bytes of unnoticed growth everywhere else.
+  const totalBefore = ratchetedSnapshotTotal(current, snapshot);
   const totalNow = total(current.alwaysLoaded);
   if (totalNow > totalBefore * (1 + tolerance)) {
     out.push({ key: "always-loaded TOTAL", snapshot: totalBefore, current: totalNow });
@@ -176,7 +210,10 @@ export function renderTable(current: Measurement, snapshot: Snapshot | null): st
     rows.push(`| ${k} | ${v} | ${s ?? "—"} | ${s === undefined ? "—" : v - s} |`);
   }
   const t = total(current.alwaysLoaded);
-  const ts = snapshot ? total(snapshot.alwaysLoaded) : undefined;
+  const ts = snapshot ? ratchetedSnapshotTotal(current, snapshot) : undefined;
   rows.push(`| **always-loaded TOTAL** | **${t}** | ${ts ?? "—"} | ${ts === undefined ? "—" : t - ts} |`);
+  for (const [k, v] of Object.entries(current.informative ?? {})) {
+    rows.push(`| _${k} — informative, outside the ratchet_ | ${v} | — | — |`);
+  }
   return rows.join("\n");
 }

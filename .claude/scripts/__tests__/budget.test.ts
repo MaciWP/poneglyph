@@ -2,17 +2,17 @@ import { describe, expect, it } from "bun:test";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { compare, frontmatterField, loadSnapshot, measure, total } from "../lib/budget";
+import { PLUGIN_SURFACE_LABEL, activationSurface, compare, loadSnapshot, measure, ratchetedSnapshotTotal, total } from "../lib/budget";
 
 const REPO = join(import.meta.dir, "..", "..", "..");
 const SNAPSHOT_DIR = join(import.meta.dir, "..", "lib");
 
-describe("frontmatterField", () => {
+describe("activationSurface", () => {
   const skill = ["---", "name: x", "description: |", "  first line", "  second line", "metadata:", "  keywords: >", "    kw", "when_to_use: |", "  \"a\", \"b\"", "---", "# body"].join("\n");
-  it("returns the indented block of a multi-line field and nothing else", () => {
-    expect(frontmatterField(skill, "description")).toBe("  first line\n  second line\n");
-    expect(frontmatterField(skill, "when_to_use")).toBe('  "a", "b"\n');
-    expect(frontmatterField(skill, "keywords")).toBe(""); // nested under metadata — not a top-level field
+  it("counts the decoded description and when_to_use, never metadata.keywords or the body", () => {
+    // The indentation of a block scalar is YAML syntax, not value; `metadata.keywords` is
+    // read only by the activation hook, and the body loads on invocation.
+    expect(activationSurface(skill)).toBe("first line\nsecond line\n".length + '"a", "b"\n'.length);
   });
 });
 
@@ -51,10 +51,11 @@ describe("measure", () => {
     expect(m.alwaysLoaded["output-styles/poneglyph.md"]).toBe(4);
     expect(m.alwaysLoaded["rules/error-recovery.md"]).toBe(3);
     expect(m.alwaysLoaded["rules/test-policy.md"]).toBeUndefined();
-    expect(m.alwaysLoaded["skills: description + when_to_use"]).toBe("  ab\n".length + "  cd\n".length);
-    expect(m.alwaysLoaded["installed plugins: description + when_to_use (this machine)"]).toBe(0); // no registry
+    expect(m.alwaysLoaded["skills: description + when_to_use"]).toBe("ab\n".length + "cd\n".length);
+    expect(m.informative?.[PLUGIN_SURFACE_LABEL]).toBe(0); // no registry
+    expect(m.alwaysLoaded[PLUGIN_SURFACE_LABEL]).toBeUndefined(); // machine-dependent — outside the ratchet
     expect(m.skillBodies.a).toBeGreaterThan(40);
-    expect(total(m.alwaysLoaded)).toBe(5 + 4 + 3 + 10);
+    expect(total(m.alwaysLoaded)).toBe(5 + 4 + 3 + 6);
   });
 
   it("counts installed plugin skills' description + when_to_use (F1 — the moved surface still loads)", () => {
@@ -65,7 +66,7 @@ describe("measure", () => {
     writeFileSync(join(home, ".claude", "plugins", "installed_plugins.json"), JSON.stringify({ version: 2, plugins: { "p@m": [{ scope: "user", installPath: pluginDir }] } }));
     const root = mkdtempSync(join(tmpdir(), "budget-"));
     mkdirSync(join(root, ".claude"), { recursive: true });
-    expect(measure(root, home).alwaysLoaded["installed plugins: description + when_to_use (this machine)"]).toBe("  desc\n".length + "  wtu\n".length);
+    expect(measure(root, home).informative?.[PLUGIN_SURFACE_LABEL]).toBe("desc\n".length + "wtu\n".length);
   });
 
   it("counts CRLF and LF checkouts as the same source size", () => {
@@ -106,15 +107,15 @@ describe("the real layer stays within its snapshot (ratchet — Cmd IX)", () => 
 // grow. `measure` also counted skills Claude Code never lists.
 describe("activation surface is measured as the host loads it (H74)", () => {
   it("counts a single-line description", () => {
-    expect(frontmatterField('---\ndescription: a short one-liner\n---\nbody\n', "description")).toContain("a short one-liner");
+    expect(activationSurface("---\ndescription: a short one-liner\n---\nbody\n")).toBe("a short one-liner".length);
   });
 
   it("still counts a block description", () => {
-    expect(frontmatterField('---\ndescription: |\n  first line\n  second line\n---\nbody\n', "description")).toContain("second line");
+    expect(activationSurface("---\ndescription: |\n  first line\n  second line\n---\nbody\n")).toBe("first line\nsecond line\n".length);
   });
 
   it("returns nothing for a key that is absent", () => {
-    expect(frontmatterField('---\nname: x\n---\nbody\n', "description")).toBe("");
+    expect(activationSurface("---\nname: x\n---\nbody\n")).toBe(0);
   });
 
   it("excludes a skill the model never sees from the listing surface", () => {
@@ -125,8 +126,83 @@ describe("activation surface is measured as the host loads it (H74)", () => {
     };
     skill("listed", "");
     skill("hidden", "disable-model-invocation: true\n");
-    const surface = measure(root).alwaysLoaded["skills: description + when_to_use"];
-    expect(surface).toBeGreaterThan(99);
-    expect(surface).toBeLessThan(200);
+    expect(measure(root).alwaysLoaded["skills: description + when_to_use"]).toBe(100);
+  });
+});
+
+describe("activation surface is decoded, not sliced (H35)", () => {
+  const tree = (skill: string) => {
+    const root = mkdtempSync(join(tmpdir(), "budget-h35-"));
+    mkdirSync(join(root, ".claude", "skills", "a"), { recursive: true });
+    writeFileSync(join(root, ".claude", "skills", "a", "SKILL.md"), skill, "utf8");
+    return root;
+  };
+  const pluginHome = (skills: Record<string, string>) => {
+    const home = mkdtempSync(join(tmpdir(), "budget-h35-home-"));
+    const dir = join(home, ".claude", "plugins", "cache", "m", "p", "1.0.0");
+    for (const [name, text] of Object.entries(skills)) {
+      mkdirSync(join(dir, "skills", name), { recursive: true });
+      writeFileSync(join(dir, "skills", name, "SKILL.md"), text, "utf8");
+    }
+    writeFileSync(join(home, ".claude", "plugins", "installed_plugins.json"), JSON.stringify({ version: 2, plugins: { "p@m": [{ scope: "user", installPath: dir }] } }));
+    return home;
+  };
+
+  it("counts the decoded value of a quoted description, not its YAML punctuation", () => {
+    const root = tree('---\nname: a\ndescription: "abcde"\n---\nbody\n');
+    expect(measure(root, mkdtempSync(join(tmpdir(), "h35-empty-"))).alwaysLoaded["skills: description + when_to_use"]).toBe(5);
+  });
+
+  it("applies disable-model-invocation to plugin skills too, not only to local ones", () => {
+    const home = pluginHome({
+      listed: "---\nname: listed\ndescription: abcde\n---\nbody\n",
+      hidden: "---\nname: hidden\ndescription: abcde\ndisable-model-invocation: true\n---\nbody\n",
+    });
+    const root = tree("---\nname: a\ndescription: x\n---\nbody\n");
+    expect(measure(root, home).informative?.[PLUGIN_SURFACE_LABEL]).toBe(5);
+  });
+
+  it("reports a plugin skill with broken frontmatter as zero instead of throwing", () => {
+    const home = pluginHome({ broken: "no frontmatter at all\n" });
+    const root = tree("---\nname: a\ndescription: x\n---\nbody\n");
+    expect(measure(root, home).informative?.[PLUGIN_SURFACE_LABEL]).toBe(0);
+  });
+});
+
+describe("the ratchet is machine-independent (H35)", () => {
+  it("never fails because this machine installed more plugins", () => {
+    const snapshot = { alwaysLoaded: { "CLAUDE.md": 1000 }, skillBodies: {}, informative: { [PLUGIN_SURFACE_LABEL]: 100 } };
+    const current = { alwaysLoaded: { "CLAUDE.md": 1000 }, skillBodies: {}, informative: { [PLUGIN_SURFACE_LABEL]: 9999 } };
+    expect(compare(current, snapshot)).toEqual([]);
+  });
+
+  it("does not let a key that left the ratchet loosen the total", () => {
+    const snapshot = { alwaysLoaded: { "CLAUDE.md": 1000, "retired-row": 5000 }, skillBodies: {} };
+    const current = { alwaysLoaded: { "CLAUDE.md": 1100 }, skillBodies: {} };
+    expect(compare(current, snapshot).map((v) => v.key)).toEqual(["CLAUDE.md", "always-loaded TOTAL"]);
+  });
+});
+
+// Quality review 2026-09-12, coordinator pass on H35. `compare` stopped counting the
+// retired plugin row, but `doctor.ts` still printed `total(snapshot.alwaysLoaded)` in its
+// detail line, so the report read "48672 B <= snapshot 52200 B" and announced 3,528 bytes
+// of headroom that the ratchet would never grant. The verdict was right and the number was
+// not. One exported function now answers "what does the snapshot allow today".
+describe("the snapshot total a reader is shown matches the one enforced (H35)", () => {
+  it("ignores snapshot rows the measurement no longer tracks", () => {
+    const snapshot = { alwaysLoaded: { "CLAUDE.md": 1000, "retired-row": 5000 }, skillBodies: {} };
+    const current = { alwaysLoaded: { "CLAUDE.md": 1000 }, skillBodies: {} };
+    expect(ratchetedSnapshotTotal(current, snapshot)).toBe(1000);
+  });
+
+  it("agrees with compare on the real repository", () => {
+    const snapshot = loadSnapshot(SNAPSHOT_DIR);
+    if (!snapshot) throw new Error("no snapshot to compare against");
+    const current = measure(REPO);
+    const allowed = ratchetedSnapshotTotal(current, snapshot);
+    // No violation means the measured total is within what the snapshot allows. The number
+    // shown must carry the same meaning, so it can never exceed the enforced allowance.
+    expect(compare(current, snapshot).some((v) => v.key === "always-loaded TOTAL")).toBe(false);
+    expect(total(current.alwaysLoaded)).toBeLessThanOrEqual(allowed);
   });
 });

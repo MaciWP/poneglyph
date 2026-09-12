@@ -162,31 +162,31 @@ export const skillTriggerParse: Grader = (transcript, caseSpec) => {
   return { pass: false, detail: `expected Skill(${expected}) invocation not found in transcript` };
 };
 
-// Dev-loop stage signals (CLAUDE.md §The dev loop, 029 US-dev). Category-counted:
-// a stage is "visible" when its wording appears in prose (code stripped). Simple
-// heuristics by design — on fail, suspect the eval first (README protocol).
-const STAGE_SIGNALS: [string, RegExp][] = [
-  ["goal", /\b(objetivo|goal)\b/i],
-  ["assumptions", /asuncion|asunción|assumption/i],
-  ["risks", /\briesgo|\brisk\b/i],
-  ["plan", /\bplan\b|\bplan:/i],
-];
+// Dev-loop stages (CLAUDE.md §The dev loop, 029 US-dev). The doctrine names FIVE stages
+// and requires them visible in the answer — full prose or the compact scan line. Counting
+// PLAN-flavoured wording instead (goal/assumptions/risks/plan) let a reply that skipped
+// BUILD, REVIEW and LEARN score as compliant: the eval measured less than the rule it
+// guards (H69, quality review 2026-09-11). The stage NAMES are the signal, and both
+// renderings spell them.
+const STAGE_NAMES = ["KNOW", "PLAN", "BUILD", "REVIEW", "LEARN"] as const;
 
-/** expected "stages-visible": a non-trivial coding reply must show >=2 PLAN-stage
- * signals (goal/assumptions/risks/plan). expected "no-ceremony": a trivial reply
- * must show <=1 (proportionality — CLAUDE.md dev loop intro). */
+/** expected "stages-visible": a coding reply must name all five stages. expected
+ * "no-ceremony": a reply to a task with no dev loop must name at most one (the mode has no
+ * live case since audit 010 — see evals/README.md — and is kept for a future one). */
 export const devLoopStages: Grader = (transcript, caseSpec) => {
-  const prose = stripCode(transcript);
-  const present = STAGE_SIGNALS.filter(([, re]) => re.test(prose)).map(([name]) => name);
-  const visible = present.length >= 2;
+  // Whole-word, case-insensitive: split on runs of non-letters so "PLAN:" and "el plan"
+  // both count, while "planificacion" does not.
+  const words = new Set(stripCode(transcript).toUpperCase().split(/[^A-Z]+/i));
+  const present = STAGE_NAMES.filter((name) => words.has(name));
+  const missing = STAGE_NAMES.filter((name) => !present.includes(name));
   if (caseSpec?.expected === "no-ceremony") {
-    return visible
-      ? { pass: false, detail: `ceremony on trivial task: stages [${present.join(", ")}]` }
-      : { pass: true, detail: `proportional: ${present.length} stage signal(s)` };
+    return present.length <= 1
+      ? { pass: true, detail: `proportional: ${present.length} stage name(s)` }
+      : { pass: false, detail: `ceremony on trivial task: stages [${present.join(", ")}]` };
   }
-  return visible
-    ? { pass: true, detail: `stages visible: [${present.join(", ")}]` }
-    : { pass: false, detail: `dev-loop PLAN stage not visible (found: [${present.join(", ")}])` };
+  return missing.length === 0
+    ? { pass: true, detail: `all five stages visible: [${present.join(", ")}]` }
+    : { pass: false, detail: `dev-loop stages missing: [${missing.join(", ")}] (found: [${present.join(", ")}])` };
 };
 
 export const graders: Record<string, Grader> = {

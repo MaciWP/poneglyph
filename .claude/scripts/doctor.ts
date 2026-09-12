@@ -17,6 +17,7 @@ import { compare, loadSnapshot, measure, total } from "./lib/budget";
 import { detectHosts, realProbe } from "./lib/hosts";
 import { check, type Report } from "./check-config";
 import { checkOrca } from "./sync-orca";
+import { lintEstate, summarizeEstate } from "./lib/memory-estate";
 import { collectTranscripts, contextRow, loadTranscripts, summarizeContext } from "./usage-profile";
 
 export type Status = "🟢" | "🟡" | "🔴";
@@ -120,6 +121,25 @@ export function renderChecks(checks: Check[]): string {
   return ["| Check | Estado | Detalle |", "|---|---|---|", ...checks.map((c) => `| ${c.name} | ${c.status} | ${c.detail} |`)].join("\n");
 }
 
+// Reads the estate off disk and turns it into a row. Absence is not a defect; an estate with
+// memories but no index is, because the index is what makes them reachable.
+function readEstate(dir: string): { status: Status; detail: string } {
+  try {
+    if (!existsSync(dir)) return { status: "🟡", detail: "no memory directory for this repository" };
+    const names = readdirSync(dir).filter((f) => f.endsWith(".md"));
+    const index = names.includes("MEMORY.md");
+    if (!index) {
+      return names.length
+        ? { status: "🔴", detail: `${names.length} memory file(s) and no MEMORY.md — nothing is reachable from the index` }
+        : { status: "🟡", detail: "memory directory is empty" };
+    }
+    const files = names.filter((f) => f !== "MEMORY.md").map((f) => ({ name: f, text: readFileSync(join(dir, f), "utf8") }));
+    return summarizeEstate(lintEstate(readFileSync(join(dir, "MEMORY.md"), "utf8"), files));
+  } catch (e) {
+    return { status: "🔴", detail: `estate unreadable: ${(e as Error).message}` };
+  }
+}
+
 export function exitCodeFor(checks: Check[]): number {
   return checks.some((c) => c.status === "🔴") ? 1 : 0;
 }
@@ -197,9 +217,17 @@ async function main(): Promise<void> {
   }
 
   if (!ci) {
-    // ~/.claude/projects/<slug>/ where slug = the repo path with separators and ':' as '-'.
-    const slug = REPO.replace(/[\\/:]/g, "-");
-    const projDir = join(homedir(), ".claude", "projects", slug);
+    // ~/.claude/projects/<slug>/ where slug = a path with separators and ':' as '-'.
+    // The two things under that directory do NOT share a root:
+    //   transcripts are per WORKING DIRECTORY — a linked worktree gets its own project dir;
+    //   auto memory is per GIT REPOSITORY — every worktree of a repo shares one estate.
+    // Deriving both from the checkout finds no memory inside a worktree; deriving both from
+    // the repository makes "sessions today" report the main checkout's transcripts instead.
+    const slugOf = (p: string) => p.replace(/[\\/:]/g, "-");
+    const projDir = join(homedir(), ".claude", "projects", slugOf(REPO));
+    const common = await run(["git", "-C", REPO, "rev-parse", "--path-format=absolute", "--git-common-dir"]);
+    const repoRoot = common.code === 0 && common.out.trim() ? dirname(common.out.trim()) : REPO;
+    const memoryDir = join(homedir(), ".claude", "projects", slugOf(repoRoot), "memory");
     const models: string[] = [];
     if (existsSync(projDir)) {
       const today = new Date();
@@ -217,6 +245,12 @@ async function main(): Promise<void> {
     // default (`autoCompactWindow`), so messages above it are the sessions that cost.
     const transcripts = loadTranscripts(collectTranscripts(join(homedir(), ".claude", "projects"), 7));
     checks.push({ name: "Context (7d, this machine)", ...contextRow(summarizeContext(transcripts)) });
+
+    // The index is the only part of the estate loaded into every session, so its size is
+    // reported here rather than by budget.ts, which measures the repo and never sees it.
+    // An estate with files but no index is broken, not absent: everything past the index is
+    // unreachable. A read that throws is reported in its own row, never allowed to abort the table.
+    checks.push({ name: "Memory estate", ...readEstate(memoryDir) });
   }
 
   const table = renderChecks(checks);

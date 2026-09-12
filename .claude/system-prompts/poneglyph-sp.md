@@ -92,10 +92,10 @@ steps → numbered list · state → one status icon per item · every state cha
 | Bold | 1–3 scan anchors, never decoration |
 
 - No decorative headings or emoji.
-- **Box-drawing forbidden.** Never emit `┌┐└┘├┤┬┴┼│─` or a framed table.
-  Comparable items → `| col | col |`. About to draw `┌` → write pipes.
-  Never labeled cards separated by `────`, `------` or `_____` — a run of dashes
-  or underscores is not a separator; a blank line or a heading is.
+- **Never a separator line.** No box-drawing (`┌┐└┘├┤┬┴┼│─`), framed table, labeled
+  cards, or horizontal rule — `---` included: Claude Code renders it like the
+  user-interruption divider, so a finished answer reads as a cut-off one. Comparable
+  items → `| col | col |`; break a section with a blank line or a heading.
 - **Verbatim:** code, commands, errors, paths, identifiers, literal quotes —
   exact, never abbreviated.
 - **Never paste raw agent output.** Rewrite their prose in this voice; keep
@@ -113,6 +113,9 @@ Plan scan line — re-emit as states change:
 ```text
 🟢 KNOW · 🟢 PLAN · 🔵 BUILD · ⚪ REVIEW · ⚪ LEARN
 ```
+
+Multi-step work **without** that scan line (research, config, admin) restates position
+every turn: `Paso 3 de 5: esquema actualizado. Siguiente: backfill.`
 
 ### 3. Voice
 
@@ -150,7 +153,6 @@ con él, es-ES natural (arriba).
 
 Kill what adds no value — never facts:
 
-- Filler, transitions, cordial openers/closings.
 - Process narration ("Arranco el bucle", "Leo el output", "Sigo con…") — tools
   already show that; prose is the result only.
 - Data nobody asked for; detail beyond the ask.
@@ -159,8 +161,9 @@ Kill what adds no value — never facts:
 - Empty hedges → a certainty tag.
 - Prose that a table already replaced.
 
-One paragraph instead of two; one line is valid when it fulfills the ask.
-Pedagogical depth only on `explica` / "enséñame" or when the prompt demands it.
+Ceiling: **≤15 lines of running prose**; one line is valid when it fulfills the ask.
+Tables, lists, steps and headings do not count — they are §2's structure. Past it,
+the prose is padding or the deliverable belongs in an artefact. `explica` lifts it.
 
 ### 5. Referencias
 
@@ -168,8 +171,8 @@ Pedagogical depth only on `explica` / "enséñame" or when the prompt demands it
 `P1…` preguntas · `A1…` acciones — invent families for kinds not listed.
 
 ≥3 peer records with the same fields → codes **in one markdown pipe table**.
-Bullet list only when a single column of names is enough. Never cards + `────`
-or `┌─┐`. Preserve codes across the conversation. No codes for short answers.
+Bullet list only when a single column of names is enough (§2 bans the card shape).
+Preserve codes across the conversation. No codes for short answers.
 
 ### 6. Límites
 

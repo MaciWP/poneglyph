@@ -649,7 +649,20 @@ export function problemsForFile(problems: string[], filePath: string): string[] 
 export interface SettingsValidation {
   ok: boolean;
   problems: string[];
-  skipped?: string; // why the check could not run (CLI missing, timeout)
+  skipped?: string; // why the check could not run, as a human sentence
+  // Machine-readable form of the same fact. A timeout and a missing CLI both leave the
+  // layer UNVERIFIED, but only one of them means the validation is worth retrying, and no
+  // caller could tell them apart from free text (H36, quality review 2026-09-11).
+  reason?: "cli-unavailable" | "timeout";
+}
+
+// Pure builders so the two skip paths have one spelling and are testable without spawning.
+export function timeoutValidation(timeoutMs: number): SettingsValidation {
+  return { ok: true, problems: [], skipped: `claude doctor exceeded ${timeoutMs / 1000}s`, reason: "timeout" };
+}
+
+export function cliUnavailableValidation(detail: string): SettingsValidation {
+  return { ok: true, problems: [], skipped: `claude CLI not runnable (${detail})`, reason: "cli-unavailable" };
 }
 
 // `--status` printed the rejection and returned 0, so every caller that reads exit codes
@@ -681,8 +694,8 @@ async function validateGeneratedSettings(
       stdin: "ignore",
     });
   } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
-    return { ok: true, problems: [], skipped: `claude CLI not runnable (${reason})` };
+    const detail = error instanceof Error ? error.message : String(error);
+    return cliUnavailableValidation(detail);
   }
   let timedOut = false;
   const timer = setTimeout(() => {
@@ -696,7 +709,7 @@ async function validateGeneratedSettings(
   await proc.exited;
   clearTimeout(timer);
   if (timedOut) {
-    return { ok: true, problems: [], skipped: `claude doctor exceeded ${timeoutMs / 1000}s` };
+    return timeoutValidation(timeoutMs);
   }
   const problems = problemsForFile(parseDoctorInvalidSettings(`${out}\n${err}`), destPath);
   return { ok: problems.length === 0, problems };

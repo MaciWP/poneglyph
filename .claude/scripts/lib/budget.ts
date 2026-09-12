@@ -1,11 +1,10 @@
-// Always-loaded token budget for the poneglyph layer (plan 032/WP4 — Cmd IX ratchet).
-//
-// What Claude Code loads on EVERY turn from this repo: CLAUDE.md, the always-on rules
-// (everything in .claude/rules/*.md except path-scoped files and test-policy.md, which
-// sync-claude keeps project-only), the active output style, and — for each skill — its
-// frontmatter `description` + `when_to_use` (the activation surface; `metadata.keywords`
-// is NOT loaded, only the skill-activation hook reads it). SKILL.md bodies load on
-// invocation, so they are tracked separately as per-skill sizes.
+// Source-byte estimate of the Claude listing and shared instruction surface.
+// This is not a token measurement or proof of the native prompt on every turn.
+// Full skills contribute description + when_to_use; source skillOverrides select
+// name-only, off or user-invocable-only. Project/managed overrides and host framing
+// are outside this estimate. Codex and Grok do not inherit these savings.
+// SKILL.md body sizes are tracked separately. Extracted references still cost bytes
+// when loaded. The legacy row key stays stable for historical comparisons.
 //
 // The snapshot (budget-snapshot.json) is the ratchet: the suite fails when a tracked
 // size grows more than TOLERANCE over its snapshot. Lowering is free; raising is a
@@ -75,11 +74,11 @@ export function frontmatterField(skillMd: string, key: string): string {
   return stringField(fieldsOf(skillMd), key);
 }
 
-// What the host lists for one skill on every turn. `disable-model-invocation: true` keeps
-// the skill out of the model listing, so it costs nothing per turn (H74).
-export function activationSurface(skillMd: string): number {
+// Estimate a Claude listing entry from source policy; native activation remains unverified.
+export function activationSurface(skillMd: string, visibility?: unknown): number {
   const fields = fieldsOf(skillMd);
-  if (fields["disable-model-invocation"] === true) return 0;
+  if (fields["disable-model-invocation"] === true || visibility === "off" || visibility === "user-invocable-only") return 0;
+  if (visibility === "name-only") return utf8Len(stringField(fields, "name"));
   return utf8Len(stringField(fields, "description") + stringField(fields, "when_to_use"));
 }
 
@@ -113,6 +112,8 @@ export function measurePluginSurface(homeDir: string): number {
 
 export function measure(repoRoot: string, homeDir: string = homedir()): Measurement {
   const claude = join(repoRoot, ".claude");
+  const settings = join(claude, "settings.global.json");
+  const overrides = existsSync(settings) ? JSON.parse(readSource(settings)).skillOverrides ?? {} : {};
   const alwaysLoaded: Record<string, number> = {
     "CLAUDE.md": bytes(join(repoRoot, "CLAUDE.md")),
     "output-styles/poneglyph.md": bytes(join(claude, "output-styles", "poneglyph.md")),
@@ -133,7 +134,7 @@ export function measure(repoRoot: string, homeDir: string = homedir()): Measurem
       if (!existsSync(file)) continue;
       const text = readSource(file);
       skillBodies[s] = utf8Len(text);
-      surface += activationSurface(text);
+      surface += activationSurface(text, overrides[s]);
     }
   }
   alwaysLoaded["skills: description + when_to_use"] = surface;
@@ -204,7 +205,7 @@ export function saveSnapshot(dir: string, m: Measurement): string {
 }
 
 export function renderTable(current: Measurement, snapshot: Snapshot | null): string {
-  const rows: string[] = ["| Layer | Bytes | Snapshot | Δ |", "|---|---|---|---|"];
+  const rows: string[] = ["Claude source-byte estimate; not measured tokens or Codex/Grok savings.\n", "| Layer | Bytes | Snapshot | Δ |", "|---|---|---|---|"];
   for (const [k, v] of Object.entries(current.alwaysLoaded)) {
     const s = snapshot?.alwaysLoaded[k];
     rows.push(`| ${k} | ${v} | ${s ?? "—"} | ${s === undefined ? "—" : v - s} |`);

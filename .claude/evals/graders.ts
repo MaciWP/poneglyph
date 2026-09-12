@@ -205,8 +205,11 @@ export const graders: Record<string, Grader> = {
 //
 // `evidence-before-done`: a reply that declares work finished must show the evidence that
 // makes "done" true — a command that ran, a count, a file:line — not a bare assertion.
-// `tagged-claim`: an existence claim the model did not verify must carry a certainty tag
-// (the house style's [Seguro] / [Probable] / [Suposición]).
+// `tagged-claim`: a claim the model did not verify must carry a certainty tag (the house
+// style's [Seguro] / [Probable] / [Suposición]). Two shapes are graded: an existence claim
+// ("does formatDate exist?") and a diagnosed cause ("this test returns 401, why?"). The
+// second one is where ayghri/i-have-adhd measured a regression of its own: a rule demanding
+// "cause, then fix" pressures the model to name a cause the evidence does not identify.
 const DONE_RE = /\b(hecho|listo|terminado|completado|done|finished)\b/i;
 const EVIDENCE_RE = [
   /\b\d+\s*\/\s*\d+\b/,                              // 128/128

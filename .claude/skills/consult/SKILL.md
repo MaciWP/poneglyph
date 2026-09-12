@@ -35,6 +35,14 @@ the fallback for hosts that have no plugin.
 | Background | `--background`, then `/codex:status` · `/codex:result` | `--background`, then `/grok-build:runs` · `/grok-build:show` | `&` + `wait`, outputs to scratchpad |
 | Auth check | `/codex:setup` | `/grok-build:check` | same claude.ai login |
 
+**`--cwd` must be a directory you will not delete.** The codex plugin spawns one detached
+broker per distinct cwd and only stops it at session end, so that directory stays locked for
+the rest of the session — a worktree passed as `--cwd` cannot be removed afterwards, and the
+failing `git worktree remove` blames git. Point cwd at the main checkout and put the diff or
+the files in the prompt (Mode 1 already requires this). Already stuck:
+`bun $HOME/.claude/scripts/codex-brokers.ts` lists them, `--shutdown <path>` frees one — it is
+a machine-wide problem, so it runs from any repo.
+
 Notes: resolve binaries through PATH at call time, never a fixed path; on auth failure
 report and stop. The plugin scripts run Codex through its app server, not `codex exec`,
 so CLI flag drift is the vendor's problem. Windows: give Codex **absolute paths** in the

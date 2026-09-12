@@ -21,13 +21,17 @@ describe("stateDirName — must match the plugin's own resolveStateDir", () => {
     expect(stateDirName(join(tmpdir(), "we ird@name"))).toMatch(/^we-ird-name-[0-9a-f]{16}$/);
   });
 
-  it("gives one answer whichever separator the path was typed with", () => {
-    // The plugin hashes a native path. Hashing the string as typed made a forward-slash path
-    // miss its own broker and report that nothing pinned the directory — the opposite of true.
-    const posix = "D:/PYTHON/some-workspace";
-    const win = "D:\\PYTHON\\some-workspace";
-    expect(stateDirName(posix)).toBe(stateDirName(win));
-    // A path that no longer exists must still resolve, because that is when this is needed.
+  it("normalises a relative path before hashing, on every platform", () => {
+    // The plugin hashes a resolved path. Hashing the string as typed made a path miss its own
+    // broker and report that nothing pinned the directory — the opposite of the truth.
+    expect(stateDirName("some-workspace")).toBe(stateDirName(join(process.cwd(), "some-workspace")));
+  });
+
+  // Backslashes only separate paths on Windows; on POSIX `D:\PYTHON\x` is one file name, so
+  // this equivalence is a Windows claim and is asserted only there.
+  it.skipIf(process.platform !== "win32")("gives one answer whichever separator was typed", () => {
+    expect(stateDirName("D:/PYTHON/some-workspace")).toBe(stateDirName("D:\\PYTHON\\some-workspace"));
+    // A directory that no longer exists must still resolve: that is exactly when this is needed.
     expect(stateDirName("D:/PYTHON/deleted-9e1f")).toBe(stateDirName("D:\\PYTHON\\deleted-9e1f"));
   });
 });

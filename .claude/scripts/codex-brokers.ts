@@ -43,7 +43,9 @@ export function stateDirName(workspaceRoot: string): string {
   } catch {
     // A directory that no longer exists still has a broker registered; the resolved path stands.
   }
-  const slug = basename(workspaceRoot).replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "workspace";
+  // The basename comes from the resolved path too, so both halves of the name agree about
+  // where the separators are.
+  const slug = basename(canonical).replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "workspace";
   return `${slug}-${createHash("sha256").update(canonical).digest("hex").slice(0, 16)}`;
 }
 

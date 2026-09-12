@@ -24,15 +24,15 @@ There is no companion `/meta-harness` command or workflow.
 
 ## Verbs
 
-Name the verb **before** acting. Impact is a step, not a sixth verb.
+Name the verb **before** acting. Impact is a step, not a sixth verb (D16).
 
 | Verb | Does | Does not |
 |---|---|---|
 | Consult | Fetch live official docs; report unchanged / changed / unreachable | Edit files |
-| Create | Write a valid artefact (portable default) | Skip the gate |
+| Create | Write a valid artefact (portable default) | Skip `bun run check:config` |
 | Modify | Change the asked behaviour; keep the rest | Wipe with the default template |
 | Disable | Turn off where the host supports it | Fake disable with a delete |
-| Delete | Remove source + name leftover registries | Claim runtime is gone without checking |
+| Delete | Remove source + leftover name registries | Claim runtime is gone without checking |
 
 **Impact** (before modify / disable / delete / rename): grep consumers, then `references/doctrine-sweep.md`. Close honestly: live refs in these roots vs installed state unverified.
 
@@ -41,11 +41,11 @@ Name the verb **before** acting. Impact is a step, not a sixth verb.
 1. Identify the type (T1–T15) and the verb.
 2. Load **one** pack: `references/tNN-<type>.md` when that file exists. Do not load sibling packs.
 3. Lookup live official docs ([lookup.md](references/lookup.md); indexes below). Local pack text is snapshot + gotchas, not the live law.
-4. A native creator may draft. This skill still owns lookup, impact, `bun run check:config`, and Poneglyph activation copy.
+4. A native creator may draft; §Native creators keeps the ownership split.
 5. Write **inline**. Fan-out via Workflow only for ≥4 independent units.
 6. Packs name the install/sync step. Do not change `sync-claude` / `sync-codex` / `sync-grok` here.
 
-Load **one** pack file. Do not invent a host recipe. Markdown-link a pack only when the file exists.
+Do not invent a host recipe. Markdown-link a pack only when the file exists.
 
 ## Catalog (T1–T15)
 
@@ -103,7 +103,7 @@ Full contract: [native-creators.md](references/native-creators.md). Claude `skil
 | T1 skill pack | [t01-skill.md](references/t01-skill.md) | Creating, changing, disabling, or deleting a skill |
 | Live official docs | [lookup.md](references/lookup.md) | Before treating local pack text as current law |
 | Evidence labels | [evidence.md](references/evidence.md) | Citing a practice as a norm |
-| Lifecycle verbs | [lifecycle.md](references/lifecycle.md) | Consult / create / modify / disable / delete |
+| Host disable matrix + gate | [lifecycle.md](references/lifecycle.md) | Turning a skill off on a host, or checking the create gate |
 | Native creators | [native-creators.md](references/native-creators.md) | After a host tool drafts files |
 | Doctrine sweep | [doctrine-sweep.md](references/doctrine-sweep.md) | Rename, delete, or change a fact other files assert |
 | Type packs T2–T15 | catalog links above | That type is in play — load **one** pack |

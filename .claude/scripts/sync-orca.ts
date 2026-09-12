@@ -8,7 +8,11 @@
 //   bun .claude/scripts/sync-orca.ts             # verify
 //   bun .claude/scripts/sync-orca.ts --verbose   # also list ignored noise hits
 //
-// Exit codes: 0 = ran (🟢 clean or 🟡 live append still set) · 2 = environment.
+// Also one `doctor` row, through checkOrca() (H47) — this script is no longer something
+// you have to remember to run.
+//
+// Exit codes: 0 = ran (🟢 clean · 🟡 live append still set, or Orca not installed on this
+// machine) · 2 = the repository's own system-prompt twin is missing.
 
 import { existsSync, readdirSync, statSync, readFileSync } from "node:fs";
 import { homedir, platform } from "node:os";
@@ -58,7 +62,7 @@ export function orcaConfigDirs(plat: string = platform(), home: string = homedir
   return dirs;
 }
 
-interface ScanHit {
+export interface ScanHit {
   file: string;
   exact: boolean; // matched the full expected "flag + path", not just the bare flag
 }
@@ -101,40 +105,41 @@ export function scanDir(root: string, expected: string, flag: string): ScanHit[]
   return hits;
 }
 
-if (import.meta.main) {
-  const verbose = process.argv.includes("--verbose");
+export interface OrcaCheck {
+  status: "🟢" | "🟡" | "🔴";
+  detail: string;
+}
 
-  if (!existsSync(SP_FILE)) {
-    console.log(`🔴 SP file missing: ${SP_FILE}`);
-    process.exit(2);
-  }
+// Decision 2026-08-18: the expected state is NO append in the live Argumentos.
+// A machine without Orca is SKIPPED, not red — `doctor` exits 1 on any 🔴 and this is a
+// machine-bound check, the same rule the host-adapter rows already follow (H47).
+export function orcaVerdict(spExists: boolean, dirs: string[], hits: ScanHit[]): OrcaCheck {
+  if (!spExists) return { status: "🔴", detail: `system-prompt twin missing: ${SP_FILE}` };
+  if (dirs.length === 0) return { status: "🟡", detail: "Orca not installed on this machine — skipped" };
+  if (hits.length === 0) return { status: "🟢", detail: "no --append-system-prompt in the live profile; sessions inherit the outputStyle" };
+  return {
+    status: "🟡",
+    detail: `${hits.length} live --append-system-prompt — double load with the outputStyle (~10K extra per session, measured 2026-08-18); remove it from Argumentos`,
+  };
+}
 
-  const dirs = orcaConfigDirs(platform(), homedir(), process.env.APPDATA).filter(existsSync);
-  if (dirs.length === 0) {
-    console.log("🔴 No Orca config dir found on this machine — is Orca installed?");
-    process.exit(2);
-  }
-
+/** The verdict plus the scan behind it. One entry point for the CLI and the doctor row. */
+export function checkOrca(): OrcaCheck & { hits: ScanHit[]; noise: ScanHit[] } {
+  const spExists = existsSync(SP_FILE);
+  const dirs = spExists ? orcaConfigDirs(platform(), homedir(), process.env.APPDATA).filter(existsSync) : [];
   const scanned = dirs.flatMap((d) => scanDir(d, EXPECTED, FLAG));
   const hits = scanned.filter((h) => isLiveOrcaVerdictFile(h.file));
-  const noise = scanned.filter((h) => !isLiveOrcaVerdictFile(h.file));
+  return { ...orcaVerdict(spExists, dirs, hits), hits, noise: scanned.filter((h) => !isLiveOrcaVerdictFile(h.file)) };
+}
 
-  // Decision 2026-08-18: expected state is NO append in live Argumentos.
-  if (hits.length === 0) {
-    console.log("🟢 Orca: correcto — sin append en orca-data.json. Las sesiones heredan el outputStyle vía settings.");
-    if (verbose && noise.length > 0) {
-      console.log("   (ignorados — bak/status, no votan)");
-      for (const h of noise) console.log(`   ~ ${h.file}`);
-    }
-    process.exit(0);
+if (import.meta.main) {
+  const verbose = process.argv.includes("--verbose");
+  const result = checkOrca();
+  console.log(`${result.status} Orca: ${result.detail}`);
+  for (const h of result.hits) console.log(`   ${h.exact ? "(poneglyph SP)" : "(another path)"} ${h.file}`);
+  if (verbose && result.noise.length > 0) {
+    console.log("   (ignored — backups and status files; they do not vote)");
+    for (const h of result.noise) console.log(`   ~ ${h.file}`);
   }
-
-  console.log("🟡 Orca: hay un --append-system-prompt en la config viva — doble carga con el outputStyle.");
-  console.log("   Medido 2026-08-18: inocua pero inútil (~10K extra/sesión). Quítalo de Argumentos.");
-  for (const h of hits) console.log(`   ${h.exact ? "(SP poneglyph)" : "(otra ruta)"} ${h.file}`);
-  if (verbose && noise.length > 0) {
-    console.log("   (ignorados — bak/status, no votan)");
-    for (const h of noise) console.log(`   ~ ${h.file}`);
-  }
-  process.exit(0);
+  process.exit(result.status === "🔴" ? 2 : 0);
 }

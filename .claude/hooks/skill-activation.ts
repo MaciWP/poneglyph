@@ -150,7 +150,7 @@ export function detectFeatureShape(prompt: string): boolean {
 
 // The second sentence is the tiered context ceiling (plan 037): 200k by default, 400k when a
 // task spans many files. The hook cannot run slash commands; the Lead proposes, Oriol decides.
-const FLOW_HINT_LINE =
+export const FLOW_HINT_LINE =
   "Feature-shaped task → consider /flow — the full lifecycle (scope→tech-plan→tdd-design→build→critic→retro). Wide scope → propose `/autocompact 400k` for this session (default ceiling 200k, plan 037).";
 
 // Model/effort routing by task shape (029/US7 — closes the 027 deployment gap:
@@ -167,7 +167,8 @@ export function detectRoutingShape(prompt: string): "bulk" | "quick" | null {
   return null;
 }
 
-const ROUTING_LINES: Record<"bulk" | "quick", string> = {
+// Exported so a host adapter can swap a Claude-only command for its own (H43).
+export const ROUTING_LINES: Record<"bulk" | "quick", string> = {
   bulk: "Bulk/mechanical shape → consider a cheaper tier via `/model` + `/effort low` (shape-only suggestion, session state unknown — playbook §4).",
   quick: "Quick-lookup shape → consider `/effort low` (shape-only suggestion, session state unknown — playbook §4).",
 };

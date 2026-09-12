@@ -16,6 +16,7 @@ import { fileURLToPath } from "node:url";
 import { compare, loadSnapshot, measure, total } from "./lib/budget";
 import { detectHosts, realProbe } from "./lib/hosts";
 import { check, type Report } from "./check-config";
+import { checkOrca } from "./sync-orca";
 import { collectTranscripts, contextRow, loadTranscripts, summarizeContext } from "./usage-profile";
 
 export type Status = "🟢" | "🟡" | "🔴";
@@ -109,6 +110,12 @@ export function summarizeSessions(models: string[], warnAt = SESSIONS_PER_DAY_WA
   return { status, detail: status === "🟡" ? `${detail} — headless runs are spawns: cheap tier + permission (lessons G13)` : detail };
 }
 
+// This used to be a check row with a hardcoded 🟡 (H47): a status that can never change is
+// not a check, it just teaches the eye to skip the one colour the other rows warn with. The
+// caveat is true and stays printed — as a note under the table, carrying no semaphore.
+export const NATIVE_EVIDENCE_NOTE =
+  "Note: these are configuration checks. They do not establish Codex hook trust, model activation, or MCP connectivity — inspect the native UI and report those gates separately.";
+
 export function renderChecks(checks: Check[]): string {
   return ["| Check | Estado | Detalle |", "|---|---|---|", ...checks.map((c) => `| ${c.name} | ${c.status} | ${c.detail} |`)].join("\n");
 }
@@ -158,7 +165,8 @@ async function main(): Promise<void> {
       const gx = await run(["bun", ".claude/scripts/sync-grok.ts", "--status"]);
       checks.push({ name: "Grok adapter (configuration)", status: statusFromSyncOutput(gx.out, gx.code), detail: "Style, native hook configuration, and Claude compatibility; no model or MCP connection." });
     } else checks.push(skipped("Grok adapter (configuration)"));
-    checks.push({ name: "Native execution evidence", status: "🟡", detail: "Configuration checks do not establish Codex hook trust, model activation, or MCP connectivity; inspect the native UI and report those gates separately." });
+    const orca = checkOrca();
+    checks.push({ name: "Orca style append (sync-orca)", status: orca.status, detail: orca.detail });
   }
 
   if (hosts.get("claude")!.cli) {
@@ -213,8 +221,9 @@ async function main(): Promise<void> {
 
   const table = renderChecks(checks);
   console.log(table);
+  console.log(`\n${NATIVE_EVIDENCE_NOTE}`);
   if (mdFile) {
-    writeFileSync(mdFile, `# poneglyph doctor — ${new Date().toISOString().slice(0, 10)}\n\n${table}\n`);
+    writeFileSync(mdFile, `# poneglyph doctor — ${new Date().toISOString().slice(0, 10)}\n\n${table}\n\n${NATIVE_EVIDENCE_NOTE}\n`);
     console.log(`\nmarkdown → ${mdFile}`);
   }
   process.exit(exitCodeFor(checks));

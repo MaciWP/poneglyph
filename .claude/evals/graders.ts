@@ -205,8 +205,11 @@ export const graders: Record<string, Grader> = {
 //
 // `evidence-before-done`: a reply that declares work finished must show the evidence that
 // makes "done" true — a command that ran, a count, a file:line — not a bare assertion.
-// `tagged-claim`: an existence claim the model did not verify must carry a certainty tag
-// (the house style's [Seguro] / [Probable] / [Suposición]).
+// `tagged-claim`: a claim the model did not verify must carry a certainty tag (the house
+// style's [Seguro] / [Probable] / [Suposición]). Two shapes are graded: an existence claim
+// ("does formatDate exist?") and a diagnosed cause ("this test returns 401, why?"). The
+// second one is where ayghri/i-have-adhd measured a regression of its own: a rule demanding
+// "cause, then fix" pressures the model to name a cause the evidence does not identify.
 const DONE_RE = /\b(hecho|listo|terminado|completado|done|finished)\b/i;
 const EVIDENCE_RE = [
   /\b\d+\s*\/\s*\d+\b/,                              // 128/128
@@ -234,3 +237,69 @@ export const evidenceBeforeDone: Grader = (transcript, caseSpec) => {
 
 // Registered after its definition so the exported registry stays a single literal above.
 graders.evidenceBeforeDone = evidenceBeforeDone;
+
+// --- Style adherence, added 2026-09-11 (review of the `i-have-adhd` skill) ---
+//
+// H16: §2 already forbade cards split by a rule, naming `────`, `------` and `_____` —
+// but not `---`, the markdown thematic break. In Claude Code that one renders exactly
+// like the divider marking a user interruption (anthropics/claude-code#52755), so the
+// reader cannot tell a finished answer from a cut-off one. The norm existed in three
+// places and no grader watched any of them; 024's retro is explicit that an unwatched
+// norm drifts in silence.
+
+// A line that is ONLY a horizontal rule. A markdown table's header rule starts with `|`,
+// so `|---|---|` never reaches this. Bare YAML frontmatter (`---` on its own line, outside
+// a fence) DOES fail, and that is the intent: in the terminal it renders as the very divider
+// this grader exists to catch. §2 wants quoted config inside a fence, where it passes.
+const RULE_LINE_RE = /^\s*(?:-{3,}|_{3,}|\*{3,}|={3,}|─{2,}|—{2,})\s*$/;
+const BOX_DRAWING_RE = /[┌┐└┘├┤┬┴┼│─━┃╔╗╚╝║═]/;
+
+export const cardSeparators: Grader = (transcript) => {
+  for (const line of stripFenced(transcript).split("\n")) {
+    if (RULE_LINE_RE.test(line)) {
+      return {
+        pass: false,
+        detail: `horizontal-rule separator ("${line.trim().slice(0, 12)}") — in Claude Code it reads as a user interruption (#52755); use a table or a blank line`,
+      };
+    }
+    if (BOX_DRAWING_RE.test(line)) {
+      return { pass: false, detail: `box-drawing separator in "${line.trim().slice(0, 24)}" — §2 wants markdown pipes` };
+    }
+  }
+  return { pass: true, detail: "no rule or box-drawing separators" };
+};
+
+// §4's ceiling measures RUNNING PROSE only. Tables, lists, numbered steps and headings are
+// the structure §2 mandates: counting them would fail the very shape the style demands.
+export const PROSE_CEILING = 15;
+const STRUCTURE_LINE_RE = /^\s*(?:[|>]|[-*+]\s|\d+[.)]\s|#{1,6}\s)/;
+
+export const proseLength: Grader = (transcript, caseSpec) => {
+  if (caseSpec?.expected !== "concise") {
+    return { pass: true, detail: "case does not ask for the prose ceiling" };
+  }
+  const prose = stripFenced(transcript)
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0 && !STRUCTURE_LINE_RE.test(l));
+  return prose.length > PROSE_CEILING
+    ? { pass: false, detail: `${prose.length} lines of running prose (ceiling ${PROSE_CEILING}) — cut padding or move it to an artefact` }
+    : { pass: true, detail: `${prose.length} lines of running prose, within ${PROSE_CEILING}` };
+};
+
+// §2: multi-step work WITHOUT the dev-loop scan line must restate position every turn.
+// Either marker restores it; "listo, ¿seguimos?" does not.
+const STEP_MARKER_RE = /\b(?:paso|step)\s+\d+\s*(?:de|of|\/)\s*\d+\b/i;
+// Two icons on one line: a lone 🔴 opening a verdict is a status icon, not the scan line.
+const SCAN_LINE_RE = /[🟢🔵⚪🟡🔴⛔🔄].*·.*[🟢🔵⚪🟡🔴⛔🔄]/u;
+
+export const stepState: Grader = (transcript, caseSpec) => {
+  const prose = stripFenced(transcript);
+  if (STEP_MARKER_RE.test(prose)) return { pass: true, detail: "current step named against the total" };
+  if (SCAN_LINE_RE.test(prose)) return { pass: true, detail: "dev-loop scan line restores the state" };
+  return { pass: false, detail: "progress claimed without position: no `paso N de M` and no scan line" };
+};
+
+graders.cardSeparators = cardSeparators;
+graders.proseLength = proseLength;
+graders.stepState = stepState;

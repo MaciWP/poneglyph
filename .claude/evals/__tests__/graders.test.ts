@@ -7,6 +7,9 @@ import {
   skillTriggerParse,
   calqueDetect,
   devLoopStages,
+  cardSeparators,
+  proseLength,
+  stepState,
   graders,
 } from "../graders";
 import { runOffline } from "../run";
@@ -218,6 +221,125 @@ describe("evidenceBeforeDone", () => {
 
   test("fails an unverified existence claim stated flatly", () => {
     expect(graders.evidenceBeforeDone("Sí, formatDate existe en el proyecto.", { expected: "tagged-claim" } as never).pass).toBe(false);
+  });
+});
+
+// Style-adherence graders added 2026-09-11 (review of the `i-have-adhd` skill).
+
+describe("cardSeparators (H16 — §2 separators, previously ungraded)", () => {
+  test("fails on labeled cards split by a box-drawing rule", () => {
+    const r = cardSeparators(`Hallazgo H1 — media
+El bucket S3 queda huérfano
+────────────────────
+Hallazgo H2 — baja
+Falta el índice`);
+    expect(r.pass).toBe(false);
+    expect(r.detail).toContain("separator");
+  });
+
+  test("fails on a bare markdown thematic break (it reads as a user interruption)", () => {
+    const r = cardSeparators(`Primer bloque de la respuesta.
+
+---
+
+Segundo bloque de la respuesta.`);
+    expect(r.pass).toBe(false);
+  });
+
+  test("fails on a box-drawn frame", () => {
+    const r = cardSeparators(`┌──────────┬──────────┐
+│ Fichero  │ Cambio   │
+└──────────┴──────────┘`);
+    expect(r.pass).toBe(false);
+  });
+
+  test("bare frontmatter outside a fence IS the failure, deliberately: it renders as that divider", () => {
+    const r = cardSeparators(`El fichero empieza así:
+
+---
+name: Poneglyph
+---
+
+Y sigue el cuerpo.`);
+    expect(r.pass).toBe(false);
+  });
+
+  test("the same frontmatter inside a fence passes — §2 wants quoted config fenced", () => {
+    const r = cardSeparators(`El fichero empieza así:
+
+\`\`\`yaml
+---
+name: Poneglyph
+---
+\`\`\`
+
+Y sigue el cuerpo.`);
+    expect(r.pass).toBe(true);
+  });
+
+  test("passes a markdown pipe table: its header rule starts with a pipe", () => {
+    const r = cardSeparators(`| Fichero | Cambio |
+|---|---|
+| auth.ts | guard añadido |`);
+    expect(r.pass).toBe(true);
+  });
+});
+
+describe("proseLength (§4 ceiling on running prose)", () => {
+  test("structure does not count: a long compliant table passes", () => {
+    const rows = Array.from({ length: 30 }, (_, i) => `| H${i} | media | un hallazgo cualquiera |`);
+    const r = proseLength(
+      ["Los hallazgos ordenados por severidad:", "", "| Ref | Sev | Hallazgo |", "|---|---|---|", ...rows].join("\n"),
+      { expected: "concise" },
+    );
+    expect(r.pass).toBe(true);
+  });
+
+  test("fails on a wall of running prose", () => {
+    const wall = Array.from({ length: 25 }, (_, i) => `Esta es la línea ${i} de prosa corrida sin estructura ninguna.`);
+    const r = proseLength(wall.join("\n"), { expected: "concise" });
+    expect(r.pass).toBe(false);
+    expect(r.detail).toMatch(/\d+/);
+  });
+
+  test("numbered steps and bullets are structure, not prose", () => {
+    const steps = Array.from({ length: 20 }, (_, i) => `${i + 1}. Ejecuta el paso ${i + 1} del procedimiento.`);
+    expect(proseLength(steps.join("\n"), { expected: "concise" }).pass).toBe(true);
+  });
+
+  test("only judges cases that ask for it", () => {
+    const wall = Array.from({ length: 40 }, () => "Prosa corrida que se extiende sin necesidad.");
+    expect(proseLength(wall.join("\n"), { expected: "explica" }).pass).toBe(true);
+  });
+});
+
+describe("stepState (§2 — multi-step work without the dev-loop scan line)", () => {
+  test("passes when the turn names the current step and the next one", () => {
+    const r = stepState("Paso 3 de 5: esquema actualizado. Siguiente: backfill de la columna nueva.", { expected: "step-state" });
+    expect(r.pass).toBe(true);
+  });
+
+  test("fails when progress is asserted without position", () => {
+    const r = stepState("Hecho. ¿Seguimos con la siguiente parte?", { expected: "step-state" });
+    expect(r.pass).toBe(false);
+  });
+
+  test("a lone status icon opening a verdict is not the scan line", () => {
+    const r = stepState("🔴 Veredicto: no la instales. Ya está cubierta por el estilo de la casa.", { expected: "step-state" });
+    expect(r.pass).toBe(false);
+  });
+
+  test("the dev-loop scan line also restores state and counts", () => {
+    const r = stepState("🟢 KNOW · 🟢 PLAN · 🔵 BUILD · ⚪ REVIEW · ⚪ LEARN", { expected: "step-state" });
+    expect(r.pass).toBe(true);
+  });
+});
+
+describe("registry", () => {
+  test("the three new graders are dispatchable by name from cases.jsonl", () => {
+    expect(graders.cardSeparators).toBe(cardSeparators);
+    expect(graders.proseLength).toBe(proseLength);
+    expect(graders.stepState).toBe(stepState);
   });
 });
 

@@ -251,7 +251,9 @@ Report:
 - Findings: <blocker>/<major>/<minor>/<nit>
 - spec_drift: <none|legitimate|scope_creep|skipped_ac>
 - fresh reviewer invoked: <yes | no (inline + declared bias)>
+- review-patterns modes: [<quality?>, <performance?>]
 - security-audit invoked: <yes|no>
+- drillme: covered 3/4 canonical Socratic categories
 
 Next:
   → /retro (if APPROVED or APPROVED_WITH_WARNINGS)
@@ -332,24 +334,3 @@ Critical invariants kept in this body: `review-patterns` is MANDATORY in standar
 | X | Base checks executed in parallel (Step 4); ONE fresh reviewer replaces the ≥4 panel — same independence, fraction of the cost (W1 D1/D3) |
 | VIII | Fresh-reviewer prompt is constrained (AC trace + correctness/requirements only + read-only role — Arch H) |
 | VII | Spec-drift detection + classification feeds living-spec loop in Phase 5 (observability) |
-
-## Output format reminder
-
-When this skill closes a review:
-
-```
-{🟢|🟡|🔴|⛔} Critic verdict for {NNN}-{slug}: <VERDICT>
-- review.md: .claude/plans/{NNN}-{slug}/review.md
-- review_level: <light|standard|full> (<reason>)
-- Findings: blocker=N major=N minor=N nit=N
-- spec_drift: <none|legitimate|scope_creep|skipped_ac>
-- fresh reviewer: <invoked | inline + declared bias | n/a light> (<reason>)
-- review-patterns modes: [<quality?>, <performance?>]
-- security-audit: <invoked|skipped|n/a>
-- drillme: covered 3/4 canonical Socratic categories
-
-Next:
-  → /retro    (APPROVED / APPROVED_WITH_WARNINGS)
-  → /build US{N}  (NEEDS_CHANGES with specific HU)
-  → STOP — escalate to user (BLOCKED)
-```

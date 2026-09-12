@@ -215,17 +215,27 @@ function printStatus(links: CodexLink[]): void {
 
 // Generated command wrappers whose shared command no longer exists (removed or renamed):
 // `$name` would still be advertised but read a missing file. Only files carrying
-// GENERATED_MARK qualify — linked skill directories and foreign skills never match.
+// GENERATED_MARK qualify — foreign skills never match.
+// A core skill installs as a directory junction (Windows) or a symlink, so its
+// `SKILL.md` resolves into the repository: pruning through one would delete the
+// source, not a wrapper. Never descend into a linked directory.
 export function staleWrappers(codexHome: string, links: CodexLink[]): string[] {
   const skillsDir = path.join(codexHome, "skills");
   if (!fs.existsSync(skillsDir)) return [];
   const managed = new Set(links.filter((l) => l.content !== undefined).map((l) => path.resolve(l.dest)));
   return fs.readdirSync(skillsDir)
+    .filter((name) => {
+      try {
+        return !fs.lstatSync(path.join(skillsDir, name)).isSymbolicLink();
+      } catch {
+        return false;
+      }
+    })
     .map((name) => path.join(skillsDir, name, "SKILL.md"))
     .filter((file) => {
       if (managed.has(path.resolve(file))) return false;
       try {
-        return fs.statSync(file).isFile() && fs.readFileSync(file, "utf8").includes(GENERATED_MARK);
+        return fs.lstatSync(file).isFile() && fs.readFileSync(file, "utf8").includes(GENERATED_MARK);
       } catch {
         return false;
       }

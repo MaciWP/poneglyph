@@ -1,7 +1,7 @@
 ---
 spec: 035-flow-coherence
 phase: 5
-status: open
+status: draft
 retro_level: light
 verdict_phase4: APPROVED_WITH_WARNINGS
 spec_drift: none

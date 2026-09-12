@@ -16,6 +16,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 const STATE_ROOT = join(tmpdir(), "codex-companion");
 
@@ -74,11 +75,31 @@ export function readBrokers(root = STATE_ROOT): Broker[] {
   return brokers.sort((a, b) => Number(b.alive) - Number(a.alive) || a.slug.localeCompare(b.slug));
 }
 
+/** Where Claude Code keeps its configuration. `CLAUDE_CONFIG_DIR` moves it. */
+export function claudeConfigDir(env: NodeJS.ProcessEnv = process.env): string {
+  return env.CLAUDE_CONFIG_DIR ?? join(homedir(), ".claude");
+}
+
+/**
+ * Orders plugin versions numerically. A plain `sort()` is lexicographic, so it ranks `1.0.10`
+ * below `1.0.9` and would import the module of an older plugin than the one installed.
+ */
+export function newestVersion(versions: string[]): string | undefined {
+  const parts = (v: string) => v.split(".").map((n) => Number.parseInt(n, 10) || 0);
+  return [...versions].sort((a, b) => {
+    const [x, y] = [parts(a), parts(b)];
+    for (let i = 0; i < Math.max(x.length, y.length); i++) {
+      if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) - (y[i] ?? 0);
+    }
+    return 0;
+  }).pop();
+}
+
 /** Newest installed copy of the plugin's lifecycle module, or null when it is not there. */
 function lifecycleModule(): string | null {
-  const cache = join(homedir(), ".claude", "plugins", "cache", "openai-codex", "codex");
+  const cache = join(claudeConfigDir(), "plugins", "cache", "openai-codex", "codex");
   if (!existsSync(cache)) return null;
-  const newest = readdirSync(cache).sort().pop();
+  const newest = newestVersion(readdirSync(cache));
   return newest ? join(cache, newest, "scripts", "lib", "broker-lifecycle.mjs") : null;
 }
 
@@ -87,7 +108,8 @@ async function shutdown(broker: Broker): Promise<boolean> {
   try {
     const lib = lifecycleModule();
     if (!lib) throw new Error("plugin not installed");
-    const { sendBrokerShutdown } = await import(`file://${lib.replace(/\\/g, "/")}`);
+    // pathToFileURL, not string surgery: a Windows path needs `file:///C:/…`, three slashes.
+    const { sendBrokerShutdown } = await import(pathToFileURL(lib).href);
     await sendBrokerShutdown(broker.endpoint);
     await Bun.sleep(800);
   } catch {
@@ -134,8 +156,10 @@ async function main(): Promise<void> {
   console.log("| Workspace | PID | State |");
   console.log("|---|---:|---|");
   for (const b of brokers) console.log(`| ${b.slug} | ${b.pid} | ${b.alive ? "running — pins its directory" : "stopped"} |`);
+  // Printed as a resolved path rather than `$HOME/…`: shell variables differ per platform and
+  // per shell, and CLAUDE_CONFIG_DIR can move the whole directory.
   console.log("\nA running broker holds its directory open. Shut it down before removing that directory:");
-  console.log("  bun $HOME/.claude/scripts/codex-brokers.ts --shutdown <path>");
+  console.log(`  bun ${join(claudeConfigDir(), "scripts", "codex-brokers.ts")} --shutdown <path>`);
 }
 
 if (import.meta.main) {

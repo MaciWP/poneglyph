@@ -1,8 +1,8 @@
 import { describe, expect, it } from "bun:test";
 import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
-import { readBrokers, stateDirName } from "../codex-brokers";
+import { claudeConfigDir, newestVersion, readBrokers, stateDirName } from "../codex-brokers";
 
 describe("stateDirName — must match the plugin's own resolveStateDir", () => {
   it("is the workspace basename plus 16 hex characters", () => {
@@ -33,6 +33,23 @@ describe("stateDirName — must match the plugin's own resolveStateDir", () => {
     expect(stateDirName("D:/PYTHON/some-workspace")).toBe(stateDirName("D:\\PYTHON\\some-workspace"));
     // A directory that no longer exists must still resolve: that is exactly when this is needed.
     expect(stateDirName("D:/PYTHON/deleted-9e1f")).toBe(stateDirName("D:\\PYTHON\\deleted-9e1f"));
+  });
+});
+
+describe("finding the plugin, on any machine", () => {
+  it("orders versions numerically, not as text", () => {
+    // `sort()` alone ranks 1.0.10 below 1.0.9 and would load an older plugin than the one
+    // installed — the module whose shape this script depends on.
+    expect(newestVersion(["1.0.6", "1.0.10", "1.0.9"])).toBe("1.0.10");
+    expect(newestVersion(["2.0.0", "10.0.0"])).toBe("10.0.0");
+    expect(newestVersion(["1.2", "1.2.1"])).toBe("1.2.1");
+    expect(newestVersion([])).toBeUndefined();
+  });
+
+  it("honours CLAUDE_CONFIG_DIR, and falls back to the home directory", () => {
+    const moved = join(tmpdir(), "elsewhere");
+    expect(claudeConfigDir({ CLAUDE_CONFIG_DIR: moved } as NodeJS.ProcessEnv)).toBe(moved);
+    expect(claudeConfigDir({} as NodeJS.ProcessEnv)).toBe(join(homedir(), ".claude"));
   });
 });
 

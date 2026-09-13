@@ -1,23 +1,10 @@
 ---
 name: frontend-craft
 description: |
-  Trabajo de UI en dos modos. CONSISTENCIA (default para repos de trabajo):
-  antes de tocar cualquier elemento de UI compartido, barrido de usages (dónde
-  más se usa, qué pantallas afecta) + extracción del patrón existente (hover,
-  spacing, tokens, componentes hermanos); después, verificación de conformidad
-  con la app. CRAFT (superficies nuevas / proyectos personales): suelo de
-  calidad numérico (contraste, medida, sombras, estados, motion) + lista de
-  "tells" de IA a rechazar + modo por superficie. Verificación acotada — 1
-  ronda de screenshots del usuario + 1 confirmación, nunca self-QA abierto.
-  Úsala cuando: toques UI compartida ("cambia el hover", "ajusta el badge",
-  "dónde más se usa este componente"), diseñes una superficie nueva, o algo
-  "parezca genérico/de IA", "no queda profesional", "revisa el diseño".
+  Diseña interfaces y adapta componentes al estilo de la aplicación. Comprueba usos compartidos, estados y accesibilidad. Úsala al modificar UI compartida, crear pantallas o revisar consistencia visual.
 metadata:
-  keywords: >
-    Keywords - frontend craft, ui compartida, cambia el hover, ajusta el badge, donde mas se
-    usa, dónde más se usa, mismo estilo que la app, consistencia visual, superficie nueva,
-    parece generico, parece genérico, no queda profesional, craft floor, diseño de interfaz
-disable-model-invocation: true
+  keywords: ui compartida, cambia el hover, ajusta el badge, consistencia visual, diseño de interfaz, diseña la pantalla
+disable-model-invocation: false
 when_to_use: |
   "cambia el hover de este componente", "¿dónde más se usan estos badges?",
   "que use el mismo estilo que el resto de la app", "diseña la pantalla nueva",

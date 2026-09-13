@@ -166,18 +166,13 @@ Triggers for `AskUserQuestion`:
 
 NEVER guess. NEVER add features beyond the AC. If 2+ `AskUserQuestion` fires in a single HU → smell signal: the HU was poorly defined; flag in Issues for retro (Phase 5).
 
-### Step 7 — Drillme intra-HU (baseline 4, proportional)
+### Step 7 — Drillme intra-HU (gap-driven)
 
-These 4 are the **floor** for an HU with real implementation choices, not a hard cap: drillme is gap-gated (SKILL.md), so it sweeps any additional `[approach]`/`[failure]` gap the HU surfaces and produces **fewer (or zero)** on an unambiguous HU. Proportional to information gain, never a fixed count.
-
-Before declaring HU complete:
-
-1. `[approach]` **Pattern ignored?** Is there a pattern in the project I'm ignoring? (Glob results inspected?)
-2. `[approach]` **Duplication?** Does my implementation introduce duplication of an existing utility?
-3. `[approach]` **Over-engineering?** Am I adding more than the AC strictly requires (abstractions, hooks, fallbacks for impossible states)?
-4. `[approach]` **Naming consistent?** Are names (files, functions, variables) consistent with the rest of the codebase?
-
-Coverage: 4/4 in the `[approach]` category — Phase 3 is implementation-focused; `[location]`/`[context]`/`[failure]` were covered in upstream phases. NOT padding with artificial questions.
+Use the canonical Phase 3 bank in
+`../drillme/references/03-phase-questions.md`. Sweep its relevant categories and
+any new gap; ask only questions whose answers could change the decision.
+Report actual coverage and unresolved gaps. Do not infer coverage from a fixed
+question count or from work performed in an earlier phase.
 
 > Skill-to-skill invocation is probabilistic. If `drillme` does not auto-fire and a real doubt blocks progress, the Lead invokes `/drillme "<concrete doubt — HU US{N}>"` manually before closing the HU.
 
@@ -246,7 +241,7 @@ Wiring and manual fallbacks for this phase (drillme and diagnostic-patterns must
 | Signal | Adaptation |
 |---|---|
 | HU trivial (1 file, known pattern, no ambiguity) | Skip exhaustive Glob; 1-2 examples max; reduced drillme (most-relevant question only) |
-| HU touches business-critical code AND `test-policy.md` = `business-critical` | Strict red→green; no shortcuts; full drillme 4/4 |
+| HU touches business-critical code AND `test-policy.md` = `business-critical` | Strict red→green; no shortcuts; full the relevant canonical drillme bank |
 | HU has `tdd-skip: <reason>` | Implement directly; suite verify; declare skip reason verbatim in Step 10 report |
 | HU is markdown-only (validation-mode) | Skip `tests.md` consultation; apply Pre/Post/Structural/Smoke/Cross from `validations.md` |
 | Tests fail 2x consecutive on same HU | STOP — escalate to user with diagnosis (per `error-recovery.md` Stuck Detection) |

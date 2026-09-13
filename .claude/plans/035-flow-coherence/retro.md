@@ -1,7 +1,7 @@
 ---
 spec: 035-flow-coherence
 phase: 5
-status: draft
+status: approved
 retro_level: light
 verdict_phase4: APPROVED_WITH_WARNINGS
 spec_drift: none
@@ -29,4 +29,4 @@ requirement-based critique are explicit. Scope matches the approved plan.
 
 No promotions, scope deltas or additional repository changes are proposed. Keep
 global synchronization and live behavioral evaluation outside this task, as agreed.
-Retro ratification remains pending; producing this document does not approve it.
+Oriol explicitly ratified this retrospective during the S1–S6 remediation planning conversation. Implementation was approved with "Implement the plan"; ratification was recorded on 2026-09-13.

@@ -4,7 +4,8 @@ created: 2026-09-08
 approved: 2026-09-08
 mode: full
 phase: 1
-status: approved
+status: closed
+closed: 2026-09-12
 ---
 
 # Reliable, compact flow

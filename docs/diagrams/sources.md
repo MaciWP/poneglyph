@@ -35,26 +35,26 @@ identify the inspected Flow version independently of the earlier architecture sn
 
 Use the unchanged Archify **2.16.0** engine from the
 [installation recipe](../../.claude/skills/archify/references/integration.md).
-Edit the JSON, never the generated HTML. From the repository root:
+The repository tracks editable JSON and PNG previews. Generate HTML on demand
+under the ignored cache; generated HTML is not a tracked source. From the repository root:
 
 ```powershell
 $engine = (Resolve-Path '.cache/archify/v2.16.0/archify/bin/archify.mjs').Path
-node "$engine" deliver architecture "docs/diagrams/poneglyph.architecture.json" "docs/diagrams/poneglyph.html" --repo-root "." --quality showcase --json
-node "$engine" deliver workflow "docs/diagrams/flow.workflow.json" "docs/diagrams/flow.html" --quality showcase --json
-node "$engine" deliver workflow "docs/diagrams/dev.workflow.json" "docs/diagrams/dev.html" --quality showcase --json
+node "$engine" deliver architecture "docs/diagrams/poneglyph.architecture.json" ".cache/poneglyph-diagrams/poneglyph.html" --repo-root "." --quality showcase --json
+node "$engine" deliver workflow "docs/diagrams/flow.workflow.json" ".cache/poneglyph-diagrams/flow.html" --quality showcase --json
+node "$engine" deliver workflow "docs/diagrams/dev.workflow.json" ".cache/poneglyph-diagrams/dev.html" --quality showcase --json
 ```
 
 Stop on any nonzero exit. A failed delivery preserves the last-good HTML; do not
 attribute it to the revised JSON. Run `visual-check` only after successful delivery.
-For QA, use a byte-identical HTML copy under the ignored `.cache/poneglyph-diagrams/`
-directory so browser receipts and screenshots stay out of the public guide folder.
+Keep browser receipts and screenshots in the same ignored cache directory.
 
 Open each final HTML in its light theme. Use **Export → PNG** to replace its
 README image. The PNG is the complete canonical diagram; benefits and limits are
 in the HTML cards and the README comparison table. The generated viewer retains
 the upstream [MIT license](LICENSE.archify.txt). Viewing needs only a browser.
 
-## Observed validation
+## Historical validation — 2026-09-08
 
 All three deliveries passed 9/9 showcase artifact checks with zero composition
 errors and warnings. Each passed containment at 1440×900, 1600×1000, 1920×1080,
@@ -67,7 +67,7 @@ Exports were initiated with a chapter active. The SVGs retained all 9/10/6 nodes
 respectively, and the PNGs decoded. Delivered HTML hashes remained unchanged.
 The three PNG previews were visually inspected at 900px in a local Markdown
 render. They contain only the authored diagrams; fine detail is available by
-opening the full image or HTML. The README's ten local guide links resolve.
+opening the full image or HTML. The local guide links resolved at that snapshot. Regeneration instructions replace tracked HTML links on 2026-09-13.
 
 The ignored cache contains `*-deliver.json`, `*.visual-check.json`, screenshot
 sidecars, and `browser.json`. Automated receipts still say `visualReview: pending`;

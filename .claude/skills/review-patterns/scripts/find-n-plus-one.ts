@@ -95,7 +95,7 @@ function isCodeFile(filePath: string): boolean {
 }
 
 function shouldIgnore(path: string): boolean {
-  const parts = path.split("/");
+  const parts = path.split(/[\\/]/);
   return parts.some((p) => IGNORE_SEGMENTS.has(p));
 }
 

@@ -15,7 +15,7 @@ description: Host skill/workflow creators draft files only. meta-harness owns lo
 A green native tool is **not** the gate. After the draft, this skill still owns:
 
 1. **Lookup** — live official docs for the type and host ([lookup.md](lookup.md)).
-2. **Impact** — grep consumers before modify / disable / delete ([lifecycle.md](lifecycle.md)).
+2. **Impact** — grep consumers before modify / disable / delete (§Impact in [SKILL.md](../SKILL.md)).
 3. **`bun run check:config`** — source floor in this repo.
 4. **Poneglyph layer** — this-repo activation copy (es-ES `description` / `when_to_use`, `metadata.keywords`, ≥3 evals). Portable nucleus only when authoring for a foreign repo (AC13).
 

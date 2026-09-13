@@ -1,13 +1,14 @@
 {
   "spec_slug": "036-orca-workflow",
   "mode": "full",
-  "current_phase": 5,
+  "current_phase": "closed",
   "phases_completed": [
     1,
     2,
     2.5,
     3,
-    4
+    4,
+    5
   ],
   "gates_approved": {
     "1->2": true,
@@ -265,11 +266,11 @@
       "at": "2026-09-09"
     }
   ],
-  "feature_closed": false,
+  "feature_closed": true,
   "review_verdict": "APPROVED",
-  "retro_status": "pending",
+  "retro_status": "approved",
   "started_at": "2026-09-08",
-  "updated_at": "2026-09-09",
+  "updated_at": "2026-09-12",
   "reopen_history": [
     {
       "us": "US1",

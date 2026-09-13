@@ -6,6 +6,9 @@ parent: pr-review
 
 Weights: **Critical ×10 · Major ×5 · Minor ×1** — `Score = 100 − Σ(count × weight)`, floor 0.
 Verdict: APPROVE (0 critical, ≤2 major) · NEEDS_CHANGES (0 critical, >2 major) · BLOCK (≥1 critical).
+Consequence floor, above the counts: a required AC left `✗` (`02-ticket-trace.md`) or a red merge
+gate forbids APPROVE whatever the major count says. The verdict follows what merging would do,
+not how many rows the table has. This file owns the thresholds; no other file restates them.
 
 ## Core criteria (apply in every repo)
 

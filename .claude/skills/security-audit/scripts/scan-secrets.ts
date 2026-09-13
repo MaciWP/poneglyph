@@ -80,7 +80,7 @@ interface Finding {
 }
 
 function shouldIgnore(path: string): boolean {
-  return path.split("/").some((p) => IGNORE_SEGMENTS.has(p));
+  return path.split(/[\\/]/).some((p) => IGNORE_SEGMENTS.has(p));
 }
 
 // `extname` returns "" for a leading-dot file and ".local" for `.env.local`, so the whole

@@ -1,7 +1,7 @@
 ---
 name: retro
 description: |
-  Retrospectiva post-feature (Fase 5 del workflow de 5 fases). Captura lecciones técnicas, saca a la luz la fricción de proceso, propone promotions a uno de tres scopes (global ~/.claude/ vs proyecto .claude/ vs memoria), cierra el living-spec loop consumiendo el spec_drift clasificado por critic, y audita el cumplimiento de los 10 Commandments. NO auto-edita spec.md: produce un diff para aprobación humana. Cierra el lifecycle del feature.
+  Retrospectiva post-feature (Fase 5 del workflow `/flow`). Captura lecciones técnicas, saca a la luz la fricción de proceso, propone promotions a uno de tres scopes (global ~/.claude/ vs proyecto .claude/ vs memoria), cierra el living-spec loop consumiendo el spec_drift clasificado por critic, y audita el cumplimiento de los 10 Commandments. NO auto-edita spec.md: produce un diff para aprobación humana. Cierra el lifecycle del feature.
   Úsala cuando: review.md APPROVED o APPROVED_WITH_WARNINGS, feature completo, antes de declarar el lifecycle cerrado, tras /critic, "retro", "retrospectiva", "qué hemos aprendido", "promover".
 metadata:
   keywords: >
@@ -114,19 +114,11 @@ Identify the heaviest phase + diagnose why. Often the heaviest phase reveals a m
 
 ### Step 7 — Drillme Phase 5
 
-The 5 retro-specific questions:
-
-```markdown
-## Drillme — Phase 5 (retrospective)
-
-1. `[approach]` **Phase too heavy?** Which phase weighed more than it needed to? Why?
-2. `[approach]` **Avoidable friction?** Was there friction that didn't add value? Concrete instance?
-3. `[approach]` **Reusable pattern?** Did a pattern emerge that's reusable beyond this feature? Where else?
-4. `[context]` **Global vs local vs memory?** If reusable — is it promotable to `~/.claude/` global, only this project's `.claude/`, or just a memory entry?
-5. `[failure]` **Commandment violated silently?** Did any of the 10 Commandments get violated without notice during the feature?
-```
-
-Coverage: 3/4 canonical Socratic categories (`[approach]`/`[context]`/`[failure]`). Honest — `[location]` was covered in Phase 2/3 (where the code lives). NOT padding with artificial questions.
+Use the canonical Phase 5 bank in
+`../drillme/references/03-phase-questions.md`. Sweep its relevant categories and
+any new gap; ask only questions whose answers could change the decision.
+Report actual coverage and unresolved gaps. Do not infer coverage from a fixed
+question count or from work performed in an earlier phase.
 
 > Skill-to-skill invocation is **probabilistic**. If `drillme` does not auto-fire, the Lead invokes `/drillme "Phase 5 retro of <NNN-slug>"` manually before closing the feature.
 
@@ -145,7 +137,7 @@ For each reusable pattern surfaced in Step 5/7 — plus each entry in `.claude/l
 | **global** (~/.claude/) | Pattern applies across multiple projects; reusable across stacks; meta-system improvement | `~/.claude/{skills,rules,hooks,agents,commands}/` |
 | **local** (project) | Pattern is project-specific (this codebase's conventions); useful here, ceremony elsewhere | `.claude/{skills,rules,hooks,agents,commands}/` |
 | **memory** (only) | Single fact / one-off learning; doesn't deserve a file | `MEMORY.md` entry via auto-memory |
-| **lessons** | A mistake with real evidence that would repeat in another repo (process, review hygiene, delivery) | Row appended to `~/.claude/skills/lessons/SKILL.md`; stack-specific → `lessons/references/<stack>-*.md` instead. Never a per-repo lessons layer |
+| **lessons** | A mistake with real evidence that would repeat in another repo (process, review hygiene, delivery) | Row appended to `~/.claude/skills/lessons/SKILL.md`; stack- or company-specific → the private addon instead. Never a per-repo lessons layer |
 
 **Strict rules**:
 
@@ -331,7 +323,7 @@ Report using the block in §Output format reminder (end of this skill) — same 
 - Spec drift action: <none | propose-diff | log-creep | log-skipped>
 - Commandment status: <X/10 ✅, Y ⚠️, Z ❌>
 - Action items: <N>
-- drillme: covered 3/4 canonical Socratic categories
+- drillme: <categories examined, evidence and unresolved gaps>
 
 Pending your approval:
   ⚪ Promotions to apply

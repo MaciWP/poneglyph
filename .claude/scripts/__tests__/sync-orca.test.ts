@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import {
   isLiveOrcaVerdictFile,
   isOrcaScanNoise,
+  orcaVerdict,
   scanDir,
 } from "../sync-orca.ts";
 
@@ -58,5 +59,30 @@ describe("scanDir ignores noise even when they contain the flag", () => {
     );
     const hits = scanDir(root, expected, flag);
     expect(hits).toEqual([{ file: live, exact: true }]);
+  });
+});
+
+// Quality review 2026-09-11, finding H47. The verdict moves out of `import.meta.main` so a
+// doctor row and the CLI read the same rule. A machine without Orca is SKIPPED, never red:
+// doctor exits 1 on any 🔴 and this check is machine-bound, exactly like the host adapters.
+describe("orcaVerdict (H47)", () => {
+  const hit = { file: "C:/x/orca-data.json", exact: true };
+
+  it("is green when no live append is configured", () => {
+    expect(orcaVerdict(true, ["C:/x"], []).status).toBe("🟢");
+  });
+
+  it("is yellow, not red, when Orca is not installed", () => {
+    expect(orcaVerdict(true, [], []).status).toBe("🟡");
+  });
+
+  it("is yellow when a live append is still set", () => {
+    const v = orcaVerdict(true, ["C:/x"], [hit]);
+    expect(v.status).toBe("🟡");
+    expect(v.detail).toMatch(/append/i);
+  });
+
+  it("is red only when the repo's own system-prompt twin is missing", () => {
+    expect(orcaVerdict(false, ["C:/x"], []).status).toBe("🔴");
   });
 });

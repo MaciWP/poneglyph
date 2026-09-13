@@ -12,13 +12,15 @@
 //
 // The real fix is not to point Codex at a disposable directory in the first place; see the
 // `consult` skill. This is the repair for when it already happened.
-import { createHash } from "node:crypto";
-import { existsSync, readdirSync, readFileSync, realpathSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { createConnection } from "node:net";
 import { homedir, tmpdir } from "node:os";
-import { basename, join, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join } from "node:path";
 import { pathToFileURL } from "node:url";
 
-const STATE_ROOT = join(tmpdir(), "codex-companion");
+export function stateRoot(env: NodeJS.ProcessEnv = process.env): string {
+  return env.CLAUDE_PLUGIN_DATA ? join(env.CLAUDE_PLUGIN_DATA, "state") : join(tmpdir(), "codex-companion");
+}
 
 export interface Broker {
   /** State directory name: `<workspace basename>-<hash>`. */
@@ -28,26 +30,26 @@ export interface Broker {
   endpoint: string;
 }
 
-/**
- * Mirrors `resolveStateDir` in the plugin: the workspace basename, then 16 hex characters of
- * the sha256 of its canonical path. Reimplemented rather than imported because the plugin
- * path carries its version number, and a pinned path is a dead reference waiting to happen.
- */
-export function stateDirName(workspaceRoot: string): string {
-  // `resolve` first, always: the plugin hashes a native path, so on Windows the separators
-  // must be backslashes. Hashing the string as typed (`D:/PYTHON/x`) yields a different digest
-  // and the lookup silently reports that nothing pins the directory — the exact opposite of
-  // the truth, and it only shows up once the directory is gone and realpath can no longer fix it.
-  let canonical = resolve(workspaceRoot);
-  try {
-    canonical = realpathSync.native(canonical);
-  } catch {
-    // A directory that no longer exists still has a broker registered; the resolved path stands.
+/** Use the installed plugin's Git-root, canonical-path and data-directory contract. */
+export async function resolveBrokerDirectory(workspaceRoot: string): Promise<string> {
+  const lib = lifecycleModule();
+  if (!lib) throw new Error("Codex plugin is unavailable; broker lookup is unverified.");
+  const { resolveStateDir } = await import(pathToFileURL(join(dirname(lib), "state.mjs")).href);
+  return resolveStateDir(workspaceRoot);
+}
+
+function localEndpoint(endpoint: unknown): string | null {
+  if (typeof endpoint !== "string" || endpoint.includes("\0")) return null;
+  if (endpoint.startsWith("pipe:")) {
+    const path = endpoint.slice(5);
+    const prefix = "\\\\.\\pipe\\";
+    return path.startsWith(prefix) && /^[^\\/]+$/.test(path.slice(prefix.length)) ? path : null;
   }
-  // The basename comes from the resolved path too, so both halves of the name agree about
-  // where the separators are.
-  const slug = basename(canonical).replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "workspace";
-  return `${slug}-${createHash("sha256").update(canonical).digest("hex").slice(0, 16)}`;
+  if (endpoint.startsWith("unix:")) {
+    const path = endpoint.slice(5);
+    return isAbsolute(path) && !path.startsWith("\\\\") ? path : null;
+  }
+  return null;
 }
 
 function isAlive(pid: number): boolean {
@@ -59,7 +61,7 @@ function isAlive(pid: number): boolean {
   }
 }
 
-export function readBrokers(root = STATE_ROOT): Broker[] {
+export function readBrokers(root = stateRoot()): Broker[] {
   if (!existsSync(root)) return [];
   const brokers: Broker[] = [];
   for (const slug of readdirSync(root)) {
@@ -67,6 +69,7 @@ export function readBrokers(root = STATE_ROOT): Broker[] {
     if (!existsSync(file)) continue;
     try {
       const state = JSON.parse(readFileSync(file, "utf8")) as { pid: number; endpoint: string };
+      if (!state || !Number.isSafeInteger(state.pid) || state.pid <= 0 || !localEndpoint(state.endpoint)) continue;
       brokers.push({ slug, pid: state.pid, alive: isAlive(state.pid), endpoint: state.endpoint });
     } catch {
       // A half-written state file is not worth failing the listing over.
@@ -103,26 +106,37 @@ function lifecycleModule(): string | null {
   return newest ? join(cache, newest, "scripts", "lib", "broker-lifecycle.mjs") : null;
 }
 
-/** Graceful first: the plugin's own `broker/shutdown`. Falls back to a signal. */
-async function shutdown(broker: Broker): Promise<boolean> {
-  try {
-    const lib = lifecycleModule();
-    if (!lib) throw new Error("plugin not installed");
-    // pathToFileURL, not string surgery: a Windows path needs `file:///C:/…`, three slashes.
-    const { sendBrokerShutdown } = await import(pathToFileURL(lib).href);
-    await sendBrokerShutdown(broker.endpoint);
-    await Bun.sleep(800);
-  } catch {
-    // The plugin moved or is not installed: the broker is a detached daemon, so a signal is
-    // the honest fallback. Its task is finished by the time anyone runs this.
-    try {
-      process.kill(broker.pid);
-      await Bun.sleep(300);
-    } catch {
-      return false;
-    }
-  }
-  return !isAlive(broker.pid);
+/** Bounded broker protocol. An acknowledgement proves acceptance, not process exit.
+ * The plugin helper treats errors as success and has no deadline, so use its wire
+ * contract here. Never signal a PID read from a potentially stale state file.
+ */
+export async function requestShutdown(endpoint: string, timeoutMs = 2000): Promise<boolean> {
+  const path = localEndpoint(endpoint);
+  if (!path || !Number.isFinite(timeoutMs) || timeoutMs <= 0) return false;
+  return new Promise(resolve => {
+    const socket = createConnection(path);
+    let buffer = "";
+    const finish = (accepted: boolean) => {
+      clearTimeout(timer);
+      socket.destroy();
+      resolve(accepted);
+    };
+    const timer = setTimeout(() => finish(false), timeoutMs);
+    socket.setEncoding("utf8");
+    socket.on("connect", () => socket.write('{"id":1,"method":"broker/shutdown","params":{}}\n'));
+    socket.on("error", () => finish(false));
+    socket.on("close", () => finish(false));
+    socket.on("data", chunk => {
+      buffer += chunk;
+      if (buffer.length > 65536) return finish(false);
+      const end = buffer.indexOf("\n");
+      if (end < 0) return;
+      try {
+        const reply = JSON.parse(buffer.slice(0, end));
+        finish(reply?.id === 1 && reply.error === undefined && reply.result !== undefined);
+      } catch { finish(false); }
+    });
+  });
 }
 
 async function main(): Promise<void> {
@@ -134,17 +148,27 @@ async function main(): Promise<void> {
       console.error("Usage: --shutdown <path to the directory the broker pins>");
       process.exit(1);
     }
-    const wanted = stateDirName(target);
-    const broker = readBrokers().find((b) => b.slug === wanted);
+    const directory = await resolveBrokerDirectory(target);
+    const broker = readBrokers(dirname(directory)).find((b) => b.slug === basename(directory));
     if (!broker) {
-      console.log(`No broker is registered for ${target}. Nothing pins it.`);
+      console.error(`No valid broker record found in ${directory}; filesystem locks are unverified.`);
+      process.exitCode = 1;
       return;
     }
     if (!broker.alive) {
-      console.log(`The broker for ${target} (pid ${broker.pid}) is already stopped.`);
+      console.log(`The recorded PID ${broker.pid} is absent; filesystem locks are unverified.`);
       return;
     }
-    console.log(await shutdown(broker) ? `Stopped the broker for ${target} (pid ${broker.pid}).` : `Could not stop pid ${broker.pid}; stop it by hand.`);
+    const lib = lifecycleModule()!;
+    const { createBrokerEndpoint } = await import(pathToFileURL(join(dirname(lib), "broker-endpoint.mjs")).href);
+    if (broker.endpoint !== createBrokerEndpoint(directory)) {
+      console.error("Broker endpoint does not match the workspace; shutdown refused.");
+      process.exitCode = 1;
+      return;
+    }
+    const accepted = await requestShutdown(broker.endpoint);
+    console.log(accepted ? `Broker acknowledged shutdown for ${target}; process exit and filesystem locks remain unverified.` : `Broker shutdown was not acknowledged for ${target}. No process signal was sent.`);
+    if (!accepted) process.exitCode = 1;
     return;
   }
 
@@ -155,10 +179,10 @@ async function main(): Promise<void> {
   }
   console.log("| Workspace | PID | State |");
   console.log("|---|---:|---|");
-  for (const b of brokers) console.log(`| ${b.slug} | ${b.pid} | ${b.alive ? "running — pins its directory" : "stopped"} |`);
+  for (const b of brokers) console.log(`| ${b.slug} | ${b.pid} | ${b.alive ? "PID exists; broker identity unverified" : "PID absent"} |`);
   // Printed as a resolved path rather than `$HOME/…`: shell variables differ per platform and
   // per shell, and CLAUDE_CONFIG_DIR can move the whole directory.
-  console.log("\nA running broker holds its directory open. Shut it down before removing that directory:");
+  console.log("\nA broker may hold its directory open. Request graceful shutdown with:");
   console.log(`  bun ${join(claudeConfigDir(), "scripts", "codex-brokers.ts")} --shutdown <path>`);
 }
 

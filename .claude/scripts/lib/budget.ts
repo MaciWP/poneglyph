@@ -1,11 +1,10 @@
-// Always-loaded token budget for the poneglyph layer (plan 032/WP4 — Cmd IX ratchet).
-//
-// What Claude Code loads on EVERY turn from this repo: CLAUDE.md, the always-on rules
-// (everything in .claude/rules/*.md except path-scoped files and test-policy.md, which
-// sync-claude keeps project-only), the active output style, and — for each skill — its
-// frontmatter `description` + `when_to_use` (the activation surface; `metadata.keywords`
-// is NOT loaded, only the skill-activation hook reads it). SKILL.md bodies load on
-// invocation, so they are tracked separately as per-skill sizes.
+// Source-byte estimate of the Claude listing and shared instruction surface.
+// This is not a token measurement or proof of the native prompt on every turn.
+// Full skills contribute description + when_to_use; source skillOverrides select
+// name-only, off or user-invocable-only. Project/managed overrides and host framing
+// are outside this estimate. Codex and Grok do not inherit these savings.
+// SKILL.md body sizes are tracked separately. Extracted references still cost bytes
+// when loaded. The legacy row key stays stable for historical comparisons.
 //
 // The snapshot (budget-snapshot.json) is the ratchet: the suite fails when a tracked
 // size grows more than TOLERANCE over its snapshot. Lowering is free; raising is a
@@ -14,6 +13,7 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { frontmatter } from "./skill-metadata";
 
 // 0 since plan 037 (2026-09-09): every byte of always-loaded growth is a decision taken with
 // `--update`, never a rounding allowance. 89 % of this machine's tokens went to meta-work on
@@ -26,24 +26,18 @@ export const SNAPSHOT_FILE = "budget-snapshot.json";
 const NON_GLOBAL_RULES = new Set(["test-policy.md"]);
 
 export interface Measurement {
-  alwaysLoaded: Record<string, number>; // label → bytes
+  alwaysLoaded: Record<string, number>; // label → bytes; the ratcheted layer
   skillBodies: Record<string, number>; // skill name → SKILL.md bytes
+  // Measured and printed, never ratcheted: what the host loads from INSTALLED PLUGINS is a
+  // property of this machine, not of this repository, so a laptop with more plugins must not
+  // turn the guard red where CI is green (H35, quality review 2026-09-11).
+  informative?: Record<string, number>;
 }
+
+export const PLUGIN_SURFACE_LABEL = "installed plugins: description + when_to_use (this machine)";
 
 export interface Snapshot extends Measurement {
   takenAt: string;
-}
-
-// The value of a one-line `description: "..."` sits ON the key line. Capturing only the
-// indented continuation counted every such skill as zero bytes, so the ratchet was blind to
-// the largest single description in the catalog (H74, quality review 2026-09-11).
-export function frontmatterField(skillMd: string, key: string): string {
-  const fm = skillMd.split(/^---\s*$/m)[1] ?? "";
-  const m = fm.match(new RegExp(`^${key}:([^\\n]*)\\n((?:[ \\t]+[^\\n]*\\n?)*)`, "m"));
-  if (!m) return "";
-  const inline = m[1].trim();
-  // A block scalar (`|`, `>`) carries no value of its own: only its indented body counts.
-  return (/^[|>][-+0-9]*$/.test(inline) ? "" : inline) + m[2];
 }
 
 // Logical UTF-8 size with LF newlines. `statSync().size` follows the checkout
@@ -58,6 +52,34 @@ function utf8Len(text: string): number {
 
 function bytes(path: string): number {
   return existsSync(path) ? utf8Len(readSource(path)) : 0;
+}
+
+// One decoder for the whole layer. A private regex reader here duplicated
+// `lib/skill-metadata.frontmatter` and measured YAML punctuation instead of the value the
+// host actually loads (H35, quality review 2026-09-11). A SKILL.md can also come from an
+// installed plugin, which `check:config` never validates, so a parse failure reads as an
+// absent field instead of aborting the whole measurement.
+function fieldsOf(skillMd: string): Record<string, unknown> {
+  try {
+    return frontmatter(skillMd).fields;
+  } catch {
+    return {};
+  }
+}
+
+const stringField = (fields: Record<string, unknown>, key: string): string =>
+  typeof fields[key] === "string" ? (fields[key] as string) : "";
+
+export function frontmatterField(skillMd: string, key: string): string {
+  return stringField(fieldsOf(skillMd), key);
+}
+
+// Estimate a Claude listing entry from source policy; native activation remains unverified.
+export function activationSurface(skillMd: string, visibility?: unknown): number {
+  const fields = fieldsOf(skillMd);
+  if (fields["disable-model-invocation"] === true || visibility === "off" || visibility === "user-invocable-only") return 0;
+  if (visibility === "name-only") return utf8Len(stringField(fields, "name"));
+  return utf8Len(stringField(fields, "description") + stringField(fields, "when_to_use"));
 }
 
 // Installed plugins load their skills' description + when_to_use on every turn too —
@@ -81,8 +103,7 @@ export function measurePluginSurface(homeDir: string): number {
       for (const s of readdirSync(skillsDir)) {
         const file = join(skillsDir, s, "SKILL.md");
         if (!existsSync(file)) continue;
-        const text = readSource(file);
-        sum += utf8Len(frontmatterField(text, "description") + frontmatterField(text, "when_to_use"));
+        sum += activationSurface(readSource(file));
       }
     }
   }
@@ -91,6 +112,8 @@ export function measurePluginSurface(homeDir: string): number {
 
 export function measure(repoRoot: string, homeDir: string = homedir()): Measurement {
   const claude = join(repoRoot, ".claude");
+  const settings = join(claude, "settings.global.json");
+  const overrides = existsSync(settings) ? JSON.parse(readSource(settings)).skillOverrides ?? {} : {};
   const alwaysLoaded: Record<string, number> = {
     "CLAUDE.md": bytes(join(repoRoot, "CLAUDE.md")),
     "output-styles/poneglyph.md": bytes(join(claude, "output-styles", "poneglyph.md")),
@@ -111,15 +134,11 @@ export function measure(repoRoot: string, homeDir: string = homedir()): Measurem
       if (!existsSync(file)) continue;
       const text = readSource(file);
       skillBodies[s] = utf8Len(text);
-      // `disable-model-invocation: true` keeps the description out of the model's context,
-      // so the skill costs nothing per turn: the budget must not charge for it (H74).
-      if (/^disable-model-invocation:\s*true\s*$/m.test(text.split(/^---\s*$/m)[1] ?? "")) continue;
-      surface += utf8Len(frontmatterField(text, "description") + frontmatterField(text, "when_to_use"));
+      surface += activationSurface(text, overrides[s]);
     }
   }
   alwaysLoaded["skills: description + when_to_use"] = surface;
-  alwaysLoaded["installed plugins: description + when_to_use (this machine)"] = measurePluginSurface(homeDir);
-  return { alwaysLoaded, skillBodies };
+  return { alwaysLoaded, skillBodies, informative: { [PLUGIN_SURFACE_LABEL]: measurePluginSurface(homeDir) } };
 }
 
 export function total(m: Record<string, number>): number {
@@ -134,6 +153,19 @@ export interface Violation {
 
 // Pure: every tracked size that grew beyond tolerance, plus files new since the
 // snapshot (a new always-loaded piece or a new skill is a budget decision too).
+// Pure: the snapshot rows that the current measurement still tracks.
+const trackedOnly = (base: Record<string, number>, current: Record<string, number>): Record<string, number> =>
+  Object.fromEntries(Object.entries(base).filter(([k]) => k in current));
+
+/**
+ * What the snapshot allows today: its total over the rows the current measurement still
+ * ratchets. Every caller that SHOWS a snapshot total must use this one, or the report
+ * announces headroom the guard would never grant.
+ */
+export function ratchetedSnapshotTotal(current: Measurement, snapshot: Measurement): number {
+  return total(trackedOnly(snapshot.alwaysLoaded, current.alwaysLoaded));
+}
+
 export function compare(current: Measurement, snapshot: Measurement, tolerance = TOLERANCE): Violation[] {
   const out: Violation[] = [];
   const check = (group: Record<string, number>, base: Record<string, number>, prefix: string) => {
@@ -148,7 +180,10 @@ export function compare(current: Measurement, snapshot: Measurement, tolerance =
   };
   check(current.alwaysLoaded, snapshot.alwaysLoaded, "");
   check(current.skillBodies, snapshot.skillBodies, "skill ");
-  const totalBefore = total(snapshot.alwaysLoaded);
+  // Only the rows the current measurement still ratchets. A retired key (the machine-
+  // dependent plugin surface, H35) is then neutral instead of a phantom shrink that would
+  // buy that many bytes of unnoticed growth everywhere else.
+  const totalBefore = ratchetedSnapshotTotal(current, snapshot);
   const totalNow = total(current.alwaysLoaded);
   if (totalNow > totalBefore * (1 + tolerance)) {
     out.push({ key: "always-loaded TOTAL", snapshot: totalBefore, current: totalNow });
@@ -170,13 +205,16 @@ export function saveSnapshot(dir: string, m: Measurement): string {
 }
 
 export function renderTable(current: Measurement, snapshot: Snapshot | null): string {
-  const rows: string[] = ["| Layer | Bytes | Snapshot | Δ |", "|---|---|---|---|"];
+  const rows: string[] = ["Claude source-byte estimate; not measured tokens or Codex/Grok savings.\n", "| Layer | Bytes | Snapshot | Δ |", "|---|---|---|---|"];
   for (const [k, v] of Object.entries(current.alwaysLoaded)) {
     const s = snapshot?.alwaysLoaded[k];
     rows.push(`| ${k} | ${v} | ${s ?? "—"} | ${s === undefined ? "—" : v - s} |`);
   }
   const t = total(current.alwaysLoaded);
-  const ts = snapshot ? total(snapshot.alwaysLoaded) : undefined;
+  const ts = snapshot ? ratchetedSnapshotTotal(current, snapshot) : undefined;
   rows.push(`| **always-loaded TOTAL** | **${t}** | ${ts ?? "—"} | ${ts === undefined ? "—" : t - ts} |`);
+  for (const [k, v] of Object.entries(current.informative ?? {})) {
+    rows.push(`| _${k} — informative, outside the ratchet_ | ${v} | — | — |`);
+  }
   return rows.join("\n");
 }

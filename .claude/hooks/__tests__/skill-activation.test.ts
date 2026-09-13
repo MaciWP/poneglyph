@@ -402,3 +402,25 @@ describe("model/effort routing hint (029/US7 — shape-only, playbook §4)", () 
     expect(r.injection).not.toContain("/model");
   });
 });
+
+// Quality review 2026-09-11, finding H43 — REFUTED for the `dev` sub-claim. "Implement the
+// plan" is the most common shape of a coding prompt, and the dev loop is always-loaded law
+// (CLAUDE.md §The dev loop), not something a hint must recover. A keyword broad enough to
+// fire here is exactly the tier the 2026-08-07 audit removed (honor-rate 2/54). This test
+// locks the silence so a later "helpful" keyword cannot reintroduce the noise.
+describe("no dev hint for a bare implementation ask (H43, refuted)", () => {
+  const repoSkills = loadSkills([join(import.meta.dir, "..", "..", "skills")]);
+
+  test("the repo skills load, so the silence is a decision and not an empty catalog", () => {
+    expect(repoSkills.length).toBeGreaterThan(10);
+  });
+
+  test.each(["Implement the plan", "implementa el plan", "escribe el codigo de esta tarea"])(
+    "%p emits no hint",
+    (prompt) => {
+      const r = analyzePayload(JSON.stringify({ prompt }), repoSkills);
+      expect(r.skills).not.toContain("dev");
+      expect(r.injection).toBe("");
+    },
+  );
+});

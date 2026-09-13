@@ -8,6 +8,7 @@
 
 import { graders, type CaseSpec, type GradeResult } from "./graders";
 import { resolveHeadlessModel, stripHeadlessFlags } from "../scripts/lib/headless";
+import { runEvalProcess } from "./process";
 
 export interface CaseResult {
   id: string;
@@ -15,6 +16,7 @@ export interface CaseResult {
   trials: number;
   pass: boolean;
   errored?: boolean; // session never produced behaviour (quota/auth/API) — not a FAIL
+  unverified?: boolean;
   model?: string; // the tier the case actually ran on (plan 033)
   detail: string;
 }
@@ -24,6 +26,7 @@ export interface Report {
   passed: number;
   failed: number;
   errored: number;
+  unverified: number;
   ok: boolean;
 }
 
@@ -44,20 +47,23 @@ export function parseCases(jsonl: string): CaseSpec[] {
 // behaviour — it is a session that never ran (quota exhausted, auth, API outage). Grading
 // it as FAIL hides the cause: on 2026-09-03 the claude.ai usage limit hit mid-run and
 // 4/4 skill cases "failed" twice in a row for that reason (plan 032). Pure, unit-tested.
-export function transcriptHealth(transcript: string): { ok: true } | { ok: false; reason: string } {
+export function transcriptHealth(transcript: string, requireTerminal = false): { ok: true } | { ok: false; reason: string } {
   if (!transcript.trim()) return { ok: false, reason: "empty transcript (quota/auth/API?)" };
   let events = 0;
   let assistantTurns = 0;
+  let terminal = false;
   for (const line of transcript.split("\n")) {
     let event: unknown;
     try {
       event = JSON.parse(line);
     } catch {
+      if (requireTerminal && line.trim()) return { ok: false, reason: "malformed live stream" };
       continue;
     }
     const e = event as { type?: string; subtype?: string; is_error?: boolean; result?: unknown };
     if (typeof e?.type !== "string") continue;
     events++;
+    terminal = e.type === "result" && e.subtype === "success" && e.is_error !== true;
     if (e.type === "assistant") assistantTurns++;
     if (e.type === "result" && (e.is_error === true || (typeof e.subtype === "string" && e.subtype.startsWith("error")))) {
       const msg = typeof e.result === "string" ? e.result.slice(0, 120) : e.subtype ?? "error";
@@ -65,8 +71,9 @@ export function transcriptHealth(transcript: string): { ok: true } | { ok: false
     }
   }
   // Plain-text transcripts (offline .txt fixtures) carry no events — nothing to judge.
-  if (events === 0) return { ok: true };
+  if (events === 0) return requireTerminal ? { ok: false, reason: "no live stream events" } : { ok: true };
   if (assistantTurns === 0) return { ok: false, reason: "no assistant turn in transcript (quota/auth/API?)" };
+  if (requireTerminal && !terminal) return { ok: false, reason: "no terminal successful result" };
   return { ok: true };
 }
 
@@ -83,6 +90,7 @@ function gradeTranscripts(c: CaseSpec, transcripts: string[]): CaseResult {
     grader: c.grader!,
     trials: transcripts.length,
     pass: !failed,
+    ...(results.some(r => r.unverified) ? { unverified: true } : {}),
     detail: failed ? failed.detail : results[0]?.detail ?? "no transcript",
   };
 }
@@ -136,23 +144,18 @@ export async function runLive(casesPath: string, argv: string[] = []): Promise<R
       results.push({ id: c.id!, grader: c.grader!, trials: 0, pass: false, errored: true, model, detail: "dry-run — not executed" });
       continue;
     }
-    let failedExit: { code: number; stderr: string } | null = null;
+    let failure: string | undefined;
     for (let i = 0; i < trials; i++) {
-      const proc = Bun.spawn(cmd, { stdout: "pipe", stderr: "pipe" });
-      const [out, err] = await Promise.all([
-        new Response(proc.stdout).text(),
-        new Response(proc.stderr).text(),
-      ]);
-      transcripts.push(out);
-      // A non-zero exit means the CLI itself failed (auth, quota, a bad flag). Its empty
-      // transcript used to be graded as a plain FAIL of the case under test (H34).
-      const code = await proc.exited;
-      if (code !== 0 && !failedExit) failedExit = { code, stderr: err.trim().slice(0, 200) };
+      const result = await runEvalProcess(cmd);
+      transcripts.push(result.stdout);
+      const health = transcriptHealth(result.stdout, true);
+      failure = result.error ?? (!health.ok ? health.reason : undefined);
+      if (failure) break;
     }
-    if (failedExit) {
+    if (failure) {
       results.push({
         id: c.id!, grader: c.grader!, trials, pass: false, errored: true, model,
-        detail: `claude exited ${failedExit.code}${failedExit.stderr ? `: ${failedExit.stderr}` : ""}`,
+        detail: failure,
       });
       continue;
     }
@@ -164,16 +167,18 @@ export async function runLive(casesPath: string, argv: string[] = []): Promise<R
 function summarize(results: CaseResult[]): Report {
   const passed = results.filter((r) => r.pass).length;
   const errored = results.filter((r) => r.errored).length;
-  return { results, passed, failed: results.length - passed - errored, errored, ok: passed === results.length };
+  const unverified = results.filter(r => r.unverified).length;
+  return { results, passed, failed: results.length - passed - errored - unverified, errored, unverified, ok: results.length > 0 && passed === results.length };
 }
 
 function printReport(report: Report): void {
   for (const r of report.results) {
-    const tag = r.pass ? "PASS" : r.errored ? "ERR " : "FAIL";
+    const tag = r.pass ? "PASS" : r.errored ? "ERR " : r.unverified ? "UNVERIFIED" : "FAIL";
     console.log(`${tag}  ${r.id}  [${r.grader} ×${r.trials}${r.model ? ` · ${r.model}` : ""}]  ${r.pass ? "" : r.detail}`);
   }
   console.log(`\n${report.passed}/${report.results.length} passed${report.errored ? ` · ${report.errored} errored (sessions that never ran — rerun them, they say nothing about behaviour)` : ""}`);
-  if (!report.ok) {
+  if (report.unverified) console.log(`${report.unverified} unverified semantic cases; excluded from PASS/FAIL, validation pending in harness-lab.`);
+  if (report.failed) {
     console.log("Expected ≈100% — SUSPECT THE EVAL FIRST (grading bug), then the config change. See .claude/evals/README.md");
   }
 }

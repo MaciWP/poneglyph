@@ -60,7 +60,7 @@ function isCodeFile(p: string): boolean {
 }
 
 function shouldIgnore(p: string): boolean {
-  return p.split("/").some((s) => IGNORE_SEGMENTS.has(s));
+  return p.split(/[\\/]/).some((s) => IGNORE_SEGMENTS.has(s));
 }
 
 function countPatternMatches(content: string): number {

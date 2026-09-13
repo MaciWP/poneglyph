@@ -66,17 +66,17 @@ describe("formatDetection", () => {
 });
 
 describe("CLI smoke (disposable home, read-only --status)", () => {
-  it("runs the Claude engine against an empty home and exits 0", () => {
+  it("reports an empty home as incomplete instead of green", () => {
     const home = mkdtempSync(path.join(tmpdir(), "sync-poneglyph-"));
     const result = Bun.spawnSync(
       [process.execPath, path.resolve(import.meta.dir, "../sync-poneglyph.ts"), "--status", "--hosts", "claude", "--no-validate"],
       { env: { ...process.env, HOME: home, USERPROFILE: home, CODEX_HOME: path.join(home, ".codex") }, stdin: "ignore" },
     );
     const out = result.stdout.toString() + result.stderr.toString();
-    expect(result.exitCode).toBe(0);
+    expect(result.exitCode).toBe(1);
     expect(out).toContain("| Host | CLI | Targets | Action |");
     expect(out).toContain(`| claude |`);
-    expect(out).toContain("🟢 claude");
+    expect(out).toContain("🔴 claude");
     expect(out).not.toContain("▶ codex");
   });
 

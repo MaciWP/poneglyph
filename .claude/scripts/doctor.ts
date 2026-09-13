@@ -13,9 +13,10 @@ import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { compare, loadSnapshot, measure, total } from "./lib/budget";
+import { compare, loadSnapshot, measure, ratchetedSnapshotTotal, total } from "./lib/budget";
 import { detectHosts, realProbe } from "./lib/hosts";
 import { check, type Report } from "./check-config";
+import { checkOrca } from "./sync-orca";
 import { lintEstate, summarizeEstate } from "./lib/memory-estate";
 import { collectTranscripts, contextRow, loadTranscripts, summarizeContext } from "./usage-profile";
 
@@ -49,11 +50,12 @@ export function summarizeSyncOutput(output: string): Check["detail"] & string {
 // prints "🔴 …" / "STALE symlink", sync-codex prints "missing  <path>". The bare word
 // "missing" inside a detail sentence must not turn the doctor red.
 export function statusFromSyncOutput(output: string, exitCode = 0): Status {
-  if (exitCode !== 0 || !/^\s*(?:🟢|🟡|🔵|🔴|⚪|linked\s|missing\s|stale\s|conflict\s|local\s)/m.test(output)) return "🔴";
+  const unverified = exitCode === 2 && /^🟡 settings\.json: not validated/m.test(output);
+  if ((exitCode !== 0 && !unverified) || !/^\s*(?:🟢|🟡|🔵|🔴|⚪|linked\s|missing\s|stale\s|conflict\s|local\s)/m.test(output)) return "🔴";
   let worst: Status = "🟢";
   for (const raw of output.split(/\r?\n/)) {
     const line = raw.trim();
-    if (/^(🔴|missing\b|stale\b|conflict\b|local\b)/.test(line) || /REJECTED|STALE symlink/.test(line)) return "🔴";
+    if (/^(🔴|❌|missing\b|stale\b|conflict\b|local\b)/.test(line) || /REJECTED|STALE symlink/.test(line) || /^⚪ .*: does not exist$/.test(line)) return "🔴";
     // 🔵 is sync-claude's "local folder/file": the entry exists but is NOT linked, so the
     // layer is not what the repository says it is. Unknown to this parser until H66
     // (quality review 2026-09-11), which let a stale local copy read as green.
@@ -109,6 +111,12 @@ export function summarizeSessions(models: string[], warnAt = SESSIONS_PER_DAY_WA
   const status: Status = models.length > warnAt || (expensive > 0 && models.length > 5) ? "🟡" : "🟢";
   return { status, detail: status === "🟡" ? `${detail} — headless runs are spawns: cheap tier + permission (lessons G13)` : detail };
 }
+
+// This used to be a check row with a hardcoded 🟡 (H47): a status that can never change is
+// not a check, it just teaches the eye to skip the one colour the other rows warn with. The
+// caveat is true and stays printed — as a note under the table, carrying no semaphore.
+export const NATIVE_EVIDENCE_NOTE =
+  "Note: these are configuration checks. They do not establish Codex hook trust, model activation, or MCP connectivity — inspect the native UI and report those gates separately.";
 
 export function renderChecks(checks: Check[]): string {
   return ["| Check | Estado | Detalle |", "|---|---|---|", ...checks.map((c) => `| ${c.name} | ${c.status} | ${c.detail} |`)].join("\n");
@@ -178,7 +186,8 @@ async function main(): Promise<void> {
       const gx = await run(["bun", ".claude/scripts/sync-grok.ts", "--status"]);
       checks.push({ name: "Grok adapter (configuration)", status: statusFromSyncOutput(gx.out, gx.code), detail: "Style, native hook configuration, and Claude compatibility; no model or MCP connection." });
     } else checks.push(skipped("Grok adapter (configuration)"));
-    checks.push({ name: "Native execution evidence", status: "🟡", detail: "Configuration checks do not establish Codex hook trust, model activation, or MCP connectivity; inspect the native UI and report those gates separately." });
+    const orca = checkOrca();
+    checks.push({ name: "Orca style append (sync-orca)", status: orca.status, detail: orca.detail });
   }
 
   if (hosts.get("claude")!.cli) {
@@ -199,7 +208,7 @@ async function main(): Promise<void> {
     checks.push({ name: "Always-loaded budget", status: "🟡", detail: `${total(m.alwaysLoaded)} B, no snapshot — bun .claude/scripts/budget.ts --update` });
   } else {
     const viol = compare(m, snapshot);
-    checks.push({ name: "Always-loaded budget", status: viol.length ? "🔴" : "🟢", detail: viol.length ? viol.map((x) => `${x.key} ${x.snapshot}→${x.current}`).join("; ") : `${total(m.alwaysLoaded)} B ≤ snapshot ${total(snapshot.alwaysLoaded)} B (ratchet 0 %, plan 037)` });
+    checks.push({ name: "Always-loaded budget", status: viol.length ? "🔴" : "🟢", detail: viol.length ? viol.map((x) => `${x.key} ${x.snapshot}→${x.current}`).join("; ") : `${total(m.alwaysLoaded)} B ≤ snapshot ${ratchetedSnapshotTotal(m, snapshot)} B (ratchet 0 %, plan 037)` });
   }
 
   try {
@@ -247,8 +256,9 @@ async function main(): Promise<void> {
 
   const table = renderChecks(checks);
   console.log(table);
+  console.log(`\n${NATIVE_EVIDENCE_NOTE}`);
   if (mdFile) {
-    writeFileSync(mdFile, `# poneglyph doctor — ${new Date().toISOString().slice(0, 10)}\n\n${table}\n`);
+    writeFileSync(mdFile, `# poneglyph doctor — ${new Date().toISOString().slice(0, 10)}\n\n${table}\n\n${NATIVE_EVIDENCE_NOTE}\n`);
     console.log(`\nmarkdown → ${mdFile}`);
   }
   process.exit(exitCodeFor(checks));

@@ -80,7 +80,7 @@ Default routing and Arch H: `orchestrator-protocol`.
 
 ### Features → /flow
 
-Non-trivial **features** run the 5-phase pipeline via `/flow <task>` with human hard gates 1→2 and 2→3 — full spec: `.claude/commands/flow.md`.
+Non-trivial **features** run the `/flow <task>` pipeline with human hard gates 1→2 and 2→3 — phases and full spec: `.claude/commands/flow.md`.
 
 ## Operating rules
 

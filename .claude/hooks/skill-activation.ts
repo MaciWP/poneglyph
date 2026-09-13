@@ -45,8 +45,9 @@ interface PromptPayload {
   [key: string]: unknown;
 }
 
-export function loadSkills(dirs: string[]): SkillEntry[] {
+export function loadSkills(dirs: string[], host: "claude" | "codex" | "grok" = "claude", overrides: Record<string, unknown> = {}): SkillEntry[] {
   const byName = new Map<string, SkillEntry>();
+  const reserved = new Set<string>();
   for (const dir of dirs) {
     if (!existsSync(dir)) continue;
     let entries: string[] = [];
@@ -57,9 +58,16 @@ export function loadSkills(dirs: string[]): SkillEntry[] {
     }
     for (const entry of entries) {
       const skillFile = join(dir, entry, "SKILL.md");
-      if (byName.has(entry) || !existsSync(skillFile)) continue;
+      if (reserved.has(entry) || !existsSync(skillFile)) continue;
       try {
         const { fields } = frontmatter(readFileSync(skillFile, "utf8"));
+        if (typeof fields.name !== "string" || !fields.name.trim() || typeof fields.description !== "string" || !fields.description.trim()) continue;
+        reserved.add(entry);
+        // A valid empty/manual project skill still shadows its core definition.
+        // Codex ignores Claude frontmatter extensions; do not export that restriction.
+        const mode = overrides[entry];
+        if (host !== "codex" && (fields["disable-model-invocation"] === true ||
+          (host === "claude" && (mode === "off" || mode === "user-invocable-only")))) continue;
         const keywords = skillKeywords(fields);
         if (keywords.length > 0) byName.set(entry, { name: entry, keywords });
       } catch {
@@ -68,6 +76,18 @@ export function loadSkills(dirs: string[]): SkillEntry[] {
     }
   }
   return [...byName.values()];
+}
+
+/** Read settings in increasing precedence. Invalid files provide no routing hints. */
+export function skillOverrides(cwd: string, config = process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), ".claude")): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const file of [join(config, "settings.json"), join(cwd, ".claude", "settings.json"), join(cwd, ".claude", "settings.local.json")]) {
+    try {
+      const value = JSON.parse(readFileSync(file, "utf8")).skillOverrides;
+      if (value && typeof value === "object" && !Array.isArray(value)) Object.assign(result, value);
+    } catch { /* Missing or invalid settings cannot authorize an extra hint. */ }
+  }
+  return result;
 }
 
 const MAX_SKILLS = 2;
@@ -150,7 +170,7 @@ export function detectFeatureShape(prompt: string): boolean {
 
 // The second sentence is the tiered context ceiling (plan 037): 200k by default, 400k when a
 // task spans many files. The hook cannot run slash commands; the Lead proposes, Oriol decides.
-const FLOW_HINT_LINE =
+export const FLOW_HINT_LINE =
   "Feature-shaped task → consider /flow — the full lifecycle (scope→tech-plan→tdd-design→build→critic→retro). Wide scope → propose `/autocompact 400k` for this session (default ceiling 200k, plan 037).";
 
 // Model/effort routing by task shape (029/US7 — closes the 027 deployment gap:
@@ -167,7 +187,8 @@ export function detectRoutingShape(prompt: string): "bulk" | "quick" | null {
   return null;
 }
 
-const ROUTING_LINES: Record<"bulk" | "quick", string> = {
+// Exported so a host adapter can swap a Claude-only command for its own (H43).
+export const ROUTING_LINES: Record<"bulk" | "quick", string> = {
   bulk: "Bulk/mechanical shape → consider a cheaper tier via `/model` + `/effort low` (shape-only suggestion, session state unknown — playbook §4).",
   quick: "Quick-lookup shape → consider `/effort low` (shape-only suggestion, session state unknown — playbook §4).",
 };
@@ -269,7 +290,7 @@ if (import.meta.main) {
     // company plugins get no hook hint; upgrade trigger = a missed plugin-skill
     // activation in real use (032/WP2).
     const analysis = analyzePayload(raw, () =>
-      loadSkills([join(cwd, ".claude", "skills"), join(homedir(), ".claude", "skills")]),
+      loadSkills([join(cwd, ".claude", "skills"), join(process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), ".claude"), "skills")], "claude", skillOverrides(cwd)),
     );
     if (analysis.injection) {
       process.stdout.write(analysis.injection + "\n");

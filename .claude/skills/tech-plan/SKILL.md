@@ -1,7 +1,7 @@
 ---
 name: tech-plan
 description: |
-  Plan técnico a partir de un spec.md aprobado (Fase 2 del workflow de 5 fases). Descompone el alcance en historias de usuario (HUs) atómicas con un DAG explícito de dependencias, tras investigación obligatoria (Context7 + WebFetch + Grep del proyecto). Produce tasks/index.md + N tasks/US{N}.md. Honra test-policy.md por nodo. Invoca tdd-design (Fase 2.5) al cerrar.
+  Plan técnico a partir de un spec.md aprobado (Fase 2 del workflow `/flow`). Descompone el alcance en historias de usuario (HUs) atómicas con un DAG explícito de dependencias, tras investigación obligatoria (Context7 + WebFetch + Grep del proyecto). Produce tasks/index.md + N tasks/US{N}.md. Honra test-policy.md por nodo. Invoca tdd-design (Fase 2.5) al cerrar.
   Úsala cuando: existe spec.md aprobado y hace falta descomposición técnica, "tareas", "roadmap", "descomponer", "HU", "atomizar", "DAG", o /tech-plan. Evita la keyword suelta "plan" (colisiona con el modo plan de Claude Code).
 metadata:
   keywords: >
@@ -122,24 +122,7 @@ Skip if the brief in `spec.md` already covers these:
 
 ### Step 7 — Drillme Phase 2
 
-Apply the 5 phase-specific questions + canonical Socratic catalog via `drillme` skill (auxiliary — see "Auxiliary skills invoked" below).
-
-```markdown
-## Drillme — Phase 2
-
-Before closing this phase, validate:
-
-1. `[approach]` **Simpler option?** Is there a simpler solution that meets the spec?
-2. `[context]` **Reinventing wheel?** Am I duplicating something already in the project?
-3. `[approach]` **Truly atomic?** Each US completable in <=1 session?
-4. `[context]` **Real deps?** Are dependencies functional or just cosmetic ordering?
-5. `[failure]` **Failure tolerance?** If one US fails mid-implementation, does the DAG survive?
-6. `[location]` **Right location?** Do these files live in the directory project conventions dictate?
-
-If any answer is "I don't know" or evasive → iterate plan; do NOT close.
-```
-
-Coverage: 4/4 canonical Socratic categories (location/approach/context/failure).
+Ask the Phase 2 bank in `.claude/skills/drillme/references/03-phase-questions.md` §Phase 2 — that file is the single source, so the questions are not restated here — plus the canonical Socratic catalog, via the `drillme` skill (auxiliary — see "Auxiliary skills invoked" below). Its closing rule holds: any "I don't know" or evasive answer → iterate the plan; do NOT close.
 
 > Skill-to-skill invocation is probabilistic. If `drillme` does not auto-fire, the Lead invokes `/drillme "Phase 2 plan closing for <NNN-slug>"` manually before approving hard gate 2->3.
 
@@ -259,14 +242,14 @@ Declare adaptation in `tasks/index.md`: "Level X — modo Y por motivo Z. Saltad
 - ⚠️ HU has >5 deps → granularity badly defined, refactor.
 - A dependency has no functional reason → inspect coupling before revising the DAG.
 - ⚠️ Plan invents AC not traceable to `spec.md` → anti-pattern; every AC must trace.
-- ⚠️ Plan mentions technologies not justified by `spec.md` constraints → tech-creep, reopen Phase 1.
+- ⚠️ Plan adds a technology with no justification written next to it → tech-creep.
 - ⚠️ Step 13 (`tdd-design` invocation) never produces tests.md/validations.md → skill-to-skill failed; Lead must invoke manually.
 
 ## Anti-patterns
 
 | Anti-pattern | Detection | Correction |
 |---|---|---|
-| Tech-creep into Phase 2 | Plan mentions library X without it being in `spec.md` Constraints | Verify Phase 1 justified it; if not, reopen scope |
+| Tech-creep into Phase 2 | Plan adds library X with no justification | Justify it in the plan (need, rejected alternative, Context7 version); reopen scope only when X breaks a constraint `spec.md` records |
 | Synthetic AC | AC in HU not traceable to a `spec.md` AC or Open question | Every AC must trace; if not, remove or surface to user |
 | DAG theater | Plan with N HUs but no real DAG (all 🔵 trivially) | Either it's genuinely trivial (Quick) or granularity is wrong (refactor) |
 | Skipping research | Standard+ plan produced without Context7 verification of external APIs | STOP, do research; obsolescence will bite in Phase 3 |
@@ -278,7 +261,7 @@ Declare adaptation in `tasks/index.md`: "Level X — modo Y por motivo Z. Saltad
 | # | Cómo |
 |---|---|
 | II | Context7/Grep/WebFetch before asserting any technical claim |
-| V | Drillme drills 1 + 3 detect over-engineering and non-atomicity |
+| V | Phase 2 drills 1 + 3 detect over-engineering and non-atomicity |
 | I | Obligatory research = understand before planning |
 | X | DAG exposes real dependencies and opportunities without forced parallelism |
 | VIII | Structured questionnaires + targeted research; delegation prompts reviewed by `prompt-engineer` |

@@ -104,7 +104,7 @@ describe("disk readers share decoded YAML metadata", () => {
     expect(advisor.find(s => s.name === "sample")).toEqual({ name: "sample", description: "Local description.", keywords: ["local phrase"] });
     expect(hook.find(s => s.name === "sample")?.keywords).toEqual(["local phrase"]);
     expect(advisor.find(s => s.name === "keyword-free")?.keywords).toEqual([]);
-    expect(hook.find(s => s.name === "keyword-free")?.keywords).toEqual(["global fallback"]);
+    expect(hook.find(s => s.name === "keyword-free")).toBeUndefined();
     expect(advisor.find(s => s.name === "broken")?.description).toBe("Readable fallback.");
     expect(hook.find(s => s.name === "broken")?.keywords).toEqual(["valid fallback"]);
   });
@@ -114,7 +114,8 @@ describe("disk readers share decoded YAML metadata", () => {
     const entries = readdirSync(root).filter(name => {
       try { return readFileSync(join(root, name, "SKILL.md"), "utf8").length > 0; } catch { return false; }
     });
-    const advisor = loadSkillsFromDisk([root]), hook = loadSkills([root]);
+    // Compare decoded metadata without Claude's separate visibility policy.
+    const advisor = loadSkillsFromDisk([root]), hook = loadSkills([root], "codex");
     expect(entries.length).toBeGreaterThan(0);
     expect(advisor.map(s => s.name).sort()).toEqual(entries.sort());
     for (const entry of advisor) {

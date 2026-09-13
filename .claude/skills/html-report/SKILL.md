@@ -1,15 +1,10 @@
 ---
 name: html-report
 description: |
-  Convierte outputs markdown de poneglyph (report.md / retro.md / review.md / cualquier contenido de auditoría/scoring/findings) en un documento HTML autocontenido, dark/light, offline — estética editorial. Renderiza como informe long-form (TOC sticky) o dashboard. También tiene modo crítica/auditoría que revisa HTML/CSS por tells de AI-slop y violaciones WCAG.
-  Úsala cuando: presentar un informe visualmente, renderizar markdown a HTML, generar un dashboard, criticar/auditar un HTML o diseño, "visualiza esto", "pásalo a HTML", "haz un informe visual", "critica este HTML".
+  Genera informes HTML autocontenidos desde Markdown o datos, con temas claro/oscuro y modo offline. Úsala para informes visuales, dashboards o auditorías de HTML; los diagramas técnicos usan archify.
 metadata:
-  keywords: >
-    Keywords - html, report, visual, present, dashboard, render, presentación, visualizar,
-    informe-visual, pásalo-a-html, self-contained, gauge, scoring, findings, audit-html,
-    retro-html, review-html, critique, audit, design-review, anti-slop, taste, wcag,
-    contrast
-disable-model-invocation: true
+  keywords: html report, informe visual, pásalo a html, render to html, audita el html, critica este html
+disable-model-invocation: false
 argument-hint: "<markdown file or 'report'|'dashboard' + content, or 'critique' + target>"
 when_to_use: |
   "pásalo a HTML", "informe visual", "dashboard", "visualiza esto", "render to HTML", "critica este diseño", "audita el HTML"
@@ -134,7 +129,7 @@ When asked to **critique/audit** an HTML/CSS or a render: load `references/criti
 | Constraint | How |
 |---|---|
 | **Self-contained (near)** | All CSS in one inlined `<style>`. The only external request is one Google Fonts `<link>` (v1.2.0 client-grade); omit it for pure-offline (system-stack fallback). Verify the rest is inlined by opening with network disabled. |
-| **No JS** | TOC nav = anchor links + `scroll-behavior:smooth`; active state via `:target`. Gauge/bars are static markup with computed values baked in. |
+| **Static modes: no JS** | TOC nav = anchor links + `scroll-behavior:smooth`; active state via `:target`. Gauge/bars are static markup with computed values baked in. |
 | **Dark/light** | `report.template`: single `@media (prefers-color-scheme: dark)` block flips every token (inherits the memo's flip mechanism), every severity + score color has both-scheme variants. `dashboard.template`: **dark-first by design** (premium dark palette, no OS flip) — its light variant comes from `@media print`. |
 | **Print-friendly** | `@media print`: white bg, drop shadows/transforms, `break-inside:avoid` on cards/tables/callouts, hide sidebar + main full width, expand link URLs via `a[href^="http"]::after`. |
 | **Motion safety** | Entrance animations wrapped in `@media (prefers-reduced-motion: no-preference)`; default state is the final state. |
@@ -213,7 +208,7 @@ Para informes **interactivos self-contained** (ver/presentar/compartir, PC+móvi
 
 **Uso**: `bun run .claude/skills/html-report/scripts/render.ts < data.json > out.html`
 
-**Cuándo**: informe que el lector **explora** (filtros, charts, nav). Para audit/retro estático largo → `report`; glance dark estático → `glance`; el **dynamic** es el interactivo low-token. **JS permitido** (feature 010) siempre con **fallback sin-JS**: secciones `<details open>`, nav por anclas, valores de charts/tabla visibles. Charts: SVG a mano por defecto; `plotInline()` usa Observable Plot si `npx` disponible y **degrada a mano** si no (artefacto nunca depende de Plot).
+**Cuándo**: informe que el lector **explora** (filtros, charts, nav). Para audit/retro estático largo → `report`; glance dark estático → `glance`; el **dynamic** es el interactivo low-token. **JS permitido** (feature 010) siempre con **fallback sin-JS**: secciones `<details open>`, nav por anclas, valores de charts/tabla visibles. Charts use the bundled SVG helpers. No Plot dependency or `npx` fallback exists.
 
 ---
 

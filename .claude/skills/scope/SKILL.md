@@ -1,7 +1,7 @@
 ---
 name: scope
 description: |
-  Define el alcance a nivel de producto ANTES de cualquier trabajo técnico (Fase 1 del workflow de 5 fases). Genera spec.md mediante un cuestionario Q&A intensivo + drillme de 5 preguntas (problema raíz, severidad, stakeholders, MVP, out-of-scope). En modo full puede lanzar 3 perspectivas de producto en paralelo. Cierra con el hard gate 1→2 que requiere aprobación humana.
+  Define el alcance a nivel de producto ANTES de cualquier trabajo técnico (Fase 1 del workflow `/flow`). Genera spec.md mediante un cuestionario Q&A intensivo + drillme de 5 preguntas (problema raíz, severidad, stakeholders, MVP, out-of-scope). En modo full puede lanzar 3 perspectivas de producto en paralelo. Cierra con el hard gate 1→2 que requiere aprobación humana.
   Úsala cuando: petición vaga, feature nuevo, alcance indefinido, "necesito X", "quiero hacer Y", "el problema es Z", antes de planificar o implementar, falta el qué/por qué antes del cómo.
 metadata:
   keywords: >
@@ -142,7 +142,7 @@ The skill does NOT proceed to Phase 2. Only the user approves.
 - **Cuestionario intensivo**: minimum 3 questions until scope is unambiguous.
 - **Proactivity on gaps**: if you detect improvements to the proposed scope or obvious gaps, mention them BEFORE closing the questionnaire — never silently absorb them.
 - **Honest about brief quality**: if the brief is too vague, say so; do not invent intent.
-- **No technology in spec.md**: any sentence that names a library, framework, or technical pattern goes to Phase 2.
+- **No technology in spec.md**: *choosing* a library, framework or pattern is Phase 2 work. One the user imposes (platform, banned dependency, pinned version) is a real constraint — record it under Constraints with its source.
 
 ## Adaptación intra-fase (Principio 2 — "no siempre más es más")
 

@@ -66,3 +66,20 @@ describe("live files never present a retired component as current", () => {
     expect([...new Set(hits)]).toEqual([]);
   });
 });
+
+// Quality review 2026-09-10, finding H69b. `README.md` installed the statusline tool with
+// `@latest` while `docs/statusline-setup.md` pins a version and says "not `@latest`" in so
+// many words. A reader who follows the README got a different tool than the one the setup
+// doc verified, and neither file knew. The pin is the owner; every install line must agree.
+describe("install commands agree with the version their doc pins", () => {
+  const setup = readFileSync(join(root, "docs", "statusline-setup.md"), "utf8");
+  const readme = readFileSync(join(root, "README.md"), "utf8");
+
+  it("README installs the ccstatusline version statusline-setup.md pins", () => {
+    const pinned = setup.match(/ccstatusline@(\d+\.\d+\.\d+)/)?.[1];
+    expect(pinned, "docs/statusline-setup.md no longer pins a version").toBeDefined();
+    const installed = [...readme.matchAll(/install -g ccstatusline@(\S+?)["'\s]/g)].map((m) => m[1]);
+    expect(installed.length, "README no longer installs ccstatusline").toBeGreaterThan(0);
+    expect(installed.filter((v) => v !== pinned)).toEqual([]);
+  });
+});

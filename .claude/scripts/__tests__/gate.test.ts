@@ -129,7 +129,7 @@ describe("claimsVsDelta", () => {
     expect(claimsVsDelta(["a.ts", "b.ts"], ["a.ts"]).missing).toEqual(["b.ts"]);
   });
 
-  test("catches a file touched but not declared — sssf's blind spot", () => {
+  test("catches a file touched but not declared — task-pipeline's blind spot", () => {
     expect(claimsVsDelta(["a.ts"], ["a.ts", "sneaky.ts"]).undeclared).toEqual(["sneaky.ts"]);
   });
 
@@ -140,7 +140,7 @@ describe("claimsVsDelta", () => {
   });
 
   test("ignores the run's own session directory so the gate does not poison itself", () => {
-    const r = claimsVsDelta(["a.ts"], ["a.ts", ".sssf/run1/envelope.json"], [".sssf/"]);
+    const r = claimsVsDelta(["a.ts"], ["a.ts", ".task-pipeline/run1/envelope.json"], [".task-pipeline/"]);
     expect(r.undeclared).toEqual([]);
   });
 });
@@ -280,13 +280,13 @@ describe("report", () => {
 describe("SELF_PATHS", () => {
   test("the gate protects its own source — a builder that edits its grader invalidates every gate", () => {
     expect(SELF_PATHS).toContain(".claude/scripts/gate.ts");
-    expect(SELF_PATHS).toContain(".claude/workflows/sssf.js");
+    expect(SELF_PATHS).toContain(".claude/workflows/task-pipeline.js");
   });
 
   // Protecting only the graders leaves the obvious way around them open: gut the
   // assertions and the suite goes green without either grader being touched.
   test("it protects the graders' TESTS too, not just the graders", () => {
     expect(SELF_PATHS).toContain(".claude/scripts/__tests__/gate.test.ts");
-    expect(SELF_PATHS).toContain(".claude/workflows/__tests__/sssf.test.ts");
+    expect(SELF_PATHS).toContain(".claude/workflows/__tests__/task-pipeline.test.ts");
   });
 });

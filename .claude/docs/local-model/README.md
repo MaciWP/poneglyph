@@ -228,7 +228,7 @@ harnesses. They now live in `metadata.keywords`.
 
 Nothing was lost: `skill-activation.ts` matches `/Keywords\s*-\s*([\s\S]*?)(?=\n\S|$)/i`
 against the whole header, not against `description`, so it still reads them. Longest
-description is now 814 chars (`frontend-craft`), down from 1110.
+description is now 814 chars (`ui-design`), down from 1110.
 
 One skill (since moved to the private company plugin) needed hand-holding: it had **no key after `description`**, so a
 naive insert appended `metadata:` onto the last line of the prose instead of a new line.

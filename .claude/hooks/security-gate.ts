@@ -229,7 +229,7 @@ export function buildStopResponse(hits: string[]): {
 // Measured friction: 10 incidents of unasked git mutations (commits taken over,
 // unwanted authorship, pushes). Always-loaded rule: CLAUDE.md §Git / PR —
 // hard gate (no proactive commit/push/PR; THIS-turn ask only; if about to
-// slip → AskUserQuestion/drillme). This is the best-effort mechanical
+// slip → AskUserQuestion/drillme-clarify). This is the best-effort mechanical
 // backstop: at Stop, compare the turn's git mutations against the user
 // prompt's intent. Warn, never block.
 
@@ -427,13 +427,13 @@ export function buildGitDisciplineWarning(
   return {
     systemMessage:
       `[security-gate] Mutación git ejecutada sin petición aparente del usuario este turno:\n${list}\n` +
-      `Regla (CLAUDE.md §Git / PR — hard gate): commit/push/PR proactivos PROHIBIDOS; solo con petición explícita ESTE turno. Si dudabas, debías AskUserQuestion/drillme, no mutar.`,
+      `Regla (CLAUDE.md §Git / PR — hard gate): commit/push/PR proactivos PROHIBIDOS; solo con petición explícita ESTE turno. Si dudabas, debías AskUserQuestion/drillme-clarify, no mutar.`,
     hookSpecificOutput: {
       hookEventName: "Stop",
       additionalContext:
         `[security-gate] A git mutation ran this turn without apparent user request:\n${list}\n` +
         `Hard gate (CLAUDE.md §Git / PR): no proactive commit/push/PR. If it was NOT requested, tell the user now, ` +
-        `offer to undo (e.g. soft reset), check no AI authorship was added, and next time STOP → AskUserQuestion/drillme.`,
+        `offer to undo (e.g. soft reset), check no AI authorship was added, and next time STOP → AskUserQuestion/drillme-clarify.`,
     },
   };
 }

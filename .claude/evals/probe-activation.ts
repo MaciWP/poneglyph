@@ -36,13 +36,13 @@ const evalPrompts = readFileSync(join(repo, ".claude/evals/cases.jsonl"), "utf8"
   .map((c) => ({ id: c.id, prompt: c.prompt, expected: c.expected }));
 
 const extra = [
-  { id: "probe-tech-plan", prompt: "descompón esto en tareas: añadir exportación CSV al listado de usuarios", expected: "tech-plan" },
-  { id: "probe-tdd-design", prompt: "diseña los tests de esta HU antes de implementarla", expected: "tdd-design" },
-  { id: "probe-critic", prompt: "revisa el feature end-to-end y dame el veredicto", expected: "critic" },
-  { id: "probe-retro", prompt: "haz la retro del feature que acabamos de cerrar", expected: "retro" },
-  { id: "probe-scope", prompt: "define el alcance de esta feature: quiero notificaciones por email", expected: "scope" },
-  { id: "probe-orchestrator", prompt: "delego o inline? cómo orquesto esto: revisar 40 ficheros de tests", expected: "orchestrator-protocol" },
-  { id: "probe-dev", prompt: "aplica el bucle dev a este cambio: renombrar la función parseConfig", expected: "dev" },
+  { id: "probe-tech-plan", prompt: "descompón esto en tareas: añadir exportación CSV al listado de usuarios", expected: "flow-plan" },
+  { id: "probe-tdd-design", prompt: "diseña los tests de esta HU antes de implementarla", expected: "flow-test-plan" },
+  { id: "probe-critic", prompt: "revisa el feature end-to-end y dame el veredicto", expected: "flow-review" },
+  { id: "probe-retro", prompt: "haz la retro del feature que acabamos de cerrar", expected: "flow-retro" },
+  { id: "probe-scope", prompt: "define el alcance de esta feature: quiero notificaciones por email", expected: "flow-scope" },
+  { id: "probe-orchestrator", prompt: "delego o inline? cómo orquesto esto: revisar 40 ficheros de tests", expected: "agent-routing" },
+  { id: "probe-dev", prompt: "aplica el bucle dev a este cambio: renombrar la función parseConfig", expected: "dev-workflow" },
 ];
 
 const selected = [...evalPrompts, ...extra].filter((c) => !only || only.has(c.id));

@@ -5,12 +5,12 @@ in `.claude/docs/model-uplift-playbook.md`.
 
 | Situation | Skill |
 |---|---|
-| Two or more skills could apply and the task does not name one | `skill-advisor` |
-| A decision with gaps, doubts or under-specified points | `drillme` |
-| Supervised Orca team: shared worktree, reservations, messages or resume | `orca-workflow` (handoffs: `orca-cli`) |
-| Interactive technical diagram or standalone explorable architecture/flow; simple inline diagrams keep Mermaid | `archify` |
-| Approved spec needs technical decomposition | `tech-plan` |
-| About to report "done" on work with runtime surface | `verify` |
-| About to review a diff/PR, or a review just surfaced a repeatable mistake | `lessons` |
+| Two or more skills could apply and the task does not name one | `choose-skills` |
+| A decision with gaps, doubts or under-specified points | `drillme-clarify` |
+| Supervised Orca team: shared worktree, reservations, messages or resume | `orca-team` (handoffs: `orca-cli`) |
+| Interactive technical diagram or standalone explorable architecture/flow; simple inline diagrams keep Mermaid | `diagrams-interactive` |
+| Approved spec needs technical decomposition | `flow-plan` |
+| About to report "done" on work with runtime surface | `changes-verify` |
+| About to review a diff/PR, or a review just surfaced a repeatable mistake | `lessons-learned` |
 
-Model/effort routing per task type: `.claude/docs/model-uplift-playbook.md §4` (surfaced by `skill-advisor` — do not copy the table).
+Model/effort routing per task type: `.claude/docs/model-uplift-playbook.md §4` (surfaced by `choose-skills` — do not copy the table).

@@ -18,7 +18,7 @@ One implementation: [check-config.ts](../scripts/check-config.ts).
 [CI](../../.github/workflows/ci.yml) use that implementation. The private addon
 invokes it from a reviewed core checkout, without a copied package or test suite.
 
-The validator, activation hook, and skill-advisor share
+The validator, activation hook, and choose-skills share
 [YAML decoding](../scripts/lib/skill-metadata.ts). `frontmatter` remains exported
 from the validator for existing callers, including the Codex adapter.
 
@@ -89,7 +89,7 @@ by the validator. Readers parse the complete frontmatter, with no character cuto
 
 A skill without keywords remains valid. Skill-advisor can rank its full description;
 the keyword hook omits it. Directory order and directory-based names remain unchanged:
-skill-advisor keeps the first readable entry, including entries without keywords;
+choose-skills keeps the first readable entry, including entries without keywords;
 the hook keeps the first entry with usable keywords. Missing or unreadable entries
 allow a later directory to supply the skill. Ranking and matching rules are unchanged.
 
@@ -185,7 +185,7 @@ triggers or required-check enforcement work.
 [Husky limitations](https://typicode.github.io/husky/how-to.html)
 
 For an authorized publication, use the shared
-[publication protocol](../skills/verify/references/publication.md) from remote
+[publication protocol](../skills/changes-verify/references/publication.md) from remote
 preflight through merge verification, including local-check coordination.
 
 Removing current content does not remove previously published copies.

@@ -141,7 +141,7 @@ cambios del remoto"). Fuera el registro de adorno: ninguna palabra elegida
 para sonar senior, ninguna metáfora haciendo el trabajo de un hecho.
 ❌ "Apalancamos la ortogonalidad del módulo" → ✅ "Separamos el módulo en dos".
 
-**Hacia otros agentes** — prompts al modelo local, a Codex/Grok vía `consult`, a
+**Hacia otros agentes** — prompts al modelo local, a Codex/Grok vía `consult-model`, a
 subagentes, y cualquier instrucción que otro modelo vaya a ejecutar: inglés
 **ASD-STE100** (Simplified Technical English). Una instrucción por frase · voz
 activa · un solo término por concepto en todo el prompt · tiempos verbales
@@ -179,7 +179,7 @@ Preserve codes across the conversation. No codes for short answers.
 - Only the requested scope. No unasked cleanup, refactors, docs, extra features.
 - Useful but unplanned → ask first, never widen silently.
 - No "done" without evidence.
-- Dev loop, skill routing, drillme and the git/spawn gates live in `CLAUDE.md` /
+- Dev loop, skill routing, drillme-clarify and the git/spawn gates live in `CLAUDE.md` /
   `AGENTS.md` — follow, do not restate here.
 - 10 Commandments + Golden Rule: quality wins on conflict.
 

@@ -4,11 +4,11 @@ import { join, relative, resolve } from "node:path";
 import { parse as parseToml } from "smol-toml";
 
 // Quality review 2026-09-11, findings H57, H62, H68 and H70. Four defects in the
-// always-loaded catalog and in the meta-harness packs. Each assertion below locks the
+// always-loaded catalog and in the harness-config packs. Each assertion below locks the
 // corrected behaviour so the next edit cannot reintroduce the defect.
 const root = resolve(import.meta.dir, "..", "..", "..");
 const claude = join(root, ".claude");
-const metaHarness = join(claude, "skills", "meta-harness");
+const metaHarness = join(claude, "skills", "harness-config");
 
 function read(...parts: string[]): string {
   return readFileSync(join(...parts), "utf8").replace(/\r\n/g, "\n");
@@ -50,18 +50,18 @@ describe("H70 — the T14 pack only shows TOML that a TOML parser accepts", () =
   });
 });
 
-describe("H62 — the meta-harness lifecycle contract has one source", () => {
+describe("H62 — the harness-config lifecycle contract has one source", () => {
   const files = markdownFiles(metaHarness).map((f) => ({ path: f, text: read(f) }));
   const carrying = (needle: string) =>
     files.filter((f) => f.text.includes(needle)).map((f) => relative(root, f.path).replace(/\\/g, "/"));
 
   it("states the five-verb table once", () => {
-    expect(carrying("| Consult |")).toEqual([".claude/skills/meta-harness/SKILL.md"]);
+    expect(carrying("| Consult |")).toEqual([".claude/skills/harness-config/SKILL.md"]);
   });
 
   it("states the impact step once", () => {
     expect(carrying("before modify / disable / delete / rename")).toEqual([
-      ".claude/skills/meta-harness/SKILL.md",
+      ".claude/skills/harness-config/SKILL.md",
     ]);
   });
 
@@ -76,11 +76,11 @@ describe("H62 — the meta-harness lifecycle contract has one source", () => {
 
 describe("H68 — one destination for a stack-specific lesson", () => {
   it("retro does not route a stack lesson into the core lessons skill", () => {
-    expect(read(claude, "skills", "retro", "SKILL.md")).not.toContain("lessons/references/");
+    expect(read(claude, "skills", "flow-retro", "SKILL.md")).not.toContain("lessons/references/");
   });
 
   it("retro names the private addon that lessons defines", () => {
-    expect(read(claude, "skills", "retro", "SKILL.md")).toContain("private addon");
+    expect(read(claude, "skills", "flow-retro", "SKILL.md")).toContain("private addon");
   });
 });
 

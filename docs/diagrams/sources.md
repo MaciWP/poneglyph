@@ -17,24 +17,36 @@ are described by the sources below.
 
 | Guide | Inspected source | Meaning retained |
 |---|---|---|
-| Poneglyph | [Doctrine](../../CLAUDE.md), [host adapters](../../.claude/docs/harness-adapters.md), [routing](../../.claude/rules/skill-routing.md), [doctor](../../.claude/scripts/doctor.ts), [lessons](../../.claude/skills/lessons/SKILL.md) | Shared guidance, native execution, optional skill hints, evidence, and limits |
-| Flow | [Command](../../.claude/commands/flow.md), [state helper](../../.claude/scripts/flow-state.ts), [verification contract](../../.claude/docs/flow-contract.md), [contract implementation](../../.claude/scripts/lib/flow-contract.ts) | Six phase skills, two human decisions, dependent tasks, review repair, state, and verified closure |
-| Dev | [Skill](../../.claude/skills/dev/SKILL.md), [verification](../../.claude/skills/verify/SKILL.md) | Five stages, proportional depth, approval by impact, real checks, and return to the failed premise |
+| Poneglyph | [Doctrine](../../CLAUDE.md), [host adapters](../../.claude/docs/harness-adapters.md), [routing](../../.claude/rules/skill-routing.md), [doctor](../../.claude/scripts/doctor.ts), [lessons](../../.claude/skills/lessons-learned/SKILL.md) | Shared guidance, native execution, optional skill hints, evidence, and limits |
+| Flow | [Command](../../.claude/commands/flow-lifecycle.md), [state helper](../../.claude/scripts/flow-state.ts), [verification contract](../../.claude/docs/flow-contract.md), [contract implementation](../../.claude/scripts/lib/flow-contract.ts) | Six phase skills, two human decisions, dependent tasks, review repair, state, and verified closure |
+| Dev | [Skill](../../.claude/skills/dev-workflow/SKILL.md), [verification](../../.claude/skills/changes-verify/SKILL.md) | Five stages, proportional depth, approval by impact, real checks, and return to the failed premise |
 
-Flow source fingerprints use SHA-256 over UTF-8 text with LF line endings. They
-identify the inspected Flow version independently of the earlier architecture snapshot.
+## Current local validation — 2026-09-13
+
+The integrated S1–S6 remediation candidate uses the approved public skill names.
+Architecture source links retain their original paths at `baf1fb8`; renamed paths
+do not exist at that revision. Those links are historical evidence, not a claim
+that the old revision contains the current source. The current local Flow sources
+are identified below by SHA-256 over UTF-8 text with LF line endings.
 
 | Source | SHA-256 |
 |---|---|
-| `flow.md` | `333763e30af245de28091519afce1ad67b8127fd81a1db1a24cd6d0a4fc73a6e` |
-| `flow-contract.md` | `0d0718fe7393ed3b6a13d27c741ce669338c91974de44eae68be008f0c7efb2d` |
-| `flow-state.ts` | `2aa21c586da148c0226a0602e4672df7da7736fb6404482ddacc1367e996c91b` |
-| `flow-contract.ts` | `7fb992f31cd87d87e0aa96801a6e6ca49eef541221f431ced40ed2bceeb11f10` |
+| `.claude/commands/flow-lifecycle.md` | `9989ed37851fc4c03dd85a70817562284d8525e005afae04e08cc109fa77ba85` |
+| `.claude/docs/flow-contract.md` | `0f644fa5f784ee4e194111962408976c5e2d0298e76cd7b42bff776922a21630` |
+| `.claude/scripts/flow-state.ts` | `c993bd7cfb1e4880e3871127c01eb303b5606fb42c73c4bb5b4dd5e45e0ba4ca` |
+| `.claude/scripts/lib/flow-contract.ts` | `7fb992f31cd87d87e0aa96801a6e6ca49eef541221f431ced40ed2bceeb11f10` |
+
+All three regenerated guides passed 9/9 showcase artifact checks and containment
+at all four desktop sizes. Edge ran offline through nine chapters, search, focus,
+themes, presentation and native PNG/SVG exports. Exports retained every node
+(9/10/6), and the HTML hashes stayed unchanged. Current receipts and screenshots
+are under `.cache/poneglyph-diagrams/`; PNG previews were regenerated from the
+native viewer. These checks do not prove model activation or behavioral quality.
 
 ## Regenerate a guide
 
 Use the unchanged Archify **2.16.0** engine from the
-[installation recipe](../../.claude/skills/archify/references/integration.md).
+[installation recipe](../../.claude/skills/diagrams-interactive/references/integration.md).
 The repository tracks editable JSON and PNG previews. Generate HTML on demand
 under the ignored cache; generated HTML is not a tracked source. From the repository root:
 

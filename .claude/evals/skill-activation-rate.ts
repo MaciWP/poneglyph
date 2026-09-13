@@ -24,8 +24,8 @@ function surfaces(prompt: string): boolean {
 const MUST_STAY_SILENT = [
   "revisa esto antes de continuar", // ex-FP: critic
   "en este caso, antes de continuar, revisa los tests que ya existen", // fixture obligatoria
-  "dame un prompt para X", // ex-FP: prompt-engineer
-  "el agent hizo esto", // ex-FP: orchestrator-protocol
+  "dame un prompt para X", // ex-FP: prompt-design
+  "el agent hizo esto", // ex-FP: agent-routing
   "[SYSTEM NOTIFICATION - NOT USER INPUT] revisa la pr y haz commit", // payload no-humano
   "gracias",
   "hola",
@@ -34,7 +34,7 @@ const MUST_STAY_SILENT = [
 // Precise matches that MUST keep firing (multi-word keyword or ≥2 distinct hits).
 const MUST_STILL_SURFACE = [
   "revisa la pr antes de aprobarla", // pr-review, multi-word
-  "quiero refactorizar este código, tiene mucha complexity y duplication", // review-patterns, 2 hits
+  "quiero refactorizar este código, tiene mucha complexity y duplication", // code-quality, 2 hits
 ];
 
 const falseFires = MUST_STAY_SILENT.filter(surfaces);

@@ -21,14 +21,14 @@ type HookOutput = {
   };
 };
 
-// H43 — the shared hint text is written for Claude: `/flow` is a Claude command prefix and
+// H43 — the shared hint text is written for Claude: `/flow-lifecycle` is a Claude command prefix and
 // `/autocompact` and `/effort` are Claude built-ins. Codex also offers `/model` in its
 // interactive CLI, including reasoning selection. Its skill prefix is `$name` and
 // compaction uses launch-time `-c` flags. Mapping by
 // whole line, so a reworded hint stops matching instead of being half-translated; the suite
 // asserts no Claude-only command survives, which is what catches that case.
 const CODEX_HINT_LINES: ReadonlyMap<string, string> = new Map([
-  [FLOW_HINT_LINE, "Feature-shaped task → consider $flow — the full lifecycle (scope→tech-plan→tdd-design→build→critic→retro). Wide scope → on Codex the 400k ceiling is a launch-time flag, not an in-session command: start with `codex -c model_auto_compact_token_limit=400000` (default ceiling 200k, plan 037)."],
+  [FLOW_HINT_LINE, "Feature-shaped task → consider $flow-lifecycle — the full lifecycle (flow-scope→flow-plan→flow-test-plan→flow-build→flow-review→flow-retro). Wide scope → on Codex the 400k ceiling is a launch-time flag, not an in-session command: start with `codex -c model_auto_compact_token_limit=400000` (default ceiling 200k, plan 037)."],
   [ROUTING_LINES.bulk, "Bulk/mechanical shape → consider a cheaper model and effort via `/model` in the Codex interactive CLI; in Orca use its model controls. Launch alternative: `codex -c model_reasoning_effort=low` (shape-only suggestion, session state unknown — playbook §4)."],
   [ROUTING_LINES.quick, "Quick-lookup shape → consider lower reasoning effort via `/model` in the Codex interactive CLI; in Orca use its model controls. Launch alternative: `codex -c model_reasoning_effort=low` (shape-only suggestion, session state unknown — playbook §4)."],
 ]);

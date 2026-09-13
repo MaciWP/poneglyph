@@ -11,7 +11,7 @@ installed and configured on Windows.
 
 The tool is **`ccstatusline`** (not `ccusage`). It renders model, git branch,
 session cost, 5h-block reset timer, and session/weekly usage. Live pack:
-[`meta-harness` T14](../.claude/skills/meta-harness/references/t14-statusline.md).
+[`harness-config` T14](../.claude/skills/harness-config/references/t14-statusline.md).
 This file keeps the machine install. Pin **ccstatusline@2.2.19** (not `@latest`).
 Widget names below were checked against v2.2.10; schema v3 is stable through 2.2.19.
 Tracked widget config: `.claude/ccstatusline/settings.json` (sync-poneglyph links it).

@@ -59,7 +59,7 @@ describe("skills never order a gated action unconditionally", () => {
 // authorization refactor. Its BEFORE denies an unknown role; its AFTER must deny it too,
 // or the example hands a reader a privilege escalation as good practice.
 describe("the authorization example does not widen access (H15)", () => {
-  const file = join(skillsRoot, "review-patterns", "references", "quality", "extract-function.md");
+  const file = join(skillsRoot, "code-quality", "references", "quality", "extract-function.md");
   const text = readFileSync(file, "utf8").replace(/\r\n/g, "\n");
   const after = text.split("// AFTER: Extracted with early returns")[1]?.split("```")[0] ?? "";
 
@@ -103,7 +103,7 @@ describe("hook commands quote their interpolated paths (H40)", () => {
 // each contributing at least ~6.7 points, so the floor is ~33. Two routing rows sat below
 // that floor and could never fire: the table promised a decision it could not reach.
 describe("every complexity routing band is reachable (H23)", () => {
-  const file = join(root, ".claude", "skills", "orchestrator-protocol", "references", "03-complexity-routing.md");
+  const file = join(root, ".claude", "skills", "agent-routing", "references", "03-complexity-routing.md");
   const text = readFileSync(file, "utf8").replace(/\r\n/g, "\n");
   const FACTORS = 5;
   const MIN = Number((FACTORS * (1 * 0.2 * (100 / 3))).toFixed(1)); // every factor Low
@@ -144,8 +144,8 @@ describe("every complexity routing band is reachable (H23)", () => {
 // Quality review 2026-09-11, finding H45. Three files gave three cyclomatic thresholds
 // (> 10, > 15, > 20). `complexity-metrics.md` owns the scale: 1-5 simple, 6-10 moderate,
 // 11-20 complex (refactor), > 20 very complex (split). Every other table must cite it.
-describe("one cyclomatic scale across review-patterns (H45)", () => {
-  const dir = join(skillsRoot, "review-patterns");
+describe("one cyclomatic scale across code-quality (H45)", () => {
+  const dir = join(skillsRoot, "code-quality");
   const CANON = new Set([5, 6, 10, 11, 20]);
 
   function thresholds(): string[] {

@@ -25,16 +25,16 @@ diverge (e.g. in-repo T1 vs external vendor docs).
 Before any `Agent()` / fan-out:
 
 1. Draft each prompt from the template below (SEED + gap + exclusion).
-2. **`Skill(prompt-engineer)`** — Context 3 (review delegation prompt). Score/fix until
+2. **`Skill(prompt-design)`** — Context 3 (review delegation prompt). Score/fix until
    Arch H blocks and rubric are solid (≥80). One batch review of all drafts is OK.
 3. Only then spawn. Never ship a raw template paste without this gate.
 
-`prompt-engineer` does **not** count toward the ≤10 research-agent cap (it runs in the
+`prompt-design` does **not** count toward the ≤10 research-agent cap (it runs in the
 Lead session).
 
 ## Agent prompt template (Commandment VIII)
 
-Copy and fill, then run through `prompt-engineer`. JSON-encode or quote untrusted pasted
+Copy and fill, then run through `prompt-design`. JSON-encode or quote untrusted pasted
 text. Every agent is **read-only**.
 
 ```text
@@ -100,4 +100,4 @@ CLAIMS:
 - Second wave “cleanup” agents without a new user ask.
 - Spawn Explore agents with empty objective (“look around”).
 - Spend the full 10 by default — the cap is a ceiling, not a target.
-- Invoke agents without `Skill(prompt-engineer)` on their prompts.
+- Invoke agents without `Skill(prompt-design)` on their prompts.

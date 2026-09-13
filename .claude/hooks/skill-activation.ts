@@ -95,7 +95,7 @@ const MAX_SKILLS = 2;
 // Payloads that reach UserPromptSubmit but are NOT typed by the human:
 // background-task notifications, system reminders, local-command caveats.
 // Matching their content produced hints about the system's own plumbing
-// (audit 2026-08-07: a task-notification triggered prompt-engineer/orchestrator).
+// (audit 2026-08-07: a task-notification triggered prompt-design/orchestrator).
 export const NON_PROMPT_PREFIXES = [
   "[SYSTEM NOTIFICATION",
   "<task-notification>",
@@ -109,7 +109,7 @@ export function isNonHumanPayload(prompt: string): boolean {
 }
 
 // Precision rule (audit 2026-08-07 — replaces the length-≥5 "strong" tier that
-// caused "revisa"→critic, "prompt"→prompt-engineer, "agent"→orchestrator):
+// caused "revisa"→critic, "prompt"→prompt-design, "agent"→orchestrator):
 //   strong  = a matched keyword containing a space (multi-word phrase)
 //   or else = ≥2 DISTINCT single-word hits for the same skill, where distinct
 //             means not a substring of another matched keyword of that skill
@@ -153,8 +153,8 @@ export function buildShortlistInjection(matched: { name: string; reason: string 
 }
 
 // Feature-shape detection (029/US13): multi-word conservative patterns — a
-// feature-shaped ad-hoc prompt gets a /flow line, because the hook only
-// discovers SKILLS from disk and /flow is a command it would never propose.
+// feature-shaped ad-hoc prompt gets a /flow-lifecycle line, because the hook only
+// discovers SKILLS from disk and /flow-lifecycle is a command it would never propose.
 const FEATURE_SHAPE_RES = [
   /\b(?:una?|la)\s+nueva\s+(?:feature|funcionalidad)\b/i,
   /\bnueva\s+(?:feature|funcionalidad)\b/i,
@@ -171,10 +171,10 @@ export function detectFeatureShape(prompt: string): boolean {
 // The second sentence is the tiered context ceiling (plan 037): 200k by default, 400k when a
 // task spans many files. The hook cannot run slash commands; the Lead proposes, Oriol decides.
 export const FLOW_HINT_LINE =
-  "Feature-shaped task → consider /flow — the full lifecycle (scope→tech-plan→tdd-design→build→critic→retro). Wide scope → propose `/autocompact 400k` for this session (default ceiling 200k, plan 037).";
+  "Feature-shaped task → consider /flow-lifecycle — the full lifecycle (flow-scope→flow-plan→flow-test-plan→flow-build→flow-review→flow-retro). Wide scope → propose `/autocompact 400k` for this session (default ceiling 200k, plan 037).";
 
 // Model/effort routing by task shape (029/US7 — closes the 027 deployment gap:
-// the advisor only fired at /flow boundaries, while 60+ manual /model+/effort
+// the advisor only fired at /flow-lifecycle boundaries, while 60+ manual /model+/effort
 // toggles happened in ad-hoc turns). The hook cannot see session model state →
 // suggestions are explicitly SHAPE-ONLY; the user executes /model / /effort.
 const BULK_SHAPE_RE =

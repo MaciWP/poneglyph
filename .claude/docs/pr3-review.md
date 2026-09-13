@@ -88,11 +88,11 @@ the gate does not execute them.
 
 | Component group | Skills | Action in this candidate |
 |---|---|---|
-| Shared development | dev, drillme, lessons, verify | Keep current workflow. Only lessons' optional-private boundary changes. |
-| Feature lifecycle | scope, tech-plan, tdd-design, build, critic, retro | Validate metadata; defer lifecycle changes. |
-| Review and diagnostics | diagnostic-patterns, explain-changes, pr-conventional-comments, pr-review, review-patterns, security-audit | Validate metadata/references; do not claim helper bugs are repaired. |
-| Research and orchestration | consult, decide, deep-research, orchestrator-protocol, prompt-engineer, skill-advisor, unstuck | Validate structure; do not launch workers or change model policy. |
-| Authoring and presentation | frontend-craft, graphify, html-report, meta-harness | Validate structure; graphify's 674-line body warns without an arbitrary rewrite. |
+| Shared development | dev, drillme-clarify, lessons, verify | Keep current workflow. Only lessons' optional-private boundary changes. |
+| Feature lifecycle | scope, flow-plan, flow-test-plan, build, critic, retro | Validate metadata; defer lifecycle changes. |
+| Review and diagnostics | troubleshooting, changes-explain, pr-comments, pr-review, code-quality, security-audit | Validate metadata/references; do not claim helper bugs are repaired. |
+| Research and orchestration | consult, decide, deep-research, agent-routing, prompt-design, choose-skills, task-unblock | Validate structure; do not launch workers or change model policy. |
+| Authoring and presentation | ui-design, graphify, html-report, harness-config | Validate structure; graphify's 674-line body warns without an arbitrary rewrite. |
 
 Work retains three unique skills. Shared rules G7/U1 stay in core lessons; Work
 holds company-specific evidence and refers to those rules instead of copying them.
@@ -104,7 +104,7 @@ supersedes the candidate's earlier project-only activation recommendation.
 
 Recommendation, **not an implemented workflow change**:
 
-1. Keep one `dev` skill with two entry states: planning and approved execution.
+1. Keep one `dev-workflow` skill with two entry states: planning and approved execution.
 2. In native plan mode, apply KNOW and PLAN. Research when uncertainty or risk
    justifies it. Validate evidence and scope, compare meaningful alternatives,
    and stop at the host's approval boundary.
@@ -112,7 +112,7 @@ Recommendation, **not an implemented workflow change**:
    working tree. Continue BUILD, REVIEW and LEARN without regenerating the plan.
 4. If a material assumption fails, return to planning and request a revised
    decision. An approval is not blanket authority for new scope or publishing.
-5. Keep `/flow` only where persisted tasks, dependencies, phase evidence and
+5. Keep `/flow-lifecycle` only where persisted tasks, dependencies, phase evidence and
    multi-session recovery add value. It should apply dev's method, not maintain
    a competing plan or duplicate approval for the same decision.
 

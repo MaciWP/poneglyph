@@ -108,7 +108,7 @@ describe("labelPresence (T3.7)", () => {
 describe("skillTriggerParse (T3.8-T3.9)", () => {
   const skillEvent = JSON.stringify({
     type: "assistant",
-    message: { content: [{ type: "tool_use", name: "Skill", input: { skill: "scope" } }] },
+    message: { content: [{ type: "tool_use", name: "Skill", input: { skill: "flow-scope" } }] },
   });
   const textEvent = JSON.stringify({
     type: "assistant",
@@ -116,15 +116,15 @@ describe("skillTriggerParse (T3.8-T3.9)", () => {
   });
 
   test("T3.8 detects Skill() invocation; fails when absent", () => {
-    expect(skillTriggerParse([textEvent, skillEvent].join("\n"), { expected: "scope" }).pass).toBe(true);
-    const miss = skillTriggerParse(textEvent, { expected: "scope" });
+    expect(skillTriggerParse([textEvent, skillEvent].join("\n"), { expected: "flow-scope" }).pass).toBe(true);
+    const miss = skillTriggerParse(textEvent, { expected: "flow-scope" });
     expect(miss.pass).toBe(false);
-    expect(miss.detail).toContain("scope");
+    expect(miss.detail).toContain("flow-scope");
   });
 
   test("T3.9 malformed JSONL line tolerated", () => {
     const corrupt = ["{not json at all", skillEvent].join("\n");
-    expect(skillTriggerParse(corrupt, { expected: "scope" }).pass).toBe(true);
+    expect(skillTriggerParse(corrupt, { expected: "flow-scope" }).pass).toBe(true);
   });
 });
 

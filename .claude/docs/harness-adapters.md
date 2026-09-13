@@ -12,13 +12,13 @@ guarantee identical model decisions or permission systems.
 | Style | Poneglyph output style | Included once in AGENTS.md | Generated style twin, linked or checked Windows copy |
 | Skills | Shared .claude/skills | Each core skill directory links into the selected profile | Existing Claude discovery, without another set of links |
 | Commands | Three shared markdown commands | Generated $name skills read the original command | Existing Claude command discovery exposes /name |
-| Lifecycle | Shared flow.md | Same phases, artifacts and human gates through $flow | Same phases, artifacts and human gates through /flow |
+| Lifecycle | Shared flow-lifecycle.md | Same phases, artifacts and human gates through $flow-lifecycle | Same phases, artifacts and human gates through /flow-lifecycle |
 | Permissions and authentication | Native profile plus ignored overlay | Native Codex configuration | Native Grok configuration and enabled compatibility sources |
 
 The adapter discovers core skill directories from source, excluding links into
 optional addons. The 2026-09-07 source review found 30 skills and five commands;
 commit-message and pr-description later moved to the private work plugin as skills,
-leaving three core commands (`flow`, `role`, `sync-poneglyph`).
+leaving three core commands (`flow-lifecycle`, `expert-role`, `sync-poneglyph`).
 References and scripts stay with their skill. Generated wrappers contain
 invocation glue, not independently maintained command bodies.
 
@@ -31,14 +31,14 @@ Claude settings recipes still configure Claude when read from another host.
 
 ## Supervised Orca teams
 
-`orca-workflow` is a core skill distributed by the existing catalog adapters.
+`orca-team` is a core skill distributed by the existing catalog adapters.
 It composes the installed Orca `orca-cli` and `orchestration` guides; those guides
 remain owned by Orca. One shared worktree hosts the team's terminals. CLAUDE.md
 owns team authorization; the skill owns reservations, role contracts and recovery.
 Flow state stays coordinator-owned. Native Workflow tools are not required.
 
 Static adapter success proves discovery, not cooperation. Validate Claude and
-Codex through the [live pilot](../skills/orca-workflow/references/pilot.md). Grok
+Codex through the [live pilot](../skills/orca-team/references/pilot.md). Grok
 requires equivalent lifecycle evidence and may need its explicit terminal launch
 path. Do not replace active global profiles with a development worktree to test
 installation; use disposable homes and the existing adapter integration tests.

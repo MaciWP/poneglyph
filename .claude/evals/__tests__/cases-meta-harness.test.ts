@@ -27,9 +27,9 @@ const VERBS: { verb: string; needles: string[] }[] = [
   { verb: "consultar", needles: ["consulta", "qué ha cambiado", "docs oficiales"] },
 ];
 
-describe("US4 meta-harness skill-trigger cases", () => {
-  test("T4.1 four es-ES trigger cases expect meta-harness", () => {
-    const rows = loadCases().filter((c) => c.type === "skill-trigger" && c.expected === "meta-harness");
+describe("US4 harness-config skill-trigger cases", () => {
+  test("T4.1 four es-ES trigger cases expect harness-config", () => {
+    const rows = loadCases().filter((c) => c.type === "skill-trigger" && c.expected === "harness-config");
     expect(rows.length).toBeGreaterThanOrEqual(4);
     const byId = rows.filter((c) => c.id.startsWith("skill-meta-harness-"));
     const pool = byId.length >= 4 ? byId : rows;
@@ -49,24 +49,24 @@ describe("US4 meta-harness skill-trigger cases", () => {
     const rows = loadCases().filter((c) => c.id.startsWith("skill-meta-harness-"));
     expect(rows.length).toBeGreaterThanOrEqual(4);
     for (const row of rows) {
-      expect(row.expected).toBe("meta-harness");
+      expect(row.expected).toBe("harness-config");
       expect(row.expected).not.toBe("meta-create");
       expect(row.expected).not.toBe("meta-settings-cookbook");
     }
   });
 
-  test("T4.3 grader accepts expected meta-harness (pin)", () => {
+  test("T4.3 grader accepts expected harness-config (pin)", () => {
     const skillEvent = JSON.stringify({
       type: "assistant",
-      message: { content: [{ type: "tool_use", name: "Skill", input: { skill: "meta-harness" } }] },
+      message: { content: [{ type: "tool_use", name: "Skill", input: { skill: "harness-config" } }] },
     });
     const textEvent = JSON.stringify({
       type: "assistant",
       message: { content: [{ type: "text", text: "hola" }] },
     });
-    expect(skillTriggerParse([textEvent, skillEvent].join("\n"), { expected: "meta-harness" }).pass).toBe(true);
-    const miss = skillTriggerParse(textEvent, { expected: "meta-harness" });
+    expect(skillTriggerParse([textEvent, skillEvent].join("\n"), { expected: "harness-config" }).pass).toBe(true);
+    const miss = skillTriggerParse(textEvent, { expected: "harness-config" });
     expect(miss.pass).toBe(false);
-    expect(miss.detail).toContain("meta-harness");
+    expect(miss.detail).toContain("harness-config");
   });
 });

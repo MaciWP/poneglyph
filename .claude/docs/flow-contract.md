@@ -9,8 +9,8 @@ not inferred permission. It does not authenticate callers or run their checks.
 
 `current_phase` names the phase that is **ready to run**, never the phase that
 finished. This file is its single owner: a skill cites this table and states no
-number of its own. Before this was written down, `build` handed over `4`, `critic`
-asked for `3`, `retro` asked for `4` while the helper had already written `5`, so
+number of its own. Before this was written down, `flow-build` handed over `4`, `flow-review`
+asked for `3`, `flow-retro` asked for `4` while the helper had already written `5`, so
 each phase entry check contradicted the state the previous phase produced
 (findings H24 and H71, quality review 2026-09-11).
 
@@ -23,8 +23,8 @@ each phase entry check contradicted the state the previous phase produced
 | `5` | Retrospective | `verdict` with an approving value |
 | `closed` | Nothing; the feature is finished | `close-feature` |
 
-A phase entry check therefore reads its **own** number: `build` starts at `3`,
-`critic` at `4`, `retro` at `5`.
+A phase entry check therefore reads its **own** number: `flow-build` starts at `3`,
+`flow-review` at `4`, `flow-retro` at `5`.
 
 ## Commands
 
@@ -91,7 +91,7 @@ fingerprint. It does not prove that omitted checks ran. Record evidence honestly
 | `APPROVED_WITH_WARNINGS` | Checks and requirements pass; only MINOR/NIT findings remain |
 | `APPROVED` | Checks and requirements pass; no findings |
 
-`critic` must trace each requirement to observed evidence; `coverageMet` is not
+`flow-review` must trace each requirement to observed evidence; `coverageMet` is not
 the percentage of HUs marked done. Reopen only the HUs implicated by findings,
 then repair within the approved scope and repeat verification/review. Keep
 existing retry limits. A new scope or unresolved blocker needs the user's

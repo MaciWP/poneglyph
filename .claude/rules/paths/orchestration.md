@@ -4,7 +4,7 @@ paths:
   - ".claude/agents/**"
 ---
 
-<!-- Last verified: 2026-06-22 (021 — globs→paths fix: CC honors `paths` not `globs`, so this rule was eager-loaded every session; now lazy-scoped to skill/agent authoring. agents-dir glob kept future-proof — harmless when the dir is absent, matches when meta-harness adds one in any repo) -->
+<!-- Last verified: 2026-06-22 (021 — globs→paths fix: CC honors `paths` not `globs`, so this rule was eager-loaded every session; now lazy-scoped to skill/agent authoring. agents-dir glob kept future-proof — harmless when the dir is absent, matches when harness-config adds one in any repo) -->
 
 ## Orchestration Context
 
@@ -26,4 +26,4 @@ paths:
 | `paths` | YAML list of globs — skill applies only to these paths |
 | `context` | `fork` = isolated context |
 
-> Error recovery + SendMessage pattern: see `orchestrator-protocol/references/07-error-recovery.md §SendMessage Recovery`.
+> Error recovery + SendMessage pattern: see `agent-routing/references/07-error-recovery.md §SendMessage Recovery`.

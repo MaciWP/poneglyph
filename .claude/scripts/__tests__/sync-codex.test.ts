@@ -34,7 +34,7 @@ describe("Codex adapter topology", () => {
     for (const link of commands) {
       expect(link.content).toContain(link.source.replaceAll("\\", "/"));
       expect(link.content).toContain("$ARGUMENTS");
-      expect(link.content).not.toContain("# /flow — feature lifecycle orchestrator");
+      expect(link.content).not.toContain("# /flow-lifecycle — feature lifecycle orchestrator");
     }
   });
 
@@ -70,7 +70,7 @@ describe("Codex adapter topology", () => {
 
   it("preflights a collision before creating doctrine or replacing unrelated skills", () => {
     const profile = mkdtempSync(path.join(tmpdir(), "codex-collision-"));
-    const custom = path.join(profile, "skills", "build");
+    const custom = path.join(profile, "skills", "flow-build");
     mkdirSync(custom, { recursive: true });
     writeFileSync(path.join(custom, "SKILL.md"), "custom content");
     const result = Bun.spawnSync([process.execPath, path.resolve(import.meta.dir, "../sync-codex.ts"), "--execute", "--force"], { env: { ...process.env, CODEX_HOME: profile } });

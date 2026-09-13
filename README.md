@@ -32,7 +32,7 @@ Commands coordinate a process. Skills provide task-specific instructions.
 
 ![Poneglyph: user intent reaches a coding agent, project work, and a verified result; shared instructions, native hosts, checks, and project evidence support the work.](docs/diagrams/poneglyph.png)
 
-[Interactive HTML](docs/diagrams/poneglyph.html) · [Editable JSON](docs/diagrams/poneglyph.architecture.json)
+[Generate interactive HTML locally](docs/diagrams/sources.md#regenerate-a-guide) · [Editable JSON](docs/diagrams/poneglyph.architecture.json)
 
 Shared instructions travel through host adapters. Permissions and authentication
 remain native. Skills and hook hints support the agent; they do not guarantee
@@ -42,7 +42,7 @@ that every instruction is followed.
 
 ![Flow: scope approval precedes planning and test design; package approval precedes Build, Critic, Retro, and closure. Failed review returns to Build; blockers require a human decision.](docs/diagrams/flow.png)
 
-[Interactive HTML](docs/diagrams/flow.html) · [Editable JSON](docs/diagrams/flow.workflow.json)
+[Generate interactive HTML locally](docs/diagrams/sources.md#regenerate-a-guide) · [Editable JSON](docs/diagrams/flow.workflow.json)
 
 Use `/flow` in Claude or Grok, and `$flow` in Codex. The six phase skills produce
 scope, tasks, expected checks, changes, review, and lessons. Human decisions approve
@@ -53,7 +53,7 @@ The state helper records evidence; it does not run or authenticate the checks.
 
 ![Dev: KNOW, PLAN, BUILD, REVIEW, and LEARN; high-impact work waits for approval, while failures return to the stage responsible for the cause.](docs/diagrams/dev.png)
 
-[Interactive HTML](docs/diagrams/dev.html) · [Editable JSON](docs/diagrams/dev.workflow.json)
+[Generate interactive HTML locally](docs/diagrams/sources.md#regenerate-a-guide) · [Editable JSON](docs/diagrams/dev.workflow.json)
 
 **Flow organizes the feature; Dev guides each coding task.** A small fix can use
 Dev directly. Every stage still applies, with depth proportional to the work.

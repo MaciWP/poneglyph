@@ -4,9 +4,10 @@ created: 2026-09-08
 approved: 2026-09-08
 mode: full
 phase: 2
-status: approved
+status: closed
 total_us: 3
 dag_complete: true
+closed: 2026-09-12
 ---
 
 # Implementation order

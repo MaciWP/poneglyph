@@ -66,7 +66,7 @@ When the user asks Claude to *produce* a prompt ("genera un prompt para X", "wri
 
 Before sending `Agent(subagent_type=…, prompt=…)`:
 
-1. Verify the Arch H blocks: `[TASK]`, `[CONTEXT]`, `[CONSTRAINTS]`, `[DELIVERABLE]`, `[RELEVANT SKILLS FOR THIS TASK]` (with `Read .claude/skills/<name>/SKILL.md` instructions, not `Skill()` calls).
+1. Verify every block of `orchestrator-protocol/references/06-context-arch-h.md` §Arch H Delegation Template. Skills enter as `Read .claude/skills/<name>/SKILL.md`, not `Skill()` calls.
 2. Score the same 5 criteria against the *subagent's perspective* (Context = files the agent will need to read; Success = the exact return shape the Lead expects).
 3. If a criterion scores low, fix before invoking — every back-and-forth round-trip with a subagent costs 2-5K tokens.
 

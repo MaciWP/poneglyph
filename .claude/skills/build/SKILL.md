@@ -290,21 +290,3 @@ Wiring and manual fallbacks for this phase (drillme and diagnostic-patterns must
 ## References
 
 Rationale, builder-agent history and post-implementation verification of this skill: `references/01-history.md`.
-
-## Output format reminder
-
-When this skill closes a HU:
-
-```
-✅ HU US{N} closed.
-- Files: [<paths>]
-- Tests: <X/Y passing>; mode: <forced red→green | tdd-skip: <reason> | validation-mode | optional>
-- Execution: inline (or Workflow fan-out if ≥4-HU wave)
-- AskUserQuestion fired: <N>
-- state.json updated.
-
-Next HU: US{M}
-  → /build US{M} (specific)
-  → /build (next pending)
-  → /critic (if all HUs closed → Phase 4)
-```

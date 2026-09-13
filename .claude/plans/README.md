@@ -40,6 +40,13 @@ and restores approved task status. Feature closure requires verified HUs, an
 approving review and resolved retro. BLOCKED is a lifecycle verdict, not an
 implicit approval to continue. The helper owns these transitions.
 
+A feature with every HU closed and an approving review, whose retro is written
+but not yet ratified, waits at `retro_status: pending`. That is a waiting state,
+not a stalled one, and only a human leaves it:
+`bun .claude/scripts/flow-state.ts retro-status approved`, or
+`retro-status "skipped — <justificación ≥10 chars>"`. It is the last gate before
+`close-feature`, which refuses to run while the retro is still pending.
+
 ## Garbage collection policy
 
 Directories with `status: draft` and no updates for **>30 days** may be purged manually. There is no auto-purge. Before deleting: verify no other feature depends on this one via `Grep` in `.claude/plans/`.

@@ -1,13 +1,14 @@
 {
   "spec_slug": "035-flow-coherence",
   "mode": "full",
-  "current_phase": 5,
+  "current_phase": "closed",
   "phases_completed": [
     1,
     2,
     2.5,
     3,
-    4
+    4,
+    5
   ],
   "gates_approved": {
     "1->2": true,
@@ -150,11 +151,11 @@
     }
   ],
   "boundary_checks": [],
-  "feature_closed": false,
+  "feature_closed": true,
   "review_verdict": "APPROVED_WITH_WARNINGS",
-  "retro_status": "pending",
+  "retro_status": "approved",
   "started_at": "2026-09-08",
-  "updated_at": "2026-09-08",
+  "updated_at": "2026-09-12",
   "review_assessment": {
     "blockers": 0,
     "majors": 0,

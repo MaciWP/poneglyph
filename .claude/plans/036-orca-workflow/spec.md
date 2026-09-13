@@ -1,6 +1,7 @@
 ---
-status: approved
+status: closed
 approved: 2026-09-08
+closed: 2026-09-12
 ---
 
 # Supervised Orca workflows

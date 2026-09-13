@@ -1,5 +1,5 @@
 ---
-status: draft
+status: approved
 ---
 
 # Retrospective for human review
@@ -30,5 +30,4 @@ post-grant rewrite to demonstrate an actual write under a transferred reservatio
 this is disclosed in implementation.md.
 
 No new global lesson or rule promotion is proposed. These observations are already
-captured in the relevant references. Human ratification is pending; no retrospective
-approval is inferred from the permission to commit or open a PR.
+captured in the relevant references. Oriol explicitly ratified this retrospective during the S1–S6 remediation planning conversation. Implementation was approved with "Implement the plan"; ratification was recorded on 2026-09-13. The original verification limits above remain unchanged.

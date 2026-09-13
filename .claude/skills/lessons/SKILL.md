@@ -46,7 +46,7 @@ by evals and docs were lost that way and had to be recovered as G9–G12 (plan 0
 | Before reviewing a PR/diff (`pr-review`, `critic`) | Read §Lessons; every guard is a checkable item |
 | Before declaring work done (`verify`) | Re-check G2, G3, G4 — the ones that bite at the finish line |
 | Starting a HU in a configured work project (`build`) | Read the matching private skill if installed; otherwise use the applicable core lessons |
-| A review (human or agent) surfaces a mistake | Append here if cross-repo; to the company plugin's `references/<stack>` if stack-specific |
+| A review (human or agent) surfaces a mistake | Append here if cross-repo; to the private addon's stack reference if stack-specific |
 | `retro` Step 8 promotion, scope = cross-project | Land it here |
 
 ## Admission rule — three conditions, all mandatory
@@ -115,7 +115,7 @@ The value of this file is inverse to its length. On every append, check the neig
 | Anti-pattern | Correction |
 |---|---|
 | Adding a lesson with no incident behind it | Admission rule #1 — evidence or it does not enter |
-| Putting a stack-specific lesson in the cross-repo tables | It belongs in `references/<stack>` — one lesson, one layer (Cmd IX) |
+| A stack-specific lesson in the cross-repo tables | Goes to the private addon — one lesson, one layer (Cmd IX) |
 | Recreating a lessons layer inside a repo | The layers were merged here on purpose; a second home drifts |
 | Restating something already in memory | Point at the memory file instead |
 | Reading this file *after* the review verdict | Guards only pay off before the verdict, not as a post-mortem |

@@ -184,5 +184,23 @@
       "Write(.claude/settings.global.json)",
       "Bash(rm .claude)"
     ]
+  },
+  "skillOverrides": {
+    "archify": "name-only",
+    "build": "name-only",
+    "critic": "name-only",
+    "dev": "name-only",
+    "diagnostic-patterns": "name-only",
+    "drillme": "name-only",
+    "lessons": "name-only",
+    "orca-workflow": "name-only",
+    "orchestrator-protocol": "name-only",
+    "prompt-engineer": "name-only",
+    "scope": "name-only",
+    "skill-advisor": "name-only",
+    "tdd-design": "name-only",
+    "tech-plan": "name-only",
+    "unstuck": "name-only",
+    "verify": "name-only"
   }
 }

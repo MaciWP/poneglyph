@@ -137,7 +137,7 @@ For each reusable pattern surfaced in Step 5/7 — plus each entry in `.claude/l
 | **global** (~/.claude/) | Pattern applies across multiple projects; reusable across stacks; meta-system improvement | `~/.claude/{skills,rules,hooks,agents,commands}/` |
 | **local** (project) | Pattern is project-specific (this codebase's conventions); useful here, ceremony elsewhere | `.claude/{skills,rules,hooks,agents,commands}/` |
 | **memory** (only) | Single fact / one-off learning; doesn't deserve a file | `MEMORY.md` entry via auto-memory |
-| **lessons** | A mistake with real evidence that would repeat in another repo (process, review hygiene, delivery) | Row appended to `~/.claude/skills/lessons/SKILL.md`; stack-specific → `lessons/references/<stack>-*.md` instead. Never a per-repo lessons layer |
+| **lessons** | A mistake with real evidence that would repeat in another repo (process, review hygiene, delivery) | Row appended to `~/.claude/skills/lessons/SKILL.md`; stack- or company-specific → the private addon instead. Never a per-repo lessons layer |
 
 **Strict rules**:
 

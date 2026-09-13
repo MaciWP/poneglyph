@@ -142,7 +142,7 @@ The skill does NOT proceed to Phase 2. Only the user approves.
 - **Cuestionario intensivo**: minimum 3 questions until scope is unambiguous.
 - **Proactivity on gaps**: if you detect improvements to the proposed scope or obvious gaps, mention them BEFORE closing the questionnaire — never silently absorb them.
 - **Honest about brief quality**: if the brief is too vague, say so; do not invent intent.
-- **No technology in spec.md**: any sentence that names a library, framework, or technical pattern goes to Phase 2.
+- **No technology in spec.md**: *choosing* a library, framework or pattern is Phase 2 work. One the user imposes (platform, banned dependency, pinned version) is a real constraint — record it under Constraints with its source.
 
 ## Adaptación intra-fase (Principio 2 — "no siempre más es más")
 

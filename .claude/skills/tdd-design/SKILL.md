@@ -80,10 +80,10 @@ Output frontmatter of resulting `tests.md`/`validations.md` declares the resolve
 
 Honor per-HU overrides if `tasks/US{N}.md` carries `tdd: forced` (force test-first despite auxiliary) or `tdd-skip: <reason ≥10 chars>` (skip test-first despite business-critical). Concrete reason required for skip.
 
-Inside `flow`, behavior-changing HUs default to `tdd: forced`, including auxiliary
-code. Derive tests from requirements before implementation; observe a relevant
-failure before making it pass. Reuse existing fixtures. Document-only HUs use
-validations. Justify exceptions before execution. Outside flow, retain project policy.
+Inside flow the project default is raised, not replaced. `.claude/rules/test-policy.md`
+§Override in plan owns that escalation and its exceptions; resolve it per HU. When it
+applies: derive tests from requirements before implementation, observe a relevant
+failure before making it pass, and reuse existing fixtures.
 
 ### Step 3 — Classify each HU by nature
 
@@ -157,17 +157,7 @@ If a HU genuinely has no oracle (e.g., pure layout change, formatting):
 
 ### Step 6 — Drillme Phase 2.5
 
-Run the 3 phase-specific questions before closing:
-
-```markdown
-## Drillme — Phase 2.5
-
-1. `[failure]` **Happy + edge?** Each HU has ≥1 happy path + ≥1 edge case test (or 5 validation categories)?
-2. `[approach]` **Untestable HU?** If any HU has no natural oracle → is the HU well-defined or atomic?
-3. `[approach]` **Property-based fit?** Does any HU have invariants (parsers, pure transforms) that property-based would cover better than examples?
-```
-
-Coverage: 2/4 canonical Socratic categories. Acceptable — Phase 2.5 is focused on oracle design, not architecture; `[location]` and `[context]` were covered by `tech-plan` in Phase 2. NOT adding artificial questions to pad coverage (Commandment V).
+Ask the Phase 2.5 bank in `.claude/skills/drillme/references/03-phase-questions.md` §Phase 2.5 before closing — that file is the single source, so the questions are not restated here. Its closing rule is the smell signal of Step 5: over 30 % untestable HUs means the Phase 2 decomposition is wrong.
 
 > Skill-to-skill invocation is probabilistic. If `drillme` does not auto-fire, the Lead invokes `/drillme "Phase 2.5 oracle design for <NNN-slug>"` manually before approving hard gate 2->3.
 

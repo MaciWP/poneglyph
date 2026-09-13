@@ -1,5 +1,7 @@
 import { describe, expect, it } from "bun:test";
-import { exitCodeFor, renderChecks, summarizeConfig, statusFromSyncOutput, summarizeSessions, summarizeSyncOutput, summarizeTests, summarizeValidate, worstOf } from "../doctor";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { NATIVE_EVIDENCE_NOTE, exitCodeFor, renderChecks, summarizeConfig, statusFromSyncOutput, summarizeSessions, summarizeSyncOutput, summarizeTests, summarizeValidate, worstOf } from "../doctor";
 
 describe("doctor — sessions today (plan 033)", () => {
   it("is green for a handful of cheap sessions", () => {
@@ -100,5 +102,30 @@ describe("doctor — local copies are not green (H66)", () => {
 
   it("stays red when an entry is missing", () => {
     expect(statusFromSyncOutput("🟢 skills: linked\n🔴 CLAUDE.md: missing\n")).toBe("🔴");
+  });
+});
+
+// Quality review 2026-09-11, finding H47. "Native execution evidence" was pushed as a check
+// row with a hardcoded 🟡 on every run. A row whose status can never change is not a check:
+// it teaches the eye to skip yellow, which is the one colour the other rows use to warn.
+// The caveat is true and worth printing — as a note under the table, with no semaphore.
+describe("doctor — a permanent caveat is a note, not a check row (H47)", () => {
+  it("carries the native-execution caveat without a status icon", () => {
+    expect(NATIVE_EVIDENCE_NOTE).not.toMatch(/🟢|🟡|🔴|⚪|🔵/);
+    expect(NATIVE_EVIDENCE_NOTE.length).toBeGreaterThan(40);
+  });
+
+  it("no longer builds it as a row", () => {
+    const source = readFileSync(join(import.meta.dir, "..", "doctor.ts"), "utf8");
+    expect(source).not.toMatch(/name:\s*"Native execution evidence"/);
+  });
+});
+
+// Same finding: sync-orca verified a real decision but was wired to nothing, so it only ran
+// when someone remembered it. One doctor row carries it.
+describe("doctor — the Orca append check is a row (H47)", () => {
+  it("calls the shared verdict", () => {
+    const source = readFileSync(join(import.meta.dir, "..", "doctor.ts"), "utf8");
+    expect(source).toMatch(/checkOrca\(\)/);
   });
 });

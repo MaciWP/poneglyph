@@ -668,9 +668,16 @@ export function cliUnavailableValidation(detail: string): SettingsValidation {
 // `--status` printed the rejection and returned 0, so every caller that reads exit codes
 // instead of parsing icons — /sync-poneglyph, CI, an agent — saw a broken layer as success
 // (H63, quality review 2026-09-11). A skipped validation is not a failure: it is unknown,
-// and the yellow line already says so.
+// and exit 2 preserves that uncertainty for callers.
 export function statusExitCode(v: SettingsValidation): number {
-  return v.ok ? 0 : 1;
+  return v.skipped ? 2 : v.ok ? 0 : 1;
+}
+
+export function classifySettingsValidation(output: string, code: number, destPath: string): SettingsValidation {
+  const problems = problemsForFile(parseDoctorInvalidSettings(output), destPath);
+  if (problems.length) return { ok: false, problems };
+  return code === 0 ? { ok: true, problems: [] }
+    : { ok: true, problems: [], skipped: `claude doctor exited ${code}; settings acceptance is unknown` };
 }
 
 export function formatSettingsValidationLine(v: SettingsValidation): string {
@@ -706,13 +713,12 @@ async function validateGeneratedSettings(
     new Response(proc.stdout as ReadableStream).text(),
     new Response(proc.stderr as ReadableStream).text(),
   ]);
-  await proc.exited;
+  const code = await proc.exited;
   clearTimeout(timer);
   if (timedOut) {
     return timeoutValidation(timeoutMs);
   }
-  const problems = problemsForFile(parseDoctorInvalidSettings(`${out}\n${err}`), destPath);
-  return { ok: problems.length === 0, problems };
+  return classifySettingsValidation(`${out}\n${err}`, code, destPath);
 }
 
 // === LINK DETECTION ===
@@ -1531,8 +1537,14 @@ Requirements per OS:
         console.log(formatSettingsValidationLine(validation));
         // The exit code carries the verdict too: /sync-poneglyph --status and CI read it
         // instead of parsing the icons (H63).
-        if (statusExitCode(validation) !== 0) process.exit(1);
+        process.exitCode = statusExitCode(validation);
+      } else {
+        console.log(formatSettingsValidationLine({ ok: true, problems: [], skipped: "generated settings file unavailable" }));
+        process.exitCode = 2;
       }
+    } else {
+      console.log(formatSettingsValidationLine({ ok: true, problems: [], skipped: "--no-validate" }));
+      process.exitCode = 2;
     }
     return;
   }
@@ -1627,10 +1639,11 @@ Requirements per OS:
   // script reported success). `claude doctor` validates every settings file
   // without a session or an API call; any problem naming the generated file
   // fails the sync and puts the previous file back when a backup exists.
-  if (settingsResult.status === "written" && config.validate) {
+  if (config.validate) {
     const destPath = path.join(homeDir, ".claude", MERGED_SETTINGS.dest);
     const verdict = await validateGeneratedSettings(destPath);
     console.log(formatSettingsValidationLine(verdict));
+    process.exitCode = statusExitCode(verdict);
     if (!verdict.ok) {
       if (settingsResult.backupPath && fs.existsSync(settingsResult.backupPath)) {
         fs.copyFileSync(settingsResult.backupPath, destPath);
@@ -1642,6 +1655,9 @@ Requirements per OS:
       }
       process.exit(1);
     }
+  } else {
+    console.log(formatSettingsValidationLine({ ok: true, problems: [], skipped: "--no-validate" }));
+    process.exitCode = 2;
   }
 
   if (failedLinks > 0) {

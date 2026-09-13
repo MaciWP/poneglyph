@@ -460,8 +460,8 @@ describe("--status tells the truth through its exit code (H63)", () => {
     expect(statusExitCode({ ok: true, problems: [] })).toBe(0);
   });
 
-  it("does not fail when validation was skipped, and says so", () => {
-    expect(statusExitCode({ ok: true, problems: [], skipped: "claude CLI not runnable" })).toBe(0);
+  it("returns a distinct unverified code when validation was skipped", () => {
+    expect(statusExitCode({ ok: true, problems: [], skipped: "claude CLI not runnable" })).toBe(2);
   });
 });
 
@@ -475,15 +475,15 @@ describe("skipped validations carry a distinct reason (H36)", () => {
     const v = timeoutValidation(90_000);
     expect(v.reason).toBe("timeout");
     expect(v.skipped).toBe("claude doctor exceeded 90s");
-    expect(v.ok).toBe(true); // unknown is not failure: statusExitCode stays 0
-    expect(statusExitCode(v)).toBe(0);
+    expect(v.ok).toBe(true); // unknown is distinct from acceptance and rejection
+    expect(statusExitCode(v)).toBe(2);
   });
 
   it("labels an unrunnable CLI distinctly from a timeout", () => {
     const v = cliUnavailableValidation("spawn ENOENT");
     expect(v.reason).toBe("cli-unavailable");
     expect(v.skipped).toBe("claude CLI not runnable (spawn ENOENT)");
-    expect(statusExitCode(v)).toBe(0);
+    expect(statusExitCode(v)).toBe(2);
   });
 
   it("renders both as the same yellow unknown line", () => {

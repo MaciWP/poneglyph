@@ -19,7 +19,7 @@ Whether TDD-first decomposition applies when planning changes. Read explicitly b
 
 ## Project declaration
 
-This project's policy: **`auxiliary`** — poneglyph is orchestration config; tests cover security gates and validators (`.claude/hooks/__tests__/`), not business logic. Mandatory TDD would be ceremony without proportional value. This rule is the single source; the repo verification command is `bun test ./.claude/` (on failure → `Skill('diagnostic-patterns')`).
+This project's policy: **`auxiliary`** — poneglyph is orchestration config; tests cover security gates and validators (`.claude/hooks/__tests__/`), not business logic. Mandatory TDD would be ceremony without proportional value. This rule is the single source of the project default; `/flow` raises it per HU (see Override in plan below). The repo verification command is `bun test ./.claude/` (on failure → `Skill('diagnostic-patterns')`).
 
 ## Override in plan
 
@@ -27,3 +27,5 @@ A plan node may override the project policy:
 
 - `tdd: forced` — force test-first despite `auxiliary` (e.g. a new hook with non-trivial logic warranting red→green).
 - `tdd-skip: <reason ≥10 chars>` — skip test-first despite `business-critical`. Reason must be concrete: `doc-only change, no testable behavior` · `exploratory spike before contract is stable` · `config tweak, validated by existing integration tests`.
+
+Inside `/flow` the default is raised, not replaced: behaviour-changing HUs get `tdd: forced`, auxiliary code included; document-only HUs use validations. `tdd-design` resolves this per HU and justifies every exception before execution (`skills/tdd-design/SKILL.md` §Step 2). Outside `/flow`, the project level above applies unchanged.

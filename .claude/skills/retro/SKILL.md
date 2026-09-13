@@ -1,7 +1,7 @@
 ---
 name: retro
 description: |
-  Retrospectiva post-feature (Fase 5 del workflow de 5 fases). Captura lecciones técnicas, saca a la luz la fricción de proceso, propone promotions a uno de tres scopes (global ~/.claude/ vs proyecto .claude/ vs memoria), cierra el living-spec loop consumiendo el spec_drift clasificado por critic, y audita el cumplimiento de los 10 Commandments. NO auto-edita spec.md: produce un diff para aprobación humana. Cierra el lifecycle del feature.
+  Retrospectiva post-feature (Fase 5 del workflow `/flow`). Captura lecciones técnicas, saca a la luz la fricción de proceso, propone promotions a uno de tres scopes (global ~/.claude/ vs proyecto .claude/ vs memoria), cierra el living-spec loop consumiendo el spec_drift clasificado por critic, y audita el cumplimiento de los 10 Commandments. NO auto-edita spec.md: produce un diff para aprobación humana. Cierra el lifecycle del feature.
   Úsala cuando: review.md APPROVED o APPROVED_WITH_WARNINGS, feature completo, antes de declarar el lifecycle cerrado, tras /critic, "retro", "retrospectiva", "qué hemos aprendido", "promover".
 metadata:
   keywords: >

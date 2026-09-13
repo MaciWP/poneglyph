@@ -10,6 +10,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { parseArgs } from "node:util";
 import { askConfirmation } from "../scripts/sync-claude";
+import { statusFromSyncOutput, type Status } from "../scripts/doctor";
 import { detectHosts, HOST_ORDER, realProbe, type DetectedHost, type HostName } from "../scripts/lib/hosts";
 
 export interface SyncFlags {
@@ -168,29 +169,50 @@ async function main(): Promise<void> {
 
   // Sequential and fail-fast: a later engine depends on the earlier one's output.
   const exitCodes = new Map<string, number>();
+  const statuses = new Map<string, Status>();
   for (const run of runs) {
     console.log(`\n▶ ${run.label}`);
     const proc = Bun.spawn(run.cmd, {
       cwd: projectRoot,
       env: { ...process.env, ...run.env },
       stdin: "inherit",
-      stdout: "inherit",
-      stderr: "inherit",
+      stdout: "pipe",
+      stderr: "pipe",
     });
-    const code = await proc.exited;
-    exitCodes.set(run.label, code);
-    if (code !== 0) break;
+    const [out, err, code] = await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text(), proc.exited]);
+    process.stdout.write(out);
+    process.stderr.write(err);
+    let finalCode = code;
+    let finalOutput = out + "\n" + err;
+    // Execute output includes the BEFORE inventory. Verify the resulting state;
+    // an old conflict in that transcript must not override a repaired installation.
+    if (flags.execute && (code === 0 || code === 2)) {
+      const probe = Bun.spawn(run.cmd.map(arg => arg === "--execute" ? "--status" : arg), {
+        cwd: projectRoot, env: { ...process.env, ...run.env }, stdin: "ignore", stdout: "pipe", stderr: "pipe",
+      });
+      const [checked, errors, checkedCode] = await Promise.all([
+        new Response(probe.stdout).text(), new Response(probe.stderr).text(), probe.exited,
+      ]);
+      process.stdout.write(checked);
+      process.stderr.write(errors);
+      finalCode = checkedCode;
+      finalOutput = checked + "\n" + errors;
+    }
+    exitCodes.set(run.label, finalCode);
+    const status = !flags.execute && !flags.status ? (code === 0 ? "🟡" : "🔴") : statusFromSyncOutput(finalOutput, finalCode);
+    statuses.set(run.label, status);
+    if (status === "🔴") break;
   }
 
   console.log("\nSummary:");
   for (const run of runs) {
     const code = exitCodes.get(run.label);
-    const icon = code === undefined ? "⚪" : code === 0 ? "🟢" : "🔴";
-    const suffix = code === undefined ? " (not run)" : code === 0 ? "" : ` (exit ${code})`;
+    const icon = statuses.get(run.label) ?? "⚪";
+    const suffix = code === undefined ? " (not run)" : icon === "🟡" ? " (unverified; see details above)" : code === 0 ? "" : ` (exit ${code})`;
     console.log(`  ${icon} ${run.label}${suffix}`);
   }
-  const failed = [...exitCodes.values()].find((code) => code !== 0);
-  if (failed !== undefined) process.exit(failed);
+  if ([...statuses.values()].includes("🔴")) process.exit(1);
+  if ((flags.execute || flags.status) && [...statuses.values()].includes("🟡")) process.exit(2);
   if (!flags.execute && !flags.status) {
     console.log("\n💡 Preview only. Use --execute to sync (add --backup when a target already exists).");
   }

@@ -13,7 +13,7 @@ import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { compare, loadSnapshot, measure, total } from "./lib/budget";
+import { compare, loadSnapshot, measure, ratchetedSnapshotTotal, total } from "./lib/budget";
 import { detectHosts, realProbe } from "./lib/hosts";
 import { check, type Report } from "./check-config";
 import { checkOrca } from "./sync-orca";
@@ -50,11 +50,12 @@ export function summarizeSyncOutput(output: string): Check["detail"] & string {
 // prints "🔴 …" / "STALE symlink", sync-codex prints "missing  <path>". The bare word
 // "missing" inside a detail sentence must not turn the doctor red.
 export function statusFromSyncOutput(output: string, exitCode = 0): Status {
-  if (exitCode !== 0 || !/^\s*(?:🟢|🟡|🔵|🔴|⚪|linked\s|missing\s|stale\s|conflict\s|local\s)/m.test(output)) return "🔴";
+  const unverified = exitCode === 2 && /^🟡 settings\.json: not validated/m.test(output);
+  if ((exitCode !== 0 && !unverified) || !/^\s*(?:🟢|🟡|🔵|🔴|⚪|linked\s|missing\s|stale\s|conflict\s|local\s)/m.test(output)) return "🔴";
   let worst: Status = "🟢";
   for (const raw of output.split(/\r?\n/)) {
     const line = raw.trim();
-    if (/^(🔴|missing\b|stale\b|conflict\b|local\b)/.test(line) || /REJECTED|STALE symlink/.test(line)) return "🔴";
+    if (/^(🔴|❌|missing\b|stale\b|conflict\b|local\b)/.test(line) || /REJECTED|STALE symlink/.test(line) || /^⚪ .*: does not exist$/.test(line)) return "🔴";
     // 🔵 is sync-claude's "local folder/file": the entry exists but is NOT linked, so the
     // layer is not what the repository says it is. Unknown to this parser until H66
     // (quality review 2026-09-11), which let a stale local copy read as green.
@@ -207,7 +208,7 @@ async function main(): Promise<void> {
     checks.push({ name: "Always-loaded budget", status: "🟡", detail: `${total(m.alwaysLoaded)} B, no snapshot — bun .claude/scripts/budget.ts --update` });
   } else {
     const viol = compare(m, snapshot);
-    checks.push({ name: "Always-loaded budget", status: viol.length ? "🔴" : "🟢", detail: viol.length ? viol.map((x) => `${x.key} ${x.snapshot}→${x.current}`).join("; ") : `${total(m.alwaysLoaded)} B ≤ snapshot ${total(snapshot.alwaysLoaded)} B (ratchet 0 %, plan 037)` });
+    checks.push({ name: "Always-loaded budget", status: viol.length ? "🔴" : "🟢", detail: viol.length ? viol.map((x) => `${x.key} ${x.snapshot}→${x.current}`).join("; ") : `${total(m.alwaysLoaded)} B ≤ snapshot ${ratchetedSnapshotTotal(m, snapshot)} B (ratchet 0 %, plan 037)` });
   }
 
   try {

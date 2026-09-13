@@ -22,15 +22,15 @@ type HookOutput = {
 };
 
 // H43 — the shared hint text is written for Claude: `/flow` is a Claude command prefix and
-// `/autocompact`, `/model`, `/effort` are Claude BUILT-INS. Codex reads the same text through
-// this adapter, where those commands do not exist: its equivalents are `$name` commands and
-// launch-time `-c` flags (docs/harness-adapters.md §Shared context/effort policy). Mapping by
+// `/autocompact` and `/effort` are Claude built-ins. Codex also offers `/model` in its
+// interactive CLI, including reasoning selection. Its skill prefix is `$name` and
+// compaction uses launch-time `-c` flags. Mapping by
 // whole line, so a reworded hint stops matching instead of being half-translated; the suite
 // asserts no Claude-only command survives, which is what catches that case.
 const CODEX_HINT_LINES: ReadonlyMap<string, string> = new Map([
   [FLOW_HINT_LINE, "Feature-shaped task → consider $flow — the full lifecycle (scope→tech-plan→tdd-design→build→critic→retro). Wide scope → on Codex the 400k ceiling is a launch-time flag, not an in-session command: start with `codex -c model_auto_compact_token_limit=400000` (default ceiling 200k, plan 037)."],
-  [ROUTING_LINES.bulk, "Bulk/mechanical shape → consider a cheaper tier; on Codex the reasoning effort is a launch-time flag, not an in-session command: `codex -c model_reasoning_effort=low` (shape-only suggestion, session state unknown — playbook §4)."],
-  [ROUTING_LINES.quick, "Quick-lookup shape → consider the cheapest reasoning tier; on Codex that is a launch-time flag: `codex -c model_reasoning_effort=low` (shape-only suggestion, session state unknown — playbook §4)."],
+  [ROUTING_LINES.bulk, "Bulk/mechanical shape → consider a cheaper model and effort via `/model` in the Codex interactive CLI; in Orca use its model controls. Launch alternative: `codex -c model_reasoning_effort=low` (shape-only suggestion, session state unknown — playbook §4)."],
+  [ROUTING_LINES.quick, "Quick-lookup shape → consider lower reasoning effort via `/model` in the Codex interactive CLI; in Orca use its model controls. Launch alternative: `codex -c model_reasoning_effort=low` (shape-only suggestion, session state unknown — playbook §4)."],
 ]);
 
 /** Rewrites the shared hint into what the target host actually offers. Skill lines pass
@@ -76,7 +76,7 @@ export async function handleNativeHook(
     const directories = typeof payload.cwd === "string"
       ? [join(payload.cwd, ".claude", "skills"), join(payload.cwd, ".agents", "skills"), join(coreRoot, ".claude", "skills")]
       : [join(coreRoot, ".claude", "skills")];
-    const hint = analyzePayload(JSON.stringify(payload), () => loadSkills(directories));
+    const hint = analyzePayload(JSON.stringify(payload), () => loadSkills(directories, "codex"));
     return hint.injection ? {
       hookSpecificOutput: { hookEventName: "UserPromptSubmit", additionalContext: translateHintForCodex(hint.injection) },
     } : null;

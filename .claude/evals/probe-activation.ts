@@ -13,6 +13,8 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { resolveHeadlessModel, stripHeadlessFlags } from "../scripts/lib/headless";
+import { runEvalProcess } from "./process";
+import { transcriptHealth } from "./run";
 
 const rawArgs = process.argv.slice(2);
 const { model, dryRun } = resolveHeadlessModel(rawArgs, "probe");
@@ -53,9 +55,15 @@ for (const c of cases) {
     console.log(`DRY  ${c.id.padEnd(24)} ${cmd.map((a) => (/\s/.test(a) ? JSON.stringify(a) : a)).join(" ")}`);
     continue;
   }
-  const proc = Bun.spawn(cmd, { cwd: repo, stdout: "pipe", stderr: "pipe", stdin: "ignore" });
-  const out = await new Response(proc.stdout).text();
-  await proc.exited;
+  const session = await runEvalProcess(cmd, repo);
+  const out = session.stdout;
+  const health = transcriptHealth(out, true);
+  const error = session.error ?? (!health.ok ? health.reason : undefined);
+  if (error) {
+    results.push({ id: c.id, expected: c.expected, model, skills: [], tools: [], hit: false, errored: true, detail: error });
+    console.log(`ERR ${c.id} ${error}`);
+    continue;
+  }
   const skills: string[] = [];
   const tools: string[] = [];
   for (const line of out.split("\n")) {
@@ -80,4 +88,5 @@ if (dryRun) {
   const file = join(outDir, `${label}.json`);
   writeFileSync(file, JSON.stringify(results, null, 2));
   console.log(`\n${results.filter((r) => r.hit).length}/${results.length} hit on ${model} → ${file}`);
+  if (!results.length || results.some(r => !r.hit)) process.exitCode = 1;
 }

@@ -137,6 +137,15 @@ and preserved integrations. Test hook input, output and failures without a model
 Complete native trust and human session checks separately. Timeouts, skipped
 checks and static listings do not establish successful activation.
 
+Claude settings validation returns 0 for acceptance, 1 for rejection, and 2
+when acceptance is unverified. The combined sync preserves warnings and broken
+inventory rows. `--no-validate` never establishes acceptance. A nonzero doctor
+exit without a settings diagnostic also remains unverified.
+
+The output-shaper hook processes Claude's Bash results only. It does not shape
+Codex `exec_command` output, PowerShell-native output, or Grok tool results.
+Registration and shared source do not establish cross-host output shaping.
+
 Keep an IDE-observed checkout and its `.git` directory in place during updates.
 Orca uses Git metadata to identify its workspaces. Prepare source changes in a
 separate review checkout, then use ordinary Git integration after checking for

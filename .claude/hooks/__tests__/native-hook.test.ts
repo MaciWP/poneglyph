@@ -66,7 +66,7 @@ describe("native hook contracts", () => {
 function writeSkillFixture(root: string, name: string, keywords: string): void {
   const dir = join(root, ".claude", "skills", name);
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, "SKILL.md"), `---\nname: ${name}\nmetadata:\n  keywords: >\n    Keywords - ${keywords}\n---\n\n# ${name}\n`);
+  writeFileSync(join(dir, "SKILL.md"), `---\nname: ${name}\ndescription: Routing fixture\nmetadata:\n  keywords: >\n    Keywords - ${keywords}\n---\n\n# ${name}\n`);
 }
 
 describe("native hook skill precedence (H21)", () => {
@@ -94,7 +94,7 @@ describe("native hook skill precedence (H21)", () => {
 });
 
 // Quality review 2026-09-11, finding H43. The shared hint text names Claude built-ins
-// (`/autocompact`, `/model`, `/effort`) and the Claude command prefix (`/flow`); Codex
+// (`/autocompact`, `/effort`) and the Claude command prefix (`/flow`); Codex
 // reads the same text through this adapter. Self-maintaining: the expected tokens are
 // read from the Claude-bound injection, not hardcoded, so a reworded hint stays covered.
 // Scope is the shape lines — `Skill(<name>)` lines are host-neutral already and a skill
@@ -119,7 +119,13 @@ describe("native hook host-neutral hints (H43)", () => {
       const codex = (await handleNativeHook("codex", "UserPromptSubmit", { prompt }))
         ?.hookSpecificOutput?.additionalContext ?? "";
       expect(codex).not.toBe("");
-      for (const token of tokens) expect(codex).not.toContain(token);
+      for (const token of tokens.filter(token => token !== "/model")) expect(codex).not.toContain(token);
     }
+  });
+  it("offers the interactive Codex model selector for effort changes", async () => {
+    const hint = (await handleNativeHook("codex", "UserPromptSubmit", { prompt: PROMPTS[2] }))?.hookSpecificOutput?.additionalContext;
+    expect(hint).toContain("/model");
+    expect(hint).toContain("Orca");
+    expect(hint).not.toContain("not an in-session command");
   });
 });

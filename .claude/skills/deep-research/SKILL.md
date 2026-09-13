@@ -31,7 +31,7 @@ Rigor method (tiers, quote-anchors, refuters, counter-evidence): read on demand
 | **Hard cap: ≤10 agents total** per invocation (finders + refuters + any helpers) | User budget; never “throw Haikus at it” |
 | **Every agent prompt carries a SEED** | What the session already found + exclusion list — no cold starts |
 | **Empty seed → do not spawn** | If Phase 1 produced nothing usable, fix the session pass or ask the user — agents will thrash |
-| **Agent prompts go through `prompt-engineer`** | Commandment VIII: `Skill(prompt-engineer)` Context 3 (review delegation) before every `Agent()` / fan-out — no raw drafts |
+| **Agent prompts go through `prompt-design`** | Commandment VIII: `Skill(prompt-design)` Context 3 (review delegation) before every `Agent()` / fan-out — no raw drafts |
 | **Read-only research** | No edits to the product codebase from this skill; report only |
 
 ## Flow
@@ -96,11 +96,11 @@ Read `references/escalation.md` when this phase runs. Summary:
    - Many gaps → merge into ≤8 finder clusters; keep ≥1 slot free for a refuter if needed
 3. **Draft** each agent prompt from the SEED + gap-only objective + exclusion + deliverable
    schema (template in the ref). Raw findings for the Lead, not user prose.
-4. **`Skill(prompt-engineer)` before every spawn (mandatory)** — Context 3: review the
+4. **`Skill(prompt-design)` before every spawn (mandatory)** — Context 3: review the
    delegation prompt(s) (Arch H / rubric ≥80). Fix weak prompts; only then call `Agent()`
    or the fan-out panel — always with an explicit `model` (mid tier for finders, top tier
    for a refuter; the `CLAUDE_CODE_SUBAGENT_MODEL` default is a cheap tier). Results
-   arrive as task notifications (background by default since CC 2.1.232). Batch-review is fine (one prompt-engineer pass over all drafts);
+   arrive as task notifications (background by default since CC 2.1.232). Batch-review is fine (one prompt-design pass over all drafts);
    skipping the skill is not. Refuter prompts go through the same gate.
 5. **Refuter** (optional, from research-rigor rule 3): only for decision-changing claims;
    counts toward the 10. Instruct REFUTE against primary sources; fail closed.
@@ -127,17 +127,17 @@ Numeric claims: quote-anchor or `[Probable]` / `UNVERIFIED` (research-rigor P1).
 | Situation | Use instead |
 |-----------|-------------|
 | Trivial fact, one known file/URL | Answer inline — no skill ceremony |
-| Pre-code API/deprecation check inside a plan | `tech-plan` → `references/02-research.md` |
-| External model second opinion | `consult` |
-| Choose between options already researched | `decide` |
-| User wants a full feature pipeline | `/flow` |
+| Pre-code API/deprecation check inside a plan | `flow-plan` → `references/02-research.md` |
+| External model second opinion | `consult-model` |
+| Choose between options already researched | `compare-and-decide` |
+| User wants a full feature pipeline | `/flow-lifecycle` |
 
 ## Anti-patterns (kill the skill if these become normal)
 
 - Agents before a real session pass.
 - 10 agents on a question two WebFetches would close.
 - Agent prompts without SEED / exclusion list (cold parallel thrash).
-- Spawning without `Skill(prompt-engineer)` Context 3 on the delegation prompts.
+- Spawning without `Skill(prompt-design)` Context 3 on the delegation prompts.
 - Re-researching exclusion-list sources “to be sure” without a concrete dispute.
 - Treating agent output as truth without verifying decision-grade claims.
 - Turning this into a harness config audit (domain audit ≠ open research).
@@ -150,15 +150,15 @@ Numeric claims: quote-anchor or `[Probable]` / `UNVERIFIED` (research-rigor P1).
 | II | Tiers, quote-anchors, verify decision-grade claims |
 | III | Counter-evidence + optional refuter — not confirmation theater |
 | V / X | Session-first; ≤10 agents; seeds cut duplicate tool use |
-| VIII | Every agent prompt: SEED + `prompt-engineer` Context 3 before `Agent()` |
+| VIII | Every agent prompt: SEED + `prompt-design` Context 3 before `Agent()` |
 
 ## Related
 
 - `.claude/docs/research-rigor.md` — evidence quality SSOT
-- `prompt-engineer` — **mandatory** before any research agent spawn (Context 3)
-- `tech-plan/references/02-research.md` — deep research *for planning code* (anti-obsolescence)
-- `/role research` · `/role shopping` — compose this skill + tools / `decide`
-- `consult` — other-model hypothesis, not a substitute for primary sources
+- `prompt-design` — **mandatory** before any research agent spawn (Context 3)
+- `flow-plan/references/02-research.md` — deep research *for planning code* (anti-obsolescence)
+- `/expert-role research` · `/expert-role shopping` — compose this skill + tools / `compare-and-decide`
+- `consult-model` — other-model hypothesis, not a substitute for primary sources
 - `references/escalation.md` — budget table + agent prompt template
 
-**Version**: 1.1.0 (prompt-engineer gate on escalation)
+**Version**: 1.1.0 (prompt-design gate on escalation)

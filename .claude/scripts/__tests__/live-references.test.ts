@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 // Quality review 2026-09-11, findings H25 and H26 and the rot class behind them.
@@ -21,7 +21,7 @@ const RETIRED = [
   "workspace-hint.ts",
   "anti-hallucination",
   "ultracode-audit",
-  "flow-build",
+  "workflows/flow-build.js",
   "token-trend",
   "meta-create",
   "meta-settings-cookbook",
@@ -30,14 +30,13 @@ const RETIRED = [
 
 // Dated history records what was true on its date; a decision log and a lessons row must
 // keep naming what they are about. Tests name retired components on purpose: that is here.
-const ALLOWED = /^\.claude\/(plans|audits)\/|^docs\/component-audit|__tests__|existence-checks\.md$|lessons\/SKILL\.md$|doctrine-sweep\.md$|history\.md$/;
+const ALLOWED = /^\.claude\/(plans|audits)\/|^docs\/component-audit|__tests__|existence-checks\.md$|lessons-learned\/SKILL\.md$|doctrine-sweep\.md$|history\.md$/;
 // A sentence that says the thing is gone is documentation, not rot.
 const RETIRED_NEARBY = /\b(cut|retired|removed|deleted|replaced by|no longer|gone)\b/i;
 
 function liveFiles(): string[] {
-  return execFileSync("git", ["ls-files"], { cwd: root, encoding: "utf8" })
-    .split("\n")
-    .filter((f) => /\.(md|ts|js|jsonl|json)$/.test(f) && !ALLOWED.test(f));
+  return [...new Set(execFileSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], { cwd: root, encoding: "utf8" }).split("\0"))]
+    .filter((f) => /\.(md|ts|js|jsonl|json)$/.test(f) && !ALLOWED.test(f) && existsSync(join(root, f)));
 }
 
 // Word-boundary match, so a plan slug like `037-meta-create-harness` is not a mention of

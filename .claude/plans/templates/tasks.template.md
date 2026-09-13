@@ -14,7 +14,7 @@ absorbs_decision: <nombre>   # opcional — solo si la HU absorbe una decisión 
 
 ## Execution prompt (Phase 3 input)
 
-> The US is consumed by `build` (the Lead executes it inline). Write this block as a self-contained, high-quality prompt — Commandment VIII applies to the plan itself.
+> The US is consumed by `flow-build` (the Lead executes it inline). Write this block as a self-contained, high-quality prompt — Commandment VIII applies to the plan itself.
 
 **Task**: <one imperative sentence — the exact change>
 **Context**: <files, prior state, evidence the executor needs — paths verified>

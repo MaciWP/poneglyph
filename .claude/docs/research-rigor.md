@@ -20,7 +20,7 @@ Reusable method for any evidence/research feature. **Runner:** skill `deep-resea
 4. **Counter-evidence mandate**: each workstream actively searches for negative results. Research without counter-evidence is marketing.
 5. **Claim format**: assertion + tier + URL + date (+ model-era flag where benchmarks are involved). `UNVERIFIED` explicit when confirmation failed.
 6. **Critic independence**: the Phase 4 sampler audits claims NOT covered by build-time refuters — overlap destroys independence and hides corpus-level failure classes.
-7. **Contradiction check** (P4, wired via orchestrator-protocol — roadmap 020.2): when ≥2 parallel agents cite the same source or fact, diff their claims before writing artefacts.
+7. **Contradiction check** (P4, wired via agent-routing — roadmap 020.2): when ≥2 parallel agents cite the same source or fact, diff their claims before writing artefacts.
 8. **Seeds discipline**: prior verified findings are ground truth with explicit "extend, don't repeat" exclusion lists in finder prompts.
 
 ## Delegation template per research agent (Commandment VIII)

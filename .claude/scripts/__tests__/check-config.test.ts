@@ -178,7 +178,7 @@ describe("native configuration structure", () => {
 
 describe("private addon and data boundaries", () => {
   const addon = (): Source => ({ files: new Map([["skills/team-notes/SKILL.md", skill("team-notes")], [".claude-plugin/plugin.json", '{"name":"private-addon"}'], ["memory/team.md", "Private project facts."]]), links: [] });
-  it("accepts unique skills and memory without its own doctrine", () => { expect(errors(addon(), { addon: true, baseSkills: new Set(["dev", "verify"]) })).toEqual([]); });
+  it("accepts unique skills and memory without its own doctrine", () => { expect(errors(addon(), { addon: true, baseSkills: new Set(["dev-workflow", "changes-verify"]) })).toEqual([]); });
   it("rejects malformed plugin manifests and paths escaping the checkout", () => {
     const s = addon(); s.files.set(".claude-plugin/plugin.json", '{"name":false,"version":42,"skills":"../outside","hooks":{}}');
     expect(errors(s)).toEqual(expect.arrayContaining(["plugin.name", "plugin.version", "plugin.path", "addon.manifest"]));
@@ -186,8 +186,8 @@ describe("private addon and data boundaries", () => {
     expect(errors(s)).toContain("plugin.marketplace");
   });
   it("rejects copied doctrine, hooks and core skill names", () => {
-    const s = addon(); s.files.set("AGENTS.md", "Duplicate"); s.files.set("hooks/hooks.json", "{}"); s.files.set("skills/dev/SKILL.md", skill("dev"));
-    expect(errors(s, { addon: true, baseSkills: new Set(["dev"]) })).toEqual(expect.arrayContaining(["addon.doctrine", "addon.content", "addon.duplicate"]));
+    const s = addon(); s.files.set("AGENTS.md", "Duplicate"); s.files.set("hooks/hooks.json", "{}"); s.files.set("skills/dev-workflow/SKILL.md", skill("dev-workflow"));
+    expect(errors(s, { addon: true, baseSkills: new Set(["dev-workflow"]) })).toEqual(expect.arrayContaining(["addon.doctrine", "addon.content", "addon.duplicate"]));
   });
   it("finds private terms in historical documents, JavaScript and file names", () => {
     const files = new Map([[".claude/plans/old.md", "PrivateCo"], ["legacy.js", "privateco"], ["PrivateCo.md", "notes"]]);

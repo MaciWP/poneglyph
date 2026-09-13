@@ -4,7 +4,7 @@ parent: pr-review
 
 # Check-command discovery (generalist)
 
-Same convention the `verify` skill uses — the project declares its truth; discover it,
+Same convention the `changes-verify` skill uses — the project declares its truth; discover it,
 don't guess it. Order:
 
 1. **Project CLAUDE.md** — §Commands / §Verification / §Testing sections (e.g. a Vite repo:

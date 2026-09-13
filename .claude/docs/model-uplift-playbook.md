@@ -20,7 +20,7 @@ Each pattern: when it applies → the discipline → evidence it happened → th
 - **When**: any claim that is cheaply executable — a bug, a guard gap, a CLI behavior, a config effect.
 - **Discipline**: don't report what the code "would do" — build a minimal fixture (scratchpad) and **execute it**. Report the observed output, not the predicted one.
 - **Evidence**: the `close-feature` guard gap (F1) was not claimed from reading `flow-state.ts` — Fable created fake plan fixtures in scratch and ran the CLI, showing the lifecycle closing with `NEEDS_CHANGES` live (audit 2026-07-02 §A).
-- **Prevents**: misread-code findings; the class behind `lessons` G10 (verifying a line exists does not validate the conclusion about it).
+- **Prevents**: misread-code findings; the class behind `lessons-learned` G10 (verifying a line exists does not validate the conclusion about it).
 
 ### 2.3 When two sources disagree, the primary artifact wins
 - **When**: docs vs disk, memory vs repo, an agent's summary vs the file it summarized, a prior report vs today's state.
@@ -85,7 +85,7 @@ Watchpoints where smaller models historically relapse in this setup — each map
 
 **Task → model routing** (the criterion lives here, not in settings):
 
-- Deep review / architecture / security / escalation → **Fable 5.1 or Opus 4.8 + `/effort xhigh`** (skills critic/security-audit/unstuck already pin xhigh via frontmatter — that wiring keeps working; `decide`'s heavy tier escalates effort per-invocation, 031).
+- Deep review / architecture / security / escalation → **Fable 5.1 or Opus 4.8 + `/effort xhigh`** (skills critic/security-audit/task-unblock already pin xhigh via frontmatter — that wiring keeps working; `compare-and-decide`'s heavy tier escalates effort per-invocation, 031).
 - Standard feature build → Fable 5.1 (session default) or Opus 4.8 high — Sonnet 5 when budget matters.
 - Bulk mechanical work (sweeps, renames, formatting, doc batches) → Opus 4.8 **fast mode** or Sonnet 5.
 - Massive-corpus analysis (multi-repo audits, huge logs, long-lived sessions) → **Sonnet 5** for the 1M window; prefer it over compacting Opus mid-task.
@@ -95,5 +95,5 @@ Watchpoints where smaller models historically relapse in this setup — each map
 ## 5. Load & verify
 
 - The always-loaded routing core is `.claude/rules/skill-routing.md` (synced per-entry to `~/.claude/rules/`). This playbook stays on-demand. Verify routing loads: `grep skill-routing .claude/learned/instructions-loaded.log` in any session (verify the load layer from the log; never assume it loaded).
-- Behavioral validation happens in the first real Opus 4.8 session (spec 026 AC5, deliberately deferred): judge against §2 — is it refuting itself, running before claiming, keeping status bookkeeping? Refine via `/retro`.
+- Behavioral validation happens in the first real Opus 4.8 session (spec 026 AC5, deliberately deferred): judge against §2 — is it refuting itself, running before claiming, keeping status bookkeeping? Refine via `/flow-retro`.
 - Lifecycle: when the model era changes again, update §4 first (it decays fastest), re-verify §2 still reads as deltas, and prune what the new model does natively.

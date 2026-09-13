@@ -18,37 +18,37 @@ post_review_adjustment: "mean 7.64->7.57 (Rules 9->8 off-rubric discount removed
 
 # Audit profundo — Claude Code Poneglyph
 
-> Deliverable de `/flow --full 002-claude-config-deep-audit`. Snapshot commit `c2eb838` · 2026-05-29 · 14 categorías scored · 17 fuentes externas · 7 HUs.
+> Deliverable de `/flow-lifecycle --full 002-claude-config-deep-audit`. Snapshot commit `c2eb838` · 2026-05-29 · 14 categorías scored · 17 fuentes externas · 7 HUs.
 >
-> **Lectura rápida**: secciones 1-3 (Executive + Top-10 + Quick-wins) bastan para decidir próximos `/flow`. Resto = evidencia.
+> **Lectura rápida**: secciones 1-3 (Executive + Top-10 + Quick-wins) bastan para decidir próximos `/flow-lifecycle`. Resto = evidencia.
 
 ---
 
 ## 1. Executive summary
 
 - **Estado global**: sistema sólido en diseño (mean **7.57**/10, median 8.0), débil en evidencia de uso. 12 de 14 categorías en rango 7-8. Min = **Critic (3)**, Max = **8 (11 categorías empatadas)** — techo n=1 declarado en rúbrica.
-- **Hallazgo crítico (BLOCKER)**: Phase 4 (Critic) **nunca se ejecutó formalmente** — `review.md` = 0 archivos en todo el repo. El quality gate central del 5-phase workflow es teórico. El sistema se construyó sobre sí mismo sin pasar por su propio proceso completo (n=1 dogfooding, `/flow` creado tarde en US8).
+- **Hallazgo crítico (BLOCKER)**: Phase 4 (Critic) **nunca se ejecutó formalmente** — `review.md` = 0 archivos en todo el repo. El quality gate central del 5-phase workflow es teórico. El sistema se construyó sobre sí mismo sin pasar por su propio proceso completo (n=1 dogfooding, `/flow-lifecycle` creado tarde en US8).
 - **Evento disruptivo (2026-05-28)**: Anthropic lanzó **dynamic workflows** + Opus 4.8. Automatiza lo que poneglyph orquesta a mano (DAG, spawning paralelo, verificación adversarial). Poneglyph cubre 2/3 de la taxonomía canónica 2026 (skills + subagents, **no** workflows).
-- **Veredicto sobre el trabajo**: NO obsoleto. Poneglyph aporta una **capa de governance** (10 Commandments, hard gates humanos, drillme, retro promotions, security-gate, output-style) que dynamic workflows NO tiene. El futuro es **componer**: poneglyph SOBRE dynamic workflows (7 items compose identificados, 5 HIGH).
-- **Limitación honesta del audit**: meta-circular — auditado con el mismo modelo familia (Claude) bajo las mismas reglas. Mitigado en capas (perspectives + reviewer Opus Phase 4 + advisor) pero no eliminable. Phase 4 de este audit fue la 1ª ejecución real de `/critic` en la historia del sistema.
+- **Veredicto sobre el trabajo**: NO obsoleto. Poneglyph aporta una **capa de governance** (10 Commandments, hard gates humanos, drillme-clarify, retro promotions, security-gate, output-style) que dynamic workflows NO tiene. El futuro es **componer**: poneglyph SOBRE dynamic workflows (7 items compose identificados, 5 HIGH).
+- **Limitación honesta del audit**: meta-circular — auditado con el mismo modelo familia (Claude) bajo las mismas reglas. Mitigado en capas (perspectives + reviewer Opus Phase 4 + advisor) pero no eliminable. Phase 4 de este audit fue la 1ª ejecución real de `/flow-review` en la historia del sistema.
 - **Resultado de la mitigación (verdict Phase 4)**: reviewer Opus independiente emitió **APPROVED_WITH_WARNINGS · 8/8 AC**. La mitigación funcionó (cambió el resultado, no rubber-stamp): rebajó Rules 9→8 por un descuento off-rubric, corrigió una inconsistencia stale Critic 5-vs-3, y **confirmó Critic=3 como genuino** verificando `review.md`=0 con Glob. Grounding validado contra fuentes primarias (spec-kit 106,797★, METR literal "19% longer", security-gate solo `SECRET_PATTERN`). No detectó auto-indulgencia sistémica.
 
 ---
 
 ## 2. Top-10 hallazgos accionables
 
-| # | Hallazgo | Tipo | Sev | Acción | Effort | /flow sugerido |
+| # | Hallazgo | Tipo | Sev | Acción | Effort | /flow-lifecycle sugerido |
 |---|---|---|---|---|---|---|
-| 1 | Phase 4 Critic nunca ejecutada (`review.md`=0); quality gate teórico | low-score | **BLOCKER** | EJECUTAR critic+reviewer Opus sobre este audit como 1ª ejecución real | M | (en curso) Phase 4 de este `/flow` |
-| 2 | Gap a Dynamic Workflows; sin guidance DW vs `/flow` manual | gap | **MAJOR** | ADD skill `workflows-integration` (heurística DW/ultracode vs /flow) | M | `/flow --standard "ADD workflows-integration skill"` |
-| 3 | Compose layer no documentado (poneglyph governance SOBRE DW) | compose | **MAJOR** | DOCUMENT capa compose en CLAUDE.md (C1-C7) | M | `/flow --standard "DOCUMENT poneglyph-over-DW governance layer"` |
-| 4 | Living-spec retro promotions infrautilizada — sin enforcement | innovation | **MAJOR** | ADD promotions.md tracking + state.json pending field | S | `/flow --minimal "ADD promotions.md tracking en retro"` |
-| 5 | Acceleration Whiplash no articulado como valor-prop (faros.ai) | opp | **MAJOR** | DOCUMENT evidencia en CLAUDE.md §Golden Rule | S | `/flow --minimal "DOCUMENT Acceleration Whiplash en Golden Rule"` |
-| 6 | Perception/reality gap METR no citado (justifica Commandment IV) | opp | **MAJOR** | DOCUMENT METR RCT+Survey como fundamento de Commandment IV | S | `/flow --minimal "DOCUMENT METR en Commandment IV"` |
-| 7 | Background agents / parallel sessions no usados (G2) | gap | MINOR | EVALUATE background agents para Phase 3 wave-parallelism | M | `/flow --standard "EVALUATE background agents en build"` |
-| 8 | Constitution level no formalizado (spec-kit 107k★ pattern) | opp | MINOR | REFACTOR Commandments como constitution-level invariante | S | `/flow --minimal "REFACTOR Commandments como constitution"` |
-| 9 | security-review no auto-activa en build (Apiiro: 10x vulns) | opp/gap | MINOR | INTEGRATE security-review auto-trigger en build/critic | M | `/flow --standard "INTEGRATE security-review auto-trigger"` |
-| 10 | n=1 dogfooding — workflow nunca probado end-to-end real | low-score | **MAJOR** | DOGFOOD `/flow` sobre 2-3 features reales, capturar friction | L | `/flow --standard "<próxima feature>"` ×2-3 |
+| 1 | Phase 4 Critic nunca ejecutada (`review.md`=0); quality gate teórico | low-score | **BLOCKER** | EJECUTAR critic+reviewer Opus sobre este audit como 1ª ejecución real | M | (en curso) Phase 4 de este `/flow-lifecycle` |
+| 2 | Gap a Dynamic Workflows; sin guidance DW vs `/flow-lifecycle` manual | gap | **MAJOR** | ADD skill `workflows-integration` (heurística DW/ultracode vs /flow-lifecycle) | M | `/flow-lifecycle --standard "ADD workflows-integration skill"` |
+| 3 | Compose layer no documentado (poneglyph governance SOBRE DW) | compose | **MAJOR** | DOCUMENT capa compose en CLAUDE.md (C1-C7) | M | `/flow-lifecycle --standard "DOCUMENT poneglyph-over-DW governance layer"` |
+| 4 | Living-spec retro promotions infrautilizada — sin enforcement | innovation | **MAJOR** | ADD promotions.md tracking + state.json pending field | S | `/flow-lifecycle --minimal "ADD promotions.md tracking en retro"` |
+| 5 | Acceleration Whiplash no articulado como valor-prop (faros.ai) | opp | **MAJOR** | DOCUMENT evidencia en CLAUDE.md §Golden Rule | S | `/flow-lifecycle --minimal "DOCUMENT Acceleration Whiplash en Golden Rule"` |
+| 6 | Perception/reality gap METR no citado (justifica Commandment IV) | opp | **MAJOR** | DOCUMENT METR RCT+Survey como fundamento de Commandment IV | S | `/flow-lifecycle --minimal "DOCUMENT METR en Commandment IV"` |
+| 7 | Background agents / parallel sessions no usados (G2) | gap | MINOR | EVALUATE background agents para Phase 3 wave-parallelism | M | `/flow-lifecycle --standard "EVALUATE background agents en build"` |
+| 8 | Constitution level no formalizado (spec-kit 107k★ pattern) | opp | MINOR | REFACTOR Commandments como constitution-level invariante | S | `/flow-lifecycle --minimal "REFACTOR Commandments como constitution"` |
+| 9 | security-review no auto-activa en build (Apiiro: 10x vulns) | opp/gap | MINOR | INTEGRATE security-review auto-trigger en build/critic | M | `/flow-lifecycle --standard "INTEGRATE security-review auto-trigger"` |
+| 10 | n=1 dogfooding — workflow nunca probado end-to-end real | low-score | **MAJOR** | DOGFOOD `/flow-lifecycle` sobre 2-3 features reales, capturar friction | L | `/flow-lifecycle --standard "<próxima feature>"` ×2-3 |
 
 **Severity**: 1 BLOCKER · 6 MAJOR · 3 MINOR · 0 NIT.
 **Tipos**: low-score(2) · gap(2) · opp(4) · compose(1) · innovation(1).
@@ -57,14 +57,14 @@ post_review_adjustment: "mean 7.64->7.57 (Rules 9->8 off-rubric discount removed
 
 ## 3. Quick-wins (Effort S — ≤1h cada uno)
 
-| # | Acción | /flow |
+| # | Acción | /flow-lifecycle |
 |---|---|---|
-| QW1 | ADD promotions.md tracking en retro skill | `/flow --minimal "ADD promotions.md tracking"` |
-| QW2 | DOCUMENT Acceleration Whiplash (faros.ai) en Golden Rule | `/flow --minimal "DOCUMENT Acceleration Whiplash"` |
-| QW3 | DOCUMENT METR evidence en Commandment IV | `/flow --minimal "DOCUMENT METR evidence"` |
-| QW4 | REFACTOR Commandments como constitution-level | `/flow --minimal "REFACTOR Commandments como constitution"` |
+| QW1 | ADD promotions.md tracking en retro skill | `/flow-lifecycle --minimal "ADD promotions.md tracking"` |
+| QW2 | DOCUMENT Acceleration Whiplash (faros.ai) en Golden Rule | `/flow-lifecycle --minimal "DOCUMENT Acceleration Whiplash"` |
+| QW3 | DOCUMENT METR evidence en Commandment IV | `/flow-lifecycle --minimal "DOCUMENT METR evidence"` |
+| QW4 | REFACTOR Commandments como constitution-level | `/flow-lifecycle --minimal "REFACTOR Commandments como constitution"` |
 
-> **Fusión sugerida**: QW2+QW3+QW4 tocan todos CLAUDE.md → 1 solo `/flow --standard "DOCUMENT evidencia empírica (faros.ai+METR) + constitution-level en CLAUDE.md"` evita 3 ediciones del mismo archivo.
+> **Fusión sugerida**: QW2+QW3+QW4 tocan todos CLAUDE.md → 1 solo `/flow-lifecycle --standard "DOCUMENT evidencia empírica (faros.ai+METR) + constitution-level en CLAUDE.md"` evita 3 ediciones del mismo archivo.
 
 ---
 
@@ -116,7 +116,7 @@ Detalle completo en `build/cross-analysis.md`. Counts: 10 gaps · 7 oportunidade
 | I3 error-recovery retry budget + SendMessage | **Genuine** — sin equivalente documentado |
 | I5 living-spec retro promotions loop | **Genuine** — spec-kit tiene ciclo sin retro de self-improvement |
 | I4 10 Commandments framework | **Parcial** — estructura auditável genuina; principios = síntesis de buenas prácticas (BMAD/cline comparten filosofía) |
-| I6 drillme socratic catalog | Genuine (downgrade MEDIUM applicability) |
+| I6 drillme-clarify socratic catalog | Genuine (downgrade MEDIUM applicability) |
 | I7 Arch H Lead-Directed Skill Reads | **Implementation workaround** — resuelve "subagents no invocan Skill()"; conceptualmente ≈ `skills:` field |
 
 ### Compose — poneglyph SOBRE dynamic workflows (el futuro)
@@ -161,7 +161,7 @@ Detalle completo en `build/inventory.md`. Counts verificados via Glob, coinciden
 
 **Discrepancias vs CLAUDE.md**: ninguna en counts principales. Adiciones documentadas: un script de tendencia de tokens (untracked, Observability), `state.template.json` (8º template). Cobertura 14 categorías: completa, ninguna huérfana.
 
-**Meta-componentes documentados**: frontmatter conventions (`activation.keywords` NO oficial), state.json schema, drillme integration (4 categorías auto-invocadas), hard gates protocol (1→2, 2→3 humanos; sin gate auto 3→4).
+**Meta-componentes documentados**: frontmatter conventions (`activation.keywords` NO oficial), state.json schema, drillme-clarify integration (4 categorías auto-invocadas), hard gates protocol (1→2, 2→3 humanos; sin gate auto 3→4).
 
 ---
 
@@ -179,7 +179,7 @@ Detalle completo en `build/corpus.md`. Distribución repos: 25% enterprise · 37
 
 ### Repos GitHub comparables (8)
 
-6. [github/spec-kit](https://github.com/github/spec-kit) — **107k★** — SDD constitution→spec→plan→tasks. Comparable más directo de `/flow`.
+6. [github/spec-kit](https://github.com/github/spec-kit) — **107k★** — SDD constitution→spec→plan→tasks. Comparable más directo de `/flow-lifecycle`.
 7. [wshobson/agents](https://github.com/wshobson/agents) — 36.1k★ — marketplace (anti-lesson: bloat).
 8. [NomenAK/SuperClaude](https://github.com/NomenAK/SuperClaude) — 23k★ — más comparable en filosofía (personal meta-prog).
 9. [davila7/claude-code-templates](https://github.com/davila7/claude-code-templates) — 27.6k★ — templates out-of-box.
@@ -205,11 +205,11 @@ Detalle completo en `build/corpus.md`. Distribución repos: 25% enterprise · 37
 
 Tres decisiones quedan listas para ejecutar, ordenadas por dependencia:
 
-1. **Cerrar el gap empírico antes que el gap funcional.** El BLOCKER (#1, Critic nunca ejecutado) y el MAJOR cross-cutting (#10, n=1 dogfooding) son el mismo problema visto desde dos ángulos: el sistema no se ha usado de verdad. Antes de añadir capacidades (workflows-integration, background agents) conviene cerrar 2-3 features reales con `/flow` end-to-end. Este audit (002) es el dogfood #1 y ya destapó el gap — la mejor señal de que dogfooding-first habría sido más barato.
+1. **Cerrar el gap empírico antes que el gap funcional.** El BLOCKER (#1, Critic nunca ejecutado) y el MAJOR cross-cutting (#10, n=1 dogfooding) son el mismo problema visto desde dos ángulos: el sistema no se ha usado de verdad. Antes de añadir capacidades (workflows-integration, background agents) conviene cerrar 2-3 features reales con `/flow-lifecycle` end-to-end. Este audit (002) es el dogfood #1 y ya destapó el gap — la mejor señal de que dogfooding-first habría sido más barato.
 
-2. **Posicionar poneglyph como governance layer, no como orquestador competidor.** Dynamic workflows gana en mecánica (escala, paralelismo, resumabilidad). Poneglyph gana en criterio (Commandments, gates humanos, drillme, retro, security-gate). Los 7 items compose (§5) son la hoja de ruta de esa convivencia. El finding #3 (documentar la capa compose en CLAUDE.md) es el que fija esta identidad antes de que la ambigüedad "¿reemplazo o complemento?" erosione la motivación de mantener el sistema.
+2. **Posicionar poneglyph como governance layer, no como orquestador competidor.** Dynamic workflows gana en mecánica (escala, paralelismo, resumabilidad). Poneglyph gana en criterio (Commandments, gates humanos, drillme-clarify, retro, security-gate). Los 7 items compose (§5) son la hoja de ruta de esa convivencia. El finding #3 (documentar la capa compose en CLAUDE.md) es el que fija esta identidad antes de que la ambigüedad "¿reemplazo o complemento?" erosione la motivación de mantener el sistema.
 
-3. **Capitalizar la evidencia empírica que ya existe.** Los quick-wins QW2-QW4 (faros.ai Acceleration Whiplash, METR perception gap, constitution-level) convierten estudios externos en justificación explícita del "por qué" de poneglyph. Coste S, fusionables en 1 solo `/flow`. Es el retorno más alto por token: blindan el sistema contra su propia tentación de vibe-coding.
+3. **Capitalizar la evidencia empírica que ya existe.** Los quick-wins QW2-QW4 (faros.ai Acceleration Whiplash, METR perception gap, constitution-level) convierten estudios externos en justificación explícita del "por qué" de poneglyph. Coste S, fusionables en 1 solo `/flow-lifecycle`. Es el retorno más alto por token: blindan el sistema contra su propia tentación de vibe-coding.
 
 El resto (security-review auto-trigger, background agents) son mejoras incrementales que dependen de haber cerrado primero el gap empírico (#1).
 
@@ -220,15 +220,15 @@ Honestidad radical (Commandment I + AC8). Cada limitación = learning para audit
 | Limitación | Detalle | Mitigación aplicada | Learning para audit-2 |
 |---|---|---|---|
 | **Sesgo meta-circular** | Auditado con mismo modelo familia (Claude) bajo mismas reglas. No ve fallos de marco. | 3 perspectives Phase 1 + reviewer Opus Phase 4 + advisor. NO eliminable. | Considerar revisor humano externo o modelo no-Claude para audit-2 |
-| **n=1 dogfooding** | Solo 001 cerró lifecycle; este audit (002) es el 2º. Scores capados a interp-8. | Techo declarado upfront en rúbrica. | Re-auditar tras 3-4 features cerradas con `/flow` real |
+| **n=1 dogfooding** | Solo 001 cerró lifecycle; este audit (002) es el 2º. Scores capados a interp-8. | Techo declarado upfront en rúbrica. | Re-auditar tras 3-4 features cerradas con `/flow-lifecycle` real |
 | **14 categorías (BLOCKER perspectives)** | Riesgo score paralysis. Usuario ratificó pese a feedback. | Progressive disclosure: scoring detrás del top-10 priorizado. | Evaluar si 7 hard-merged habría sido más accionable |
 | **12-20 fuentes (BLOCKER perspectives)** | Riesgo apples-to-oranges para uso personal. Usuario ratificó. | `compare-context` label por fuente; 25% enterprise (<50%). | Funcionó mejor de lo previsto — spec-kit/BMAD aportaron señal real |
-| **Audit-first vs dogfood-first** | Hallazgos parcialmente teóricos. Usuario ratificó audit-first. | El hallazgo #1+#10 confirmó empíricamente la intuición del usuario (drillme D2). | Dogfood-first habría detectado el gap Critic antes |
+| **Audit-first vs dogfood-first** | Hallazgos parcialmente teóricos. Usuario ratificó audit-first. | El hallazgo #1+#10 confirmó empíricamente la intuición del usuario (drillme-clarify D2). | Dogfood-first habría detectado el gap Critic antes |
 | **Read-only** | `bun test` no re-ejecutado (constraint anti-drift). Score Hooks asume 81/81 de retro 001. | Declarado en scoring categoría 9. | Audit-2 podría permitir 1 ejecución de test suite controlada |
 | **Disputa/rebuttal** | Frontmatter `disputed: []` editable por Oriol sin re-ejecutar audit. | Protocolo activo. | — |
 
 ### Reflexión meta
 
-El audit confirma su propio hallazgo central: **el sistema es fuerte en diseño, débil en evidencia de uso**. Este mismo audit (002) es el primer `/flow --full` que llega a Phase 4 con `/critic` formal. Si el audit se hubiera hecho dogfood-first (como sugirieron Outsider+Product perspectives), el gap Critic se habría detectado por uso, no por scoring. La decisión audit-first del usuario produjo un report más exhaustivo a costa de evidencia empírica — trade-off consciente, documentado, sin ocultar.
+El audit confirma su propio hallazgo central: **el sistema es fuerte en diseño, débil en evidencia de uso**. Este mismo audit (002) es el primer `/flow-lifecycle --full` que llega a Phase 4 con `/flow-review` formal. Si el audit se hubiera hecho dogfood-first (como sugirieron Outsider+Product perspectives), el gap Critic se habría detectado por uso, no por scoring. La decisión audit-first del usuario produjo un report más exhaustivo a costa de evidencia empírica — trade-off consciente, documentado, sin ocultar.
 
 **El trabajo de poneglyph NO es obsoleto post dynamic workflows.** Es una capa de governance que el ecosistema todavía no tiene. El siguiente paso natural: componer (no reemplazar).

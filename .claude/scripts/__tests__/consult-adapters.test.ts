@@ -11,7 +11,7 @@ import { join, resolve } from "node:path";
 //   - both `config.toml` profiles now read model_reasoning_effort = "high", not "xhigh"
 // The skill is prose, so these assertions are what makes the correction checkable.
 const root = resolve(import.meta.dir, "..", "..", "..");
-const md = readFileSync(join(root, ".claude", "skills", "consult", "SKILL.md"), "utf8");
+const md = readFileSync(join(root, ".claude", "skills", "consult-model", "SKILL.md"), "utf8");
 // Markdown escapes the pipe inside table cells; compare against the unescaped text.
 const flat = md.split("\\|").join("|");
 

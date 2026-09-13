@@ -45,12 +45,12 @@ Declared count matches documented real failures only — no filler added (the or
 
 | Cluster | Cases | Grader | Failure origin |
 |---|---|---|---|
-| Skill triggering | skill-01..04 | `skillTriggerParse` | Native under-triggering verified in `_research-skill-activation-2026-06-09.md`; wiring lesson = `lessons` G12 (skill wiring over auto-trigger) |
-| meta-harness routing | skill-meta-harness-create-22 .. consult-25 | `skillTriggerParse` | 037 AC27: create/modify/delete/consult must route to `meta-harness`, not the stubs |
+| Skill triggering | skill-01..04 | `skillTriggerParse` | Native under-triggering verified in `_research-skill-activation-2026-06-09.md`; wiring lesson = `lessons-learned` G12 (skill wiring over auto-trigger) |
+| harness-config routing | skill-meta-harness-create-22 .. consult-25 | `skillTriggerParse` | 037 AC27: create/modify/delete/consult must route to `harness-config`, not the stubs |
 | Anti-sycophancy openers | opener-05..09 | `bannedOpeners` | poneglyph.md kill-list (distilled from real feedback); hook-reliability false-claim case |
 | es-ES register | eses-10..12 | `esEsDetect` | CLAUDE.md language convention; 017 translated-English debt |
-| BLUF position | bluf-13..15 | `blufPosition` | poneglyph.md §2 Glance anti-examples; `lessons` G11 (brief by default, no bureaucracy) |
-| Confidence labels | label-16..18 | `labelPresence` | `lessons` G9 (measure, don't estimate — 010 incident); `lessons` G10 (verified line ≠ correct fix — 014) |
+| BLUF position | bluf-13..15 | `blufPosition` | poneglyph.md §2 Glance anti-examples; `lessons-learned` G11 (brief by default, no bureaucracy) |
+| Confidence labels | label-16..18 | `labelPresence` | `lessons-learned` G9 (measure, don't estimate — 010 incident); `lessons-learned` G10 (verified line ≠ correct fix — 014) |
 
 ## Known gaps (declared)
 

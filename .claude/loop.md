@@ -17,4 +17,4 @@ Hard rules: never cross an unapproved human gate, never run destructive ops
 (`rm -rf`, force push, schema change) or touch sensitive paths unattended; judge "done"
 only against objective evidence printed into the transcript (tests, lint, build exit
 code, critic verdict), never self-assessment. If stuck (same error twice / no progress),
-escalate via the `unstuck` skill before giving up.
+escalate via the `task-unblock` skill before giving up.

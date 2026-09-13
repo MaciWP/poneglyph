@@ -44,7 +44,7 @@ that every instruction is followed.
 
 [Generate interactive HTML locally](docs/diagrams/sources.md#regenerate-a-guide) · [Editable JSON](docs/diagrams/flow.workflow.json)
 
-Use `/flow` in Claude or Grok, and `$flow` in Codex. The six phase skills produce
+Use `/flow-lifecycle` in Claude or Grok, and `$flow-lifecycle` in Codex. The six phase skills produce
 scope, tasks, expected checks, changes, review, and lessons. Human decisions approve
 scope and the execution package. `state.json` records progress for resumption.
 The state helper records evidence; it does not run or authenticate the checks.
@@ -258,8 +258,8 @@ The current bridge topology and verification commands live in
 | `.claude/settings.json` | Hook-free project profile |
 | `.claude/skills/` | Shared core skill source; linked directories retain their supporting resources |
 | `.claude/hooks/` | Shared hook logic, native event adapters and tests |
-| `.claude/commands/` | `/flow`, `/role`, `/sync-poneglyph` |
-| `.claude/plans/` | `/flow` feature lifecycles (`{NNN}-{slug}/`) |
+| `.claude/commands/` | `/flow-lifecycle`, `/expert-role`, `/sync-poneglyph` |
+| `.claude/plans/` | `/flow-lifecycle` feature lifecycles (`{NNN}-{slug}/`) |
 | `docs/` | Machine bootstrap records (git, statusline) |
 
 ---

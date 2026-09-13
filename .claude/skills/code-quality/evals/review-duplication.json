@@ -1,0 +1,12 @@
+{
+  "skills": [
+    "code-quality"
+  ],
+  "query": "Analyze this codebase for code duplication and suggest DRY improvements",
+  "expected_behavior": [
+    "Identifies duplicated logic patterns",
+    "Suggests extraction into shared utilities",
+    "Evaluates if duplication is acceptable (rule of 3)",
+    "Provides before/after code examples"
+  ]
+}

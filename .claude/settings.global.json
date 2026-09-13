@@ -186,21 +186,21 @@
     ]
   },
   "skillOverrides": {
-    "archify": "name-only",
-    "build": "name-only",
-    "critic": "name-only",
-    "dev": "name-only",
-    "diagnostic-patterns": "name-only",
-    "drillme": "name-only",
-    "lessons": "name-only",
-    "orca-workflow": "name-only",
-    "orchestrator-protocol": "name-only",
-    "prompt-engineer": "name-only",
-    "scope": "name-only",
-    "skill-advisor": "name-only",
-    "tdd-design": "name-only",
-    "tech-plan": "name-only",
-    "unstuck": "name-only",
-    "verify": "name-only"
+    "diagrams-interactive": "name-only",
+    "flow-build": "name-only",
+    "flow-review": "name-only",
+    "dev-workflow": "name-only",
+    "troubleshooting": "name-only",
+    "drillme-clarify": "name-only",
+    "lessons-learned": "name-only",
+    "orca-team": "name-only",
+    "agent-routing": "name-only",
+    "prompt-design": "name-only",
+    "flow-scope": "name-only",
+    "choose-skills": "name-only",
+    "flow-test-plan": "name-only",
+    "flow-plan": "name-only",
+    "task-unblock": "name-only",
+    "changes-verify": "name-only"
   }
 }

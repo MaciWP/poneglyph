@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 // flow-state — typed mutations for .claude/plans/{NNN}-{slug}/state.json
-// (canonical schema: commands/flow.md Step 4) + the matching tasks/US{n}.md
+// (canonical schema: commands/flow-lifecycle.md Step 4) + the matching tasks/US{n}.md
 // frontmatter flip. Replaces the hand-rolled python/sed one-liners that every
-// /flow run re-invented (provenance: 2026-06-11 polish plan; 019 ran 6 of them).
+// /flow-lifecycle run re-invented (provenance: 2026-06-11 polish plan; 019 ran 6 of them).
 //
 // Usage:
 //   bun .claude/scripts/flow-state.ts close-us US3 --verification <report.json> [--files "a.md,b.ts"] [--note "..."] [--tests-passed true|false] [--plan <dir>]

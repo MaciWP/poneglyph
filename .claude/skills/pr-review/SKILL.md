@@ -16,8 +16,8 @@ when_to_use: |
 
 # pr-review — generalist PR/branch review (any repo)
 
-Diff-level, ticket-anchored review at any point in time. NOT `critic` (feature-level,
-spec.md-anchored, /flow Phase 4 after all HUs close) — the two never shadow each other.
+Diff-level, ticket-anchored review at any point in time. NOT `flow-review` (feature-level,
+spec.md-anchored, /flow-lifecycle Phase 4 after all HUs close) — the two never shadow each other.
 
 ## Steps (all executed or explicitly skipped with a reason — see step 9)
 
@@ -54,7 +54,7 @@ Find the check command per `references/03-check-discovery.md` (project CLAUDE.md
 Apply `references/01-criteria-core.md` (Correctness / Tests / Security / Style /
 Scope-discipline) plus any project-specific criteria found in the repo's rules. It owns the
 weights, the score and the verdict — consequence floor included: a required AC at `✗` or a red
-gate forbids APPROVE. Read it there. Before scoring, run the **lessons pass**: `Skill(lessons)` — cross-repo
+gate forbids APPROVE. Read it there. Before scoring, run the **lessons pass**: `Skill(lessons-learned)` — cross-repo
 guards (G6 forbids APPROVE while a merge gate is red) plus the `references/<stack>` file
 matching the diff (Django, React, …). A lesson violated in the diff is a finding like any
 other, quoted with its rule.
@@ -70,7 +70,7 @@ final section **"Fuera del diff (opcional)"** — never mixed with the PR's find
 counted in the score.
 
 ### 8. Report
-- Comments in Conventional Comments format via `Skill(pr-conventional-comments)`
+- Comments in Conventional Comments format via `Skill(pr-comments)`
   (label (decorator): subject; ≥1 praise; issue paired with suggestion; single review).
 - Score + per-criterion table + verdict + AC-trace table inline.
 - HTML report ONLY on explicit request, via `Skill(html-report)` — never hand-rolled CSS.
@@ -107,7 +107,7 @@ no hay ticket en la rama y el usuario no aportó ACs"). A silent skip is a revie
 
 ## Related
 
-- `critic` — feature-level review (spec.md, /flow fase 4); pr-review es diff-level y ticket-anchored.
-- `pr-conventional-comments` — formato de comentarios (reusada, no duplicada).
+- `flow-review` — feature-level review (spec.md, /flow-lifecycle fase 4); pr-review es diff-level y ticket-anchored.
+- `pr-comments` — formato de comentarios (reusada, no duplicada).
 - La skill de tickets del plugin de empresa — digest del ticket con ACs (reusada cuando aplica).
-- `verify` — gate pre-done del propio trabajo; pr-review revisa trabajo AJENO/de rama.
+- `changes-verify` — gate pre-done del propio trabajo; pr-review revisa trabajo AJENO/de rama.

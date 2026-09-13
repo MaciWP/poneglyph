@@ -1,9 +1,9 @@
-<!-- Last verified: 2026-06-22 (021 — split: behavioral triggers stay always-loaded here; procedural reference (SendMessage, diagnosis steps, recovery template, worktree cleanup) moved to orchestrator-protocol/references/07-error-recovery.md; hook-reliability table folded into rules/paths/hooks.md) -->
+<!-- Last verified: 2026-06-22 (021 — split: behavioral triggers stay always-loaded here; procedural reference (SendMessage, diagnosis steps, recovery template, worktree cleanup) moved to agent-routing/references/07-error-recovery.md; hook-reliability table folded into rules/paths/hooks.md) -->
 
 # Error Recovery
 
-The Lead diagnoses failures inline with `diagnostic-patterns` when needed, then
-retries, replans or escalates. For Orca teams, load `orca-workflow` recovery:
+The Lead diagnoses failures inline with `troubleshooting` when needed, then
+retries, replans or escalates. For Orca teams, load `orca-team` recovery:
 timeouts do not prove failure or release reservations. Inspect uncertain writers
 before replacement. Retry only proven failures within the approved allowance.
 
@@ -11,11 +11,11 @@ before replacement. Retry only proven failures within the approved allowance.
 
 | Error Type | Max Retries | Then |
 |------------|-------------|------|
-| Inline build — test failure | 2 | Lead diagnoses with `diagnostic-patterns` → fix inline |
+| Inline build — test failure | 2 | Lead diagnoses with `troubleshooting` → fix inline |
 | Inline build — Edit conflict | 1 | Re-read file, re-issue the edit |
 | Workflow unit failure | 1 | Lead diagnoses → re-run the unit (or fold inline) |
 | Workflow unit timeout | 1 | Double timeout → escalate to user |
-| Critic BLOCKED | 0 | Re-plan with `tech-plan` |
+| Critic BLOCKED | 0 | Re-plan with `flow-plan` |
 | Critic NEEDS_CHANGES | 2 | Apply feedback → escalate to user |
 | Worktree / Team failure | 1 | Re-run unit or fold the domain back inline |
 
@@ -29,8 +29,8 @@ before replacement. Retry only proven failures within the approved allowance.
 | 2+ diagnoses without a working fix | STOP → AskUserQuestion |
 | Same exact error 2 times | STOP → AskUserQuestion |
 
-> **Escalation rung**: before STOP→AskUserQuestion, invoke the `unstuck` skill (`effort: xhigh`) for ONE deep change-of-technique pass — attack the *class* with a method not yet tried (`diagnostic-patterns`/`drillme`). If it still fails, then STOP→AskUserQuestion. Do not repeat the same attack louder.
+> **Escalation rung**: before STOP→AskUserQuestion, invoke the `task-unblock` skill (`effort: xhigh`) for ONE deep change-of-technique pass — attack the *class* with a method not yet tried (`troubleshooting`/`drillme-clarify`). If it still fails, then STOP→AskUserQuestion. Do not repeat the same attack louder.
 
 When blocked, ask: (1) missing context, (2) approach change, (3) task split.
 
-> **Procedural detail on demand** — SendMessage recovery (Workflow/Team agents), the Lead-driven diagnosis steps, the recovery-prompt template, and worktree cleanup live in `.claude/skills/orchestrator-protocol/references/07-error-recovery.md`. Hook reliability (which events are safe to gate on) lives in `.claude/rules/paths/hooks.md`.
+> **Procedural detail on demand** — SendMessage recovery (Workflow/Team agents), the Lead-driven diagnosis steps, the recovery-prompt template, and worktree cleanup live in `.claude/skills/agent-routing/references/07-error-recovery.md`. Hook reliability (which events are safe to gate on) lives in `.claude/rules/paths/hooks.md`.

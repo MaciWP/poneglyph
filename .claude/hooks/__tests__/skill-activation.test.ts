@@ -16,25 +16,25 @@ import { formatLogLine } from "../instructions-loaded";
 // Fixture: a minimal skills dir with one drillme-like skill (keywords on disk,
 // no hardcoded list — mirrors the production loader contract).
 const fixtures = mkdtempSync(join(tmpdir(), "skills-fixture-"));
-mkdirSync(join(fixtures, "drillme"), { recursive: true });
+mkdirSync(join(fixtures, "drillme-clarify"), { recursive: true });
 writeFileSync(
-  join(fixtures, "drillme", "SKILL.md"),
+  join(fixtures, "drillme-clarify", "SKILL.md"),
   [
     "---",
-    "name: drillme",
+    "name: drillme-clarify",
     "description: |",
     "  Socratic check for plans and decisions.",
-    "  Keywords - drill, drillme, socratic, valida, cuestiona, challenge, gap, gaps",
+    "  Keywords - drill, drillme-clarify, socratic, valida, cuestiona, challenge, gap, gaps",
     "---",
     "",
-    "# drillme",
+    "# drillme-clarify",
   ].join("\n"),
 );
 for (const [name, kw] of [
-  ["review-patterns", "refactor, solid, performance, slow, endpoint"],
-  ["tdd-design", "tests, tdd, oracle, test-design"],
-  ["skill-advisor", "skill-advisor, skills, shortlist, propón skills, which skills"],
-  ["critic", "critic, revisa, audita, valida, verdict, revisa el codigo"],
+  ["code-quality", "refactor, solid, performance, slow, endpoint"],
+  ["flow-test-plan", "tests, tdd, oracle, test-design"],
+  ["choose-skills", "choose-skills, skills, shortlist, propón skills, which skills"],
+  ["flow-review", "critic, revisa, audita, valida, verdict, revisa el codigo"],
 ] as const) {
   mkdirSync(join(fixtures, name), { recursive: true });
   writeFileSync(
@@ -62,7 +62,7 @@ writeFileSync(
   ].join("\n"),
 );
 // Multi-word keyword wrapping WITHOUT a trailing comma (the real bug behind
-// "review"→pr-conventional-comments, audit 2026-08-07): "review\ncomment" is
+// "review"→pr-comments, audit 2026-08-07): "review\ncomment" is
 // ONE keyword "review comment", not two single-words.
 mkdirSync(join(fixtures, "wrapped-multiword"), { recursive: true });
 writeFileSync(
@@ -71,7 +71,7 @@ writeFileSync(
     "---",
     "name: wrapped-multiword",
     "description: |",
-    "  Fixture replicating pr-conventional-comments' wrapped keyword.",
+    "  Fixture replicating pr-comments' wrapped keyword.",
     "  Keywords - conventional comments, review",
     "  comment, blocking",
     "---",
@@ -84,7 +84,7 @@ const skills = loadSkills([fixtures]);
 
 test("the shared Archify entry is discoverable by the native hook loader", () => {
   const catalog = loadSkills([join(import.meta.dir, "../../skills")]);
-  const archify = catalog.find((entry) => entry.name === "archify");
+  const archify = catalog.find((entry) => entry.name === "diagrams-interactive");
   expect(archify).toBeDefined();
   expect(archify!.keywords).toContain("diagrama interactivo");
 });
@@ -123,9 +123,9 @@ describe("loadSkills — multi-word keyword wrapping without comma (audit 2026-0
 });
 
 describe("matchWithReasons + buildShortlistInjection — prompt with match (T12.1)", () => {
-  test("'valida y cuestiona este plan' (2 distinct hits) injects Skill(drillme) in ≤5 lines", () => {
+  test("'valida y cuestiona este plan' (2 distinct hits) injects Skill(drillme-clarify) in ≤5 lines", () => {
     const injection = buildShortlistInjection(matchWithReasons("valida y cuestiona este plan", skills));
-    expect(injection).toContain("Skill(drillme)");
+    expect(injection).toContain("Skill(drillme-clarify)");
     expect(injection.split("\n").length).toBeLessThanOrEqual(5);
   });
 });
@@ -152,22 +152,22 @@ describe("keyword precision rule (auditoría 2026-08-07)", () => {
 
   test("'revisa y valida este resultado' → critic (2 distinct single-word hits)", () => {
     const names = matchWithReasons("revisa y valida este resultado, dame el verdict", skills).map((m) => m.name);
-    expect(names).toContain("critic");
+    expect(names).toContain("flow-review");
   });
 
   test("multi-word keyword alone qualifies: 'revisa el codigo'", () => {
     const matched = matchWithReasons("por favor revisa el codigo antes de aprobar", skills);
-    expect(matched.map((m) => m.name)).toContain("critic");
-    const critic = matched.find((m) => m.name === "critic")!;
+    expect(matched.map((m) => m.name)).toContain("flow-review");
+    const critic = matched.find((m) => m.name === "flow-review")!;
     expect(critic.reason).toBe("revisa el codigo");
   });
 
   test("containment collapse: 'gap'+'gaps' from one physical word = 1 hit → no match", () => {
-    expect(matchWithReasons("hay varios gaps que resolver", skills).map((m) => m.name)).not.toContain("drillme");
+    expect(matchWithReasons("hay varios gaps que resolver", skills).map((m) => m.name)).not.toContain("drillme-clarify");
   });
 
-  test("tradeoff documentado: el nombre corto solo ('drillme' ⊃ 'drill') ya no basta", () => {
-    expect(matchWithReasons("necesito un drillme de esto", skills).map((m) => m.name)).not.toContain("drillme");
+  test("tradeoff documentado: el nombre corto solo ('drillme-clarify' ⊃ 'drill') ya no basta", () => {
+    expect(matchWithReasons("necesito un drillme-clarify de esto", skills).map((m) => m.name)).not.toContain("drillme-clarify");
   });
 });
 
@@ -216,11 +216,11 @@ describe("analyzePayload — malformed payload is silent (T12.3)", () => {
   });
 
   test("slash-command prompt is skipped (user already chose)", () => {
-    expect(analyzePayload(JSON.stringify({ prompt: "/drillme algo" }), skills).injection).toBe("");
+    expect(analyzePayload(JSON.stringify({ prompt: "/drillme-clarify algo" }), skills).injection).toBe("");
   });
 
-  test("/flow is skipped — it self-routes its phase skills", () => {
-    expect(analyzePayload(JSON.stringify({ prompt: "/flow valida este plan" }), skills).injection).toBe("");
+  test("/flow-lifecycle is skipped — it self-routes its phase skills", () => {
+    expect(analyzePayload(JSON.stringify({ prompt: "/flow-lifecycle valida este plan" }), skills).injection).toBe("");
   });
 });
 
@@ -230,9 +230,9 @@ describe("analyzePayload — silencioso por defecto (031)", () => {
       JSON.stringify({ prompt: "refactoriza el módulo de pagos aplicando SOLID" }),
       skills,
     ).injection;
-    expect(out).toContain("Skill(review-patterns)");
+    expect(out).toContain("Skill(code-quality)");
     expect(out).toContain("matched");
-    expect(out).not.toContain("Skill(skill-advisor)");
+    expect(out).not.toContain("Skill(choose-skills)");
   });
 
   test("T2.2 prompt no-trivial SIN match ni shape → silencio total", () => {
@@ -248,7 +248,7 @@ describe("analyzePayload — silencioso por defecto (031)", () => {
       JSON.stringify({ prompt: "/goal valida y cuestiona este plan de migración" }),
       skills,
     ).injection;
-    expect(conMatch).toContain("Skill(drillme)");
+    expect(conMatch).toContain("Skill(drillme-clarify)");
     const sinMatch = analyzePayload(
       JSON.stringify({ prompt: "/goal añade un botón al formulario de login" }),
       skills,
@@ -256,9 +256,9 @@ describe("analyzePayload — silencioso por defecto (031)", () => {
     expect(sinMatch).toBe("");
   });
 
-  test("T2.3 '/flow' y '/role' siguen saltándose", () => {
-    expect(analyzePayload(JSON.stringify({ prompt: "/flow valida este plan" }), skills).injection).toBe("");
-    expect(analyzePayload(JSON.stringify({ prompt: "/role security" }), skills).injection).toBe("");
+  test("T2.3 '/flow-lifecycle' y '/expert-role' siguen saltándose", () => {
+    expect(analyzePayload(JSON.stringify({ prompt: "/flow-lifecycle valida este plan" }), skills).injection).toBe("");
+    expect(analyzePayload(JSON.stringify({ prompt: "/expert-role security" }), skills).injection).toBe("");
   });
 
   test("T2.4 prompt trivial → vacío (sin ruido)", () => {
@@ -271,7 +271,7 @@ describe("analyzePayload — silencioso por defecto (031)", () => {
       skills,
     ).injection;
     expect(out.split("\n").length).toBeLessThanOrEqual(5);
-    expect(out).not.toContain("Skill(skill-advisor)");
+    expect(out).not.toContain("Skill(choose-skills)");
   });
 
   test("T2.6 carga perezosa: los pre-gates no tocan disco (getter no invocado)", () => {
@@ -280,7 +280,7 @@ describe("analyzePayload — silencioso por defecto (031)", () => {
       calls++;
       return skills;
     };
-    expect(analyzePayload(JSON.stringify({ prompt: "/flow valida" }), getter).injection).toBe("");
+    expect(analyzePayload(JSON.stringify({ prompt: "/flow-lifecycle valida" }), getter).injection).toBe("");
     expect(analyzePayload("", getter).injection).toBe("");
     expect(analyzePayload("{not json", getter).injection).toBe("");
     expect(calls).toBe(0);
@@ -319,27 +319,27 @@ describe("feature-shape flow hint (029/US13)", () => {
     expect(detectFeatureShape("revisa este ticket y dime qué pide")).toBe(false);
   });
 
-  test("analyzePayload adds the /flow line on feature shape, alongside matched skills", () => {
+  test("analyzePayload adds the /flow-lifecycle line on feature shape, alongside matched skills", () => {
     const raw = JSON.stringify({ prompt: "valida el plan de esta nueva funcionalidad de informes" });
     const r = analyzePayload(raw, skills);
     expect(r.flowHint).toBe(true);
-    expect(r.injection).toContain("/flow");
+    expect(r.injection).toContain("/flow-lifecycle");
     expect(r.injection).toContain("skill-activation-hint");
   });
 
-  test("feature shape alone (no skill keyword match) still injects the /flow line, with the tiered ceiling (plan 037)", () => {
+  test("feature shape alone (no skill keyword match) still injects the /flow-lifecycle line, with the tiered ceiling (plan 037)", () => {
     const raw = JSON.stringify({ prompt: "desarrolla una nueva funcionalidad de exportación a excel" });
     const r = analyzePayload(raw, skills);
     expect(r.flowHint).toBe(true);
-    expect(r.injection).toContain("/flow");
+    expect(r.injection).toContain("/flow-lifecycle");
     expect(r.injection).toContain("/autocompact 400k");
   });
 
-  test("no feature shape → no /flow line (unchanged behavior)", () => {
+  test("no feature shape → no /flow-lifecycle line (unchanged behavior)", () => {
     const raw = JSON.stringify({ prompt: "valida este plan antes de cerrarlo" });
     const r = analyzePayload(raw, skills);
     expect(r.flowHint).toBe(false);
-    expect(r.injection).not.toContain("/flow");
+    expect(r.injection).not.toContain("/flow-lifecycle");
   });
 });
 
@@ -348,14 +348,14 @@ describe("hint emission log (029/US13 — honor-rate measurement, emit side)", (
     const dir = mkdtempSync(join(tmpdir(), "hintlog-"));
     const ok = appendHintLog(dir, {
       ts: "2026-08-05T00:00:00Z",
-      skills: ["drillme"],
+      skills: ["drillme-clarify"],
       reasons: ["valida y cuestiona"],
       flow: false,
     });
     expect(ok).toBe(true);
     const written = readFileSync(join(dir, ".claude", "learned", "skill-hints.log"), "utf8");
     const entry = JSON.parse(written.trim().split("\n").at(-1)!);
-    expect(entry.skills).toEqual(["drillme"]);
+    expect(entry.skills).toEqual(["drillme-clarify"]);
     expect(entry.reasons).toEqual(["valida y cuestiona"]);
     expect(entry.flow).toBe(false);
   });
@@ -375,7 +375,7 @@ describe("hint emission log (029/US13 — honor-rate measurement, emit side)", (
 
   test("analyzePayload devuelve reasons alineadas con skills", () => {
     const r = analyzePayload(JSON.stringify({ prompt: "revisa y valida el resultado, dame el verdict" }), skills);
-    expect(r.skills).toContain("critic");
+    expect(r.skills).toContain("flow-review");
     expect(r.reasons.length).toBe(r.skills.length);
   });
 });
@@ -419,7 +419,7 @@ describe("no dev hint for a bare implementation ask (H43, refuted)", () => {
     "%p emits no hint",
     (prompt) => {
       const r = analyzePayload(JSON.stringify({ prompt }), repoSkills);
-      expect(r.skills).not.toContain("dev");
+      expect(r.skills).not.toContain("dev-workflow");
       expect(r.injection).toBe("");
     },
   );

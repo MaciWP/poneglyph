@@ -4,7 +4,7 @@
 // Provenance: ported from disler's super-simple-software-factory (adws/adw_modules/gates.py),
 // with three changes that its version does not have:
 //   1. diff_matches_claims compares a DELTA against a baseline snapshot, not absolute
-//      state. sssf only does Path.exists(), so a pre-existing file passes even when the
+//      state. task-pipeline only does Path.exists(), so a pre-existing file passes even when the
 //      agent never touched it, and files touched but NOT declared are invisible to it.
 //      This repo carries ~119 modified + ~24 untracked files at rest — absolute state
 //      would be permanently red, and a permanently red gate gets ignored.
@@ -68,15 +68,15 @@ export type Snapshot = Record<string, string>;
 /** Files this repo's own machinery must survive; a build touching them is a red flag. */
 export const SELF_PATHS = [
   ".claude/scripts/gate.ts",
-  ".claude/workflows/sssf.js",
+  ".claude/workflows/task-pipeline.js",
   // The tests belong here too: an agent that guts the assertions turns the suite green
   // without touching the graders themselves — the same failure this check exists to stop.
   ".claude/scripts/__tests__/gate.test.ts",
-  ".claude/workflows/__tests__/sssf.test.ts",
+  ".claude/workflows/__tests__/task-pipeline.test.ts",
 ];
 
 /**
- * Write allowlist per phase — the genuinely new contribution over sssf's roster-wide
+ * Write allowlist per phase — the genuinely new contribution over task-pipeline's roster-wide
  * `writes:`. null means unrestricted (still subject to protected_files).
  * An empty array means read-only: a reviewer that cannot fix cannot quietly fix.
  */
@@ -96,7 +96,7 @@ export const PHASE_WRITES: Record<string, string[] | null> = {
  * Nothing here judges the code: it checks the envelope against itself, which the
  * harness can refute without reading a line of the diff.
  *
- * Extended past sssf: an `approved` that ships a red suite, and a `done` that
+ * Extended past task-pipeline: an `approved` that ships a red suite, and a `done` that
  * touched nothing, are the same class of self-contradiction and cost nothing to catch.
  */
 export function verdictConsistent(env: Envelope): Check[] {
@@ -160,7 +160,7 @@ export function diffDelta(before: Snapshot, after: Snapshot): string[] {
 /**
  * Cross the agent's claims against the measured delta. Both directions matter:
  * `missing` catches a file claimed but never touched; `undeclared` catches work the
- * agent did not report — the blind spot sssf's gate has entirely.
+ * agent did not report — the blind spot task-pipeline's gate has entirely.
  */
 export function claimsVsDelta(
   claimed: string[],

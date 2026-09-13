@@ -14,7 +14,7 @@ test.each([
 });
 
 test("a partial tool invocation is not a completed live session", () => {
-  const partial = JSON.stringify({ type: "assistant", message: { content: [{ type: "tool_use", name: "Skill", input: { skill: "verify" } }] } });
+  const partial = JSON.stringify({ type: "assistant", message: { content: [{ type: "tool_use", name: "Skill", input: { skill: "changes-verify" } }] } });
   expect(transcriptHealth(partial, true).ok).toBe(false);
   expect(transcriptHealth("plain prose", true).ok).toBe(false);
   expect(transcriptHealth(partial + '\n{"type":"result","subtype":"success","is_error":false}\n', true).ok).toBe(true);

@@ -3,22 +3,22 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { frontmatterField } from "../../scripts/lib/budget";
 
-// Quality review 2026-09-10, finding H51. Two facts about /flow lived in several files
+// Quality review 2026-09-10, finding H51. Two facts about /flow-lifecycle lived in several files
 // and drifted: how many phases the pipeline has, and whether `allowed-tools` exempts a
-// phase from CLAUDE.md's spawn gate. The enumeration in flow.md owns the first fact, and
+// phase from CLAUDE.md's spawn gate. The enumeration in flow-lifecycle.md owns the first fact, and
 // nothing the model pays for on every turn may restate it. The frontmatter is the trigger
 // for the second. Both are derived here, so the checks survive a reworded sentence and a
 // renumbered pipeline.
 const root = resolve(import.meta.dir, "..", "..", "..");
 // These files are CRLF on this machine; normalize so the anchors below mean what they say.
 const read = (...p: string[]) => readFileSync(join(root, ...p), "utf8").replace(/\r\n/g, "\n");
-const flow = read(".claude", "commands", "flow.md");
+const flow = read(".claude", "commands", "flow-lifecycle.md");
 
 /** The numbered list of phase skills is the single owner of the phase count. */
 const enumerated = [...flow.matchAll(/^\d+\. \*\*/gm)].length;
 
 const WORD: Record<string, number> = { five: 5, six: 6, cinco: 5, seis: 6 };
-/** In flow.md the count is also spelled as a step heading; there it is the owner. */
+/** In flow-lifecycle.md the count is also spelled as a step heading; there it is the owner. */
 const CLAIM_OWNER = /\b(\d+|five|six|cinco|seis)[- ](phases?|fases?|steps?)\b/gi;
 /** Everywhere else only a phase count is a second owner of this fact. */
 const CLAIM_SURFACE = /\b(\d+|five|six|cinco|seis)[- ](phases?|fases?)\b/gi;
@@ -55,12 +55,12 @@ function alwaysLoaded(): Array<[string, string]> {
 }
 
 describe("flow doctrine — one owner per fact", () => {
-  test("flow.md still enumerates its phase skills", () => {
+  test("flow-lifecycle.md still enumerates its phase skills", () => {
     expect(enumerated).toBeGreaterThan(0);
   });
 
-  test("flow.md's own count claims match its enumeration", () => {
-    const wrong = claims(flow, "flow.md", CLAIM_OWNER)
+  test("flow-lifecycle.md's own count claims match its enumeration", () => {
+    const wrong = claims(flow, "flow-lifecycle.md", CLAIM_OWNER)
       .filter(c => c.count !== enumerated)
       .map(c => `${c.where} says "${c.text}" but the list enumerates ${enumerated}`);
     expect(wrong).toEqual([]);
@@ -69,14 +69,14 @@ describe("flow doctrine — one owner per fact", () => {
   test("no always-loaded text restates the phase count", () => {
     const restated = alwaysLoaded()
       .flatMap(([id, text]) => claims(text, id, CLAIM_SURFACE))
-      .map(c => `${c.where} restates the phase count as "${c.text}"; flow.md owns it`);
+      .map(c => `${c.where} restates the phase count as "${c.text}"; flow-lifecycle.md owns it`);
     expect(restated).toEqual([]);
   });
 
   test("pre-authorizing Agent does not silently waive the per-task spawn gate", () => {
     const frontmatter = flow.match(/^---\n([\s\S]*?)\n---/)?.[1] ?? "";
     // A frontmatter that fails to parse would make this whole check pass on nothing.
-    expect(frontmatter, "flow.md frontmatter did not parse").not.toBe("");
+    expect(frontmatter, "flow-lifecycle.md frontmatter did not parse").not.toBe("");
     const preauthorized = /^allowed-tools:.*\bAgent\b/m.test(frontmatter);
     if (!preauthorized) return; // nothing to waive, nothing to state
     const body = flow.slice(flow.indexOf("\n---", 3) + 4);

@@ -35,7 +35,7 @@ describe("native hook contracts", () => {
     const hint = await handleNativeHook("codex", "UserPromptSubmit", { prompt: "revisa la pr" });
     expect(hint?.hookSpecificOutput?.hookEventName).toBe("UserPromptSubmit");
     expect(hint?.hookSpecificOutput?.additionalContext).toContain("Skill(");
-    expect(await handleNativeHook("codex", "UserPromptSubmit", { prompt: "$flow una nueva funcionalidad" })).toBeNull();
+    expect(await handleNativeHook("codex", "UserPromptSubmit", { prompt: "$flow-lifecycle una nueva funcionalidad" })).toBeNull();
   });
 
   it("scans the payload project, including an unborn repo and spaced filenames", async () => {
@@ -73,8 +73,8 @@ describe("native hook skill precedence (H21)", () => {
   it("lets the project override a core skill of the same name", async () => {
     const core = mkdtempSync(join(tmpdir(), "native-core-"));
     const project = mkdtempSync(join(tmpdir(), "native-project-"));
-    writeSkillFixture(core, "verify", "core only phrase");
-    writeSkillFixture(project, "verify", "project only phrase");
+    writeSkillFixture(core, "changes-verify", "core only phrase");
+    writeSkillFixture(project, "changes-verify", "project only phrase");
     const hint = await handleNativeHook(
       "codex", "UserPromptSubmit",
       { prompt: "aplica la project only phrase ahora", cwd: project },
@@ -85,7 +85,7 @@ describe("native hook skill precedence (H21)", () => {
 
   it("still reads the core skills when the payload carries no project cwd", async () => {
     const core = mkdtempSync(join(tmpdir(), "native-core-only-"));
-    writeSkillFixture(core, "verify", "core only phrase");
+    writeSkillFixture(core, "changes-verify", "core only phrase");
     const hint = await handleNativeHook(
       "codex", "UserPromptSubmit", { prompt: "usa la core only phrase" }, core,
     );
@@ -94,7 +94,7 @@ describe("native hook skill precedence (H21)", () => {
 });
 
 // Quality review 2026-09-11, finding H43. The shared hint text names Claude built-ins
-// (`/autocompact`, `/effort`) and the Claude command prefix (`/flow`); Codex
+// (`/autocompact`, `/effort`) and the Claude command prefix (`/flow-lifecycle`); Codex
 // reads the same text through this adapter. Self-maintaining: the expected tokens are
 // read from the Claude-bound injection, not hardcoded, so a reworded hint stays covered.
 // Scope is the shape lines — `Skill(<name>)` lines are host-neutral already and a skill

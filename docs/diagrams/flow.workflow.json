@@ -94,7 +94,7 @@
       "lane": "preparation",
       "col": 1,
       "type": "backend",
-      "label": "2 · Tech-plan",
+      "label": "2 · Plan",
       "sublabel": "Tasks + dependencies",
       "width": 140,
       "height": 100
@@ -104,7 +104,7 @@
       "lane": "preparation",
       "col": 2,
       "type": "backend",
-      "label": "2.5 · Tdd-design",
+      "label": "2.5 · Test plan",
       "sublabel": "Tests / validations",
       "width": 140,
       "height": 100
@@ -134,7 +134,7 @@
       "lane": "delivery",
       "col": 4,
       "type": "security",
-      "label": "4 · Critic",
+      "label": "4 · Review",
       "sublabel": "review.md + evidence",
       "width": 140,
       "height": 100

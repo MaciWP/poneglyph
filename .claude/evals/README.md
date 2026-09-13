@@ -9,7 +9,8 @@ Deterministic regression harness for poneglyph's OWN named behaviors. Every cons
 | **Cadence** | Run on EVERY meta-config change: CLAUDE.md, output-styles, rules, skill descriptions, hooks that shape behavior |
 | **Expectation** | ≈100% pass. These are regression checks on behaviors that already work — not aspirational targets |
 | **On any FAIL** | **SUSPECT THE EVAL FIRST** (Anthropic's own 42%→95% grading-bug incident), then the config change. Fix the grader or fix the config; never normalize a red suite |
-| **ERR vs FAIL** | A session with no assistant turn, or a `result` event with `is_error`, prints `ERR` and is counted separately: it says nothing about behaviour (2026-09-03: the claude.ai usage limit hit mid-run and 4/4 skill cases "failed" twice). Rerun the errored cases once the cause is gone |
+| **ERR vs FAIL** | Live runs require an assistant turn, a terminal successful result and exit 0. Malformed streams, nonzero exits and the 120-second deadline produce ERR. Both runners drain stdout and stderr. Partial tool calls do not count as activation hits. Offline plain-text fixtures remain supported. |
+| **UNVERIFIED** | `evidenceBeforeDone` cannot establish truth or executed checks from prose. These semantic cases are excluded from PASS and FAIL; they keep the report non-green. Validate them in harness-lab. `completionEvidenceMarkers` and `labelPresence` check form only; their PASS does not prove honesty, execution or routing compliance. |
 | **Trials** | `trials: 2` on stochastic style criteria (pass^k — every trial must pass); 1 on deterministic-ish ones. Cap 3 |
 | **Grading** | Deterministic code graders ONLY (`graders.ts`). NO LLM judge, ever — judges measured ~80% FP in-domain and run-to-run inconsistent (W2 D4) |
 | **Suite cap** | ≤50 cases. Growth = one new case per NEW real documented failure, clustered (no near-duplicates). No synthetic filler |

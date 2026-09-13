@@ -1,7 +1,7 @@
 ---
 name: tech-plan
 description: |
-  Plan técnico a partir de un spec.md aprobado (Fase 2 del workflow de 5 fases). Descompone el alcance en historias de usuario (HUs) atómicas con un DAG explícito de dependencias, tras investigación obligatoria (Context7 + WebFetch + Grep del proyecto). Produce tasks/index.md + N tasks/US{N}.md. Honra test-policy.md por nodo. Invoca tdd-design (Fase 2.5) al cerrar.
+  Plan técnico a partir de un spec.md aprobado (Fase 2 del workflow `/flow`). Descompone el alcance en historias de usuario (HUs) atómicas con un DAG explícito de dependencias, tras investigación obligatoria (Context7 + WebFetch + Grep del proyecto). Produce tasks/index.md + N tasks/US{N}.md. Honra test-policy.md por nodo. Invoca tdd-design (Fase 2.5) al cerrar.
   Úsala cuando: existe spec.md aprobado y hace falta descomposición técnica, "tareas", "roadmap", "descomponer", "HU", "atomizar", "DAG", o /tech-plan. Evita la keyword suelta "plan" (colisiona con el modo plan de Claude Code).
 metadata:
   keywords: >

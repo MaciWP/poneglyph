@@ -1,7 +1,7 @@
 ---
 name: critic
 description: |
-  Revisión end-to-end tras completar todas las HUs (Fase 4 del workflow de 5 fases). Valida que el problema original de spec.md se resolvió de verdad. Produce review.md con checklist de 5 secciones (Correctness/Quality/Security/Performance/Maintainability) + findings con severidad + veredicto (APPROVED/WITH_WARNINGS/NEEDS_CHANGES/BLOCKED). Despacha UN reviewer de contexto fresco (read-only) y dispara security-audit en auth/pagos/credenciales.
+  Revisión end-to-end tras completar todas las HUs (Fase 4 del workflow `/flow`). Valida que el problema original de spec.md se resolvió de verdad. Produce review.md con checklist de 5 secciones (Correctness/Quality/Security/Performance/Maintainability) + findings con severidad + veredicto (APPROVED/WITH_WARNINGS/NEEDS_CHANGES/BLOCKED). Despacha UN reviewer de contexto fresco (read-only) y dispara security-audit en auth/pagos/credenciales.
   Úsala cuando: feature completo, todas las HUs cerradas en state.json, revisión antes de retro, tras /build, "revisa", "critica", "valida", "audita", "veredicto".
 metadata:
   keywords: >
@@ -73,7 +73,7 @@ In parallel:
 | Signal | Level | Scope |
 |---|---|---|
 | Feature trivial (1-2 HUs, no security/perf concern, mode minimal) | **light** | Base checks (tests + typecheck) + drillme Q1 only; skip fresh reviewer + review-patterns + security-audit |
-| Feature standard (3-N HUs, no critical area) | **standard** | Full 5-section checklist; review-patterns quality mode; ONE fresh-context reviewer; drillme 4/4 |
+| Feature standard (3-N HUs, no critical area) | **standard** | Full 5-section checklist; review-patterns quality mode; ONE fresh-context reviewer; the relevant canonical drillme bank |
 | Feature architectural / touches auth/payments/secrets / complexity >60 | **full** | Standard + security-audit skill + review-patterns both modes (quality + performance); fresh reviewer prompt additionally carries the critical-area focus |
 
 CLI override: `/critic --light` / `--standard` / `--full`. Default = auto-detect from `spec.md.mode` + scanned content.
@@ -185,18 +185,11 @@ The decision to update spec.md is deferred to Phase 5 (retro) — critic only fl
 
 ### Step 9 — Drillme Phase 4
 
-Before producing the verdict:
-
-```markdown
-## Drillme — Phase 4
-
-1. `[context]` **Spec drift?** Does the spec.md still describe what was delivered? If not, classify (legitimate / scope_creep / skipped_ac).
-2. `[failure]` **E2E happy path?** Does the full happy path work, not just modules? Trace by hand.
-3. `[failure]` **Edge case the user will hit?** Is there an edge case we did not test that real usage will surface?
-4. `[approach]` **Coverage matches policy?** Does test coverage match what `test-policy.md` expects (forced/adaptive/optional)?
-```
-
-Coverage: 3/4 canonical Socratic categories (`[location]` covered upstream — code locations were nailed in Phase 2/3). Honest — Phase 4 focuses on E2E + drift + coverage. These are the **floor**, not a cap: drillme is gap-gated, so it sweeps any extra gap the review surfaces and stays proportional (fewer on a clean, unambiguous feature).
+Use the canonical Phase 4 bank in
+`../drillme/references/03-phase-questions.md`. Sweep its relevant categories and
+any new gap; ask only questions whose answers could change the decision.
+Report actual coverage and unresolved gaps. Do not infer coverage from a fixed
+question count or from work performed in an earlier phase.
 
 > Skill-to-skill invocation is **probabilistic**. If `drillme` does not auto-fire, the Lead invokes `/drillme "Phase 4 review of <NNN-slug>"` manually before declaring the verdict.
 
@@ -275,7 +268,7 @@ Next:
 | Signal | Adaptation |
 |---|---|
 | Mode `light` (trivial feature, 1-2 HUs, no security/perf) | Base checks + drillme Q1 only; skip fresh reviewer + review-patterns + security-audit |
-| Mode `standard` (default, 3-N HUs, no critical area) | Full 5-section + review-patterns quality + drillme 4/4 |
+| Mode `standard` (default, 3-N HUs, no critical area) | Full 5-section + review-patterns quality + the relevant canonical drillme bank |
 | Mode `full` (architectural / auth / payments / complexity >60) | Standard + security-audit + review-patterns both modes; fresh reviewer carries critical-area focus |
 | Doc-only feature (markdown changes, no code) | Quality + Maintainability sections only; skip Performance + Security; drillme Q1 |
 | Bug fix with reproducible test | Correctness section + drillme Q3 (edge case); skip Performance unless bug was performance-related |
@@ -346,7 +339,7 @@ When this skill closes a review:
 - fresh reviewer: <invoked | inline + declared bias | n/a light> (<reason>)
 - review-patterns modes: [<quality?>, <performance?>]
 - security-audit: <invoked|skipped|n/a>
-- drillme: covered 3/4 canonical Socratic categories
+- drillme: <categories examined, evidence and unresolved gaps>
 
 Next:
   → /retro    (APPROVED / APPROVED_WITH_WARNINGS)

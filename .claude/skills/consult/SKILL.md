@@ -35,6 +35,13 @@ the fallback for hosts that have no plugin.
 | Background | `--background`, then `/codex:status` · `/codex:result` | `--background`, then `/grok-build:runs` · `/grok-build:show` | `&` + `wait`, outputs to scratchpad |
 | Auth check | `/codex:setup` | `/grok-build:check` | same claude.ai login |
 
+**Use a persistent `--cwd`.** The plugin's detached broker can lock that directory
+until session end. Use the main checkout; put the diff or files in the prompt.
+`bun $HOME/.claude/scripts/codex-brokers.ts` lists records from any repo;
+`--shutdown <path>` requests shutdown through the installed plugin protocol, never
+by killing a recorded PID. An acknowledgement proves acceptance only: verify
+process exit and released directory locks separately.
+
 Notes: resolve binaries through PATH at call time, never a fixed path; on auth failure
 report and stop. The plugin scripts run Codex through its app server, not `codex exec`,
 so CLI flag drift is the vendor's problem. Windows: give Codex **absolute paths** in the

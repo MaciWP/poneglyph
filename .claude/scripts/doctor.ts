@@ -13,7 +13,7 @@ import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { compare, loadSnapshot, measure, total } from "./lib/budget";
+import { compare, loadSnapshot, measure, ratchetedSnapshotTotal, total } from "./lib/budget";
 import { detectHosts, realProbe } from "./lib/hosts";
 import { check, type Report } from "./check-config";
 import { lintEstate, summarizeEstate } from "./lib/memory-estate";
@@ -199,7 +199,7 @@ async function main(): Promise<void> {
     checks.push({ name: "Always-loaded budget", status: "🟡", detail: `${total(m.alwaysLoaded)} B, no snapshot — bun .claude/scripts/budget.ts --update` });
   } else {
     const viol = compare(m, snapshot);
-    checks.push({ name: "Always-loaded budget", status: viol.length ? "🔴" : "🟢", detail: viol.length ? viol.map((x) => `${x.key} ${x.snapshot}→${x.current}`).join("; ") : `${total(m.alwaysLoaded)} B ≤ snapshot ${total(snapshot.alwaysLoaded)} B (ratchet 0 %, plan 037)` });
+    checks.push({ name: "Always-loaded budget", status: viol.length ? "🔴" : "🟢", detail: viol.length ? viol.map((x) => `${x.key} ${x.snapshot}→${x.current}`).join("; ") : `${total(m.alwaysLoaded)} B ≤ snapshot ${ratchetedSnapshotTotal(m, snapshot)} B (ratchet 0 %, plan 037)` });
   }
 
   try {

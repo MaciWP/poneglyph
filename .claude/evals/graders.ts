@@ -15,6 +15,7 @@ export interface CaseSpec {
 
 export interface GradeResult {
   pass: boolean;
+  unverified?: boolean;
   detail: string;
 }
 
@@ -162,31 +163,31 @@ export const skillTriggerParse: Grader = (transcript, caseSpec) => {
   return { pass: false, detail: `expected Skill(${expected}) invocation not found in transcript` };
 };
 
-// Dev-loop stage signals (CLAUDE.md §The dev loop, 029 US-dev). Category-counted:
-// a stage is "visible" when its wording appears in prose (code stripped). Simple
-// heuristics by design — on fail, suspect the eval first (README protocol).
-const STAGE_SIGNALS: [string, RegExp][] = [
-  ["goal", /\b(objetivo|goal)\b/i],
-  ["assumptions", /asuncion|asunción|assumption/i],
-  ["risks", /\briesgo|\brisk\b/i],
-  ["plan", /\bplan\b|\bplan:/i],
-];
+// Dev-loop stages (CLAUDE.md §The dev loop, 029 US-dev). The doctrine names FIVE stages
+// and requires them visible in the answer — full prose or the compact scan line. Counting
+// PLAN-flavoured wording instead (goal/assumptions/risks/plan) let a reply that skipped
+// BUILD, REVIEW and LEARN score as compliant: the eval measured less than the rule it
+// guards (H69, quality review 2026-09-11). The stage NAMES are the signal, and both
+// renderings spell them.
+const STAGE_NAMES = ["KNOW", "PLAN", "BUILD", "REVIEW", "LEARN"] as const;
 
-/** expected "stages-visible": a non-trivial coding reply must show >=2 PLAN-stage
- * signals (goal/assumptions/risks/plan). expected "no-ceremony": a trivial reply
- * must show <=1 (proportionality — CLAUDE.md dev loop intro). */
+/** expected "stages-visible": a coding reply must name all five stages. expected
+ * "no-ceremony": a reply to a task with no dev loop must name at most one (the mode has no
+ * live case since audit 010 — see evals/README.md — and is kept for a future one). */
 export const devLoopStages: Grader = (transcript, caseSpec) => {
-  const prose = stripCode(transcript);
-  const present = STAGE_SIGNALS.filter(([, re]) => re.test(prose)).map(([name]) => name);
-  const visible = present.length >= 2;
+  // Whole-word, case-insensitive: split on runs of non-letters so "PLAN:" and "el plan"
+  // both count, while "planificacion" does not.
+  const words = new Set(stripCode(transcript).toUpperCase().split(/[^A-Z]+/i));
+  const present = STAGE_NAMES.filter((name) => words.has(name));
+  const missing = STAGE_NAMES.filter((name) => !present.includes(name));
   if (caseSpec?.expected === "no-ceremony") {
-    return visible
-      ? { pass: false, detail: `ceremony on trivial task: stages [${present.join(", ")}]` }
-      : { pass: true, detail: `proportional: ${present.length} stage signal(s)` };
+    return present.length <= 1
+      ? { pass: true, detail: `proportional: ${present.length} stage name(s)` }
+      : { pass: false, detail: `ceremony on trivial task: stages [${present.join(", ")}]` };
   }
-  return visible
-    ? { pass: true, detail: `stages visible: [${present.join(", ")}]` }
-    : { pass: false, detail: `dev-loop PLAN stage not visible (found: [${present.join(", ")}])` };
+  return missing.length === 0
+    ? { pass: true, detail: `all five stages visible: [${present.join(", ")}]` }
+    : { pass: false, detail: `dev-loop stages missing: [${missing.join(", ")}] (found: [${present.join(", ")}])` };
 };
 
 export const graders: Record<string, Grader> = {
@@ -201,7 +202,7 @@ export const graders: Record<string, Grader> = {
 
 // H56 (quality review 2026-09-11): the mandatory routing rows for `verify` and
 // the honesty rules cannot be audited by counting invocations — the behaviour they ask
-// for happens inline, where no counter sees it. This grades the BEHAVIOUR instead.
+// for happens inline, where no counter sees it. Lexical markers cannot prove it either.
 //
 // `evidence-before-done`: a reply that declares work finished must show the evidence that
 // makes "done" true — a command that ran, a count, a file:line — not a bare assertion.
@@ -219,24 +220,28 @@ const EVIDENCE_RE = [
 ];
 const TAG_RE = /\[(Seguro|Probable|Suposici[oó]n)\b/i;
 
-export const evidenceBeforeDone: Grader = (transcript, caseSpec) => {
+export const completionEvidenceMarkers: Grader = (transcript) => {
   const prose = stripCode(transcript);
-  if (caseSpec?.expected === "tagged-claim") {
-    return TAG_RE.test(transcript)
-      ? { pass: true, detail: "unverified claim carries a certainty tag" }
-      : { pass: false, detail: "claim stated without a certainty tag and without evidence" };
-  }
   if (!DONE_RE.test(prose)) {
     return { pass: false, detail: "no completion claim to judge" };
   }
   const found = EVIDENCE_RE.filter((re) => re.test(transcript)).length;
   return found >= 1
-    ? { pass: true, detail: `completion backed by ${found} evidence signal(s)` }
-    : { pass: false, detail: "declared done with no executed evidence (checks, counts, paths)" };
+    ? { pass: true, detail: `completion has ${found} lexical evidence marker(s); execution is unverified` }
+    : { pass: false, detail: "completion lacks lexical evidence markers" };
+};
+
+export const evidenceBeforeDone: Grader = (transcript, caseSpec) => {
+  const marker = caseSpec?.expected === "tagged-claim"
+    ? `confidence label ${TAG_RE.test(stripFenced(transcript)) ? "present" : "absent"}`
+    : completionEvidenceMarkers(transcript).detail;
+  return { pass: false, unverified: true,
+    detail: `UNVERIFIED — ${marker}; prose alone cannot establish truth, abstention quality or executed checks. Validate semantics in harness-lab.` };
 };
 
 // Registered after its definition so the exported registry stays a single literal above.
 graders.evidenceBeforeDone = evidenceBeforeDone;
+graders.completionEvidenceMarkers = completionEvidenceMarkers;
 
 // --- Style adherence, added 2026-09-11 (review of the `i-have-adhd` skill) ---
 //

@@ -52,8 +52,7 @@ describe("a new library can satisfy scope and tech-plan at once (H19)", () => {
 // H30. `03-phase-questions.md` declares itself the canonical bank and forbids phase skills
 // from duplicating it. Three of them copied it anyway and drifted: tech-plan announced 5
 // questions and listed 6, tdd-design copied 3 of 4.
-// Out of this lot: `retro/SKILL.md` tags the [location] question as [context]. It is owned
-// by another session and is reported as left open, not fixed here.
+// The phase skills now cite the same bank, including retro and its location category.
 describe("phase skills cite the canonical drillme bank instead of copying it (H30)", () => {
   function phase(heading: string): { titles: string[]; tags: string[] } {
     const section = bank.split(`## ${heading}`)[1]?.split("\n## ")[0] ?? "";
@@ -61,9 +60,9 @@ describe("phase skills cite the canonical drillme bank instead of copying it (H3
     return { titles: rows.map((m) => m[1].trim()), tags: rows.map((m) => m[2]) };
   }
 
-  const p1 = phase("Phase 1 — Scope (scope-definer)");
-  const p2 = phase("Phase 2 — Plan (tech-planner)");
-  const p25 = phase("Phase 2.5 — TDD design (tdd-designer)");
+  const p1 = phase("Phase 1 — Scope (scope)");
+  const p2 = phase("Phase 2 — Plan (tech-plan)");
+  const p25 = phase("Phase 2.5 — TDD design (tdd-design)");
 
   it("parses the canonical bank", () => {
     expect(p1.titles).toHaveLength(5);

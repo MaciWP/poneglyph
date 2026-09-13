@@ -1,7 +1,7 @@
 ---
 name: scope
 description: |
-  Define el alcance a nivel de producto ANTES de cualquier trabajo técnico (Fase 1 del workflow de 5 fases). Genera spec.md mediante un cuestionario Q&A intensivo + drillme de 5 preguntas (problema raíz, severidad, stakeholders, MVP, out-of-scope). En modo full puede lanzar 3 perspectivas de producto en paralelo. Cierra con el hard gate 1→2 que requiere aprobación humana.
+  Define el alcance a nivel de producto ANTES de cualquier trabajo técnico (Fase 1 del workflow `/flow`). Genera spec.md mediante un cuestionario Q&A intensivo + drillme de 5 preguntas (problema raíz, severidad, stakeholders, MVP, out-of-scope). En modo full puede lanzar 3 perspectivas de producto en paralelo. Cierra con el hard gate 1→2 que requiere aprobación humana.
   Úsala cuando: petición vaga, feature nuevo, alcance indefinido, "necesito X", "quiero hacer Y", "el problema es Z", antes de planificar o implementar, falta el qué/por qué antes del cómo.
 metadata:
   keywords: >

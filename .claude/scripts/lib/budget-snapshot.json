@@ -1,5 +1,5 @@
 {
-  "takenAt": "2026-09-12",
+  "takenAt": "2026-09-14",
   "alwaysLoaded": {
     "CLAUDE.md": 14055,
     "output-styles/poneglyph.md": 12645,
@@ -15,7 +15,7 @@
     "choose-skills": 5697,
     "code-quality": 6790,
     "compare-and-decide": 7007,
-    "consult-model": 10105,
+    "consult-model": 9803,
     "deep-research": 8627,
     "dev-workflow": 9830,
     "diagrams-interactive": 4532,
@@ -29,7 +29,7 @@
     "harness-config": 6413,
     "html-report": 21291,
     "knowledge-graph": 17754,
-    "lessons-learned": 16026,
+    "lessons-learned": 19438,
     "orca-team": 6423,
     "pr-comments": 4990,
     "pr-review": 6871,
@@ -40,6 +40,6 @@
     "ui-design": 3661
   },
   "informative": {
-    "installed plugins: description + when_to_use (this machine)": 3231
+    "installed plugins: description + when_to_use (this machine)": 4365
   }
 }

@@ -1,5 +1,5 @@
 ---
-parent: flow-plan
+parent: flow
 name: quality-gates
 description: Poka-Yoke tool usage + TDD-enforcement anti-patterns + final quality gate checklist.
 ---

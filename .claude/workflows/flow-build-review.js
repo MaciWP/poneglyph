@@ -6,7 +6,7 @@ export const meta = {
     'Plan /flow-lifecycle con tasks/ aprobado y fase 2.5 cerrada, cuando quieres el ciclo trasero COMPLETO — build + fase 4 con artefacto review.md — y no solo ejecutar las HUs. Opt-in explícito: ~2x el coste de un build directo por la fase 4 instrumentada.',
   phases: [
     { title: 'Preflight', detail: 'readiness del plan + comandos de verificación + review_level + fecha (1 agente lector)' },
-    { title: 'Build', detail: 'HUs por waves del DAG con la disciplina de flow-build/SKILL.md; 1 retry con diagnóstico', model: 'sonnet' },
+    { title: 'Build', detail: 'HUs por waves del DAG con la disciplina de flow/references/04-build.md; 1 retry con diagnóstico', model: 'sonnet' },
     { title: 'Review', detail: 'base checks + fresh reviewer (opus) + code-quality + security-audit condicional' },
     { title: 'Synthesize', detail: 'veredicto determinista + writer escribe review.md desde el template' },
   ],
@@ -14,8 +14,8 @@ export const meta = {
 
 // ---------------------------------------------------------------------------
 // Contrato con /flow-lifecycle (commands/flow-lifecycle.md) y con las skills de fase:
-//   · Fase 3 = flow-build/SKILL.md   → steps 4-9 destilados en el prompt de HU.
-//   · Fase 4 = flow-review/SKILL.md  → steps 4-10 repartidos entre Review + Synthesize.
+//   · Fase 3 = skills/flow/references/04-build.md  → steps 4-9 destilados en el prompt de HU.
+//   · Fase 4 = skills/flow/references/05-review.md → steps 3-11 repartidos entre Review + Synthesize.
 // Invariantes que hacen seguro el handback:
 //   1. NINGÚN agente escribe state.json ni frontmatter de US — cierra el Lead
 //      con `flow-state close-us` tras validar contigo.
@@ -101,7 +101,7 @@ const plan = await agent(
     `   Flow defaults to forced TDD for behavior changes, including auxiliary code. Use validation for documents; optional/skip requires a recorded exception before execution. Resolve oracle_mode per US from ${PLAN}/tests.md frontmatter (tdd_policy) + per-node overrides + .claude/rules/test-policy.md: "forced" (strict red→green), "optional" (impl + suite verify), "validation" (markdown/config US covered by validations.md), "skip" (node carries tdd-skip: <reason> → copy it into oracle_skip_reason). oracle_ref = the exact section that covers this US.\n` +
     `4) check_command / typecheck_command / lint_command = the project's verification commands (project CLAUDE.md, .claude/rules/test-policy.md). Empty string when the project has none. test_policy = the declared level.\n` +
     `5) spec_summary = problem statement + acceptance criteria of ${PLAN}/spec.md, condensed to ≤15 lines (the review writer works from this).\n` +
-    `6) review_level per flow-review/SKILL.md Step 3: "light" (1-2 HUs, no security/perf surface), "standard" (3-N HUs, no critical area), "full" (architectural, or the diff will touch auth/payments/secrets/crypto/session). Give the reason in one line.\n` +
+    `6) review_level per .claude/skills/flow/references/05-review.md Step 3: "light" (1-2 HUs, no security/perf surface), "standard" (3-N HUs, no critical area), "full" (architectural, or the diff will touch auth/payments/secrets/crypto/session). Give the reason in one line.\n` +
     `Return ONLY the structured object.`,
   { label: 'preflight:plan', phase: 'Preflight', schema: PREFLIGHT_SCHEMA, model: 'sonnet', effort: 'low' },
 )
@@ -156,7 +156,7 @@ function huPrompt(u, retryOf) {
       ? `RETRY (attempt 2 of 2). The previous attempt failed with:\n"""${retryOf}"""\nDiagnose the ROOT CAUSE first (5-whys / read the failing output / .claude/skills/troubleshooting) and fix the cause, not the symptom. If you reproduce the very same error, stop and return status:"failed" with that error verbatim — do not keep retrying louder.\n\n`
       : '') +
     `PRIMARY INSTRUCTION (execution prompt from ${PLAN}/tasks/${u.id}.md — Task/Context/Constraints/Deliverable/Verify govern the work):\n${u.execution_prompt}\n\n` +
-    `PROTOCOL (flow-build/SKILL.md steps 4-9 — follow in order):\n` +
+    `PROTOCOL (.claude/skills/flow/references/04-build.md steps 4-9 — follow in order):\n` +
     `A. Style anchors BEFORE writing: Glob for 1-3 files of the same kind as your output and Read them; Grep the symbols/modules the US will use to confirm they exist. Report those files in style_anchors. Never claim a path exists without having seen it.\n` +
     `B. Oracle: ${oracle}\n` +
     `C. Scope floor: smallest diff that satisfies the ACs, in the surrounding code style. Reuse what the project already has instead of writing a variant. Add NOTHING beyond the ACs (no extra abstractions, hooks or fallbacks for impossible states). Never simplify away trust-boundary validation, error handling, security or accessibility. Stay inside the US files field (${u.files.join(', ') || 'declared in the US'}); anything else you had to touch goes in out_of_scope_files with the reason in summary.\n` +
@@ -232,7 +232,7 @@ const failed = results.filter((r) => r.status === 'failed')
 const touched = [...new Set(done.flatMap((r) => [...(r.files_touched || []), ...(r.out_of_scope_files || [])]))]
 
 // ---------------------------------------------------------------------------
-// Fase 3 — Review (flow-review/SKILL.md steps 4-8). Fuentes INDEPENDIENTES sobre
+// Fase 3 — Review (skills/flow/references/05-review.md steps 4-8). Fuentes INDEPENDIENTES sobre
 // dominios DISJUNTOS: no es un panel deliberativo (019 demotion: los paneles
 // sobre las mismas claims son la forma débil para revisar código).
 // ---------------------------------------------------------------------------
@@ -484,5 +484,5 @@ return {
   next:
     `El Lead cierra con el usuario: 1) valida cada HU done y la cierra con \`bun .claude/scripts/flow-state.ts close-us US{N} --verification <report.json> --files "..."\`; ` +
     `2) registra los boundary_checks; 3) resuelve blocked/failed contigo (nunca improvisando la respuesta); ` +
-    `4) ratifica o corrige el veredicto propuesto (\`flow-state verdict <VERDICT> --review <assessment.json>\`) — el workflow NO lo aprueba; 5) /flow-retro con retro_inputs.`,
+    `4) ratifica o corrige el veredicto propuesto (\`flow-state verdict <VERDICT> --review <assessment.json>\`) — el workflow NO lo aprueba; 5) Skill(flow, "retro") con retro_inputs.`,
 }

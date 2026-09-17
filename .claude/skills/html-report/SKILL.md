@@ -46,7 +46,7 @@ The design quality bar lives in `references/`, loaded only when needed (keeps th
 | Situation | Use instead |
 |---|---|
 | User wants a strategic DECISION memo (3 perspectives) | `compare-and-decide` skill (already emits its own HTML memo) |
-| User wants the markdown CONTENT authored/edited, not rendered | the relevant phase skill (`flow-review`, `flow-retro`, `flow-scope`…) |
+| User wants the markdown CONTENT authored/edited, not rendered | the relevant phase of the `flow` skill (review, retro, scope…) |
 | User wants a PDF | render HTML then print-to-PDF (the template's `@media print` is built for this) |
 | Trivial one-paragraph note | plain markdown — HTML scaffolding is over-engineering here (Commandment V) |
 | Needs live external data refresh | a live application; this skill's dynamic reports explore an embedded snapshot |
@@ -190,7 +190,7 @@ The canonical smoke test: render the real audit at `.claude/skills/html-report/e
 > | §9 Limitations table | C2 data-table |
 > | AC-compliance 8/8 | C6 progress-bar or C5 tile |
 >
-> NIT (`0 NIT`) is kept in the system though this report doesn't exercise it — `flow-review`'s rubric emits NIT for `review.md` rendering.
+> NIT (`0 NIT`) is kept in the system though this report doesn't exercise it — the `flow` review phase's rubric emits NIT for `review.md` rendering.
 
 ---
 

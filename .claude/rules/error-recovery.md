@@ -15,7 +15,7 @@ before replacement. Retry only proven failures within the approved allowance.
 | Inline build — Edit conflict | 1 | Re-read file, re-issue the edit |
 | Workflow unit failure | 1 | Lead diagnoses → re-run the unit (or fold inline) |
 | Workflow unit timeout | 1 | Double timeout → escalate to user |
-| Critic BLOCKED | 0 | Re-plan with `flow-plan` |
+| Critic BLOCKED | 0 | Re-plan with `flow` (plan phase) |
 | Critic NEEDS_CHANGES | 2 | Apply feedback → escalate to user |
 | Worktree / Team failure | 1 | Re-run unit or fold the domain back inline |
 

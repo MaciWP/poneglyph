@@ -16,7 +16,7 @@ when_to_use: |
 
 # pr-review — generalist PR/branch review (any repo)
 
-Diff-level, ticket-anchored review at any point in time. NOT `flow-review` (feature-level,
+Diff-level, ticket-anchored review at any point in time. NOT `flow` (review phase) (feature-level,
 spec.md-anchored, /flow-lifecycle Phase 4 after all HUs close) — the two never shadow each other.
 
 ## Steps (all executed or explicitly skipped with a reason — see step 9)
@@ -107,7 +107,7 @@ no hay ticket en la rama y el usuario no aportó ACs"). A silent skip is a revie
 
 ## Related
 
-- `flow-review` — feature-level review (spec.md, /flow-lifecycle fase 4); pr-review es diff-level y ticket-anchored.
+- `flow` skill (review phase) — feature-level review (spec.md, /flow-lifecycle fase 4); pr-review es diff-level y ticket-anchored.
 - `pr-comments` — formato de comentarios (reusada, no duplicada).
 - La skill de tickets del plugin de empresa — digest del ticket con ACs (reusada cuando aplica).
 - `changes-verify` — gate pre-done del propio trabajo; pr-review revisa trabajo AJENO/de rama.

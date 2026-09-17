@@ -24,7 +24,7 @@ when_to_use: |
 # verify — the pre-done gate
 
 Makes "done" mean verified. This skill is the executor of the dev loop's REVIEW
-stage (CLAUDE.md §The dev loop); `flow-review` invokes it for the happy-path E2E row.
+stage (CLAUDE.md §The dev loop); `flow` (review phase) invokes it for the happy-path E2E row.
 
 For authorized publication, read [the publication protocol](references/publication.md)
 in KNOW. It coordinates local checks, candidate CI, and verified integration.

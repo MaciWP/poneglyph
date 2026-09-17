@@ -188,16 +188,16 @@ Supporting files loaded on demand based on task context. Consult the Contents co
 | # | Cómo |
 |---|---|
 | II | Findings are evidence-backed (OWASP refs, secret patterns) — not speculative "looks risky" |
-| IV | Security is a blocking gate in the `flow-review` phase for auth/payments/credentials/crypto |
+| IV | Security is a blocking gate in the `flow` review phase for auth/payments/credentials/crypto |
 | VI | The core skill — secret-leak prevention; history-rewrite/force-push gated on Cmd VI authorization |
 
 ## Related
 
-- `flow-review` — Phase 4 owner that dispatches this skill on sensitive surfaces.
+- `flow` skill (review phase) — Phase 4 owner that dispatches this skill on sensitive surfaces.
 - Verify the vulnerable path/symbol exists before reporting it (`changes-verify` → existence checks).
 
 ---
 
 **Version**: 2.0
-**For**: Phase 4 `flow-review` (Step 7 dispatch for auth/payments/secrets/credentials/crypto). The legacy `reviewer` agent was cut in feature 008.
+**For**: Phase 4 `flow` (review phase) (Step 7 dispatch for auth/payments/secrets/credentials/crypto). The legacy `reviewer` agent was cut in feature 008.
 **Patterns**: Language-agnostic

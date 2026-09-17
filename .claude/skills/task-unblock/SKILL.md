@@ -50,7 +50,7 @@ Do NOT fire on a first failure — that's ordinary `troubleshooting` territory a
 
 If it starts copying the `troubleshooting` catalog, it is redundant and must die. Its
 body is trigger + change-of-technique + handback, nothing more. The diagnosis lives in
-`troubleshooting`; the judgment in `flow-review`; this is only the escalation rung.
+`troubleshooting`; the judgment in `flow` (review phase); this is only the escalation rung.
 
 ## Related
 - `.claude/rules/error-recovery.md` — stuck-detection thresholds that trigger this

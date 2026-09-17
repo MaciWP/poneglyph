@@ -89,7 +89,7 @@ the gate does not execute them.
 | Component group | Skills | Action in this candidate |
 |---|---|---|
 | Shared development | dev, drillme-clarify, lessons, verify | Keep current workflow. Only lessons' optional-private boundary changes. |
-| Feature lifecycle | scope, flow-plan, flow-test-plan, build, critic, retro | Validate metadata; defer lifecycle changes. |
+| Feature lifecycle | scope, plan, test-plan, build, critic, retro | Validate metadata; defer lifecycle changes. |
 | Review and diagnostics | troubleshooting, changes-explain, pr-comments, pr-review, code-quality, security-audit | Validate metadata/references; do not claim helper bugs are repaired. |
 | Research and orchestration | consult, decide, deep-research, agent-routing, prompt-design, choose-skills, task-unblock | Validate structure; do not launch workers or change model policy. |
 | Authoring and presentation | ui-design, graphify, html-report, harness-config | Validate structure; graphify's 674-line body warns without an arbitrary rewrite. |

@@ -76,11 +76,11 @@ describe("H62 — the harness-config lifecycle contract has one source", () => {
 
 describe("H68 — one destination for a stack-specific lesson", () => {
   it("retro does not route a stack lesson into the core lessons skill", () => {
-    expect(read(claude, "skills", "flow-retro", "SKILL.md")).not.toContain("lessons/references/");
+    expect(read(claude, "skills", "flow", "references", "06-retro.md")).not.toContain("lessons/references/");
   });
 
   it("retro names the private addon that lessons defines", () => {
-    expect(read(claude, "skills", "flow-retro", "SKILL.md")).toContain("private addon");
+    expect(read(claude, "skills", "flow", "references", "06-retro.md")).toContain("private addon");
   });
 });
 

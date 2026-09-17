@@ -127,7 +127,7 @@ Numeric claims: quote-anchor or `[Probable]` / `UNVERIFIED` (research-rigor P1).
 | Situation | Use instead |
 |-----------|-------------|
 | Trivial fact, one known file/URL | Answer inline — no skill ceremony |
-| Pre-code API/deprecation check inside a plan | `flow-plan` → `references/02-research.md` |
+| Pre-code API/deprecation check inside a plan | `flow` (plan phase) → `references/plan/02-research.md` |
 | External model second opinion | `consult-model` |
 | Choose between options already researched | `compare-and-decide` |
 | User wants a full feature pipeline | `/flow-lifecycle` |
@@ -156,7 +156,7 @@ Numeric claims: quote-anchor or `[Probable]` / `UNVERIFIED` (research-rigor P1).
 
 - `.claude/docs/research-rigor.md` — evidence quality SSOT
 - `prompt-design` — **mandatory** before any research agent spawn (Context 3)
-- `flow-plan/references/02-research.md` — deep research *for planning code* (anti-obsolescence)
+- `flow/references/plan/02-research.md` — deep research *for planning code* (anti-obsolescence)
 - `/expert-role research` · `/expert-role shopping` — compose this skill + tools / `compare-and-decide`
 - `consult-model` — other-model hypothesis, not a substitute for primary sources
 - `references/escalation.md` — budget table + agent prompt template

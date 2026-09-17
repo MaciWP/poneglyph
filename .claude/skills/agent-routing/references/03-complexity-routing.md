@@ -19,7 +19,7 @@ description: Complexity factors × weight table, formula, routing thresholds, mo
 - [Effort Routing (Frontmatter — static)](#effort-routing-frontmatter-static)
 - [Calculation Examples](#calculation-examples)
 
-Calculate complexity before delegating to determine if invoking the `flow-plan` skill is required and which execution mode to use.
+Calculate complexity before delegating to determine if invoking the `flow` skill (plan phase) is required and which execution mode to use.
 
 ## Complexity Factors
 
@@ -52,8 +52,8 @@ obviously trivial is not scored at all — scoring it is the ceremony the score 
 | Score | Routing | Reason |
 |-------|---------|--------|
 | **33-45** | inline, no plan | Every factor Low, or one Medium |
-| **45-60** | flow-plan optional | Consider a plan if there is uncertainty; matches tiered mode below |
-| **> 60** | flow-plan mandatory | Requires a structured roadmap; also the team-mode gate |
+| **45-60** | flow (plan phase) optional | Consider a plan if there is uncertainty; matches tiered mode below |
+| **> 60** | flow (plan phase) mandatory | Requires a structured roadmap; also the team-mode gate |
 
 ## Mode Selection Table
 
@@ -74,11 +74,11 @@ Other write fan-out still needs explicit opt-in (SKILL.md P8).
 
 ## Tiered Mode
 
-Intermediate mode for 2-3 domains with shared interfaces and complexity 45-60. The `flow-plan` skill (Mode B) designs contracts before the units are built — all inline; no separate architect agent.
+Intermediate mode for 2-3 domains with shared interfaces and complexity 45-60. The `flow` skill (plan phase, Mode B) designs contracts before the units are built — all inline; no separate architect agent.
 
 ```mermaid
 graph TD
-    P[flow-plan: Mode A roadmap + Mode B contracts]
+    P[flow (plan phase): Mode A roadmap + Mode B contracts]
     P --> D1[Lead builds domain A inline, honoring contract]
     D1 --> D2[Lead builds domain B inline, honoring contract]
     D2 --> R[critic skill: validates cross-domain integration]
@@ -86,9 +86,9 @@ graph TD
 
 | Step | Who | Action |
 |------|-----|--------|
-| 1 | `flow-plan` skill | Generates roadmap with `executionMode: "tiered"` and an inline Mode B section (interface contracts between domains X and Y) |
+| 1 | `flow` skill (plan phase) | Generates roadmap with `executionMode: "tiered"` and an inline Mode B section (interface contracts between domains X and Y) |
 | 2 | Lead (inline, sequential) | Builds each domain honoring the Mode B contracts |
-| 3 | `flow-review` skill | Validates cross-domain integration against contracts |
+| 3 | `flow` skill (review phase) | Validates cross-domain integration against contracts |
 
 ## 4-Gate Criteria (Team Mode Only — ALL must pass)
 
@@ -114,7 +114,7 @@ Opt-out: `PONEGLYPH_DISABLE_TEAM_MODE=1` forces subagents regardless.
 
 ### Teammate prompts, coordination & fallback
 
-Team mode is experimental and rarely used (4-gate + opt-in). The teammate prompt template, domain-boundary definition, coordination protocol and recovery/fallback table are canonical in `flow-plan/references/05-team-mode.md` — not duplicated here. Routing-level summary: spawn one teammate per domain; they negotiate contracts via the shared task list; the Lead runs `Skill('critic')` over the full changeset; any stuck/failed teammate folds back to inline or a `Workflow` unit.
+Team mode is experimental and rarely used (4-gate + opt-in). The teammate prompt template, domain-boundary definition, coordination protocol and recovery/fallback table are canonical in `flow/references/plan/05-team-mode.md` — not duplicated here. Routing-level summary: spawn one teammate per domain; they negotiate contracts via the shared task list; the Lead runs `Skill('critic')` over the full changeset; any stuck/failed teammate folds back to inline or a `Workflow` unit.
 
 > Current limitation: teammates are always `general-purpose` (issue anthropics/claude-code#24316); each still loads `~/.claude/` automatically (Poneglyph rules/skills/hooks apply). Activation flag: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`.
 

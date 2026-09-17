@@ -24,8 +24,8 @@ verification and artifact recovery.
 | Phase | File / Dir | Skill |
 |---|---|---|
 | 1 | `spec.md` | scope |
-| 2 | `tasks/` directory containing `index.md` (DAG + summary) + one `US{N}.md` per story | flow-plan |
-| 2.5 | `tests.md` (code) **or** `validations.md` (markdown/skills/docs) — chosen per HU based on whether files are executable | flow-test-plan |
+| 2 | `tasks/` directory containing `index.md` (DAG + summary) + one `US{N}.md` per story | plan |
+| 2.5 | `tests.md` (code) **or** `validations.md` (markdown/skills/docs) — chosen per HU based on whether files are executable | test-plan |
 | 3 | Code changes; records verified closure in `state.json` | build |
 | 4 | `review.md` | critic |
 | 5 | `retro.md` | retro |
@@ -72,7 +72,7 @@ Code and Cursor write plans to the home directory by default). `spec.md` +
 `retro.md` already carry definition, outcome and lessons; no extra summary
 document is needed.
 
-The move is an authorized action at closure (`flow-retro` Step 13d), never
+The move is an authorized action at closure (`flow` retro phase Step 12d), never
 automatic. A closed plan is not repaired with `sync-artifacts`; reopening
 restores its working set from `_archive/` first.
 
@@ -94,7 +94,7 @@ numbering sequence so nothing collides. In-flight = `state.json` with
 
 ## Other projects
 
-`/flow-lifecycle` writes to `<project>/.claude/plans/`. `flow-scope` settles the git policy
+`/flow-lifecycle` writes to `<project>/.claude/plans/`. The `flow` scope phase settles the git policy
 once per project (Initial detection, step 0) and never writes it silently:
 
 | Project type | Policy | Mechanism |

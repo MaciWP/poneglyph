@@ -108,5 +108,5 @@ Verdict shapes: Proceed / Proceed with conditions / Investigate first / Reject.
 
 - `consult-model` — EXTERNAL second opinion (codex/grok); decide is the internal machinery. High-stakes calls can use both.
 - `drillme-clarify` — closes information gaps by asking the USER; decide weighs alternatives. Gaps first, decision second.
-- `flow-scope` — reuses `references/heavy/01-perspectives.md` and `prompts/outsider-agent.md` for its full mode.
+- `flow` skill (plan phase) — invokes the heavy tier when two or more technically reasonable alternatives surface.
 - `html-report` — renders the decision memo on request.

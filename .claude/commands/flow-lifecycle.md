@@ -6,7 +6,8 @@ allowed-tools: Read, Edit, Write, Bash, Glob, Grep, Skill, Agent, AskUserQuestio
 
 # /flow-lifecycle — a reliable feature lifecycle
 
-Use the six phase skills below. Keep the feature in the current project's
+Use the six phases of the `flow` skill below: `Skill(flow, "<phase>")` loads the shared
+body plus that phase's reference. Keep the feature in the current project's
 `.claude/plans/{NNN}-{slug}/`. `state.json` records progress and decisions;
 the [flow contract](../docs/flow-contract.md) defines the helper and recovery.
 `dev-workflow` owns the development loop; `flow-lifecycle` coordinates it across a whole feature.
@@ -26,40 +27,40 @@ the [flow contract](../docs/flow-contract.md) defines the helper and recovery.
 
 ## Six steps
 
-1. **Scope — `flow-scope`.** Define the problem, required outcomes, boundaries and risks
+1. **Scope — `Skill(flow, "scope")`.** Define the problem, required outcomes, boundaries and risks
    in `spec.md`. Resolve consequential questions. Record phase 1 complete, then
    the user's scope approval at gate 1→2. Without approval, keep scope open.
-2. **Research and plan — `flow-plan`.** Inspect existing code and relevant primary
+2. **Research and plan — `Skill(flow, "plan")`.** Inspect existing code and relevant primary
    documentation. Reuse existing mechanisms. Split the work into verifiable HUs,
    with acceptance criteria and real dependencies. Create draft tasks and record
    phase 2 complete. A sequential DAG is valid; never invent parallel work.
-3. **Design checks — `flow-test-plan`.** Define expected behavior before implementation.
+3. **Design checks — `Skill(flow, "test-plan")`.** Define expected behavior before implementation.
    Behavior changes use TDD by default; documentation uses validation checks.
    Justify exceptions before execution. Record phase 2.5 complete and present
    tasks plus oracle together. Gate 2→3 records one actual user decision and
    updates their approval status. A rejected package returns to planning.
-4. **Build — `flow-build`.** Select a pending HU whose dependencies are complete.
+4. **Build — `Skill(flow, "build")`.** Select a pending HU whose dependencies are complete.
    For TDD: observe the relevant test fail, implement, then observe it pass.
    Include documentation updates before final verification. Run `changes-verify` and
    close the HU only with its verification record. Failures leave it pending.
-5. **Critique — `flow-review`.** Check the assembled result against every requirement:
+5. **Critique — `Skill(flow, "review")`.** Check the assembled result against every requirement:
    requirement → executed check → observed outcome. Exercise the real flow when
    runtime exists. Passing unit tests alone does not establish the feature's
    success. Record the supported verdict. For an in-scope defect, reopen the
    affected HUs, fix them and repeat verification and critique. Respect existing
    retry limits. Escalate changed scope, unresolved questions or a real blocker;
    `BLOCKED` requires an authorized reopen.
-6. **Retro and close — `flow-retro`.** Capture useful lessons and propose any promotions
+6. **Retro and close — `Skill(flow, "retro")`.** Capture useful lessons and propose any promotions
    or scope deltas for ratification. Record the resolved retro, or an announced
    justified skip. Close the feature only after verified HUs and an approving
    review. Repair stale documents from state; never mark unfinished work complete.
 
 ## Controls at each boundary
 
-Record the phase skill used, the previous artifact/check, and the transition with
+Record the phase used, the previous artifact/check, and the transition with
 the helper's `boundary-check` command. Confirm the human decision at gates 1→2
 and 2→3. At planning/build entry, apply `choose-skills` and the `drillme-clarify` gap sweep;
-zero unresolved gaps means zero questions. Invoke the phase skill explicitly;
+zero unresolved gaps means zero questions. Invoke `flow` with the phase explicitly;
 do not rely on automatic activation or reconstruct its instructions from memory.
 
 Use the helper for transitions, including approval, closure, review, reopening
@@ -81,7 +82,7 @@ user gate in CLAUDE.md. For a user-authorized supervised Orca team, invoke
 worker roles. CLAUDE.md's Agent spawn section owns team approval and its validity
 on resume. Task decomposition never grants permission.
 
-Workers apply `flow-build`'s supervised-worker branch and return evidence. Only the
+Workers apply the supervised-worker branch of `flow`'s build phase and return evidence. Only the
 coordinator records transitions with flow-state. Orca's completed/ready status
 does not satisfy a HU dependency until the coordinator verifies and closes it.
 Quiesce affected writers before acceptance checks and all writers before final

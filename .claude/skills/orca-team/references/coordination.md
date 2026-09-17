@@ -104,7 +104,7 @@ Send worker_done once through the current preamble, then stop writing and idle.
 Return useful non-obvious lessons when present.
 ```
 
-For a flow worker, apply `flow-build`'s supervised-worker branch. For a review worker,
+For a flow worker, apply the `flow` build phase's supervised-worker branch. For a review worker,
 replace the write grant with read-only scope and request findings against the DoD.
 The coordinator records acceptance; a worker's report never closes a HU.
 Separate required worker checks from coordinator-only assembled checks in the

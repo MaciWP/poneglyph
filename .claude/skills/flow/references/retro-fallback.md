@@ -1,6 +1,6 @@
 # Retro — embedded fallback template (if `retro.template.md` missing)
 
-Extracted verbatim from `SKILL.md` (017/US9 — mechanical move, no content redesign). Used by Step 2 when `.claude/plans/templates/retro.template.md` does not exist.
+Extracted from the former retro skill (017/US9); since the 2026-09-17 merge it belongs to `flow` phase 5. Used when `.claude/plans/templates/retro.template.md` does not exist.
 
 ```markdown
 # Retro — {feature-name}

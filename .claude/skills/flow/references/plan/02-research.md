@@ -1,5 +1,5 @@
 ---
-parent: flow-plan
+parent: flow
 name: research
 description: Deep Research Protocol + Anti-Obsolescence Detection — consult external docs, reject deprecated APIs.
 ---

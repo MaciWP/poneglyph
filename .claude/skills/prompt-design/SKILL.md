@@ -72,7 +72,7 @@ Before sending `Agent(subagent_type=…, prompt=…)`:
 
 ### Context 4 — Audit an inter-agent communication
 
-When a prompt flows between agents (Lead → Workflow unit, or skill → skill, e.g. `flow-build` → `flow-review`) or in a generator→validator handoff, run the rubric against the handoff: is intent preserved? Are constraints carried forward? Is the deliverable specified in a way the receiving side can verify?
+When a prompt flows between agents (Lead → Workflow unit, or skill → skill, e.g. `flow` build phase → `flow` review phase) or in a generator→validator handoff, run the rubric against the handoff: is intent preserved? Are constraints carried forward? Is the deliverable specified in a way the receiving side can verify?
 
 ## When to Use
 
@@ -92,4 +92,4 @@ When a prompt flows between agents (Lead → Workflow unit, or skill → skill, 
 ## Related
 
 - `agent-routing` — the Arch H delegation template this skill scores (Context 3).
-- `flow-scope` / `drillme-clarify` — upstream clarifiers when a user brief is too vague to refine into a prompt.
+- `flow` skill (scope phase) / `drillme-clarify` — upstream clarifiers when a user brief is too vague to refine into a prompt.

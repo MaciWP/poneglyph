@@ -35,7 +35,7 @@ Plus: design-doc audits, cross-file consistency checks, and full-file reads → 
 | LOW Volume + LOW Complexity = direct Read | Cost of delegation > cost of direct Read. |
 | Exploration primitive = `Explore` (inherits session model) | Empirical score 83; the custom `scout` was cut in feature 008. |
 | Deeper synthesis past Explore's window | Runs inline (Lead `Read`/Grep); ≥4 independent sweeps → `Workflow`. |
-| Parallel axis: "change difficulty" | If after exploring you must implement a difficult change, invoke `flow-plan` skill (independent of the exploration axis). |
+| Parallel axis: "change difficulty" | If after exploring you must implement a difficult change, invoke `flow` skill (plan phase) (independent of the exploration axis). |
 
 ### Primitive by context need (CC ≥2.1.232)
 
@@ -55,7 +55,7 @@ The matrix above decides **exploration**. The difficulty of the **change that fo
 |--------|-------------------------|
 | Trivial (1 line, rename) | Lead inline |
 | Standard (1 file, clear pattern) | Lead inline (`Skill('build')` in a /flow-lifecycle) |
-| Multi-file / architectural (one unit) | Lead inline (`Skill('flow-plan')` first if complexity >60); ≥4 independent HUs → `Workflow` |
+| Multi-file / architectural (one unit) | Lead inline (`Skill(flow, "plan")` first if complexity >60); ≥4 independent HUs → `Workflow` |
 
 A task can be **HIGH Volume exploration + trivial change** (lots to read, little to change) or **LOW Volume + complex change** (little to read, lots to think). Decide each axis separately.
 
@@ -67,7 +67,7 @@ The "Suggested skills to Read (for delegation)" column lists `.claude/skills/<na
 
 | Signal | Execution | Skill/Mode | Suggested skills to Read (Arch H) | Fallback |
 |--------|-----------|------------|-------------------------------------------|----------|
-| implement, create, fix, build | `flow-build` inline by default; authorized Orca teams use its supervised-worker branch | (by prompt) | (match domain via skill-matching) | — |
+| implement, create, fix, build | `flow` (build phase) inline by default; authorized Orca teams use its supervised-worker branch | (by prompt) | (match domain via skill-matching) | — |
 | refactor, extract, simplify, restructure | inline | code-quality | code-quality | — |
 | merge conflict, git conflict | inline | (prompt context) | — | — |
 | docs, sync, documentation | inline | (doc task) | — | — |
@@ -76,8 +76,8 @@ The "Suggested skills to Read (for delegation)" column lists `.claude/skills/<na
 | security, audit, vulnerability, owasp | `Skill('critic')` + `Skill('security-audit')` | security-audit | security-audit | — |
 | code quality, smells, SOLID, complexity | `Skill('critic')` / code-quality (quality) | code-quality (quality mode) | code-quality | — |
 | performance, slow, bottleneck, N+1 | `Skill('critic')` / code-quality (performance) | code-quality (performance mode) | code-quality | — |
-| plan, design, decompose, RFC, architecture, contract | Lead via `Skill('flow-plan')` | (no dedicated agent) | decide (heavy tier) (for design risk), code-quality | — |
-| >3 subtasks, breakdown, dependencies | Lead via `Skill('flow-plan')` | (decomposition in skill) | — | — |
+| plan, design, decompose, RFC, architecture, contract | Lead via `Skill(flow, "plan")` | (no dedicated agent) | decide (heavy tier) (for design risk), code-quality | — |
+| >3 subtasks, breakdown, dependencies | Lead via `Skill(flow, "plan")` | (decomposition in skill) | — | — |
 | find, explore, search codebase | `Explore` (built-in); ≥4 sweeps → `Workflow` | — | — | Lead `Read` inline |
 | error, failing, debug, diagnose | Lead via `Skill('troubleshooting')` | (no dedicated agent) | troubleshooting | fix inline (obvious fix) |
 
@@ -86,12 +86,12 @@ The "Suggested skills to Read (for delegation)" column lists `.claude/skills/<na
 | Pattern | Execution | When |
 |---------|-----------|------|
 | **Explore then Build** | `Explore` (read) → inline build | exploration provides context, Lead implements inline |
-| **Plan then Build** | Lead `Skill('flow-plan')` → inline build (sequential; write fan-out = opt-in) | complexity >60 |
+| **Plan then Build** | Lead `Skill(flow, "plan")` → inline build (sequential; write fan-out = opt-in) | complexity >60 |
 | **Build then Review** | inline build → `Skill('critic')` | mandatory for multi-file changes |
 | **Diagnose then Fix** | Lead `Skill('troubleshooting')` → fix inline | diagnosis before fix |
 | **Worktree Parallel** | ≥4 `Workflow` WRITE units with `isolation: 'worktree'` — explicit user opt-in only | user opted in (ultracode) AND files may overlap |
 | **Security Review** | `Skill('critic')` + `Skill('security-audit')` | auth/security changes |
-| **Tiered Build** | Lead `Skill('flow-plan')` Mode B contracts → inline sequential | complexity 45-60, 2-3 domains with shared interfaces |
+| **Tiered Build** | Lead `Skill(flow, "plan")` Mode B contracts → inline sequential | complexity 45-60, 2-3 domains with shared interfaces |
 | **Team Parallel** | Team mode (experimental) | 3+ independent domains negotiating interfaces, complexity >60 |
 
 ### Workflow wiring
@@ -105,8 +105,8 @@ How the capabilities of the custom agents (cut in feature 008) map onto the curr
 
 | Capability (historical agent) | Now | Fan-out trigger |
 |---|---|---|
-| implement (was `builder`) | `flow-build` inline by default; supervised-worker branch for an approved Orca team | Native Workflow uses explicit opt-in; Orca uses its shared-worktree contract |
-| validate (was `reviewer`) | `flow-review` skill inline | standard/full code review → **ONE fresh-context read-only reviewer** (correctness/requirements only — P1 exception, 018 W1 D1/D3); decision review → panel via `compare-and-decide` (heavy tier) |
+| implement (was `builder`) | `flow` (build phase) inline by default; supervised-worker branch for an approved Orca team | Native Workflow uses explicit opt-in; Orca uses its shared-worktree contract |
+| validate (was `reviewer`) | `flow` skill (review phase) inline | standard/full code review → **ONE fresh-context read-only reviewer** (correctness/requirements only — P1 exception, 018 W1 D1/D3); decision review → panel via `compare-and-decide` (heavy tier) |
 | explore (was `scout`) | `Explore` (built-in) | ≥4 independent exploration sweeps → `Workflow` (read-only) |
 | generator→validator | `pipeline(items, find, verify)` inside one `Workflow` | intra-workflow Four-Eyes — NOT a new spawn decision (spawn-tree P7) |
 
@@ -153,9 +153,9 @@ prohibit the explicitly authorized `orca-team` route.
 | Anti-Pattern | Problem | Use Instead |
 |--------------|---------|-------------|
 | Spawning an agent for exploration | misses context, wastes tokens | `Explore` (read) or Lead `Read` inline |
-| flow-plan skill for complexity <30 | overkill, slows execution | act inline |
-| skipping `flow-review` after multi-file changes | quality risk | `Skill('critic')` checkpoint |
-| no flow-plan for >60 complexity | uncoordinated, error-prone | Lead `Skill('flow-plan')` → inline (≥4 HUs → `Workflow`) |
+| `flow` skill (plan phase) for complexity <30 | overkill, slows execution | act inline |
+| skipping `flow` (review phase) after multi-file changes | quality risk | `Skill('critic')` checkpoint |
+| no `flow` (plan phase) for >60 complexity | uncoordinated, error-prone | Lead `Skill(flow, "plan")` → inline (≥4 HUs → `Workflow`) |
 | ≥4 `Workflow` units without worktree on overlapping files | Write conflicts | `isolation: "worktree"` per unit |
 | team mode for <3 domains | 3-7x cost with no real benefit | inline, or `Workflow` at ≥4 independent units |
 | team mode for dependent domains | file conflicts between teammates | sequential inline / a `Workflow` |

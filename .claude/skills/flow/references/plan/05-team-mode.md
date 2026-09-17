@@ -1,5 +1,5 @@
 ---
-parent: flow-plan
+parent: flow
 name: team-mode
 description: Team Mode Planning + Cross-Validation (Four-Eyes principle) — domain boundaries, teammate prompts, recovery plan.
 ---
@@ -11,7 +11,7 @@ description: Team Mode Planning + Cross-Validation (Four-Eyes principle) — dom
 - [Cross-Validation (Four-Eyes Principle)](#cross-validation-four-eyes-principle)
 - [Team Mode Planning](#team-mode-planning)
 
-> **Post-feature-008 mapping** — the named agents in this doc (`planner`/`builder`/`reviewer`/`scout`) were **cut**. Team mode now uses generic **scoped teammates** (experimental, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`); map `builder` → `flow-build` skill / impl unit, `reviewer` → Phase 4 `flow-review` / review panel (≥4), `scout` → `Explore` (built-in), `planner` → `flow-plan` skill. The patterns (Four-Eyes generator→validator, domain boundaries, recovery loop) **remain valid** — only the agent names died. The generator→validator pattern is exactly what a `Workflow` `pipeline(items, find, verify)` encodes.
+> **Post-feature-008 mapping** — the named agents in this doc (`planner`/`builder`/`reviewer`/`scout`) were **cut**. Team mode now uses generic **scoped teammates** (experimental, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`); map `builder` → `flow` (build phase) / impl unit, `reviewer` → `flow` (review phase) / review panel (≥4), `scout` → `Explore` (built-in), `planner` → `flow` (plan phase). The patterns (Four-Eyes generator→validator, domain boundaries, recovery loop) **remain valid** — only the agent names died. The generator→validator pattern is exactly what a `Workflow` `pipeline(items, find, verify)` encodes.
 >
 > **Spawn model (CC 2.1.178)** — there is **no setup step**: `TeamCreate`/`TeamDelete` were removed; with the flag set, every session has one **implicit team**. Spawn a teammate directly via the `Agent` tool's `name` parameter (the old `team_name` param is accepted but ignored). Permission rules can scope spawns with `Tool(param:value)` syntax, e.g. `Agent(model:opus)`.
 
@@ -53,14 +53,14 @@ sequenceDiagram
 
 ### Agent Combinations
 
-> Generator/Validator below are **roles**, not custom agents (those were cut — see L14). Map: generator = impl teammate / `flow-build` skill; validator = review teammate / `flow-review`. The pattern = a `Workflow` `pipeline(items, find, verify)`.
+> Generator/Validator below are **roles**, not custom agents (those were cut — see L14). Map: generator = impl teammate / `flow` (build phase); validator = review teammate / `flow` (review phase). The pattern = a `Workflow` `pipeline(items, find, verify)`.
 
 | Task | Generator (role) | Validator (role) |
 |------|-----------|-----------|
-| New architecture | `flow-plan` (Mode B) | `flow-review` |
-| Complex refactoring | `flow-build` | `flow-review` |
-| Feature with security | `flow-build` | `flow-review` (+ `security-audit`) |
-| Critical tests | `flow-build` | `flow-review` |
+| New architecture | plan (Mode B) | review |
+| Complex refactoring | build | review |
+| Feature with security | build | review (+ `security-audit`) |
+| Critical tests | build | review |
 
 ---
 
@@ -75,9 +75,9 @@ Select agents based on task analysis:
 | Role (skill) | Condition | Required |
 |-------|-----------|----------|
 | `Explore` (exploration) | Codebase exploration | ALWAYS |
-| `flow-build` (implementation) | Code implementation | ALWAYS |
-| `flow-review` (validation) | Quality validation | ALWAYS |
-| `flow-plan` (Mode B) | Complexity > 40 OR cross-domain interfaces — emits RFC + contracts inline | CONDITIONAL |
+| build (implementation) | Code implementation | ALWAYS |
+| review (validation) | Quality validation | ALWAYS |
+| plan (Mode B) | Complexity > 40 OR cross-domain interfaces — emits RFC + contracts inline | CONDITIONAL |
 | `security-audit` | Keywords: auth, token, password, jwt, encryption | CONDITIONAL |
 
 ### Domain Boundary Definition
@@ -115,17 +115,17 @@ Coordination: Use task list to signal completion and coordinate with other teamm
 | Scenario | Action | Max retries |
 |----------|--------|-------------|
 | Teammate test failure | Analyze error, fix, re-run | 2 |
-| NEEDS_CHANGES from `flow-review` | Apply feedback, re-submit | 3 then escalate |
-| Teammate stuck (no progress) | Fold domain back to inline `flow-build` | 0 |
-| File conflict between teammates | Lead arbitrates via `flow-review`, loser re-executes | 1 |
+| NEEDS_CHANGES from `flow` (review phase) | Apply feedback, re-submit | 3 then escalate |
+| Teammate stuck (no progress) | Fold domain back to inline `flow` (build phase) | 0 |
+| File conflict between teammates | Lead arbitrates via `flow` (review phase), loser re-executes | 1 |
 | Multiple teammates fail | Abort team mode → fallback to subagents/inline | 0 |
-| Architecture mismatch | `flow-plan` (Mode B) redesigns contracts, re-delegate | 1 |
+| Architecture mismatch | `flow` (plan phase, Mode B) redesigns contracts, re-delegate | 1 |
 
 ### Correction Loop
 
 ```
-1. impl teammate (`flow-build` role) implements
-2. review teammate (`flow-review` role) evaluates
+1. impl teammate (`flow` role, build phase) implements
+2. review teammate (`flow` role, review phase) evaluates
 3. If NEEDS_CHANGES:
    a. impl teammate fixes according to feedback
    b. review teammate re-evaluates

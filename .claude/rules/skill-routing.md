@@ -9,7 +9,7 @@ in `.claude/docs/model-uplift-playbook.md`.
 | A decision with gaps, doubts or under-specified points | `drillme-clarify` |
 | Supervised Orca team: shared worktree, reservations, messages or resume | `orca-team` (handoffs: `orca-cli`) |
 | Interactive technical diagram or standalone explorable architecture/flow; simple inline diagrams keep Mermaid | `diagrams-interactive` |
-| Approved spec needs technical decomposition | `flow-plan` |
+| Approved spec needs technical decomposition | `flow` (plan phase) |
 | About to report "done" on work with runtime surface | `changes-verify` |
 | About to review a diff/PR, or a review just surfaced a repeatable mistake | `lessons-learned` |
 

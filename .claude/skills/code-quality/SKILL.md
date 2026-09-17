@@ -87,15 +87,15 @@ Both modes produce structured output. Quality mode uses `Code Quality Review: [C
 | # | Cómo |
 |---|---|
 | V | Drives toward simple-by-default code (SOLID/DRY, decompose complexity, kill premature abstraction) |
-| IV | Quality findings feed the `flow-review` gate — review is verification, not opinion |
+| IV | Quality findings feed the `flow` (review phase) gate — review is verification, not opinion |
 | X | Performance mode targets real bottlenecks (N+1, memory leaks, blocking async) with evidence |
 
 ## Related
 
-- `flow-review` — Phase 4 owner that dispatches this skill (quality + performance lenses).
+- `flow` skill (review phase) — Phase 4 owner that dispatches this skill (quality + performance lenses).
 
 ---
 
 **Version**: 1.0
-**For**: Phase 4 `flow-review` (Step 6 dispatch) + Phase 3 `flow-build` skill (inline quality-mode). The legacy `reviewer`/`builder` agents were cut in feature 008.
+**For**: Phase 4 `flow` (review phase) (Step 6 dispatch) + Phase 3 `flow` (build phase) (inline quality-mode). The legacy `reviewer`/`builder` agents were cut in feature 008.
 **Patterns**: Language-agnostic

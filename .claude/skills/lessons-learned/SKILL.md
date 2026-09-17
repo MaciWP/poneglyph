@@ -43,11 +43,11 @@ by evals and docs were lost that way and had to be recovered as G9–G12 (plan 0
 
 | Moment | Action |
 |---|---|
-| Before reviewing a PR/diff (`pr-review`, `flow-review`) | Read §Lessons; every guard is a checkable item |
+| Before reviewing a PR/diff (`pr-review`, `flow` review phase) | Read §Lessons; every guard is a checkable item |
 | Before declaring work done (`changes-verify`) | Re-check G2, G3, G4 — the ones that bite at the finish line |
-| Starting a HU in a configured work project (`flow-build`) | Read the matching private skill if installed; otherwise use the applicable core lessons |
+| Starting a HU in a configured work project (`flow` build phase) | Read the matching private skill if installed; otherwise use the applicable core lessons |
 | A review (human or agent) surfaces a mistake | Append here if cross-repo; to the private addon's stack reference if stack-specific |
-| `flow-retro` Step 8 promotion, scope = cross-project | Land it here |
+| `flow` retro phase Step 7 promotion, scope = cross-project | Land it here |
 
 ## Admission rule — three conditions, all mandatory
 

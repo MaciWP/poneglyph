@@ -18,7 +18,7 @@ The model performs the critique guided by the references; no framework required.
 4. **Run the pre-flight checklist** → pass/fail per item.
 5. **Verdict**: `CLEAN` (no MAJOR+), `WARN` (MINOR/NIT only), `FAIL` (≥1 BLOCKER/MAJOR).
 
-## Severity (reuses `flow-review`'s vocabulary)
+## Severity (reuses the `flow` review phase's vocabulary)
 
 | Severity | Trigger |
 |---|---|

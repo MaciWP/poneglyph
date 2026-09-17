@@ -171,7 +171,7 @@ export function detectFeatureShape(prompt: string): boolean {
 // The second sentence is the tiered context ceiling (plan 037): 200k by default, 400k when a
 // task spans many files. The hook cannot run slash commands; the Lead proposes, Oriol decides.
 export const FLOW_HINT_LINE =
-  "Feature-shaped task → consider /flow-lifecycle — the full lifecycle (flow-scope→flow-plan→flow-test-plan→flow-build→flow-review→flow-retro). Wide scope → propose `/autocompact 400k` for this session (default ceiling 200k, plan 037).";
+  "Feature-shaped task → consider /flow-lifecycle — the full lifecycle (Skill flow: scope→plan→test-plan→build→review→retro). Wide scope → propose `/autocompact 400k` for this session (default ceiling 200k, plan 037).";
 
 // Model/effort routing by task shape (029/US7 — closes the 027 deployment gap:
 // the advisor only fired at /flow-lifecycle boundaries, while 60+ manual /model+/effort

@@ -8,21 +8,21 @@ description: Phase-specific question banks for the poneglyph 5-phase workflow. L
 
 ## Contents
 
-- [Phase 1 — Scope (scope)](#phase-1-scope-scope)
-- [Phase 2 — Plan (flow-plan)](#phase-2-plan-tech-plan)
-- [Phase 2.5 — TDD design (flow-test-plan)](#phase-25-tdd-design-tdd-design)
-- [Phase 3 — Build (build, intra-HU)](#phase-3-build-build-intra-hu)
-- [Phase 4 — Review (critic)](#phase-4-review-critic)
-- [Phase 5 — Retro (retro)](#phase-5-retro-retro)
+- [Phase 1 — Scope (flow scope)](#phase-1--scope-flow-scope)
+- [Phase 2 — Plan (flow plan)](#phase-2--plan-flow-plan)
+- [Phase 2.5 — TDD design (flow test-plan)](#phase-25--tdd-design-flow-test-plan)
+- [Phase 3 — Build (flow build, intra-HU)](#phase-3--build-flow-build-intra-hu)
+- [Phase 4 — Review (flow review)](#phase-4--review-flow-review)
+- [Phase 5 — Retro (flow retro)](#phase-5--retro-flow-retro)
 - [Loading rule for drillme-clarify](#loading-rule-for-drillme)
 - [Phase auto-detection priority](#phase-auto-detection-priority)
 - [When phase questions don't fit the actual context](#when-phase-questions-dont-fit-the-actual-context)
 
 When drillme-clarify detects an active 5-phase workflow context (see SKILL.md §The recipe — Step 1), it loads the relevant phase bank **in addition to** the canonical 4 categories. Phase questions are tagged `[phase-N]` in the output so the user sees their origin.
 
-These question banks are the **canonical source**. Phase skills (`flow-scope`, `flow-plan`, `flow-test-plan`, `flow-build`, `flow-review`, `flow-retro`) reference them — they do NOT duplicate the content in their own SKILL.md.
+These question banks are the **canonical source**. The `flow` skill's phase references (`skills/flow/references/01-scope.md` … `06-retro.md`) cite them — they do NOT duplicate the content.
 
-## Phase 1 — Scope (scope)
+## Phase 1 — Scope (flow scope)
 
 Closing the spec.md before hard gate 1->2.
 
@@ -40,7 +40,7 @@ Closing the spec.md before hard gate 1->2.
 
 If any of the 5 returns "no sé / not sure" without follow-up reason → **do not close Phase 1**. Iterate until concrete answer or marked `[OPEN]` in spec.md with explicit reason.
 
-## Phase 2 — Plan (flow-plan)
+## Phase 2 — Plan (flow plan)
 
 Closing tasks/ before hard gate 2->3.
 
@@ -59,7 +59,7 @@ Closing tasks/ before hard gate 2->3.
 
 If "I don't know" or evasive on any of the 6 → iterate plan; do NOT close. Question 6 closes the `[location]` coverage gap detected in US3 (3/4 → 4/4).
 
-## Phase 2.5 — TDD design (flow-test-plan)
+## Phase 2.5 — TDD design (flow test-plan)
 
 Closing tests.md or validations.md.
 
@@ -76,7 +76,7 @@ Closing tests.md or validations.md.
 
 If >30% HUs are "untestable" → the Phase 2 decomposition is wrong; reopen Phase 2 (smell signal).
 
-## Phase 3 — Build (build, intra-HU)
+## Phase 3 — Build (flow build, intra-HU)
 
 Before marking a single HU as completed.
 
@@ -94,7 +94,7 @@ Before marking a single HU as completed.
 
 Tests must pass before marking the HU completed. Drillme is in addition to, not instead of, test passing.
 
-## Phase 4 — Review (critic)
+## Phase 4 — Review (flow review)
 
 Before producing the verdict in review.md.
 
@@ -112,7 +112,7 @@ Before producing the verdict in review.md.
 
 If E2E happy path fails (question 2) → verdict cannot be APPROVED. Drillme failure here is a blocking signal, not just guidance.
 
-## Phase 5 — Retro (retro)
+## Phase 5 — Retro (flow retro)
 
 Before closing the feature.
 

@@ -60,7 +60,7 @@ Poneglyph has ONE workflow (the 5 phases + Lead turn flow); what differs is how 
 **The honest answer to "siempre activar las skills":** activation is layered:
 1. **Routing core is always-loaded** (CLAUDE.md §Operating rules — Skill routing — + §Dev workflow incl. §Agents for cheap reads). The Lead therefore triages and routes on EVERY turn — including every `/goal` loop turn — without any hook. This is the real "always-on" layer.
 2. **`/flow-lifecycle` → deterministic phase→skill wiring** (each phase invokes its skill explicitly). The strongest guarantee, for feature-shaped work.
-3. **Keyword hook → on-demand skill acceleration** — best-effort, plain prompts only (skips slash commands); surfaces a specific skill (`security-audit`, `flow-test-plan`…) earlier than the Lead might. NOT a guarantee (Spanish/novel phrasings miss; and the Lead may ignore the hint).
+3. **Keyword hook → on-demand skill acceleration** — best-effort, plain prompts only (skips slash commands); surfaces a specific skill (`security-audit`, `flow` test-plan phase…) earlier than the Lead might. NOT a guarantee (Spanish/novel phrasings miss; and the Lead may ignore the hint).
 
 **The real gap (named honestly):** skill *use* by the Lead is discretionary — the hook only nudges, CLAUDE.md only says "match skills before build", and the Lead can (and does) skip both on a given turn. On conversational/meta turns skipping is correct (loading a skill would be ceremony); the concern is genuine work turns. **The only deterministic enforcement of skill use is `/flow-lifecycle`** (each phase invokes its skill explicitly). So: for a real feature, wrap it in `/flow-lifecycle` even from inside a `/goal` loop. Don't try to force skill use via hooks/always-loaded — that's the regression pattern (Cmd IX: always-loaded content costs every turn).
 
@@ -73,8 +73,8 @@ graph TD
     AQ --> S
     S -->|clear| C[Calculate complexity]
     C -->|< 30| SK[Pick relevant skills via path hints / keywords]
-    C -->|30-60| P1[Skill flow-plan optional]
-    C -->|> 60| P2[Skill flow-plan mandatory]
+    C -->|30-60| P1[Skill flow plan phase optional]
+    C -->|> 60| P2[Skill flow plan phase mandatory]
     P1 & P2 --> SK
     SK --> B[build inline -- Skill build]
     B --> R[critic checkpoint -- Skill critic]
@@ -93,12 +93,12 @@ Canonical per-turn checklist: `agent-routing` skill §1.
 | **Inline** (default) | Build/write by default; an explicitly approved `orca-team` team uses the bounded shared-worktree exception | 1x |
 | **Workflow read-only fan-out** | ≥4 independent read-only units (research sweeps, decision-review panels) | scales w/ agent count |
 | **Workflow write fan-out** | explicit user opt-in only ("ultracode" / direct ask; "workflow" keyword no longer triggers since CC 2.1.160); per-unit `isolation: 'worktree'` on collision | scales |
-| **Tiered** | Complexity 45-60 with 2-3 domains sharing interfaces — contracts inline via flow-plan Mode B | ~2x |
+| **Tiered** | Complexity 45-60 with 2-3 domains sharing interfaces — contracts inline via `flow` (plan phase) Mode B | ~2x |
 | **Team agents** (experimental) | Complexity >60, 3+ independent domains, interface negotiation, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` | 3-7x |
 
 > **Background sessions / agent-view** (`claude agents`, CC ≥2.1.139 — version-specific, verify): orthogonal axis — runs whole **sessions** in the background with a dashboard for running/blocked/done. `claude --bg` / `←←` to background; `/resume` lists them. Operational tool, not a per-turn routing mode.
 
-## Planner adaptive levels (flow-plan)
+## Planner adaptive levels (`flow` plan phase)
 
 | Level | When | Refs loaded | Target cost |
 |------|------|-------------|-------------|
@@ -155,7 +155,7 @@ Test: "does the agent need this in EVERY prompt?" — no → skill.
 | Component | Audit baseline (early 2026) | Post-cleanup (2026-05-28) | Current | Detail |
 |---|---|---|---|---|
 | Agents | 7 + 1 meta | 3 | **0 custom** | builder/reviewer/scout cut in feature 008; work runs inline (delegation doctrine), read-only fan-out via Workflow/`Explore`. The ONE sanctioned single-agent dispatch is critic's fresh-context reviewer (P1 exception, feature 019) — ad-hoc, no agent file |
-| Skills | 28 | 14 | **29** (source count 2026-09-13) | 6 phase skills + `drillme-clarify` + `html-report` (003); 031: `best-of-n` + `project-onboard` CUT, `decision-stress-test` MERGED into `compare-and-decide` (heavy tier), `escalate`→`task-unblock`, `codex-consult`→`consult-model` (multi-model), +`pr-review` (new); `choose-skills` restored in 023, auto-invoke-the-obvious since 031 |
+| Skills | 28 | 14 | **24** (source count 2026-09-18) | the 6 phase skills merged into one `flow` skill on 2026-09-18 (shared body + one reference per phase); `drillme-clarify` + `html-report` (003); 031: `best-of-n` + `project-onboard` CUT, `decision-stress-test` MERGED into `compare-and-decide` (heavy tier), `escalate`→`task-unblock`, `codex-consult`→`consult-model` (multi-model), +`pr-review` (new); `choose-skills` restored in 023, auto-invoke-the-obvious since 031 |
 | Hooks | 15+ | 6 | **5 handlers / 4 events** (settings.global.json, 2026-09-13) | authoritative list = user profile source; event table with per-hook detail: `rules/paths/hooks.md` |
 | Slash commands | 10 | 4 | **3** (source count 2026-09-13) | `flow-lifecycle`, `sync-poneglyph`, `expert-role` (decide/changes-explain were thin command wrappers → pruned; they remain as skills) |
 | Rules | 7 | 2 + paths/ | **4 top-level + 2 path rules** (source count 2026-09-13) | `error-recovery.md`, `test-policy.md`, `skill-routing.md` (030 — replaced `model-uplift.md`) + `paths/{hooks,orchestration}.md` |
@@ -171,7 +171,7 @@ Test: "does the agent need this in EVERY prompt?" — no → skill.
 |---|---|---|
 | `skills/`, `commands/`, `rules/`, `hooks/`, `output-styles/`, `plans/` | Core system (counts live in the component table above — snapshots + count commands, never trust stale numbers) | documented above |
 | `docs/` | This file + `research-rigor.md` + `auxiliary-skills-matrix.md` (relocated here 2026-06-24) (`arch-h-*` and `lead-mode-*` deleted 2026-06-11 — superseded by `agent-routing/references/06` and the `CLAUDE_LEAD_MODE` note above) | on-demand references |
-| `workflows/` | Saved Workflow scripts: `flow-build-review.js` (full /flow-lifecycle back-half: build with the `flow-build` skill discipline + Phase-4 review that writes `review.md`; 031) · `task-pipeline.js` (autonomous one-shot factory: plan→build→review→document with DETERMINISTIC gates from `scripts/gate.ts` instead of human ones; never commits — returns `suggested_commits` as data). Lógica determinista cubierta por `workflows/__tests__/{flow-build-review,task-pipeline}.test.ts` | live |
+| `workflows/` | Saved Workflow scripts: `flow-build-review.js` (full /flow-lifecycle back-half: build with the `flow` skill's build-phase discipline + Phase-4 review that writes `review.md`; 031) · `task-pipeline.js` (autonomous one-shot factory: plan→build→review→document with DETERMINISTIC gates from `scripts/gate.ts` instead of human ones; never commits — returns `suggested_commits` as data). Lógica determinista cubierta por `workflows/__tests__/{flow-build-review,task-pipeline}.test.ts` | live |
 | `audits/` | Ad-hoc audit outputs (005, 009, 010 — CC release feature audits: 009 = 2.1.136→2.1.161, 010 = 2.1.222→2.1.258 + Codex + Grok; 011 = poneglyph vs the Claude Code ecosystem, 2026-09-03: 38 repos by category with stars via GitHub API, a 15-project feature matrix computed from repo trees by `feature-matrix.ts`, nine experts quoted, official best-practices, drillme-clarify lineage → findings H1–H7, M1–M4, adoptions A1–A11) | archive-like |
 | `evals/` | Golden-prompt regression harness (019): deterministic graders + runner + real-failure cases (30 cases counted on 2026-09-13; recount `cases.jsonl` after changes). Tracked, NOT synced. Run per meta-config change | live |
 | `scripts/` | `doctor.ts` — one-table health check: sync status (Claude + Codex + Grok), `claude plugin validate`, suite, budget ratchet, privacy grep, sessions-today by model (033), **context shape 7d (037)** (`bun run doctor`, 032/WP6) · `usage-profile.ts` + `lib/*` (037) — SHAPE of the token spend from `~/.claude/projects/**/*.jsonl` (context per message, share above the 200k ceiling, top-session share, tool output by tool and Bash family); `bun run usage [--days N] [--cap N]`; feeds the doctor's Context row · `lib/host-config.ts` (037) — one context/effort policy for every host (Claude `autoCompactWindow`/`effortLevel`, Codex `model_auto_compact_token_limit`/`model_reasoning_effort`, Grok `auto_compact_threshold_percent`/`default_reasoning_effort`), consumed by `sync-codex`/`sync-grok` · `budget.ts` + `lib/budget.ts` + `lib/budget-snapshot.json` — always-loaded token budget with a **0 %** ratchet (037, was +5 %) enforced by `__tests__/budget.test.ts` (`bun run budget`, `--update` after a ratified size decision; 032/WP4) · `flow-state.ts` + `lib/flow-contract.ts` — verified lifecycle transitions, disjoint review decisions and recoverable artifact projection; contract: `docs/flow-contract.md` · `gate.ts` — deterministic validation of what an agent CLAIMS it did (artifacts, delta-vs-baseline diff cross-check, verdict self-consistency, suite, protected paths, self-integrity); ported from disler's task-pipeline `gates.py` with delta-not-absolute-state, patterns derived from the user/global/project settings union, and a self-integrity check. Tracked, **synced since 027/US2** (RI-1 sync-trap class closed: synced components instruct `bun .claude/scripts/...`) | live |

@@ -187,8 +187,7 @@
   },
   "skillOverrides": {
     "diagrams-interactive": "name-only",
-    "flow-build": "name-only",
-    "flow-review": "name-only",
+    "flow": "name-only",
     "dev-workflow": "name-only",
     "troubleshooting": "name-only",
     "drillme-clarify": "name-only",
@@ -196,10 +195,7 @@
     "orca-team": "name-only",
     "agent-routing": "name-only",
     "prompt-design": "name-only",
-    "flow-scope": "name-only",
     "choose-skills": "name-only",
-    "flow-test-plan": "name-only",
-    "flow-plan": "name-only",
     "task-unblock": "name-only",
     "changes-verify": "name-only"
   }

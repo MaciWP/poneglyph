@@ -43,7 +43,7 @@ graph TD
 
 For an approved Orca team, use `orca-team`'s worker contract with the Arch H
 blocks below. Resolve installed skill paths explicitly. Workers apply `dev-workflow` and
-the supervised `flow-build` branch; the coordinator retains state and acceptance.
+the supervised `flow` (build phase) branch; the coordinator retains state and acceptance.
 The historical inline-only/native-worker table describes the default route.
 
 > The custom `builder`/`reviewer`/`scout` agents and their per-role baselines were **cut in feature 008** — work runs inline (delegation doctrine: SKILL.md §P8). Limits below govern the surfaces that still exist:
@@ -54,7 +54,7 @@ The historical inline-only/native-worker table describes the default route.
 | Workflow `agentType` (read-only fan-out) | `skills:` frontmatter (1-2) | 3 | Preload does not count against the Arch H max |
 | Built-in `Explore` | — | 0-1 | Minimal context by design (skips CLAUDE.md/git status — restate constraints in the prompt) |
 
-> Planning and error diagnosis are handled by the Lead invoking `Skill('flow-plan')` / `Skill('troubleshooting')` directly — no dedicated subagent.
+> Planning and error diagnosis are handled by the Lead invoking `Skill(flow, "plan")` / `Skill('troubleshooting')` directly — no dedicated subagent.
 
 ## Precedence Rules
 

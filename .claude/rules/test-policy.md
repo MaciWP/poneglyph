@@ -3,11 +3,11 @@ paths:
   - ".claude/plans/**"
 ---
 
-<!-- Path-scoped (021): flow-plan/flow-test-plan/build Read this file explicitly when they run, so it never needs eager always-load. Lazy-trigger on planning artefacts is belt-and-suspenders; the skills' explicit Read is the real delivery. -->
+<!-- Path-scoped (021): the flow plan, test-plan and build phases Read this file explicitly when they run, so it never needs eager always-load. Lazy-trigger on planning artefacts is belt-and-suspenders; the skills' explicit Read is the real delivery. -->
 
 # Test Policy
 
-Whether TDD-first decomposition applies when planning changes. Read explicitly by `flow-plan` (§0.1), `flow-test-plan`, and honored by `flow-build` per node.
+Whether TDD-first decomposition applies when planning changes. Read explicitly by the `flow` plan and test-plan phases, and honored by its build phase per node.
 
 ## Levels
 
@@ -28,4 +28,4 @@ A plan node may override the project policy:
 - `tdd: forced` — force test-first despite `auxiliary` (e.g. a new hook with non-trivial logic warranting red→green).
 - `tdd-skip: <reason ≥10 chars>` — skip test-first despite `business-critical`. Reason must be concrete: `doc-only change, no testable behavior` · `exploratory spike before contract is stable` · `config tweak, validated by existing integration tests`.
 
-Inside `/flow-lifecycle` the default is raised, not replaced: behaviour-changing HUs get `tdd: forced`, auxiliary code included; document-only HUs use validations. `flow-test-plan` resolves this per HU and justifies every exception before execution (`skills/flow-test-plan/SKILL.md` §Step 2). Outside `/flow-lifecycle`, the project level above applies unchanged.
+Inside `/flow-lifecycle` the default is raised, not replaced: behaviour-changing HUs get `tdd: forced`, auxiliary code included; document-only HUs use validations. The `flow` test-plan phase resolves this per HU and justifies every exception before execution (`skills/flow/references/03-test-plan.md` §Step 2). Outside `/flow-lifecycle`, the project level above applies unchanged.

@@ -1,5 +1,5 @@
 ---
-parent: flow-plan
+parent: flow
 name: classification-waves
 description: Task classification, justified dependencies and optional parallel execution.
 ---
@@ -69,7 +69,7 @@ the current session's permission and model choice.
 
 ## Seed Wave Patterns
 
-> **Post-feature-008 mapping** — the named agents below (`builder`/`scout`/`reviewer`/`planner`) were **cut**. Read them as their current equivalents: `builder` → `flow-build` skill (Phase 3, inline) or a Workflow impl unit; `scout` → `Explore` (built-in, read-only); `reviewer` → Phase 4 `flow-review` / review panel; `planner` → `flow-plan` skill. **Spawn rule**: 1-3 independent units run **inline** (never spawn); these patterns illustrate **≥4-unit** fan-outs → `Workflow`. The patterns themselves remain valid; only the names changed.
+> **Post-feature-008 mapping** — the named agents below (`builder`/`scout`/`reviewer`/`planner`) were **cut**. Read them as their current equivalents: `builder` → `flow` (build phase, inline) or a Workflow impl unit; `scout` → `Explore` (built-in, read-only); `reviewer` → `flow` (review phase) / review panel; `planner` → `flow` (plan phase). **Spawn rule**: 1-3 independent units run **inline** (never spawn); these patterns illustrate **≥4-unit** fan-outs → `Workflow`. The patterns themselves remain valid; only the names changed.
 
 Starting templates for the first wave of common task shapes. Adapt the agent/skill mix to the specific task. Use only patterns that fit real dependencies.
 

@@ -108,8 +108,8 @@ Show inline: `Complexity: ~XX`.
 | Score | Routing | Mode |
 |---|---|---|
 | <30 | act inline (skip scoring/skills) | inline |
-| 30-60 | `Skill('flow-plan')` optional | inline or Workflow (≥4) |
-| >60 | `Skill('flow-plan')` MANDATORY | inline, Workflow, or Team |
+| 30-60 | `Skill(flow, "plan")` optional | inline or Workflow (≥4) |
+| >60 | `Skill(flow, "plan")` MANDATORY | inline, Workflow, or Team |
 
 > If complexity > 60, suggest `/effort xhigh` to the user.
 
@@ -132,7 +132,7 @@ Full Arch H template with all blocks, propagation model, skill discovery: `refer
 | `Workflow` (≥4 independent **read-only** units) | Fan-out: research sweeps / exploration / decision-review panel in parallel (`agentType` `default`, or built-ins like `Explore`). Write fan-out: explicit user opt-in only (`isolation: 'worktree'` on file collision) |
 | `Explore` | Explore codebase (massive read-only — built-in, inherits session model; not a work-spawn) |
 | `Agent(subagent_type: "fork")` | Read-only sweep that needs the session's thread (inherits conversation + cache, parent model). Never for the fresh-context reviewer. Same hard gate |
-| `Skill('flow-plan')` | Plan complex tasks — Lead inline, no dedicated agent |
+| `Skill(flow, "plan")` | Plan complex tasks — Lead inline, no dedicated agent |
 | `Skill('troubleshooting')` | Diagnose failures — Lead inline, no dedicated agent |
 | `Skill()` | Load context into the Lead's OWN session only |
 | `/goal` / `/loop` (native autonomous iteration) | Drive a gated build→critic to a verifiable stop, or recurring read-only audit/research. Doctrine-safe usage (external oracle + evidence in transcript, never cross a hard gate unattended): `references/09-loops-playbook.md` |

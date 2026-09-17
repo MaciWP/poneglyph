@@ -32,8 +32,8 @@ Sources: `code.claude.com/docs/en/goal`, `…/scheduled-tasks`. The "Haiku judge
 | DAME piece | poneglyph equivalent |
 |---|---|
 | **D** — trigger | native `/goal` (until-condition) / `/loop` (recurring) — the only piece poneglyph lacked; now adopted, not built |
-| **A** — agent (maker) | `flow-build` skill (inline-first) |
-| **M** — verifiable meta | `flow-review` + quality gates + `flow-test-plan` oracle = the external auditor |
+| **A** — agent (maker) | `flow` skill (build phase, inline-first) |
+| **M** — verifiable meta | `flow` (review phase) + quality gates + `flow` (test-plan phase) oracle = the external auditor |
 | **E** — state (out of chat) | `state.json`, `plans/`, `memory/`, living-spec loop |
 
 ## Doctrine-compatible recipes (ranked value/risk)
@@ -77,7 +77,7 @@ Poll a CI run / background `Workflow` / remote queue and resume when state flips
 - **`/goal` is not per-subagent** (that would be `SubagentStop`); you cannot put `/goal`/`/loop` inside a subagent — they are interactive-session commands.
 - **This reinforces inline-first.** A goal-loop is most reliable when the maker runs inline (the Lead surfaces tests/outputs/verdict to the transcript). With write fan-out, the oracle only sees summaries (summary degradation).
 - **Rule**: inside a loop, use agents only for read-only fan-out; the Lead must **re-verify inline** anything the stop condition depends on (run the test itself, print the output) — never trust an agent's "I did it".
-- **Stronger judge**: don't try to make the Haiku evaluator smarter (its model is the global small-fast slot, no per-goal effort control). Put the strong judgment in a `flow-review` step (Opus, inline) and let the evaluator only check "is critic's verdict APPROVED?" — a cheap read over evidence already in the transcript.
+- **Stronger judge**: don't try to make the Haiku evaluator smarter (its model is the global small-fast slot, no per-goal effort control). Put the strong judgment in a `flow` (review phase) step (Opus, inline) and let the evaluator only check "is critic's verdict APPROVED?" — a cheap read over evidence already in the transcript.
 
 ## Effort selection for loops (Opus 4.8)
 
@@ -90,7 +90,7 @@ On the FrontierCode *diamond* subset (hardest 50/150 — coding), Opus 4.8 is ro
 | **xhigh** | The only real score jump — reserve for the genuinely hard step |
 | **max** | *Worse* than xhigh here (overthinking). Avoid |
 
-Effort is **not changeable dynamically mid-session** (the user sets `/effort`; the Lead cannot self-switch). Project policy: skills carry NO `effort:` (they inherit the session = low) **except** the strong-judgment gates `flow-review`, `security-audit` (xhigh) and the `task-unblock` stuck-buster (xhigh); `compare-and-decide`'s heavy tier escalates effort per-invocation instead. For "low bulk / xhigh on the hard step", route the hard step through one of those skills, or a Workflow agent with per-agent `effort`. When a loop is stuck, `task-unblock` is the xhigh rung. Caveat: diamond subset exaggerates effort's value vs everyday tasks, where low suffices even more.
+Effort is **not changeable dynamically mid-session** (the user sets `/effort`; the Lead cannot self-switch). Project policy: skills carry NO `effort:` (they inherit the session = low) **except** the strong-judgment gates `flow` (review phase), `security-audit` (xhigh) and the `task-unblock` stuck-buster (xhigh); `compare-and-decide`'s heavy tier escalates effort per-invocation instead. For "low bulk / xhigh on the hard step", route the hard step through one of those skills, or a Workflow agent with per-agent `effort`. When a loop is stuck, `task-unblock` is the xhigh rung. Caveat: diamond subset exaggerates effort's value vs everyday tasks, where low suffices even more.
 
 ## Guardrails (non-negotiable for any adopted loop)
 - **Hard gates are never crossed unattended.** A loop runs *after* a gate, or only on read-only work, or stops and reports when a gate is pending.
@@ -103,4 +103,4 @@ Effort is **not changeable dynamically mid-session** (the user sets `/effort`; t
 - `task-unblock` skill — xhigh stuck-buster for a loop that stops converging
 - `references/09-loops-analysis-source.md` — the analysis this playbook operationalizes
 - `/flow-lifecycle` command — the gated lifecycle a goal-loop (R1) advances
-- `flow-review` skill — the external auditor / stop oracle
+- `flow` skill (review phase) — the external auditor / stop oracle

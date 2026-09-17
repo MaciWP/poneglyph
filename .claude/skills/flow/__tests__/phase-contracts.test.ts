@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 // Quality review 2026-09-10, findings H19, H30 and H53. Three contradictions between the
-// /flow-lifecycle phase skills. Each one is a pair of rules that a single real case cannot satisfy,
+// /flow-lifecycle phase references (one skill `flow` since 2026-09-17). Each one is a pair of rules that a single real case cannot satisfy,
 // so each is locked here as a text invariant on the doctrine files themselves.
 const root = resolve(import.meta.dir, "..", "..", "..", "..");
 const claude = join(root, ".claude");
@@ -12,9 +12,9 @@ function read(...parts: string[]): string {
   return readFileSync(join(claude, ...parts), "utf8").replace(/\r\n/g, "\n");
 }
 
-const scope = read("skills", "flow-scope", "SKILL.md");
-const techPlan = read("skills", "flow-plan", "SKILL.md");
-const tddDesign = read("skills", "flow-test-plan", "SKILL.md");
+const scope = read("skills", "flow", "references", "01-scope.md");
+const techPlan = read("skills", "flow", "references", "02-plan.md");
+const tddDesign = read("skills", "flow", "references", "03-test-plan.md");
 const testPolicy = read("rules", "test-policy.md");
 const bank = read("skills", "drillme-clarify", "references", "03-phase-questions.md");
 
@@ -40,7 +40,7 @@ describe("a new library can satisfy scope and flow-plan at once (H19)", () => {
       .split("\n")
       .map((line, i) => ({ line, n: i + 1 }))
       .filter(({ line }) => ABSENCE.test(line) && REOPEN.test(line))
-      .map(({ line, n }) => `flow-plan/SKILL.md:${n}  ${line.trim().slice(0, 90)}`);
+      .map(({ line, n }) => `flow/references/02-plan.md:${n}  ${line.trim().slice(0, 90)}`);
     expect(offenders).toEqual([]);
   });
 
@@ -60,9 +60,9 @@ describe("phase skills cite the canonical drillme-clarify bank instead of copyin
     return { titles: rows.map((m) => m[1].trim()), tags: rows.map((m) => m[2]) };
   }
 
-  const p1 = phase("Phase 1 — Scope (scope)");
-  const p2 = phase("Phase 2 — Plan (flow-plan)");
-  const p25 = phase("Phase 2.5 — TDD design (flow-test-plan)");
+  const p1 = phase("Phase 1 — Scope (flow scope)");
+  const p2 = phase("Phase 2 — Plan (flow plan)");
+  const p25 = phase("Phase 2.5 — TDD design (flow test-plan)");
 
   it("parses the canonical bank", () => {
     expect(p1.titles).toHaveLength(5);
@@ -103,15 +103,11 @@ describe("phase skills cite the canonical drillme-clarify bank instead of copyin
     expect(wrong).toEqual([]);
   });
 
-  // scope keeps an inline copy that has NOT drifted and already points at the canonical
-  // file. It is pinned here so a future edit cannot repeat the flow-plan drift silently.
-  it("scope's inline Phase 1 copy still matches the bank, title and tag", () => {
+  // The 2026-09-17 merge removed scope's inline copy of the Phase 1 questions: the bank is
+  // the only source, so scope must cite it and re-list nothing (same rule as the others).
+  it("scope cites the canonical file and does not re-list the Phase 1 questions", () => {
     expect(scope).toMatch(CITATION);
-    const mismatched = p1.titles.filter((t, i) => {
-      const line = scope.split("\n").find((l) => l.includes(`**${t}**`));
-      return !line || !line.includes(`\`${p1.tags[i]}\``);
-    });
-    expect(mismatched).toEqual([]);
+    expect(p1.titles.filter((t) => scope.includes(t))).toEqual([]);
   });
 });
 

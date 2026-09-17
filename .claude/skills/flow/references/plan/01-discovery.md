@@ -1,5 +1,5 @@
 ---
-parent: flow-plan
+parent: flow
 name: discovery
 description: Discovery Protocol — static and dynamic sources, anti-duplicate verification before "create X".
 ---
@@ -12,8 +12,8 @@ Before generating any plan, consult these sources. **Assume nothing.**
 
 | File | Purpose | What to look for |
 |------|---------|-----------------|
-| `docs/orchestrator/ORCHESTRATOR.md` | Philosophy, policies | Commit rules, evidence |
-| `docs/orchestrator/CAPABILITIES.md` | Real inventory | Available agents, skills, scripts |
+| `CLAUDE.md` / `AGENTS.md` of the project | Philosophy, policies | Commit rules, gates, evidence requirements |
+| The project's inventory doc when one exists (in poneglyph: `.claude/docs/system-inventory.md`) | Real inventory | Available agents, skills, scripts |
 
 ## B. Dynamic Sources (Code State)
 

@@ -26,11 +26,20 @@ const RETIRED = [
   "meta-create",
   "meta-settings-cookbook",
   "lsp-operations",
+  // The six phase skills merged into `flow` on 2026-09-17.
+  "flow-scope",
+  "flow-plan",
+  "flow-test-plan",
+  "flow-build",
+  "flow-review",
+  "flow-retro",
 ];
 
 // Dated history records what was true on its date; a decision log and a lessons row must
 // keep naming what they are about. Tests name retired components on purpose: that is here.
-const ALLOWED = /^\.claude\/(plans|audits)\/|^docs\/component-audit|__tests__|existence-checks\.md$|lessons-learned\/SKILL\.md$|doctrine-sweep\.md$|history\.md$/;
+// `html-report/examples/` is a frozen sample deliverable (snapshot 2026-05-29): an example
+// corpus, like a fixture, not live instruction.
+const ALLOWED = /^\.claude\/(plans|audits)\/|^docs\/component-audit|__tests__|existence-checks\.md$|lessons-learned\/SKILL\.md$|doctrine-sweep\.md$|history\.md$|html-report\/examples\//;
 // A sentence that says the thing is gone is documentation, not rot.
 const RETIRED_NEARBY = /\b(cut|retired|removed|deleted|replaced by|no longer|gone)\b/i;
 

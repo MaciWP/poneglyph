@@ -39,7 +39,7 @@ Marketing claims (4 machines 24/7, ROI 16×, $1M in tokens, the paid "motor agé
 | A "goal" trigger that runs until a condition is met (`/goal`) | **True — `/goal` is a native built-in (CC 2.1.139+)** [corrected; see UPDATE above]. Session-scoped Stop hook; a Haiku evaluator judges the natural-language condition after each turn, reading the transcript only (does not execute). `/loop` without an interval is the self-paced sibling. | `[Seguro]` — verified via official docs + in-session Stop hook text |
 | Automatic triggers: schedule (cron) and event-triggered (webhook/PR) | **True, partially.** Native `schedule` skill = cron cloud agents/routines. `CronCreate/List/Delete` + `RemoteTrigger` exist. Event/webhook triggering is an external-infra concern, not a CLI primitive. | `[Seguro]` for cron; `[Suposición]` for webhook depth — not verified, not needed |
 | "DAME": Trigger + Agent(maker) + verifiable Meta + State(E) | Accurate decomposition. It maps cleanly onto poneglyph (next section). | `[Seguro]` |
-| The framework's "jewel": the auditor must be a **separate** agent from the maker (self-review is biased — attributed to Addy Osmani) | **Correct, and it is already poneglyph's core doctrine** (builder ≠ reviewer, Four-Eyes, fresh-context reviewer in `flow-review`). The video validates poneglyph, not the reverse. | `[Seguro]` |
+| The framework's "jewel": the auditor must be a **separate** agent from the maker (self-review is biased — attributed to Addy Osmani) | **Correct, and it is already poneglyph's core doctrine** (builder ≠ reviewer, Four-Eyes, fresh-context reviewer in `flow` (review phase)). The video validates poneglyph, not the reverse. | `[Seguro]` |
 | Cost: a loop spends tokens; today off subscription, tomorrow off API | True and relevant — it motivates the cost guardrail below. The specific $ figures are marketing, unverified. | n/a |
 
 ---
@@ -49,8 +49,8 @@ Marketing claims (4 machines 24/7, ROI 16×, $1M in tokens, the paid "motor agé
 | DAME piece | Video's version | poneglyph equivalent | Gap? |
 |---|---|---|---|
 | **D — Trigger** | manual prompt OR schedule/cron/webhook | **MISSING natively in poneglyph** (commands are only `flow-lifecycle`, `expert-role`, `sync-claude`). | **This is the only real gap.** Filled by native `/loop` + `schedule` + `ScheduleWakeup` + `CronCreate`. |
-| **A — Agent (maker)** | one agent that produces | `flow-build` skill (inline-first), `Workflow` for ≥4 read-only fan-out | covered, more disciplined |
-| **M — verifiable Meta** | bounded (deterministic) vs unbounded (model-judged) | `flow-review` + blocking quality gates + `/flow-lifecycle` Phase 4 verdict; `flow-test-plan` oracle | covered, stronger |
+| **A — Agent (maker)** | one agent that produces | `flow` skill (build phase, inline-first), `Workflow` for ≥4 read-only fan-out | covered, more disciplined |
+| **M — verifiable Meta** | bounded (deterministic) vs unbounded (model-judged) | `flow` (review phase) + blocking quality gates + `/flow-lifecycle` Phase 4 verdict; `flow` (test-plan phase) oracle | covered, stronger |
 | **E — State (out of chat)** | files/JSON/markdown so context-saturation doesn't lose work | `state.json`, `plans/`, `memory/`, the living-spec loop | covered, far stronger |
 
 **poneglyph also already loops internally**: the `Workflow` engine documents `loop-until-count`, `loop-until-budget`, and `loop-until-dry` patterns for fan-out. So "the loop" is not a foreign concept — it exists, bounded and budgeted, inside orchestration.
@@ -74,9 +74,9 @@ The video's headline mode — *leave it running unattended overnight, improving 
 ## Doctrine-compatible opportunities (ranked by value / risk)
 
 ### ✅ 1 — Goal-loop with a verifiable stop, wrapping build→critic (HIGH value, LOW risk)
-The bounded case. Stop condition is objective and external: `bun test ./.claude/hooks/` green **and** lint clean **and** `flow-review` verdict APPROVED. This is literally Commandment IV expressed as a loop.
+The bounded case. Stop condition is objective and external: `bun test ./.claude/hooks/` green **and** lint clean **and** `flow` (review phase) verdict APPROVED. This is literally Commandment IV expressed as a loop.
 - **Mechanism (native, no build)**: `/loop` self-paced (no interval) over a single, well-scoped, *already-gate-approved* HU, stopping on the test/critic signal. Or `ScheduleWakeup` to wait on a background build.
-- **Why it's safe**: the human gate happened *before* the loop (spec/tasks approved); the loop only grinds an approved task to a green, machine-checkable bar. Maker (`flow-build`) ≠ auditor (`flow-review`) is preserved.
+- **Why it's safe**: the human gate happened *before* the loop (spec/tasks approved); the loop only grinds an approved task to a green, machine-checkable bar. Maker (`flow` build phase) ≠ auditor (`flow` review phase) is preserved.
 - **Note**: this is essentially the philosophy of the retired `best-of-n` pilot (test-selected attempts; archived 031, pattern preserved in `plans/_archive/031-skill-cuts/`) in a sequential loop. Possibly already covered — check before adding anything.
 
 ### ✅ 2 — Unattended read-only research/audit loops (MEDIUM-HIGH value, LOW risk)

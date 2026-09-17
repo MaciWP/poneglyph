@@ -11,8 +11,8 @@ const root = resolve(import.meta.dir, "..", "..", "..", "..");
 const read = (rel: string) => readFileSync(resolve(root, rel), "utf8");
 
 const SKILLS = [
-  { name: "flow-build", file: ".claude/skills/flow-build/SKILL.md", marker: "HU US{N} closed." },
-  { name: "flow-review", file: ".claude/skills/flow-review/SKILL.md", marker: "Critic verdict" },
+  { name: "build", file: ".claude/skills/flow/references/04-build.md", marker: "HU US{N} closed." },
+  { name: "review", file: ".claude/skills/flow/references/05-review.md", marker: "Critic verdict" },
 ];
 
 describe("closing report is stated once per skill", () => {
@@ -30,7 +30,7 @@ describe("closing report is stated once per skill", () => {
   // Deleting the reminder must not narrow the contract: critic's only surviving copy
   // carries the two fields that lived exclusively in the deleted block.
   it("critic keeps the fields that only the reminder carried", () => {
-    const critic = read(".claude/skills/flow-review/SKILL.md");
+    const critic = read(".claude/skills/flow/references/05-review.md");
     expect(critic).toContain("code-quality modes:");
     expect(critic).toContain("drillme-clarify:");
   });

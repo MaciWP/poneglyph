@@ -67,7 +67,7 @@ describe("usage tie-breaker (031 — census-derived)", () => {
   });
 
   test("USAGE_TIER map exists with census anchors", () => {
-    expect(USAGE_TIER["flow-plan"]).toBe(2);
+    expect(USAGE_TIER["flow"]).toBe(2);
     expect(USAGE_TIER["drillme-clarify"]).toBe(2);
     expect(USAGE_TIER["consult-model"]).toBe(1);
     expect(USAGE_TIER["changes-explain"] ?? 0).toBe(0);

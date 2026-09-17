@@ -12,7 +12,7 @@ Relocated verbatim from `SKILL.md` (Stage 4 and Stage 5 sub-bullets) on 2026-09-
 
 One line per finding, tagged `delete:` (shouldn't exist) · `stdlib:` · `native:` ·
 `yagni:` (premature) · `shrink:` (same behavior, less code). Scope strictly
-over-engineering — correctness/security belong to `flow-review`/`code-quality`.
+over-engineering — correctness/security belong to `flow` (review phase)/`code-quality`.
 
 ## Debt harvest (Stage 5, on request — "cosecha la deuda")
 

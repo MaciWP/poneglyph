@@ -95,5 +95,5 @@ Watchpoints where smaller models historically relapse in this setup — each map
 ## 5. Load & verify
 
 - The always-loaded routing core is `.claude/rules/skill-routing.md` (synced per-entry to `~/.claude/rules/`). This playbook stays on-demand. Verify routing loads: `grep skill-routing .claude/learned/instructions-loaded.log` in any session (verify the load layer from the log; never assume it loaded).
-- Behavioral validation happens in the first real Opus 4.8 session (spec 026 AC5, deliberately deferred): judge against §2 — is it refuting itself, running before claiming, keeping status bookkeeping? Refine via `/flow-retro`.
+- Behavioral validation happens in the first real Opus 4.8 session (spec 026 AC5, deliberately deferred): judge against §2 — is it refuting itself, running before claiming, keeping status bookkeeping? Refine via `flow` (retro phase).
 - Lifecycle: when the model era changes again, update §4 first (it decays fastest), re-verify §2 still reads as deltas, and prune what the new model does natively.

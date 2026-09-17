@@ -76,14 +76,14 @@ quality gates or invent a feature lifecycle for a small task.
 
 ## Accept and resume
 
-Workers execute `dev-workflow` and the applicable `flow-build` discipline. They return evidence;
+Workers execute `dev-workflow` and the applicable `flow` (build phase) discipline. They return evidence;
 they never close HUs or edit the shared plan state. The coordinator reviews the
 changed set and applies the [flow contract](../../docs/flow-contract.md) after
 `changes-verify`. Failed or missing required checks leave the task unaccepted.
 
 Before final checks, stop assigning writes and obtain a stable handoff from every
 writer. Run the required checks on the assembled diff. Any later change invalidates
-affected evidence. Use one approved fresh-context reviewer for `flow-review`; if no
+affected evidence. Use one approved fresh-context reviewer for `flow` (review phase); if no
 reviewer is authorized, critique inline and report that limitation.
 
 For `--resume <run-id>`, inspect the Run and record before binding. Reconcile live

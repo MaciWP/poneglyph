@@ -35,10 +35,10 @@ export const SHORTLIST_MAX = 5;
  */
 export const USAGE_TIER: Record<string, number> = {
   // Tier 2 — invoked five or more times in the last seven days.
-  "dev-workflow": 2, "drillme-clarify": 2, "flow-scope": 2, "flow-plan": 2, "lessons-learned": 2,
-  "flow-review": 2, "flow-test-plan": 2, "prompt-design": 2,
+  // `flow` inherits the tier of the six phase skills it replaced on 2026-09-17.
+  "dev-workflow": 2, "drillme-clarify": 2, "flow": 2, "lessons-learned": 2, "prompt-design": 2,
   // Tier 1 — invoked at least once.
-  "flow-build": 1, "flow-retro": 1, "consult-model": 1, "pr-review": 1, "agent-routing": 1,
+  "consult-model": 1, "pr-review": 1, "agent-routing": 1,
   "deep-research": 1, "pr-comments": 1, "choose-skills": 1,
   // Skills with no recorded invocation carry no boost; absence is the default.
 };

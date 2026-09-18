@@ -63,7 +63,18 @@ describe("the repo carries the same policy for every host (single source)", () =
     const s = JSON.parse(readFileSync(join(REPO, ".claude", "settings.global.json"), "utf8"));
     expect(s.autoCompactWindow).toBe(CLAUDE_DESIRED.autoCompactWindow);
     expect(s.effortLevel).toBe(CLAUDE_DESIRED.effortLevel);
-    expect(`${CONTEXT_POLICY.defaultTokens / 1000}k`).toBe(CLAUDE_DESIRED.autoCompactWindow);
+    expect(CLAUDE_DESIRED.autoCompactWindow).toBe(CONTEXT_POLICY.defaultTokens);
+  });
+
+  // Claude Code 2.1.275 validates the settings key as an integer (100k-1M) and drops an
+  // invalid value with `.catch(undefined)`: the "200k" string shipped since plan 037 never
+  // took effect and sessions compacted at the [1m] default (~967k; measured 2026-09-18).
+  it("writes the Claude ceiling as an integer, the only form the settings schema accepts", () => {
+    const s = JSON.parse(readFileSync(join(REPO, ".claude", "settings.global.json"), "utf8"));
+    expect(typeof s.autoCompactWindow).toBe("number");
+    expect(Number.isInteger(s.autoCompactWindow)).toBe(true);
+    expect(s.autoCompactWindow).toBeGreaterThanOrEqual(100_000);
+    expect(s.autoCompactWindow).toBeLessThanOrEqual(1_000_000);
   });
 
   it(".codex/config.toml (project-level Codex) already satisfies the plan", () => {

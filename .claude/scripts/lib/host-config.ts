@@ -7,7 +7,11 @@
 // compact at 200k by default, raise to 400k per session when a task needs it, effort `high`
 // (the hosts' own default) with the stronger tier one command away.
 //
-//   Claude  settings.global.json → autoCompactWindow "200k" · effortLevel "high"
+//   Claude  settings.global.json → autoCompactWindow 200000 · effortLevel "high"
+//           The settings key is validated as an INTEGER (100k-1M) with `.catch(undefined)`:
+//           the string "200k" written until 2026-09-18 was dropped silently and every
+//           session ran at the model default (~967k on [1m] models). Only the command and
+//           the CLI flag accept a suffix.
 //           raise:  /autocompact 400k   ·   /effort xhigh
 //   Codex   $CODEX_HOME/config.toml (sync-codex) and the project .codex/config.toml
 //           raise:  codex -c model_auto_compact_token_limit=400000 -c model_reasoning_effort=xhigh
@@ -26,7 +30,7 @@ export const CONTEXT_POLICY = {
 } as const;
 
 /** Claude keys as they must appear in settings.global.json (checked by the suite). */
-export const CLAUDE_DESIRED = { autoCompactWindow: "200k", effortLevel: CONTEXT_POLICY.effort } as const;
+export const CLAUDE_DESIRED = { autoCompactWindow: CONTEXT_POLICY.defaultTokens, effortLevel: CONTEXT_POLICY.effort } as const;
 
 export function percentOfWindow(tokens: number, window: number): number {
   return Math.max(1, Math.min(100, Math.round((tokens / window) * 100)));

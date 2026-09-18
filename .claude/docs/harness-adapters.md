@@ -104,7 +104,7 @@ tier one command away. Source of truth: `.claude/scripts/lib/host-config.ts`.
 
 | Host | Keys written | Default | Raise for one session |
 |---|---|---|---|
-| Claude | `autoCompactWindow`, `effortLevel` (settings.global.json) | 200k · high | `/autocompact 400k` · `/effort xhigh` |
+| Claude | `autoCompactWindow`, `effortLevel` (settings.global.json) | 200000 (integer; a suffixed string is dropped silently) · high | `/autocompact 400k` · `/effort xhigh` |
 | Codex | `model_auto_compact_token_limit`, `model_reasoning_effort`, `plan_mode_reasoning_effort` (config.toml, via `sync-codex`) | 200k · high · plan xhigh | `codex -c model_auto_compact_token_limit=400000 -c model_reasoning_effort=xhigh` |
 | Grok | `session.auto_compact_threshold_percent`, `models.default_reasoning_effort`, `model."grok-4.6".context_window` (config.toml, via `sync-grok`) | 40 % of a pinned 500k = 200k · high | `grok --effort xhigh` (per session) |
 

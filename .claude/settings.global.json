@@ -165,7 +165,7 @@
   "editorMode": "normal",
   "skipDangerousModePermissionPrompt": true,
   "autoCompactEnabled": true,
-  "autoCompactWindow": "200k",
+  "autoCompactWindow": 200000,
   "skipAutoPermissionPrompt": true,
   "autoMode": {
     "hard_deny": [

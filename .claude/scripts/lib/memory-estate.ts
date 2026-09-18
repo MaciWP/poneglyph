@@ -35,7 +35,9 @@ export interface EstateReport {
 }
 
 const TYPES = ["user", "feedback", "project", "reference"] as const;
-const KNOWN_METADATA = new Set(["type", "modified"]);
+// `node_type` and `originSessionId` are written by Claude Code's memory harness itself
+// (13 of 15 files carried them by 2026-09-18); they are host metadata, not our legacy.
+const KNOWN_METADATA = new Set(["type", "modified", "node_type", "originSessionId"]);
 
 /**
  * Tokens that exist to name a moment. These are shapes, not meanings, so they are errors.

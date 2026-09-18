@@ -41,7 +41,7 @@ Fetch now. Recipe and last-fetch table: [lookup.md](lookup.md).
 | Trigger extra | **ausente** | `when_to_use` | Keep scope in `description`; `$name` explicit | `when-to-use` (extra hyphen) |
 | Reload | **ausente** | `SKILL.md` live in session | Auto-detect; else restart | Disk change; `grok inspect` |
 | Disable | **ausente** | `skillOverrides.<name>: "off"` (not a delete) or frontmatter `disable-model-invocation: true`, which also drops the description from the listing. `disableBundledSkills` is bundled-only | `[[skills.config]]` with `path` + `enabled = false` (restart) | `[skills] disabled = ["name"]` |
-| Native creator | **ausente** | `skill-creator` drafts | `$skill-creator` drafts | `/create-skill` drafts |
+| Native creator | **ausente** | **ausente** (`plugin init` scaffolds only) | `$skill-creator` drafts | `/create-skill` drafts |
 
 ## 4. Min template
 

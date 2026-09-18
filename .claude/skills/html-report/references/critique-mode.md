@@ -1,6 +1,6 @@
 # Critique / audit mode
 
-The capability neither `html-report` nor the builtin `frontend-design` has: **review** a rendered HTML/CSS (or html-report's own output) against the taste corpus and report violations. Both of those skills are generative-only; this is the missing review side.
+The capability `html-report`'s generation path does not have: **review** a rendered HTML/CSS (or html-report's own output) against the taste corpus and report violations. Generation is one mode; this is the review side.
 
 ## When
 

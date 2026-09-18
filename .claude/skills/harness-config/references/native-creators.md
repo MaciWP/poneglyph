@@ -8,7 +8,7 @@ description: Host skill/workflow creators draft files only. harness-config owns 
 
 | Host | Tool | Owns |
 |---|---|---|
-| Claude Code | `skill-creator` (bundled / plugin) | Draft files |
+| Claude Code | **ausente** — `claude plugin init <name>` scaffolds a directory only | Nothing. Author by hand under this skill |
 | Codex | `$skill-creator` (ChatGPT Work: `@skill-creator`) | Draft files |
 | Grok Build | `/create-skill` · `/create-workflow` | Draft files |
 

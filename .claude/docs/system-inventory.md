@@ -173,7 +173,7 @@ Test: "does the agent need this in EVERY prompt?" — no → skill.
 
 ## MCP servers (session-connected) — decision 2026-06-10 (017/US8)
 
-All five stay default-on (user-ratified): **context7** (plugin, settings.global.json `enabledPlugins`), **claude-in-chrome** (extension), **Atlassian**, two company MCP connectors (claude.ai connectors — managed in the claude.ai UI, not in settings). Context cost is mitigated by ToolSearch deferred loading. Revisit if a server's tool list bloats context again.
+Default-on (user-ratified): **claude-in-chrome** (extension), **Atlassian**, two company MCP connectors (claude.ai connectors — managed in the claude.ai UI, not in settings). The Claude `context7` plugin is no longer a shared default (`settings.global.json` `enabledPlugins` is empty); Codex still registers Context7 as a native MCP. Context cost is mitigated by ToolSearch deferred loading. Revisit if a server's tool list bloats context again.
 
 Schema findings (refreshed 2026-07-08 against the live settings profile — now `settings.global.json` — + CC changelog): `minimumVersion` EXISTS and gates the version (the live value is whatever `settings.global.json` says — 2.1.228 as of audit 010; the floor was first set at 2.1.198, the release fixing conditional rules loaded via symlinked paths, which the whole global layer depends on; CG-02, feature 028 — and the generated `~/.claude/settings.json` lags the repo until `sync-claude --execute` runs again); `fallbackModel` EXISTS since CC 2.1.166 and IS configured in settings.global.json (cascade of 2); `requiredMinimumVersion`/`requiredMaximumVersion` are **managed settings** for org policy (changelog 2.1.163) — they do NOT supersede personal `minimumVersion` (CG-12 resolved, 028/US2).
 

@@ -86,7 +86,7 @@ Date-stamp the fetch. Unreachable → use the pack snapshot and say so.
 
 ## Native creators (draft only)
 
-Full contract: [native-creators.md](references/native-creators.md). Claude `skill-creator`, Codex `$skill-creator`, Grok `/create-skill`. They draft. This skill still owns lookup, impact, `check:config`, and Poneglyph copy.
+Full contract: [native-creators.md](references/native-creators.md). Codex `$skill-creator`, Grok `/create-skill`. They draft. Claude Code has none. This skill still owns lookup, impact, `check:config`, and Poneglyph copy.
 
 ## When NOT to use
 

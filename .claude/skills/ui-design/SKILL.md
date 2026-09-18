@@ -18,9 +18,9 @@ there were ZERO "generic AI UI" complaints — the real friction is SEMANTIC and
 CONSISTENCY-shaped ("same hover as the rest of the app", "where else are these
 badges used?" — sweeps the user had to initiate manually, 4 times). So
 consistency mode is the DEFAULT; the aesthetic craft mode serves new surfaces
-and personal projects. Adapted from Impeccable (Apache 2.0, pbakaus/impeccable);
-Anthropic's `frontend-design` plugin covers new-build aesthetic direction — this
-skill points there instead of duplicating it.
+and personal projects. Adapted from Impeccable (Apache 2.0, pbakaus/impeccable).
+Craft-mode direction is agreed with the user; `references/craft-floor.md` is the
+floor, not the brief.
 
 ## Mode 1 — Consistency (default for work repos)
 
@@ -47,8 +47,8 @@ skill points there instead of duplicating it.
 2. **The craft floor** — numeric checks + the refuse-list of AI tells:
    `references/craft-floor.md`. Read it BEFORE building, apply it silently
    (never announce the checklist).
-3. **Aesthetic direction** for genuinely new visual worlds → the installed
-   `frontend-design` plugin skill (do not duplicate it here).
+3. **Aesthetic direction** for genuinely new visual worlds → agree mode,
+   reference and palette with the user first (do not invent it here).
 
 ## Shared rules (both modes)
 

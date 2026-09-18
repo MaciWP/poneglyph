@@ -26,3 +26,6 @@ This reuses the existing secret heuristic. It is not a full privacy audit.
 Grok discards passive hook output, so apply routing and verification explicitly.
 Codex hook registration needs native trust before execution. Report missing
 capabilities and unverified activation; never count static installation as model quality.
+
+A command expected to run over 30 seconds, or a chain of awaited checks, follows
+`docs/visible-execution.md`: supervise it from this chat and never promise alerts.

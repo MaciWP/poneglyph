@@ -98,14 +98,16 @@ describe("lintEstate — the invariants a grader can actually prove", () => {
     });
   });
 
-  it("reports legacy metadata keys as warnings, never as errors", () => {
-    const legacy = good("alpha").replace("  type: project", "  node_type: memory\n  type: project\n  originSessionId: abc");
+  it("accepts the keys the memory harness writes and warns on a truly unknown one, never as an error", () => {
+    // `node_type` / `originSessionId` are stamped by Claude Code's memory harness on most files
+    // (13 of 15 on 2026-09-18); flagging them made the row permanently 🟡 for nothing we own.
+    const harness = good("alpha").replace("  type: project", "  node_type: memory\n  type: project\n  originSessionId: abc");
+    expect(lintEstate(index("alpha"), [{ name: "alpha.md", text: harness }]).findings).toEqual([]);
+
+    const legacy = good("alpha").replace("  type: project", "  type: project\n  confidence: high");
     const report = lintEstate(index("alpha"), [{ name: "alpha.md", text: legacy }]);
     expect(report.findings.every((f) => f.level === "warn")).toBe(true);
-    expect(report.findings.map((f) => f.message).sort()).toEqual([
-      'unknown metadata key "node_type"',
-      'unknown metadata key "originSessionId"',
-    ]);
+    expect(report.findings.map((f) => f.message)).toEqual(['unknown metadata key "confidence"']);
     expect(summarizeEstate(report).status).toBe("🟡");
   });
 

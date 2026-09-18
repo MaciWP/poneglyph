@@ -1,10 +1,10 @@
 {
-  "takenAt": "2026-09-17",
+  "takenAt": "2026-09-18",
   "alwaysLoaded": {
     "CLAUDE.md": 14055,
     "output-styles/poneglyph.md": 12645,
     "rules/error-recovery.md": 2484,
-    "rules/harness-runtime.md": 1745,
+    "rules/harness-runtime.md": 1910,
     "rules/skill-routing.md": 997,
     "skills: description + when_to_use": 7220
   },

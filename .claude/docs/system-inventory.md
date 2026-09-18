@@ -100,21 +100,11 @@ Canonical per-turn checklist: `agent-routing` skill §1.
 
 ## Planner adaptive levels (`flow` plan phase)
 
-| Level | When | Refs loaded | Target cost |
-|------|------|-------------|-------------|
-| **Quick** | complexity <30 or clear scope (1-2 files, no external research) | ≤2 | ~3-5 min |
-| **Standard** (default) | complexity 30-60 or some ambiguity about dependencies | 3-5 | ~10 min |
-| **Full** | complexity >60, multi-domain, plan mode with architectural risk | all | ~20-30 min |
-
-Escalation: Quick → Standard on uncertainty → Full on multi-domain/architectural risk. Level declared in the first line of planner output.
-
-## /flow-lifecycle adaptation per mode
-
-| Mode | Phases executed | When |
-|---|---|---|
-| `minimal` | Phase 3 direct + Phase 4 light | trivial task, 1-2 files, no design decisions |
-| `standard` (default) | All 5 phases, drillme-clarify normal | feature 2-5 files OR single domain |
-| `full` | All 5 phases + decide (heavy tier) in Phase 2 + fresh-context reviewer (critical-area focus; panels = decisions only, feature 019) in Phase 4 + Commandments forensics in Phase 5 | architectural / multi-domain / auth-payments-security |
+The plan phase declares `Level: Quick|Standard|Full — <reason>` on its first line and escalates
+on uncertainty, never splicing levels. The table and the references each level loads have one
+owner: `skills/flow/references/02-plan.md` §Step 1. (The former `/flow-lifecycle`
+`minimal|standard|full` modes were removed in 029/US12; every phase runs and a justified skip
+is announced and recorded.)
 
 ## Skill loading into a Workflow agent (3 mechanisms)
 

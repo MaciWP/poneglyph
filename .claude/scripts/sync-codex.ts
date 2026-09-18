@@ -250,6 +250,39 @@ function removeStaleWrappers(codexHome: string, links: CodexLink[]): void {
   }
 }
 
+// A core skill that was deleted or renamed leaves its junction behind: Codex still lists the
+// name and reads a missing directory (the 2026-09-17 merge of six flow skills left twelve).
+// Only links that point INTO this checkout's skills directory qualify — a foreign skill that
+// happens to dangle belongs to someone else and is never touched.
+export function staleSkillLinks(codexHome: string, projectRoot: string): string[] {
+  const skillsDir = path.join(codexHome, "skills");
+  if (!fs.existsSync(skillsDir)) return [];
+  const norm = (p: string) => (process.platform === "win32" ? path.resolve(p).toLowerCase() : path.resolve(p));
+  const owned = norm(path.join(projectRoot, ".claude", "skills")) + path.sep;
+  return fs.readdirSync(skillsDir)
+    .map((name) => path.join(skillsDir, name))
+    .filter((dest) => {
+      try {
+        if (!fs.lstatSync(dest).isSymbolicLink()) return false;
+        const target = path.resolve(path.dirname(dest), fs.readlinkSync(dest).replace(/^\\\\\?\\/, ""));
+        return norm(target).startsWith(owned) && !fs.existsSync(target);
+      } catch {
+        return false;
+      }
+    });
+}
+
+export function removeStaleSkillLinks(codexHome: string, projectRoot: string): string[] {
+  const removed = staleSkillLinks(codexHome, projectRoot);
+  for (const dest of removed) {
+    // rmdirSync removes a directory junction itself; a plain symlink needs unlinkSync. Neither
+    // follows the link, and the target is gone anyway.
+    try { fs.rmdirSync(dest); } catch { fs.unlinkSync(dest); }
+    console.log(`removed  ${dest} (skill removed from the source)`);
+  }
+  return removed;
+}
+
 function usage(): void {
   console.log(`
 sync-codex - install Poneglyph's portable Codex adapter
@@ -306,6 +339,7 @@ async function main(): Promise<void> {
   const status = () => {
     printStatus(links);
     for (const file of staleWrappers(profile, links)) console.log(`stale    ${file} (generated wrapper; its command no longer exists)`);
+    for (const dest of staleSkillLinks(profile, projectRoot)) console.log(`stale    ${dest} (skill removed from the source)`);
     console.log(`${hookFilePlan(hookFile, hooks).status.padEnd(8)} ${hookFile}`);
     console.log(`${(configPlan().changed ? "stale" : "linked").padEnd(8)} ${configFile} (${describePolicy("codex")})`);
     console.log("Native hook execution requires Codex /hooks trust; registration alone is not activation evidence.");
@@ -343,6 +377,7 @@ async function main(): Promise<void> {
   if (plan.changed && fs.existsSync(configFile) && !values.backup) throw new Error("Context policy change in config.toml requires --backup.");
   for (const link of links) createLink(link, values.backup ?? false);
   removeStaleWrappers(profile, links);
+  removeStaleSkillLinks(profile, projectRoot);
   installHookFile(hookFile, hooks);
   if (plan.changed) {
     if (fs.existsSync(configFile)) {

@@ -50,12 +50,10 @@ file holds what every phase shares. Read exactly one phase reference per entry.
 
 ## Shared discipline
 
-- **Inputs first.** Read every artifact the phase lists before writing. Verify each path,
-  symbol and claim with Glob/Grep/Read; a cited file that does not exist is a finding, never
-  a fact. Templates: project `.claude/plans/templates/` first, then `~/.claude/plans/templates/`.
-- **Depth scales, stages do not.** Declare the level you chose (`light|standard|full`, or
-  the plan's `Quick|Standard|Full`) and what you skipped, in the artifact and in the report.
-  Silent reduction is the failure; declared reduction is the design.
+- **Inputs first.** Read every artifact the phase lists; verify each path, symbol and claim
+  with Glob/Grep/Read. Templates: project `.claude/plans/templates/`, then `~/.claude/plans/templates/`.
+- **Depth scales, stages do not.** Declare the level (`light|standard|full`, or the plan's
+  `Quick|Standard|Full`) and what you skipped, in the artifact and the report.
 - **Drillme per phase.** The canonical bank is
   `../drillme-clarify/references/03-phase-questions.md`; this skill never copies it. Sweep the
   phase bank and any new gap; ask only what would change the decision. Skill-to-skill
@@ -85,42 +83,23 @@ file holds what every phase shares. Read exactly one phase reference per entry.
 - Honest reduction: "skipped X because Y" in the report. Never a silent skip.
 - Human decisions stay human: scope approval, package approval, verdict ratification,
   promotions, `spec.md` edits, archiving. The skill proposes; the user decides.
-
-## Anti-patterns (cross-phase)
-
-| Anti-pattern | Detection | Correction |
-|---|---|---|
-| Phase theater | Artifact produced in minutes with no real question, check or finding | Run the phase's steps; declare "too vague / nothing to review" instead of inventing |
-| Copying a canonical file | Drillme questions, test policy or contract values restated in a phase | Cite the owner file; delete the copy |
-| Approval from artifacts | `spec.md` or `tasks/` exists, so the phase treats the gate as passed | Read the recorded decision in `state.json`; ask if absent |
-| Push-forward on a broken premise | Assumption fails mid-phase and the phase keeps going | Loop back to the phase that produced the premise and tell the user |
-| Report "done" without evidence | Closure written before the checks ran on the final inputs | Rerun the affected checks; record observed results |
+- Cite canonical files (drillme bank, test policy, flow contract); never copy them. An
+  artifact's existence is not a gate decision: read `state.json`, ask if absent.
+- A premise that fails mid-phase loops back to the phase that produced it, and says so.
 
 ## Commandments cubiertos
 
 | # | Cómo |
 |---|---|
-| I | Every phase reads its inputs and verifies premises before producing anything |
-| II | Claims about code, libraries and tests are checked with Glob/Grep/Read or marked |
-| III | Honest levels, honest findings, honest "nothing to learn"; irreducible gaps stay `[OPEN]` |
-| IV | Oracle before build, verification before closure, checks before verdict; gates are blocking |
-| V | One shared body, one phase file per entry; canonical files are cited, never copied |
-| VI | Sensitive paths declared; `security-audit` is a gate on critical areas; destructive ops escalate |
-| VII | State, verification records, review and retro make every decision observable |
-| VIII | HU execution prompts and reviewer prompts follow `prompt-design` (Arch H) |
-| IX | Retro promotions keep the meta-system healthy; this skill replaced six with one |
+| I · II | Every phase reads its inputs and verifies each claim with Glob/Grep/Read before producing |
+| III | Honest levels, findings and "nothing to learn"; irreducible gaps stay `[OPEN]` |
+| IV · VI | Oracle before build, verification before closure, checks before verdict; `security-audit` gates critical areas |
+| V · IX | One shared body, one phase file per entry, canonical files cited; six skills became one |
 | X | Inline by default; one fresh reviewer instead of a panel; a phase loads only its reference |
 
 ## Content map
 
-| Topic | File |
-|---|---|
-| Phase 1 — scope questionnaire, `spec.md`, gate 1→2 | `references/01-scope.md` |
-| Phase 2 — level triage, research, DAG, `tasks/`, quality gate | `references/02-plan.md` |
-| Phase 2 deep dives — discovery, research, gap analysis, waves, team mode, quality gates | `references/plan/01-discovery.md` … `06-quality-gates.md` |
-| Phase 2.5 — dual-mode oracle, fixtures reuse, joint package for gate 2→3 | `references/03-test-plan.md` |
-| Phase 3 — one HU, TDD modes, verification record, Orca worker branch | `references/04-build.md` |
-| Phase 4 — base checks, 5-section checklist, fresh reviewer, spec drift, verdict | `references/05-review.md` |
-| Phase 5 — lessons, promotions, living-spec loop, commandments audit, closure | `references/06-retro.md` |
-| Fallback templates when `review.template.md` / `retro.template.md` are missing | `references/review-fallback.md`, `references/retro-fallback.md` |
-| Rationale, decisions and the 2026-09-17 merge of the six phase skills | `references/07-history.md` |
+The phase table above names the six phase references. Also: `references/plan/01…06-*.md`
+(plan deep dives: discovery, research, gap analysis, waves, team mode, quality gates),
+`references/review-fallback.md` and `retro-fallback.md` (templates when the plan templates
+are missing), `references/07-history.md` (rationale, decisions, the 2026-09-17 merge).

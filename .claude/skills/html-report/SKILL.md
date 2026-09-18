@@ -51,7 +51,7 @@ The design quality bar lives in `references/`, loaded only when needed (keeps th
 | Trivial one-paragraph note | plain markdown — HTML scaffolding is over-engineering here (Commandment V) |
 | Needs live external data refresh | a live application; this skill's dynamic reports explore an embedded snapshot |
 | Wants an explorable technical architecture, workflow, sequence, dataflow, or lifecycle diagram | `diagrams-interactive`; simple inline diagrams keep Mermaid |
-| User wants to GENERATE arbitrary user-facing UI / a landing page | builtin `frontend-design` — this skill renders Claude Code's OWN outputs, not general UI |
+| User wants to GENERATE arbitrary user-facing UI / a landing page | `ui-design` (craft mode) — this skill renders Claude Code's OWN outputs, not general UI |
 
 ## Workflow
 
@@ -61,7 +61,7 @@ graph TD
     M -->|critique| K[Load references/critique-mode.md - review target, no generation]
     M -->|generate| B[1. Read input markdown OR accept structured data]
     B --> C[2. Pick template: report long-form vs dashboard glance]
-    C --> D[3. frontend-design + taste-hard-rules.md + anti-slop.md]
+    C --> D[3. taste-hard-rules.md + anti-slop.md]
     D --> E[4. Fill template placeholders + compose C1-C8 from components.html]
     E --> P[5a. Run pre-flight-checklist.md as gate]
     P --> F[5b. Write self-contained .html next to source or in cwd]
@@ -93,11 +93,9 @@ When unsure, default to `report` (long-form loses no information; dashboard comp
 >
 > **shadcn components + interactivity** (badges/alert/separator/progress/skeleton/empty-state + tabs/tooltips CSS-only + command JS-opt-in + `:focus-visible` ring): patterns live in `templates/components.html`. Baking the full set into `components.html` + wiring into glance/decision is a tracked future evolution.
 
-### Step 3 — Design quality: frontend-design + taste corpus (AC5)
+### Step 3 — Design quality: taste corpus (AC5)
 
-**Explicitly invoke the builtin `frontend-design` skill** (`Skill('frontend-design')`, or — when this skill runs inside a delegated Workflow unit — instruct that unit to `Read` the frontend-design SKILL first). It produces distinctive, production-grade frontend that **avoids the generic AI aesthetic**.
-
-Then **load the taste corpus** for the measurable bar: `references/taste-hard-rules.md` (spacing/type/color/depth/motion + WCAG) and `references/anti-slop.md` (what to never do). Use them to vet type hierarchy, spacing rhythm, color/contrast restraint, motion, and the absence of AI-slop tells. This combination — official skill + sourced hard rules — is what guarantees the output is polished, not template-flat.
+**Load the taste corpus** — it is the substrate, not a supplement: `references/taste-hard-rules.md` (spacing/type/color/depth/motion + WCAG) and `references/anti-slop.md` (what to never do). Use them to vet type hierarchy, spacing rhythm, color/contrast restraint, motion, and the absence of AI-slop tells. Sourced hard rules are what keep the output polished rather than template-flat. For a genuinely new visual world, use `ui-design` (craft mode) instead.
 
 ### Step 4 — Fill placeholders + compose components
 
@@ -122,7 +120,7 @@ Then **load the taste corpus** for the measurable bar: `references/taste-hard-ru
 
 ## Critique mode (review, not generate)
 
-When asked to **critique/audit** an HTML/CSS or a render: load `references/critique-mode.md` and follow it — inspect across dimensions (typography/color/layout/depth/motion/a11y/anti-slop), emit findings with severity (BLOCKER/MAJOR/MINOR/NIT) citing the violated rule, run the pre-flight checklist, and give a verdict (CLEAN/WARN/FAIL). This is the review side that `frontend-design` (generative-only) lacks.
+When asked to **critique/audit** an HTML/CSS or a render: load `references/critique-mode.md` and follow it — inspect across dimensions (typography/color/layout/depth/motion/a11y/anti-slop), emit findings with severity (BLOCKER/MAJOR/MINOR/NIT) citing the violated rule, run the pre-flight checklist, and give a verdict (CLEAN/WARN/FAIL). Generation and review are separate modes: this is the review side.
 
 ## Self-contained + anti-generic (HARD constraints)
 
@@ -142,8 +140,8 @@ When asked to **critique/audit** an HTML/CSS or a render: load `references/criti
 | Precedent | What it provides | How html-report extends it |
 |---|---|---|
 | The `compare-and-decide` skill's HTML memo | Inline CSS, `prefers-color-scheme` flip, `@media print`, radius/shadow scale, `--color-*` naming | html-report's `tokens.css` is a **superset** of that token architecture (same naming, same flip mechanism). `/compare-and-decide` and `/html-report` must read as ONE design family (Commandment IX). |
-| builtin `frontend-design` skill | Distinctive, production-grade frontend that avoids generic AI aesthetics | Invoked in Step 3 as the design-quality gate (AC5). |
-| `references/` taste corpus | Sourced hard rules + bans + pre-flight + critique mode | The measurable bar + the review side, layered above frontend-design. |
+| `references/` taste corpus | Sourced hard rules + bans + pre-flight + critique mode | The measurable bar (Step 3) + the review side. |
+| `ui-design` skill | Craft mode for new visual surfaces | Arbitrary UI, not Claude Code's own output. |
 
 ## Commandments cubiertos
 
@@ -151,7 +149,7 @@ When asked to **critique/audit** an HTML/CSS or a render: load `references/criti
 |---|---|---|
 | **V** | Delivered code quality — simple by default, best practices, no over-engineering | One self-contained HTML, no JS framework, no build step, no CDN. Charts via plain SVG + CSS, not a charting library. System stack fonts, not embedded webfonts. Critique is markdown-mode, no helper unless justified. |
 | **IV** | Blocking quality gates | The pre-flight checklist (Step 5a) gates the write; critique emits a verdict. |
-| **VIII** | Optimal output — invoke the right capability well | Explicitly leverages the builtin `frontend-design` skill + a sourced taste corpus instead of hand-rolling mediocre CSS; reuses the decide memo precedent. Good output by composition, not improvisation. |
+| **VIII** | Optimal output — invoke the right capability well | Applies a sourced taste corpus instead of hand-rolling mediocre CSS; reuses the decide memo precedent; routes arbitrary UI to `ui-design`. Good output by composition, not improvisation. |
 | **IX** | Poneglyph maintainability | `tokens.css` is the single source of truth for the report template (inlined byte-identical); the dashboard owns its dark-native palette by design; bans/tells live once in `references/anti-slop.md` (no dual source); `/compare-and-decide` + `/html-report` share one design language. |
 
 ## Verification (smoke test)

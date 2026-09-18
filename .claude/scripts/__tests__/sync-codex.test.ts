@@ -1,9 +1,46 @@
 import { describe, expect, it } from "bun:test";
-import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, readlinkSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, readlinkSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { parse as parseToml } from "smol-toml";
-import { buildCodexLinks, codexBudgetVerdict, CODEX_DOC_BUDGET, generatedContent, linkMethodFor, linkStatus, PORTABLE_SKILLS, staleWrappers } from "../sync-codex.ts";
+import { buildCodexLinks, codexBudgetVerdict, CODEX_DOC_BUDGET, generatedContent, linkMethodFor, linkStatus, PORTABLE_SKILLS, removeStaleSkillLinks, staleSkillLinks, staleWrappers } from "../sync-codex.ts";
+
+// A deleted core skill leaves its junction in every Codex profile (2026-09-17: the six flow
+// skills left twelve). The sync must prune only links that point into OUR skills directory.
+describe("stale skill links", () => {
+  function estate() {
+    const root = mkdtempSync(path.join(tmpdir(), "codex-root-"));
+    const skills = path.join(root, ".claude", "skills");
+    const home = mkdtempSync(path.join(tmpdir(), "codex-home-"));
+    const foreign = mkdtempSync(path.join(tmpdir(), "codex-foreign-"));
+    for (const d of [path.join(skills, "gone"), path.join(skills, "kept"), path.join(home, "skills"), path.join(foreign, "theirs")]) mkdirSync(d, { recursive: true });
+    const type = process.platform === "win32" ? "junction" : "dir";
+    symlinkSync(path.join(skills, "gone"), path.join(home, "skills", "gone"), type);
+    symlinkSync(path.join(skills, "kept"), path.join(home, "skills", "kept"), type);
+    symlinkSync(path.join(foreign, "theirs"), path.join(home, "skills", "theirs"), type);
+    mkdirSync(path.join(home, "skills", "local-real")); // a real directory, never a candidate
+    rmSync(path.join(skills, "gone"), { recursive: true });
+    rmSync(path.join(foreign, "theirs"), { recursive: true });
+    return { root, home };
+  }
+
+  it("lists only a Poneglyph link whose source is gone; a live link, a foreign dangling one and a real directory stay", () => {
+    const { root, home } = estate();
+    expect(staleSkillLinks(home, root)).toEqual([path.join(home, "skills", "gone")]);
+  });
+
+  it("removes the stale link itself and nothing else", () => {
+    const { root, home } = estate();
+    expect(removeStaleSkillLinks(home, root)).toEqual([path.join(home, "skills", "gone")]);
+    expect(readdirSync(path.join(home, "skills")).sort()).toEqual(["kept", "local-real", "theirs"]);
+    expect(lstatSync(path.join(home, "skills", "theirs")).isSymbolicLink()).toBe(true);
+    expect(existsSync(path.join(root, ".claude", "skills", "kept"))).toBe(true);
+  });
+
+  it("is silent when the profile has no skills directory", () => {
+    expect(staleSkillLinks(mkdtempSync(path.join(tmpdir(), "codex-empty-")), mkdtempSync(path.join(tmpdir(), "codex-root-")))).toEqual([]);
+  });
+});
 
 describe("codex 32KiB budget guard", () => {
   it("ok below 90%, warn at 90%+, over past the budget", () => {

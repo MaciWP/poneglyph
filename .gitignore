@@ -70,6 +70,8 @@ tmpclaude-*-cwd
 
 # Archived plans (closed/abandoned features — out of accidental read reach)
 .claude/plans/_archive/
+# Local skill explorer previews and their generated inventory
+.claude/plans/_skill-explorer-*/
 
 # Learning inbox + load-layer log (may contain transcript snippets — never commit).
 # Exception: best-of-n-log.md is versioned pilot evidence (feature 019).

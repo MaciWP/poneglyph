@@ -23,13 +23,15 @@ do not create a second runtime task database:
   communication, worktree creation and writes. Record revocations or amendments.
 - Map each HU/task to its Orca Task and current Dispatch. Runtime status and mail
   stay in Orca; this map does not substitute for live inspection.
-- Record each task's DoD and accepted dependencies. In flow, point to tasks,
+- Record each task's DoD, quality priorities and accepted dependencies. In flow, point to tasks,
   oracle and `state.json`; do not copy their acceptance state into another ledger.
   In standalone dev, record coordinator acceptance with evidence here.
 - Maintain the reservation table below, shared contract decisions and pending
   coordinator questions. Link observed checks and their input fingerprint.
-- Keep a short resume note: remaining decisions, next eligible work and relevant
-  message IDs. Do not copy conversations, secrets or provider credentials.
+- Keep a short resume note: criterion references, accepted work and its checked
+  inputs/results, blockers, remaining decisions, next eligible work and relevant
+  message IDs. Reuse valid evidence; do not restart accepted work. Do not copy
+  conversations, secrets or provider credentials.
 
 | Resource | Task / Dispatch owner | Phase | Release or transfer evidence |
 |---|---|---|---|
@@ -83,6 +85,9 @@ Use the live Orca Dispatch preamble for lifecycle identity and commands.
 Execute <one task> as <role> in <shared worktree>.
 Your accepted prerequisites are <dependencies>.
 Your DoD is <observable acceptance criteria and required checks>.
+Your quality priorities are <task-specific outcomes and behaviors to favor>.
+Reuse the agreed criteria. Resolve missing criteria before execution.
+Do not expand scope or repeat valid checks to improve a grade.
 
 [CONSTRAINTS]
 Wait for the coordinator's startup clearance and resource grant before edits.

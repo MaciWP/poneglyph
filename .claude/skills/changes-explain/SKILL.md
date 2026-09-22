@@ -14,6 +14,16 @@ when_to_use: |
 
 Educational walkthrough of code changes. Reads the target, investigates the surrounding context, verifies non-obvious claims against official documentation, and returns a "professor-mode" report: executive summary, logical chain, numbered points, pre-anticipated Q&A.
 
+## Definition of Done
+
+- Resolve the requested diff, revision or files and the questions the explanation must answer.
+- Deliver the explanation with source-backed reasons, observed validation and explicit unknowns. Stop when those questions are answered; do not expand into a new review or implementation.
+
+## How You're Graded
+
+- You are graded on a clear causal explanation and accurate links between changes, intent and effects.
+- Distinguish observed behavior from inference. More commentary or unrelated findings do not improve the result.
+
 ## Underlying Principle
 
 > The user learns by being walked through the code, not by being given the answer.

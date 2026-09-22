@@ -18,6 +18,17 @@ when_to_use: |
 
 Unified code review skill with two modes: **quality** and **performance**. Patterns are language-agnostic.
 
+## Definition of Done
+
+- Select quality or performance mode. Reuse the requested scope, acceptance and quality priorities; resolve missing task criteria before inspecting code.
+- Return supported findings with severity and actionable corrections in the selected mode's format. If implementation was requested, verify the scoped changes before closing it.
+- Stop after the scoped assessment or verified repair. An assessment can complete with findings; it does not certify that those findings are fixed.
+
+## How You're Graded
+
+- You are graded on correct, consequential findings and simple corrections that preserve behavior.
+- Zero findings is valid. Finding counts, speculative optimizations and unrelated refactors earn no credit.
+
 ## Mode Selection
 
 | Trigger | Mode | Load |

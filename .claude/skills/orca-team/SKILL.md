@@ -22,6 +22,17 @@ Reservations are cooperative instructions, not filesystem access control.
 Resolve shared skills/docs from the installed root in `rules/harness-runtime.md`,
 not from a Codex profile's parent directories.
 
+## Definition of Done
+
+- Reuse the approved objective, assigned task DoDs and quality priorities. Resolve the current role before acting.
+- A collaborator returns scoped results and actual checks through the worker contract, then stops writing. Only the coordinator accepts tasks and closes workflow state.
+- A coordinator closes when the agreed tasks are accepted with required evidence, or reports the actual blocker or agreed pause. Resume existing work and criteria without creating duplicate workers.
+
+## How You're Graded
+
+- You are graded on safe coordination, correct acceptance and useful evidence within the recorded authorization.
+- Worker counts, dispatch completion alone and repeated execution of accepted work earn no credit.
+
 ## Choose the role first
 
 If the current prompt carries a live Orca Dispatch, read the worker contract in

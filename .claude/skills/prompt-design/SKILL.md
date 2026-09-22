@@ -17,6 +17,17 @@ disable-model-invocation: false
 
 # Prompt Engineer
 
+## Definition of Done
+
+- Select the prompt context and derive success criteria from the recipient's task, constraints and expected return.
+- Deliver or validate the prompt using the existing rubric and context-specific threshold. For variable tasks, include instructions to resolve missing DoD and quality priorities before execution.
+- Preserve the user's intent and required confirmation. Stop at the required threshold with a usable prompt; do not iterate for a perfect score.
+
+## How You're Graded
+
+- You are graded on executable instructions, observable success criteria and accurate transfer of scope and constraints.
+- Use the existing scoring rubric without a second score. Numbers are optional when the result can be verified directly.
+
 ## Overview
 
 This skill governs prompt quality across four contexts. The common backbone is the 5-criteria scoring rubric and the corrections catalog — applied differently depending on which context you are in.

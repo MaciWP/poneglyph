@@ -8,6 +8,17 @@ disable-model-invocation: true
 
 Turn any folder of files into a navigable knowledge graph with community detection, an honest audit trail, and three outputs: interactive HTML, GraphRAG-ready JSON, and a plain-language GRAPH_REPORT.md.
 
+## Definition of Done
+
+- Resolve the requested mode and corpus or question. Help returns usage without executing; query returns graph-backed answers with provenance.
+- Build/update returns the requested outputs with observed integrity results. Watch/MCP reports verified startup and the active process; startup does not mean the service has finished.
+- Stop the invocation after its result or report a blocker. Reuse an existing graph for queries; do not rebuild or expand the corpus without need.
+
+## How You're Graded
+
+- You are graded on useful, traceable relationships and preserving graph integrity.
+- Graph size and additional extraction earn no credit. Keep extracted facts, inferences and ambiguous relationships distinct.
+
 ## Usage
 
 ```

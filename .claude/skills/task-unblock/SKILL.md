@@ -21,6 +21,17 @@ reason to exist: **raise effort to xhigh and change the attack** when repetition
 base effort isn't working. It is deliberately THIN — it does not own diagnostic content;
 it borrows it.
 
+## Definition of Done
+
+- Resolve the repeated failure, attempted approaches and evidence before the one deep pass.
+- Return a verified cause and fix, or the required escalation with attempted techniques and viable next options.
+- Stop at that handback. A failed deep pass does not authorize another retry of the same attack.
+
+## How You're Graded
+
+- You are graded on a materially different diagnosis and useful evidence that resolves or clarifies the blocker.
+- Retry counts, higher effort alone and unsupported claims of recovery earn no credit.
+
 ## When this fires
 
 Invoke when `error-recovery` stuck-detection trips, or any equivalent loop:

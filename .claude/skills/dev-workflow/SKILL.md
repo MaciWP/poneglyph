@@ -35,6 +35,18 @@ rendering when KNOW shows the task is bounded) is CLAUDE.md §The dev loop — t
 is not restated here. Judging a task "simple" *before* KNOW is circular: you only
 know that after investigating.
 
+## Definition of Done
+
+- In PLAN, reuse the agreed acceptance criteria or define the task's observable outcomes, required checks and stop condition.
+- Close after those outcomes are verified, REVIEW reports residual risk and LEARN records a justified lesson or explicitly finds none.
+- Deliver and stop. Reopen work only for changed scope, changed inputs, a new failure or invalidated evidence; use the existing loop-back rules.
+
+## How You're Graded
+
+- You are graded on solving the agreed problem, reusing existing code and delivering the simplest maintainable result above the safety floor.
+- Verified correctness and scope compliance come first. Extra code, repeated green checks and speculative improvements earn no credit.
+- Define task-specific quality priorities in PLAN when needed. Do not lower acceptance criteria or add scope to improve a grade.
+
 ## Stage 1 — KNOW (learn / investigate / reuse)
 
 - Read the full problem statement and the surrounding code before forming an opinion.
@@ -57,6 +69,9 @@ migrations, deletion). For everything else, plan and proceed.
 
 - **Goal**: the ask restated in your own words + the acceptance criteria you'll
   hold yourself to. Wrong restatement = cheapest possible failure point.
+- **Completion contract**: reuse the agreed DoD and quality priorities. Fill only
+  missing task-specific outcomes, required evidence and the stop condition before
+  BUILD. Keep them in the existing plan or inline PLAN, not a second ledger.
 - **Blocking questions (0-3)**: only where a wrong answer means throwing work away.
   Each carries your recommended default so "yes to all" is a valid reply.
   Nothing blocking → say so, list zero.

@@ -17,7 +17,7 @@ function write(root: string, name: string, content: string): void {
   writeFileSync(join(root, name, "SKILL.md"), content, "utf8");
 }
 const skill = (name: string, description: string, extra = "") =>
-  `---\nname: ${name}\ndescription: ${description}\n${extra}---\nRead the source.\n`;
+  `---\nname: ${name}\ndescription: ${description}\n${extra}---\nRead the source.\n\n## Definition of Done\nReturn the requested source evidence.\n\n## How You're Graded\nPrefer relevant evidence over volume.\n`;
 afterEach(() => {
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
 });

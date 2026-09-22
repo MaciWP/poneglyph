@@ -18,6 +18,17 @@ metadata:
 Use the official Archify package unchanged. This entrypoint connects its authoring
 contract to Poneglyph's shared installation and the user's target project.
 
+## Definition of Done
+
+- Resolve the requested system or flow, audience, relationships and task-specific quality priorities before authoring; reuse the agreed brief.
+- Deliver editable JSON and self-contained HTML through the existing engine. Validate the data and inspect the rendered diagram and applicable controls.
+- Stop after the requested relationships are clear and the artifact is verified. Missing engine or rendering evidence remains an explicit limitation.
+
+## How You're Graded
+
+- You are graded on accurate relationships, readable navigation and a usable delivered artifact.
+- More nodes, decoration or repeated visual polishing earn no credit once the brief and checks are satisfied.
+
 ## Resolve the engine
 
 Resolve this skill directory to its real filesystem location before deriving paths.

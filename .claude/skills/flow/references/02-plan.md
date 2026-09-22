@@ -14,6 +14,15 @@ external documentation (Context7/WebFetch), atomicity (drillme).
 Precondition: `spec.md` with `status: approved` and gate 1→2 recorded. A `draft` spec →
 STOP and escalate. Open questions in the spec are resolved with the user before planning.
 
+## Definition of Done
+
+- Reuse approved scope and deliver tasks/index.md plus atomic HU files with dependencies, acceptance and verification needs.
+- Record phase 2 completion only after its checks pass, then hand the package to test-plan. The joint gate remains separate.
+
+## How You're Graded
+
+- Favor complete AC coverage, executable tasks and real dependencies. Additional HUs or architecture do not earn credit.
+
 ## Initial detection
 
 1. `Glob .claude/plans/*-*/spec.md`; several approved → the most recent, or ask.

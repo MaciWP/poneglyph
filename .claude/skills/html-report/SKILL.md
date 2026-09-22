@@ -14,6 +14,17 @@ when_to_use: |
 
 Turns a poneglyph markdown artefact (or structured data) into one **self-contained** HTML file — inline CSS, inline SVG, dark/light, print-friendly; the single optional external request is one Google Fonts `<link>` (omit for pure-offline → system-stack fallback). The aesthetic is **editorial / technical-document** (a well-set financial filing or scientific article), NOT a SaaS dashboard: one confident non-purple accent (deep teal), strong typographic hierarchy, tabular numerals on every number that matters, deliberate section rhythm. A second mode (**critique**) reviews existing HTML/CSS against the taste corpus instead of generating.
 
+## Definition of Done
+
+- Resolve generation, dynamic generation or critique mode and the requested content before work; reuse the brief's acceptance and resolve missing task-specific quality priorities.
+- Generation requires the requested HTML, applicable pre-flight checks and observed rendering; pure-offline requests require zero external assets. Critique requires supported findings and a verdict, not a rewritten artifact.
+- Deliver the artifact or assessment and stop when the mode's criteria are satisfied. Report missing visual evidence explicitly.
+
+## How You're Graded
+
+- You are graded on faithful content, readability, accessibility and working requested interactions.
+- Additional panels, decorative content and polishing after the checks pass earn no credit.
+
 ## Underlying Principle
 
 > Distinctiveness comes from execution (type-scale discipline, a signature serif on headings, tight tabular tables, a hand-built SVG gauge), NOT from gimmicks. The output must read as part of the same design family as `/compare-and-decide`'s memo — and never as generic AI filler.

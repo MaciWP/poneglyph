@@ -53,6 +53,7 @@ cannot pass.
 | Surface | Blocking rule | Basis |
 |---|---|---|
 | Skill entrypoint | YAML mapping, matching name, non-empty instructions, required description | [Agent Skills specification](https://agentskills.io/specification); the `metadata` field is optional |
+| Core skill completion contract | Non-empty `## Definition of Done` and `## How You're Graded` prose sections, outside code examples and comments (`skill.contract.dod`, `skill.contract.graded`) | [Poneglyph authoring convention](../skills/harness-config/references/completion-contract.md), explicitly adopted 2026-09-22; not a vendor requirement or a semantic/model-quality check. Applies to direct core skill entrypoints, not addons, commands or generated adapters. |
 | Name | 1-64 characters, ASCII lowercase kebab-case, no name collisions | Portable naming subset chosen by this project; not a claim that every host rejects Unicode |
 | Description | Non-whitespace string, 1-1024 Unicode code points after YAML decoding | [Agent Skills specification](https://agentskills.io/specification); no invented 150-character target |
 | Optional metadata | String-to-string `metadata`, compatibility up to 500 characters, documented field types | Agent Skills baseline plus [Claude fields](https://code.claude.com/docs/en/skills) |
@@ -107,7 +108,8 @@ A number becomes a blocking standard only with evidence A/B/T1. Then, in one HU:
 4. The matching template or pack default.
 5. Run the new rule against the existing catalog **before** it is a CI error. If a D12 artefact would fail, ship a warning or fix those files in the same HU. Never merge known red. Never relax the rule in silence.
 
-A heading in a skill is not a standard. Invented counts (word targets, “32”, “150 characters”) stay out. Unknown metadata also warns:
+The two completion headings are an explicit project convention; other headings
+are not automatically standards. Invented counts (word targets, “32”, “150 characters”) stay out. Unknown metadata also warns:
 a host extension needs review, but the gate must not forbid valid future fields.
 Claude's default description/when_to_use listing budget is separate from the
 portable description limit. Do not confuse bytes on disk, available context,

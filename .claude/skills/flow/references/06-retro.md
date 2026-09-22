@@ -8,7 +8,7 @@ description: Phase 5 — capture lessons, propose promotions, close the living-s
 
 Measure the **process** that produced the deliverable and turn it into structural
 improvements: lessons, promotions, the living-spec delta, the commandments audit. Honesty is
-the whole value: a retro without friction or without a lesson is theater.
+the whole value: report actual friction and lessons, including an honest absence of either.
 
 Precondition: `review.md` with APPROVED or APPROVED_WITH_WARNINGS and `current_phase: 5`.
 NEEDS_CHANGES or BLOCKED → STOP; a retro on broken work captures the wrong lessons.
@@ -17,6 +17,15 @@ NEEDS_CHANGES or BLOCKED → STOP; a retro on broken work captures the wrong les
 nothing to learn (no lesson, no promotion, no spec drift), announced before skipping and
 recorded: `bun .claude/scripts/flow-state.ts retro-status "skipped — <reason ≥10 chars>"`.
 `close-feature` refuses a null or pending retro, so a silent skip is impossible.
+
+## Definition of Done
+
+- Produce the evidence-backed retro and requested closure decisions, or record the justified no-learning skip under the existing protocol.
+- Close the feature only when the review, retro status and required human decisions allow it. Resume from existing records.
+
+## How You're Graded
+
+- Favor reusable lessons and accurate scope closure. Zero lessons or promotions is valid; invented friction and forced entries do not earn credit.
 
 ## Step 1 — Read inputs
 

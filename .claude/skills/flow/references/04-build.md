@@ -14,6 +14,15 @@ Precondition: `state.json.current_phase == 3` (gate 2→3 recorded) and a pendin
 dependencies are complete. Draft tasks, a missing oracle or all HUs closed → STOP and route
 (phase 2.5 or phase 4).
 
+## Definition of Done
+
+- Reuse the assigned HU's accepted DoD and oracle. Implement its scope and collect required checks on the final inputs.
+- Inline/coordinator closure requires the verification record. A worker returns evidence and stops writing; it does not close state.
+
+## How You're Graded
+
+- Favor the smallest maintainable change that meets the HU and safety floor. Extra features and repeated checks on unchanged inputs do not earn credit.
+
 ## Supervised Orca worker
 
 When the current prompt carries a live Orca Dispatch under an approved `orca-team` team,

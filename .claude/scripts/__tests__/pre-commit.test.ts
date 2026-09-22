@@ -43,7 +43,7 @@ describe('pre-commit.ts drives the staged-index guard (H33)',()=>{
   execFileSync('git',['-C',root,'init','--quiet'],{env:clean,stdio:'ignore'});
   mkdirSync(join(root,'.claude','skills','a'),{recursive:true});
   mkdirSync(join(root,'.claude','__tests__'),{recursive:true});
-  writeFileSync(join(root,'.claude','skills','a','SKILL.md'),'---\nname: a\ndescription: A fixture skill so the inventory is not empty.\n---\nFixture body.\n');
+  writeFileSync(join(root,'.claude','skills','a','SKILL.md'),'---\nname: a\ndescription: A fixture skill so the inventory is not empty.\n---\n## Definition of Done\nReturn the checked fixture result.\n\n## How You\'re Graded\nReport actual evidence.\n');
   writeFileSync(join(root,'.claude','__tests__','inner.test.ts'),innerTest);
   execFileSync('git',['-C',root,'add','.'],{env:clean,stdio:'ignore'});
   return root;

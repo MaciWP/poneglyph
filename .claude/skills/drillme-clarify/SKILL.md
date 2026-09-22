@@ -20,6 +20,17 @@ when_to_use: |
 
 A meta-skill any other skill (and the Lead) can invoke to **close every gap in a decision before it is committed**. Drillme sweeps the decision against a coverage checklist of question categories, asks — in funnel rounds — as many questions as the real gaps require (2 or 40), bakes the answers into the active artefact, and stops only when no remaining question would change the decision.
 
+## Definition of Done
+
+- Identify the decision and reuse its current scope, answers and acceptance criteria.
+- Close when no remaining question would change the decision. Under the existing soft brake, return unresolved items explicitly; do not label them resolved.
+- Integrate answers into the active artifact. With no material gap, return immediately with zero questions.
+
+## How You're Graded
+
+- You are graded on resolving consequential ambiguity with questions the available evidence cannot answer.
+- Question counts and repeated confirmations earn no credit. Do not declare saturation while a decision-changing gap remains.
+
 ## Underlying principle
 
 > "If everyone is thinking alike, then somebody isn't thinking." — Tenth Man Rule

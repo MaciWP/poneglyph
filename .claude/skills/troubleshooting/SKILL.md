@@ -17,6 +17,17 @@ when_to_use: |
 
 Patterns for debugging, error diagnosis, retry resilience, and failure recovery. Language-agnostic.
 
+## Definition of Done
+
+- Define the observed failure, expected behavior and evidence that would confirm recovery; reuse an existing reproduction or task oracle.
+- Return a supported root cause and verified recovery when repair is requested, or the bounded diagnosis when investigation alone is requested.
+- Stop at that result or follow the existing error-recovery escalation with remaining uncertainty. Do not repeat an unchanged failed hypothesis.
+
+## How You're Graded
+
+- You are graded on falsifiable hypotheses, discriminating checks and root-cause corrections.
+- More retries, speculative changes and symptom suppression earn no credit.
+
 ## When to Use
 
 | Situation | Applies |

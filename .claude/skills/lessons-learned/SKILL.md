@@ -26,6 +26,16 @@ cycle. This is the **single home** for cross-repo lessons across every repo Orio
 on. Company-specific knowledge belongs in an optional private addon. The core
 works without that addon and must not discover or activate it automatically.
 
+## Definition of Done
+
+- For review, apply the relevant existing lessons to the actual change and return to the caller.
+- For capture, persist only an incident-backed, reusable lesson that passes the admission rule and is not already recorded. Otherwise state that no new lesson qualifies and stop.
+
+## How You're Graded
+
+- You are graded on preventing a demonstrated repeat failure and keeping one accurate home for each lesson.
+- Lesson counts and generic best-practice entries earn no credit. No new lesson is a valid result.
+
 ## Frontier — what lives where
 
 | Layer | Holds | Read at |

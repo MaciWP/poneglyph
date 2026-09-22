@@ -31,6 +31,17 @@ in KNOW. It coordinates local checks, candidate CI, and verified integration.
 A claim resting on a file, symbol or route existing →
 [existence checks](references/existence-checks.md): what the tools do NOT prove.
 
+## Definition of Done
+
+- Derive the applicable checks and expected outcomes from the agreed task and affected surfaces before verification.
+- A passing result requires the applicable protocol below, evidence for the checked inputs and a residual-risk report.
+- Failed or unavailable required checks return the task to repair or a reported blocker. After a passing report, return to the caller; rerun only for changed inputs, new failures or invalidated evidence.
+
+## How You're Graded
+
+- You are graded on checks that prove the requested behavior, an accurate impact sweep and honest claim status.
+- Reuse valid evidence for unchanged inputs. Repeating green checks earns no credit; omitting required checks cannot earn a pass.
+
 ## Anti-trigger (proportionality)
 
 Doc/markdown-only diffs and test-only diffs with no runtime surface do NOT get

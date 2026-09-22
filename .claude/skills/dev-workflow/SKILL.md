@@ -37,7 +37,7 @@ know that after investigating.
 
 ## Definition of Done
 
-- In PLAN, reuse the agreed acceptance criteria or define the task's observable outcomes, required checks and stop condition.
+- Between KNOW and PLAN, settle the observable outcomes, required checks and stop condition: from the ask, or proposed in PLAN's question round (then wait). Pure questions are exempt.
 - Close after those outcomes are verified, REVIEW reports residual risk and LEARN records a justified lesson or explicitly finds none.
 - Deliver and stop. Reopen work only for changed scope, changed inputs, a new failure or invalidated evidence; use the existing loop-back rules.
 
@@ -65,13 +65,14 @@ know that after investigating.
 ## Stage 2 — PLAN (analyze / price / de-risk)
 
 Produce, then STOP on high blast radius (new module, schema, auth, money,
-migrations, deletion). For everything else, plan and proceed.
+migrations, deletion). Else proceed once the DoD is settled.
 
 - **Goal**: the ask restated in your own words + the acceptance criteria you'll
   hold yourself to. Wrong restatement = cheapest possible failure point.
-- **Completion contract**: reuse the agreed DoD and quality priorities. Fill only
-  missing task-specific outcomes, required evidence and the stop condition before
-  BUILD. Keep them in the existing plan or inline PLAN, not a second ledger.
+- **Completion contract**: reuse the agreed DoD and quality priorities. Missing
+  outcomes, evidence or stop condition → propose one line (Tarea · Hecho
+  significa · Cuándo paro) with an "Adelante" option.
+  Keep them in the existing plan or inline PLAN, not a second ledger.
 - **Blocking questions (0-3)**: only where a wrong answer means throwing work away.
   Each carries your recommended default so "yes to all" is a valid reply.
   Nothing blocking → say so, list zero.
@@ -170,6 +171,7 @@ A small task with one loop-back, in full and in compact rendering:
 | Simplifying away validation/errors to score fewer lines | Floor violation — restore it |
 | `ponytail:` comment without an upgrade trigger | Add the trigger or treat as a bug |
 | Asking the user something Grep answers | Stage 1 owes that research |
+| Inventing the finish line, or asking for it mid-run | Settle the DoD at KNOW→PLAN; propose it with a default |
 | Improvising when an assumption breaks mid-task | Loop-back to PLAN and tell — always |
 | Risks section padded with invented dangers | Proportionality of *depth* — real risks only, or none |
 | Silent LEARN because "nothing to say" | Explicit `LEARN: nothing non-obvious` |

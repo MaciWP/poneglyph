@@ -99,6 +99,22 @@ describe("hook commands quote their interpolated paths (H40)", () => {
   });
 });
 
+// Opus 5.5 playbook, 2026-09-23: "Keep permission prompts on for destructive commands too".
+// An explicit ask rule prompts in every mode, auto and bypassPermissions included; the
+// doctrine alone does not. Allow rules never cancel it, so the broad "Bash" allow is safe.
+describe("destructive commands always prompt", () => {
+  const ask: string[] = JSON.parse(readFileSync(join(root, ".claude", "settings.global.json"), "utf8")).permissions.ask;
+  const GIT = ["git reset --hard *", "git clean *", "git branch -D *", "git stash drop *", "git worktree remove *", "git checkout -- *", "git restore *", "git push *", "gh pr create *", "gh pr merge *"];
+
+  it("asks before a recursive delete in either shell", () => {
+    for (const rule of ["Bash(rm -r *)", "Bash(rm -rf *)", "Bash(rm -fr *)", "PowerShell(Remove-Item *)"]) expect(ask).toContain(rule);
+  });
+
+  it("asks before a destructive or outward git step in both shells", () => {
+    for (const cmd of GIT) for (const shell of ["Bash", "PowerShell"]) expect(ask).toContain(`${shell}(${cmd})`);
+  });
+});
+
 // Quality review 2026-09-11, finding H23. The complexity score is the sum of five factors,
 // each contributing at least ~6.7 points, so the floor is ~33. Two routing rows sat below
 // that floor and could never fire: the table promised a decision it could not reach.

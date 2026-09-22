@@ -43,5 +43,8 @@ Surface habits:
 - A system display face (Impact, Arial Black, the platform sans) as the display voice of an own-world page. Source and self-host a face whose character matches the approved lettering; the closest installed font is a failure, not a fallback.
 - Unicode glyphs or emoji standing in for an icon system. Icons are drawn, from a real library or authored SVG, in one consistent stroke and weight.
 - Light or dark picked by category. Pick it from the use scene: who, where, under what ambient light.
+- A cream or off-white page background as the default "warm" light theme.
+- One italic or serif accent word inside an otherwise upright heading.
+- Pill-shaped buttons and tags by reflex. Corner radius follows the world's shape language.
 
 The floor holds the mechanics; it never picks the direction. With every check green, spend the page on the committed world, and when torn between refined and committed, commit.

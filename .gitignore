@@ -83,6 +83,9 @@ data/
 # Test results (Playwright/runner artifacts)
 test-results/
 
+# Testing laboratory: lives in D:/PYTHON/harness-lab, never in this repo (decision 2026-09-10)
+testing/
+
 # Windows shell artifact
 nul
 
@@ -108,6 +111,6 @@ poneglyph-analysis.md
 .claude/skills/orca-cli
 .claude/ccstatusline/*.tmp
 
-# Grok host runtime: deleted-skill trash and synced plugin buckets (not source)
+# Claude Code runtime via the ~/.claude/skills junction: claude.ai skill sync and its trash (not source)
 .claude/skills/.trash/
 .claude/skills/synced/

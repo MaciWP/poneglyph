@@ -18,6 +18,19 @@ when_to_use: |
 
 Instantiate: `{{SKILL_NAME}}` kebab 1–64 matching the directory; `description` 1–1024; `argument-hint` is a string. `disable-model-invocation: true` blocks auto-invoke (Claude/Grok). Codex: also set `agents/openai.yaml` `allow_implicit_invocation: false` if implicit match must not fire. This-repo activation copy stays es-ES.
 
+## Definition of Done
+
+- Reuse the agreed task criteria. For variable scope, propose the concrete result and required checks, then wait before Step 1.
+- {{Observable result of this workflow or selected mode}}
+- {{Required verification and handoff that close this invocation}}
+- On success, return to the caller and stop this workflow. Failed required checks need repair or a reported blocker, not a success claim.
+
+## How You're Graded
+
+- For variable scope, reuse agreed quality priorities or resolve them with the DoD before Step 1.
+- You are graded on {{desired result}} and {{observable behavior that produces it reliably}}.
+- Complete the required workflow within scope. Extra steps, repeated passing checks and unrelated improvements earn no credit.
+
 ## When NOT to use
 
 - {{This is a one-off edit, not a repeatable procedure}}

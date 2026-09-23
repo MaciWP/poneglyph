@@ -60,12 +60,17 @@ Instantiation rules:
 - `description` 1–1024 after YAML decode. This repo: es-ES, third person, qué + cuándo. Foreign repo: portable English (or that repo's language).
 - `metadata.keywords` is a **string** (this-repo hook). Empty string disables the description fallback.
 - `when_to_use` is a **string**. `argument-hint` is a **string**, not a YAML list.
-- Body: when-NOT, content map, ≥3 eval scenarios, anti-patterns.
+- Body: when-NOT, content map, ≥3 eval scenarios, anti-patterns. Core skills also require `## Definition of Done` and `## How You're Graded` before the procedure.
 - Omit Claude-only `context: fork` / `agent:` from the portable default.
+
+Completion authoring: [completion-contract.md](completion-contract.md). Write concrete
+criteria for stable procedures. For variable tasks, require reuse of agreed criteria
+or resolution of missing outcomes and evidence before execution. Keep mode-specific
+details in the selected reference. Preserve existing activation settings when migrating.
 
 ## 5. Evidence
 
-Labels and E1–E6: [evidence.md](evidence.md). Compact curated default is **A** (SkillsBench v4). Without A/B the text is not a norm.
+Labels and E1–E6: [evidence.md](evidence.md). Compact curated default is **A** (SkillsBench v4). Without A/B, do not present a practice as an empirically proven norm. The completion contract is an explicitly adopted Poneglyph authoring convention; model adherence and savings remain unproven by static checks.
 
 ## 6. Poneglyph grain
 
@@ -75,9 +80,11 @@ Labels and E1–E6: [evidence.md](evidence.md). Compact curated default is **A**
 | Tokens | SKILL.md short; refs one level; do not load other type packs. Compact beats exhaustive (E1). |
 | This repo (AC13) | `description` + `when_to_use` es-ES; `metadata.keywords` for the activation hook; evals. |
 | Foreign repo | Portable nucleus only. No es-ES, no keywords requirement. |
-| Gate | `check:config` errors block. Description 1–1024. Body ≥500 lines = warning, not failure. No second validator. |
+| Gate | `check:config` errors block. Core DoD and Graded sections must contain prose outside examples. Description 1–1024. Body ≥500 lines = warning, not failure. No second validator. |
 
-Do not rewrite the existing ~30-skill catalog to this template (D12).
+Do not rewrite the catalog without an explicitly agreed migration scope. The
+2026-09-22 migration adds this contract to the 24 core skills; it does not reset
+their procedures to a generic template. See the completion contract's decision history.
 
 ## 7. Declared absences
 

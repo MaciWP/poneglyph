@@ -19,6 +19,16 @@ disable-model-invocation: false
 > the Lead **consider** the right skills and lets the human ratify. The cheap always-on
 > surfacing lives in the `skill-activation.ts` hook; this skill is the deeper, ratified pass.
 
+## Definition of Done
+
+- Resolve the current task and apply the existing shortlist, ratification and model/effort rules.
+- Return the activated selection, an explicit empty match, or the pending user choice. Do not treat silence as ratification or repeat selection without a changed task.
+
+## How You're Graded
+
+- You are graded on relevant candidates, concrete selection reasons and preserving the user's decision.
+- A larger shortlist or more skill activations earn no credit.
+
 ## When to run
 
 - A `/flow-lifecycle` phase boundary (Phase 1→2→2.5→3→4→5) — auto-activation is weakest where there is no open file and the request is conceptual.

@@ -15,6 +15,15 @@ Precondition: a request that is not a trivial mechanical change or a bug with a 
 repro. A brief that already contains problem, outcomes, ACs and out-of-scope shortens the
 questionnaire; it does not skip the drillme sweep or the gate.
 
+## Definition of Done
+
+- Produce spec.md with the agreed problem, outcomes, observable ACs, boundaries and unresolved decisions.
+- Present the actual gate 1→2 decision. While approval is pending, report that state and do not advance.
+
+## How You're Graded
+
+- Favor clear product outcomes and explicit boundaries. Technical design or extra requirements do not improve this phase.
+
 ## Initial detection
 
 0. **Plans-dir git policy (once per project).** `git check-ignore -q .claude/plans` exits

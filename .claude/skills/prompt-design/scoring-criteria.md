@@ -9,10 +9,15 @@
 | **Clarity** | Action verb + specific target | Generic verb | Vague/ambiguous |
 | **Context** | Paths + tech + versions | Tech mentioned | No context |
 | **Structure** | Organized, bullets/headers | Clear paragraphs | Wall of text |
-| **Success** | Metrics (<100ms, >90%) | "better", "faster" | No criteria |
+| **Success** | Observable outcome + verification (behavior, artifact or relevant metric) | "better", "faster", or a result without a way to check it | No criteria |
 | **Actionable** | No open questions | 1-2 clarifications | Very vague |
 
 ## Thresholds
+
+A non-numeric DoD can earn full Success credit. For variable tasks, require the
+recipient to resolve missing acceptance and quality priorities before execution.
+Existing task criteria remain authoritative; do not invent metrics or scope to
+raise the score. Stop at the selected context's threshold with a usable prompt.
 
 | Score | Action |
 |-------|--------|

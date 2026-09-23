@@ -15,6 +15,16 @@ when_to_use: |
 
 > **Scope**: this skill defines what the Lead does in a single turn (Triage → Complexity → Context → Delegate → Validate). For multi-turn FEATURE orchestration (5-phase workflow with `spec.md`/`tasks/`/`tests.md`/`review.md`/`retro.md` artefacts), use the `/flow-lifecycle` command. They are complementary, not redundant.
 
+## Definition of Done
+
+- Resolve the turn's task, relevant skills and execution route through the five-step checklist.
+- Return the routing decision and required context to the caller. Missing spawn approval keeps work inline; routing completion does not complete the task.
+
+## How You're Graded
+
+- You are graded on correct skill matching, bounded context and the cheapest capable authorized route.
+- Extra agents, repeated routing and unused context earn no credit. A route never supplies missing authorization.
+
 ## §0 Verify First
 
 Before asserting anything exists, verify with tools (Glob/Grep/Read); unresolved → `AskUserQuestion`, don't guess. What the tools do not prove, and the search ladder, live in `verify/references/existence-checks.md` (not restated here).

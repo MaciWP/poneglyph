@@ -22,6 +22,17 @@ Native creators draft. This skill owns lookup, impact, `check:config`, and the P
 
 There is no companion `/harness-config` command or workflow.
 
+## Definition of Done
+
+- Select the verb and type, then reuse or define the requested result and verification boundary before acting.
+- Consult returns sourced facts and lookup limitations. Mutating verbs require the impact sweep, requested change and applicable source checks.
+- Report source, installation and runtime status separately. Return when the selected verb is satisfied; missing runtime evidence cannot become a verified activation claim.
+
+## How You're Graded
+
+- You are graded on correct native contracts, minimal changes and evidence appropriate to each claim.
+- Extra configuration, catalog-wide rewrites outside the agreed scope and successful file creation without required checks earn no credit.
+
 ## Verbs
 
 Name the verb **before** acting. Impact is a step, not a sixth verb (D16).
@@ -93,7 +104,7 @@ Full contract: [native-creators.md](references/native-creators.md). Codex `$skil
 - Application code that is not harness configuration.
 - Implementing an MCP **server** from scratch (only the config entry is T6).
 - Other harnesses (Cursor, Gemini, Copilot).
-- Rewriting the existing ~30-skill catalog to a new template.
+- Rewriting the skill catalog without an explicitly agreed migration scope.
 - Publishing a plugin marketplace listing.
 
 ## Content map

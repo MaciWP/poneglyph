@@ -5,9 +5,12 @@
 // sessions (890k and 654k max context) were 71 % of the spend. The same shape sat in Codex
 // (`model_auto_compact_token_limit = 800000`, xhigh) and Grok (xhigh). The policy is tiered:
 // compact at 200k by default, raise to 400k per session when a task needs it, effort `high`
-// (the hosts' own default) with the stronger tier one command away.
+// with the stronger tier one command away. `high` was the hosts' own default until Opus 5.5,
+// which defaults to `medium` (Claude Code 2.1.280); the policy pins `high` there explicitly.
 //
 //   Claude  settings.global.json → autoCompactWindow 200000 · effortLevel "high"
+//           · modelSettings["claude-opus-5-5"].effortLevel "high": in USER settings Opus 5.5
+//           and later models ignore the top-level key (settings-reference, 2026-09-22).
 //           The settings key is validated as an INTEGER (100k-1M) with `.catch(undefined)`:
 //           the string "200k" written until 2026-09-18 was dropped silently and every
 //           session ran at the model default (~967k on [1m] models). Only the command and
@@ -30,7 +33,11 @@ export const CONTEXT_POLICY = {
 } as const;
 
 /** Claude keys as they must appear in settings.global.json (checked by the suite). */
-export const CLAUDE_DESIRED = { autoCompactWindow: CONTEXT_POLICY.defaultTokens, effortLevel: CONTEXT_POLICY.effort } as const;
+export const CLAUDE_DESIRED = {
+  autoCompactWindow: CONTEXT_POLICY.defaultTokens,
+  effortLevel: CONTEXT_POLICY.effort,
+  modelSettings: { "claude-opus-5-5": { effortLevel: CONTEXT_POLICY.effort } },
+} as const;
 
 export function percentOfWindow(tokens: number, window: number): number {
   return Math.max(1, Math.min(100, Math.round((tokens / window) * 100)));

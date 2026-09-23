@@ -19,6 +19,17 @@ when_to_use: |
 Diff-level, ticket-anchored review at any point in time. NOT `flow` (review phase) (feature-level,
 spec.md-anchored, /flow-lifecycle Phase 4 after all HUs close) — the two never shadow each other.
 
+## Definition of Done
+
+- Resolve the review target and trace the ticket or agreed acceptance criteria against the actual diff.
+- Complete the applicable review steps and return evidence-backed findings, check results and the supported verdict. Failed required checks block approval, not an honest review report.
+- Stop after the requested assessment; fixes or publication require their own authorization.
+
+## How You're Graded
+
+- You are graded on accurate requirement coverage, consequential findings and a verdict supported by real checks.
+- Use the existing review rubric. Finding counts, praise quotas and repeated reviews of unchanged evidence earn no credit.
+
 ## Steps (all executed or explicitly skipped with a reason — see step 9)
 
 ### 0. Coexistence check
@@ -71,7 +82,7 @@ counted in the score.
 
 ### 8. Report
 - Comments in Conventional Comments format via `Skill(pr-comments)`
-  (label (decorator): subject; ≥1 praise; issue paired with suggestion; single review).
+  (label (decorator): subject; grounded praise when warranted; issue paired with suggestion; single review).
 - Score + per-criterion table + verdict + AC-trace table inline.
 - HTML report ONLY on explicit request, via `Skill(html-report)` — never hand-rolled CSS.
 

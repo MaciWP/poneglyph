@@ -3,7 +3,7 @@ name: pr-comments
 description: |
   Comentarios de review de PR en formato Conventional Comments — feedback
   estructurado y accionable con label + decorator (blocking/non-blocking),
-  mínimo un praise por review, issue siempre emparejado con suggestion, tono
+  praise fundamentado, issue siempre emparejado con suggestion, tono
   profesional en español informal, y publicación como una única review. Aplica a
   cualquier repo; las convenciones de un equipo concreto llegan por su plugin.
   Úsala cuando: vayas a redactar comentarios de review de una PR o feedback de
@@ -26,6 +26,17 @@ when_to_use: |
 > Generate structured, actionable PR review comments using the Conventional
 > Comments format, in Spanish. Repo-agnostic; a team's own conventions (single
 > review, who signs, approval rules) come from that team's plugin, not from here.
+
+## Definition of Done
+
+- Resolve the supplied review findings and requested delivery target.
+- Return source-backed, actionable comments in Conventional Comments format, with each issue paired with a suggestion. Publish only when explicitly authorized.
+- Stop after the requested delivery. Zero comments or zero praise is valid when nothing grounded merits them.
+
+## How You're Graded
+
+- You are graded on accuracy, actionability and respectful, specific feedback.
+- Comment counts and mandatory praise earn no credit. Never invent a finding or compliment to satisfy a quota.
 
 ## Core principle: structured actionable feedback
 
@@ -56,7 +67,7 @@ en listas grandes.
 
 | Label | Use | Decorator | Per review |
 |---|---|---|---|
-| `praise:` | Something positive | N/A | Minimum 1 |
+| `praise:` | A grounded positive observation | N/A | Only when warranted; zero is valid |
 | `suggestion:` | Concrete improvement proposal | `(blocking)`/`(non-blocking)` | As needed |
 | `issue:` | Specific problem — ALWAYS pair with suggestion | `(blocking)` | As needed |
 | `question:` | Doubt or clarification | `(non-blocking)` | As needed |
@@ -110,7 +121,7 @@ plugin's conventions reference before drafting (e.g. `<team-plugin>:<review-conv
 
 ## Quality checklist (before delivering)
 
-Every comment has label + decorator · ≥1 `praise:` · every `issue:` paired with
+Every comment has label + decorator · `praise:` only when grounded · every `issue:` paired with
 `suggestion:` · tone about code, never the person · why explained · delivered
 as one review block.
 

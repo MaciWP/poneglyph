@@ -87,6 +87,42 @@ export function privacyMatches(files: Map<string, string>, terms: string[]): str
   return [...files].filter(([p, text]) => terms.some(t => (p + "\n" + text).toLowerCase().includes(t.toLowerCase()))).map(([p]) => p);
 }
 
+/** Structural authoring check only. Examples and comments cannot supply the contract. */
+function contractSections(body: string): Set<string> {
+  const populated = new Set<string>();
+  let fence = "", section = "", comment = false;
+  for (const raw of body.split(/\r?\n/)) {
+    if (fence) {
+      const close = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(raw);
+      if (close && close[1][0] === fence[0] && close[1].length >= fence.length && !close[2].trim()) fence = "";
+      continue;
+    }
+    // Comments are stripped outside fences only: a "<!--" inside a code example must not hide the rest.
+    let line = raw;
+    if (comment) {
+      const end = line.indexOf("-->");
+      if (end < 0) continue;
+      line = line.slice(end + 3);
+      comment = false;
+    }
+    line = line.replace(/<!--[\s\S]*?-->/g, "");
+    const open = line.indexOf("<!--");
+    if (open >= 0) { line = line.slice(0, open); comment = true; }
+    const marker = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
+    if (marker) { fence = marker[1]; continue; }
+    // Four-space/tab-indented code cannot declare headings or prose criteria.
+    if (/^(?: {4}|\t)/.test(line)) continue;
+    const heading = /^ {0,3}(#{1,6})(?:[ \t]+(.*)|[ \t]*)$/.exec(line);
+    if (heading) {
+      if (heading[1].length <= 2) section = heading[1].length === 2 ? (heading[2] ?? "").replace(/[ \t]+#+[ \t]*$/, "").trim() : "";
+      continue;
+    }
+    // A rule ("---") or a bare bullet is not prose: require a letter or digit.
+    if (section && /[\p{L}\p{N}]/u.test(line)) populated.add(section);
+  }
+  return populated;
+}
+
 export function validate(source: Source, options: { addon?: boolean; privacyTerms?: string[]; baseSkills?: Set<string> } = {}): Report {
   const { files } = source;
   const addon = options.addon ?? (files.has(".claude-plugin/plugin.json") && !files.has(".claude/settings.global.json"));
@@ -140,6 +176,12 @@ export function validate(source: Source, options: { addon?: boolean; privacyTerm
     if (typeof fields.description === "string" && typeof fields.when_to_use === "string" && chars(fields.description + " " + fields.when_to_use) > 1536) add(p, "metadata.listing", "The Claude default listing may truncate this description.", "warning");
     if (!body.trim()) add(p, "skill.body", "Instructions must not be empty.");
     if (body.split(/\r?\n/).length >= 500) add(p, "skill.length", "Consider moving detail into references; 500 lines is guidance, not a quality score.", "warning");
+    if (skill && !addon) {
+      const sections = contractSections(body);
+      for (const [id, title] of [["dod", "Definition of Done"], ["graded", "How You're Graded"]]) {
+        if (!sections.has(title)) add(p, `skill.contract.${id}`, `Core skills require a non-empty ## ${title} section outside code examples (Poneglyph authoring convention).`);
+      }
+    }
     if (addon && fields.hooks !== undefined) add(p, "addon.hooks", "The private addon does not register hooks.");
     if (fields.hooks !== undefined) checkHooks(fields.hooks, p);
     // Explicit Markdown links only. Examples in fences and inline code are not dependencies.

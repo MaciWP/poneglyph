@@ -70,16 +70,21 @@ tmpclaude-*-cwd
 
 # Archived plans (closed/abandoned features — out of accidental read reach)
 .claude/plans/_archive/
+# Local skill explorer previews and their generated inventory
+.claude/plans/_skill-explorer-*/
 
 # Learning inbox + load-layer log (may contain transcript snippets — never commit).
 # Exception: best-of-n-log.md is versioned pilot evidence (feature 019).
-.claude/learned/*
+.claude/learned/*
 
 # Runtime data directories
 data/
 
 # Test results (Playwright/runner artifacts)
 test-results/
+
+# Testing laboratory: lives in D:/PYTHON/harness-lab, never in this repo (decision 2026-09-10)
+/testing/
 
 # Windows shell artifact
 nul
@@ -106,6 +111,6 @@ poneglyph-analysis.md
 .claude/skills/orca-cli
 .claude/ccstatusline/*.tmp
 
-# Grok host runtime: deleted-skill trash and synced plugin buckets (not source)
+# Claude Code runtime via the ~/.claude/skills junction: claude.ai skill sync and its trash (not source)
 .claude/skills/.trash/
 .claude/skills/synced/

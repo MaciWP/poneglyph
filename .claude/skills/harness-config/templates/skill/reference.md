@@ -17,6 +17,19 @@ when_to_use: |
 
 Instantiate: `{{SKILL_NAME}}` kebab 1–64 matching the directory; `description` 1–1024; `when_to_use` and `metadata.keywords` strings. This-repo activation copy stays es-ES. Foreign repo: portable description, drop keywords/`when_to_use` if unused.
 
+## Definition of Done
+
+- Reuse the caller's scope and acceptance criteria. Propose any missing task-specific outcome and wait before applying the patterns.
+- {{Observable answer or application of the reference that satisfies the request}}
+- {{Evidence needed to verify that outcome}}
+- Return the result when these criteria hold. Report unmet criteria honestly; do not expand the task after completion.
+
+## How You're Graded
+
+- For variable scope, reuse the caller's quality priorities or resolve them with the DoD before work.
+- You are graded on {{specific useful behavior or outcome}} and {{evidence that demonstrates its quality}}.
+- Preserve the reference's constraints when adapting it to the task. Additional patterns, prose or changes earn no credit.
+
 ## When to use
 
 - {{Condition 1}}

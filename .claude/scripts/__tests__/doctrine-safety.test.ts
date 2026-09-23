@@ -99,6 +99,39 @@ describe("hook commands quote their interpolated paths (H40)", () => {
   });
 });
 
+// Opus 5.5 playbook, 2026-09-23: "Keep permission prompts on for destructive commands too".
+// An explicit ask rule prompts in every mode, auto and bypassPermissions included; the
+// doctrine alone does not. Allow rules never cancel it, so the broad "Bash" allow is safe.
+describe("destructive commands always prompt", () => {
+  const ask: string[] = JSON.parse(readFileSync(join(root, ".claude", "settings.global.json"), "utf8")).permissions.ask;
+  // The documented prefix contract (code.claude.com/docs/en/permissions): "Tool(x *)" matches
+  // "x" and "x ..."; a rule without a trailing " *" matches the exact command only.
+  const prompts = (shell: string, cmd: string) =>
+    ask.some((rule) => {
+      const m = rule.match(/^(\w+)\((.*)\)$/);
+      if (!m || m[1] !== shell) return false;
+      const prefix = m[2].endsWith(" *") ? m[2].slice(0, -2) : null;
+      return prefix === null ? cmd === m[2] : cmd === prefix || cmd.startsWith(`${prefix} `);
+    });
+  const GIT = ["git reset --hard", "git reset --hard HEAD~1", "git clean -fd", "git branch -D x", "git stash drop", "git stash clear", "git worktree remove w", "git checkout -- f", "git checkout .", "git restore f", "git merge b", "git rebase main", "git push", "git push origin b", "gh pr create", "gh pr merge 39"];
+
+  it.each(["rm -r d", "rm -rf d", "rm -fr d", "rm -R d", "rm -Rf d", "rm -fR d", "rm -rfv d", "rm --recursive d"])("asks before %s in Bash", (cmd) => {
+    expect(prompts("Bash", cmd)).toBe(true);
+  });
+
+  it("asks before a delete in PowerShell", () => {
+    expect(prompts("PowerShell", "Remove-Item -Recurse d")).toBe(true);
+  });
+
+  it.each(GIT)("asks before %s in both shells", (cmd) => {
+    for (const shell of ["Bash", "PowerShell"]) expect(prompts(shell, cmd)).toBe(true);
+  });
+
+  it("does not prompt for read-only git", () => {
+    for (const cmd of ["git status", "git diff", "git log --oneline"]) expect(prompts("Bash", cmd)).toBe(false);
+  });
+});
+
 // Quality review 2026-09-11, finding H23. The complexity score is the sum of five factors,
 // each contributing at least ~6.7 points, so the floor is ~33. Two routing rows sat below
 // that floor and could never fire: the table promised a decision it could not reach.

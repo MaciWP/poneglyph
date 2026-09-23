@@ -63,6 +63,9 @@ describe("the repo carries the same policy for every host (single source)", () =
     const s = JSON.parse(readFileSync(join(REPO, ".claude", "settings.global.json"), "utf8"));
     expect(s.autoCompactWindow).toBe(CLAUDE_DESIRED.autoCompactWindow);
     expect(s.effortLevel).toBe(CLAUDE_DESIRED.effortLevel);
+    // Opus 5.5+ ignore the top-level key in user settings and default to medium.
+    expect(s.modelSettings).toEqual(CLAUDE_DESIRED.modelSettings);
+    expect(s.modelSettings["claude-opus-5-5"].effortLevel).toBe(CONTEXT_POLICY.effort);
     expect(CLAUDE_DESIRED.autoCompactWindow).toBe(CONTEXT_POLICY.defaultTokens);
   });
 

@@ -73,21 +73,22 @@ Watchpoints where smaller models historically relapse in this setup — each map
 | Findings inflation | Verification pass that confirms 100% of candidates | 2.1: a refute pass that kills nothing probably didn't refute |
 | es-ES calques / telegraphic relapse | "Voy a proceder a…", fragment-style output | output-style poneglyph (doctrine) — re-read its examples when drifting |
 
-## 4. Harness levers per model (verified against CC changelog 2.1.154–2.1.258)
+## 4. Harness levers per model (verified against CC changelog 2.1.154–2.1.258; Opus 5.5 column 2.1.280, 2026-09-22)
 
-| Lever | Fable 5.1 (default since 2.1.257) | Opus 4.8 | Sonnet 5 |
+| Lever | Fable 5.1 | Opus 5.5 (daily default since 2026-09-22) | Sonnet 5 |
 |---|---|---|---|
-| Context | 1M native | 1M native at API level; in CC check `/model` for the active variant | **1M native, CC default window** (2.1.197; auto-compact ≈967K since 2.1.247) |
-| Effort | `xhigh` available; `/effort` saves a default **per model** (2.1.251); `/effort s` = this session only (2.1.257) | defaults high; **`/effort xhigh` exists** (2.1.154) | low/medium/high |
-| Fast mode | — | 2× rate for ~2.5× speed (2.1.154) | — |
-| Pricing note | $10/$50 per Mtok, $0.25/Mtok cache reads (2.1.257) | premium | $2/$10 per Mtok, **permanent** since 2.1.243 (was a promo) |
+| Context | 1M native | check `/model` for the active variant (not verified) | **1M native, CC default window** (2.1.197; auto-compact ≈967K since 2.1.247) |
+| Effort | `xhigh` available; `/effort` saves a default **per model** (2.1.251); `/effort s` = this session only (2.1.257) | **defaults `medium`**, thinking always on, more thinking per turn than Opus 5 at the same level (Anthropic: medium on 5.5 ≥ high on 5). In user settings only `modelSettings["claude-opus-5-5"].effortLevel` applies — the top-level `effortLevel` is ignored; Poneglyph pins `high` there | low/medium/high |
+| Fast mode | — | `/fast` research preview at launch: same model, faster output, needs extra usage, higher per-token price (Anthropic playbook, 2026-09-22) — for back-and-forth work, not long runs | — |
+| Pricing note | $10/$50 per Mtok, $0.25/Mtok cache reads (2.1.257) | $4/$20 per Mtok | $2/$10 per Mtok, **permanent** since 2.1.243 (was a promo) |
 | Subagent default | `CLAUDE_CODE_SUBAGENT_MODEL` (cheap tier) applies to any spawn without an explicit model; forks keep the parent model (2.1.232/2.1.251) | same | same |
 
 **Task → model routing** (the criterion lives here, not in settings):
 
-- Deep review / architecture / security / escalation → **Fable 5.1 or Opus 4.8 + `/effort xhigh`** (skills critic/security-audit/task-unblock already pin xhigh via frontmatter — that wiring keeps working; `compare-and-decide`'s heavy tier escalates effort per-invocation, 031).
-- Standard feature build → Fable 5.1 (session default) or Opus 4.8 high — Sonnet 5 when budget matters.
-- Bulk mechanical work (sweeps, renames, formatting, doc batches) → Opus 4.8 **fast mode** or Sonnet 5.
+- Deep review / architecture / security / escalation → **Fable 5.1 or Opus 5.5 + `/effort xhigh`** (skills critic/security-audit/task-unblock already pin xhigh via frontmatter — that wiring keeps working; `compare-and-decide`'s heavy tier escalates effort per-invocation, 031).
+- Standard feature build → Opus 5.5 high (session default) — Sonnet 5 when budget matters.
+- Bulk mechanical work (sweeps, renames, formatting, doc batches) → Sonnet 5, or Opus 5.5 at `medium` (its own default).
+- A durable model or effort choice goes in `settings.global.json` / `settings.machine.json`: sync-claude rebuilds `~/.claude/settings.json` and drops what `/model` or `/effort` wrote there.
 - Massive-corpus analysis (multi-repo audits, huge logs, long-lived sessions) → **Sonnet 5** for the 1M window; prefer it over compacting Opus mid-task.
 - Degradation cascade on overload: `settings.global.json.fallbackModel` (kept current by feature 026/US3).
 - One-turn deep reasoning boost: the `ultrathink` keyword instead of switching effort for the whole session.
@@ -95,5 +96,5 @@ Watchpoints where smaller models historically relapse in this setup — each map
 ## 5. Load & verify
 
 - The always-loaded routing core is `.claude/rules/skill-routing.md` (synced per-entry to `~/.claude/rules/`). This playbook stays on-demand. Verify routing loads: `grep skill-routing .claude/learned/instructions-loaded.log` in any session (verify the load layer from the log; never assume it loaded).
-- Behavioral validation happens in the first real Opus 4.8 session (spec 026 AC5, deliberately deferred): judge against §2 — is it refuting itself, running before claiming, keeping status bookkeeping? Refine via `flow` (retro phase).
+- Behavioral validation happens in the first real Opus 5.5 sessions (spec 026 AC5, deliberately deferred; the Opus 4.8 run never happened): judge against §2 — is it refuting itself, running before claiming, keeping status bookkeeping? Refine via `flow` (retro phase).
 - Lifecycle: when the model era changes again, update §4 first (it decays fastest), re-verify §2 still reads as deltas, and prune what the new model does natively.

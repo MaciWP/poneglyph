@@ -24,6 +24,17 @@ Since 3.0.0 the skill owns **when, which model, and what to do with the answer**
 plumbing belongs to the vendors' official Claude Code plugins; the raw CLIs stay only as
 the fallback for hosts that have no plugin.
 
+## Definition of Done
+
+- Resolve the bounded question or critique target, expected return, quality priorities and authorized provider/model before consulting.
+- Verify the useful claims against primary evidence and return the integrated answer or the unresolved disagreement. An external response alone is not verification.
+- Stop after answering the question or reporting the consultation blocker; do not repeat a call merely for agreement.
+
+## How You're Graded
+
+- You are graded on a precise consultation prompt, useful independent criticism and verified integration.
+- Model agreement and additional calls earn no credit without new evidence.
+
 ## Adapters (bridges re-read 2026-09-11 — codex plugin 1.0.6 · grok-build plugin 0.2.1 · Codex CLI 0.153.4 · Grok CLI 1.0.x · Claude Code 2.1.266)
 
 | | Codex (OpenAI) | Grok (xAI) | Claude (fresh context) |

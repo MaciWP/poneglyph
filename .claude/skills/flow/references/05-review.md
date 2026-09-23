@@ -16,6 +16,15 @@ ticket-anchored). This phase is feature-level and `spec.md`-anchored, after ever
 Precondition: `current_phase: 4` and `us_pending == []`. Pending HUs → STOP; an incomplete
 review wastes effort.
 
+## Definition of Done
+
+- Trace agreed ACs through the assembled change to actual check results and deliver review.md with the supported verdict.
+- Record the assessment through the existing contract. A blocked or negative verdict completes the assessment, not the feature.
+
+## How You're Graded
+
+- Favor accurate coverage and consequential, evidence-backed findings. Zero findings is valid; never invent issues or approve missing checks.
+
 ## Step 1 — Read inputs
 
 `spec.md` (problem, ACs, out-of-scope), `tasks/index.md` and every `tasks/US{N}.md`,

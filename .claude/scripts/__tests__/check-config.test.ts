@@ -5,7 +5,8 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { check, frontmatter, privacyMatches, readSource, render, validate, withoutGitEnv, type Source } from "../check-config";
 
-const skill = (name = "sample", description = "A valid task-specific description.", extra = "", body = "Read the relevant source.") => `---\nname: ${name}\ndescription: ${JSON.stringify(description)}\n${extra}---\n${body}\n`;
+const contract = "## Definition of Done\nReturn the requested finding with source evidence.\n\n## How You're Graded\nPrefer accurate findings over finding counts.\n";
+const skill = (name = "sample", description = "A valid task-specific description.", extra = "", body = contract) => `---\nname: ${name}\ndescription: ${JSON.stringify(description)}\n${extra}---\n${body}\n`;
 const claudeAgent = (stem = "reviewer", description = "Reviews diffs.", extra = "", body = "Review the diff.") => `---\nname: ${stem}\ndescription: ${JSON.stringify(description)}\n${extra}---\n${body}\n`;
 const grokAgent = (stem = "reviewer", description = "Reviews diffs.", extra = "", body = "Review the diff.") => `---\nname: ${stem}\ndescription: ${JSON.stringify(description)}\n${extra}---\n${body}\n`;
 const codexAgent = (fields: { name?: string; description?: string; developer_instructions?: string }) => {
@@ -36,14 +37,83 @@ function fixture() {
 }
 afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
 
+describe("core skill completion contract", () => {
+  const findings = (body: string) => validate(source({
+    ".claude/skills/sample/SKILL.md": skill("sample", "Useful.", "", body),
+  })).findings.filter(f => f.rule.startsWith("skill.contract."));
+
+  it("requires both non-empty sections only in core skill entrypoints", () => {
+    expect(findings("Read the source.").map(f => f.rule)).toEqual(["skill.contract.dod", "skill.contract.graded"]);
+    const addon: Source = { files: new Map([["skills/sample/SKILL.md", skill("sample", "Useful.", "", "Read.")]]), links: [] };
+    expect(errors(addon, { addon: true })).toEqual([]);
+    expect(errors(source({ ".claude/commands/run.md": "---\ndescription: Run checks.\n---\nRun checks.\n" }))).toEqual([]);
+  });
+
+  it.each([
+    "```md\n" + contract + "```",
+    "~~~md\n" + contract + "~~~",
+    "````md\n```\n" + contract + "````",
+    "```md\n" + contract,
+    "<!--\n" + contract + "-->",
+    contract.split("\n").map(line => "    " + line).join("\n"),
+  ])("does not treat examples or comments as contract headings", body => {
+    expect(findings(body)).toHaveLength(2);
+  });
+
+  it("rejects empty sections and does not borrow content from the next section", () => {
+    expect(findings("## Definition of Done\n<!-- TODO -->\n## How You're Graded\n\n## Steps\nRun tests."))
+      .toHaveLength(2);
+    expect(findings("## Definition of Done\n# Other document\nDetails.\n## How You're Graded\nPrefer evidence."))
+      .toEqual([expect.objectContaining({ rule: "skill.contract.dod", severity: "error" })]);
+  });
+
+  // PR #39 review, finding H7: a horizontal rule or a bare bullet is not a criterion.
+  it("rejects sections that hold only punctuation", () => {
+    expect(findings("## Definition of Done\n---\n## How You're Graded\n-\n")).toHaveLength(2);
+  });
+
+  // PR #39 review, finding H9: a comment opener inside a code example hid every later section.
+  it("keeps sections after a fence that contains a comment opener", () => {
+    expect(findings("```html\n<!-- example\n```\n" + contract)).toEqual([]);
+    expect(findings("<!-- one --> <!--\nstill hidden\n-->\n" + contract)).toEqual([]);
+  });
+
+  it("accepts prose under subheadings, longer closing fences and CRLF", () => {
+    const body = "```md\n## Definition of Done\nExample only.\n````\n" +
+      "## Definition of Done\n### Required output\n- Return evidence.\n## How You're Graded\nPrefer accuracy.\n";
+    expect(findings(body.replace(/\n/g, "\r\n"))).toEqual([]);
+  });
+
+  it.each(["reference", "research", "workflow"])("instantiates the %s template without hand patches", flavor => {
+    const path = `.claude/skills/harness-config/templates/skill/${flavor}.md`;
+    const text = readFileSync(join(import.meta.dir, "../../..", path), "utf8")
+      .replace(/\{\{SKILL_NAME\}\}/g, "sample")
+      .replace(/\{\{[^}]+\}\}/g, "Example");
+    expect(text).not.toContain("{{");
+    expect(errors(source({ ".claude/skills/sample/SKILL.md": text }))).toEqual([]);
+  });
+
+  it("covers every tracked core skill", () => {
+    const root = join(import.meta.dir, "../../..");
+    const paths = execFileSync("git", ["ls-files", "-z", "--", ".claude/skills"], {
+      cwd: root, env: withoutGitEnv(process.env),
+    }).toString().split("\0").filter(Boolean);
+    const files = new Map(paths.filter(path => path.endsWith(".md")).map(path =>
+      [path, readFileSync(join(root, path), "utf8")]));
+    const report = validate({ files, links: [] });
+    expect(report.skills).toBeGreaterThan(0);
+    expect(report.findings.filter(f => f.rule.startsWith("skill.contract."))).toEqual([]);
+  });
+});
+
 describe("configuration metadata contracts", () => {
-  it("accepts the portable minimum and documented host extensions", () => {
+  it("accepts core skills with documented host extensions", () => {
     expect(errors(source({ ".claude/skills/sample/SKILL.md": skill("sample", "Useful.", "when_to_use: 'An explicit task'\neffort: xhigh\npaths: ['src/**']\nallowed-tools: [Read, Grep]\nmetadata:\n  keywords: 'source, task'\n") }))).toEqual([]);
   });
   it("decodes folded YAML and CRLF instead of counting indentation or quotes", () => {
     const text = "---\r\nname: sample\r\ndescription: >-\r\n  first line\r\n  second line\r\n---\r\nRead.\r\n";
     expect(frontmatter(text).fields.description).toBe("first line second line");
-    expect(errors(source({ ".claude/skills/sample/SKILL.md": text }))).toEqual([]);
+    expect(errors(source({ ".claude/skills/sample/SKILL.md": text + contract.replace(/\n/g, "\r\n") }))).toEqual([]);
   });
   it.each(["", "   ", "x".repeat(1025)])("rejects invalid descriptions", description => {
     expect(errors(source({ ".claude/skills/sample/SKILL.md": skill("sample", description) }))).toContain("metadata.description");
@@ -74,7 +144,7 @@ describe("configuration metadata contracts", () => {
     expect(report.findings).toContainEqual(expect.objectContaining({ rule: "metadata.extension", severity: "warning" }));
   });
   it("warns about a long body without blocking it", () => {
-    const report = validate(source({ ".claude/skills/sample/SKILL.md": skill("sample", "Useful.", "", "line\n".repeat(500)) }));
+    const report = validate(source({ ".claude/skills/sample/SKILL.md": skill("sample", "Useful.", "", contract + "line\n".repeat(500)) }));
     expect(report.findings).toEqual([expect.objectContaining({ rule: "skill.length", severity: "warning" })]);
   });
   it("supports legacy commands without requiring a name field", () => {
@@ -84,7 +154,7 @@ describe("configuration metadata contracts", () => {
     expect(errors(source({ ".claude/commands/sample.md": "---\ndescription: Hi.\n---\nHi.", ".claude/skills/broken/references/doc.md": "Read." }))).toEqual(expect.arrayContaining(["metadata.collision", "skill.entry"]));
   });
   it("checks explicit local links but leaves examples and remote URLs alone", () => {
-    const s = source({ ".claude/skills/sample/SKILL.md": skill("sample", "Useful.", "", '[Read](references/guide.md)\n[Web](https://example.com)\n```md\n[Example](missing.md)\n```\n`[code](missing.md)`'), ".claude/skills/sample/references/guide.md": "Details." });
+    const s = source({ ".claude/skills/sample/SKILL.md": skill("sample", "Useful.", "", '[Read](references/guide.md)\n[Web](https://example.com)\n```md\n[Example](missing.md)\n```\n`[code](missing.md)`' + '\n' + contract), ".claude/skills/sample/references/guide.md": "Details." });
     expect(errors(s)).toEqual([]);
     s.files.delete(".claude/skills/sample/references/guide.md");
     expect(errors(s)).toEqual(["reference.missing"]);
@@ -273,7 +343,7 @@ describe("real Git snapshot input", () => {
     expect(errors(readSource(root))).toContain("metadata.parse");
   });
   it("detects a staged deleted target despite its unstaged restoration", () => {
-    const root = fixture(); write(root, ".claude/skills/sample/SKILL.md", skill("sample", "Useful.", "", "[Read](references/doc.md)"));
+    const root = fixture(); write(root, ".claude/skills/sample/SKILL.md", skill("sample", "Useful.", "", "[Read](references/doc.md)\n" + contract));
     write(root, ".claude/skills/sample/references/doc.md", "Read."); git(root, "add", ".");
     git(root, "rm", "--cached", "--", ".claude/skills/sample/references/doc.md");
     expect(errors(readSource(root, true))).toContain("reference.missing");

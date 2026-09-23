@@ -555,6 +555,14 @@ export function generateSettings(
       >;
       merged = deepMerge(base, overlay);
       if ("hooks" in overlay) merged.hooks = mergeHookEvents(base.hooks, overlay.hooks);
+      // PR #39 review, H8: ask and deny are safety lists. An overlay adds rules and never
+      // drops the base ones; `allow` keeps deepMerge's replace rule.
+      const perms = (s: Record<string, unknown>) => (isPlainObject(s.permissions) ? s.permissions : {});
+      for (const key of ["ask", "deny"]) {
+        const extra = perms(overlay)[key];
+        const own = perms(base)[key];
+        if (Array.isArray(extra) && Array.isArray(own)) perms(merged)[key] = [...new Set([...own, ...extra])];
+      }
       overlayApplied = true;
     } else {
       merged = base;

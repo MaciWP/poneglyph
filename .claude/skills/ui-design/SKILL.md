@@ -22,6 +22,17 @@ and personal projects. Adapted from Impeccable (Apache 2.0, pbakaus/impeccable).
 Craft-mode direction is agreed with the user; `references/craft-floor.md` is the
 floor, not the brief.
 
+## Definition of Done
+
+- Select consistency or craft mode per requested surface. Reuse or define required states, shared consumers, observable acceptance and task-specific quality priorities before edits.
+- Deliver the requested design or verified UI change with applicable accessibility and shared-usage checks. Report any unobserved visual behavior.
+- Stop when the brief and checks pass. Apply the bounded inspection rules; do not redesign a committed direction while polishing.
+
+## How You're Graded
+
+- You are graded on usable requested states, consistency, accessibility and fidelity to the brief.
+- Novelty, extra screens and additional visual iterations earn no credit without a concrete unmet criterion.
+
 ## Mode 1 — Consistency (default for work repos)
 
 **Before the first edit to any shared UI element:**

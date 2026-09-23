@@ -17,6 +17,19 @@ Research {{TOPIC}} thoroughly and provide well-sourced findings.
 
 Instantiate: `{{SKILL_NAME}}` kebab 1–64 matching the directory; `description` 1–1024; `when_to_use` and `metadata.keywords` strings. Portable default omits Claude-only `context: fork`. This-repo activation copy stays es-ES.
 
+## Definition of Done
+
+- Before research, reuse the questions, deliverable and evidence that will resolve this request; propose any missing one and wait.
+- {{Required answers and the evidence that supports them}}
+- {{How to distinguish a resolved question from an unresolved evidence gap}}
+- Deliver and stop when the required questions are answered. Report irreducible gaps explicitly; never present a partial answer as complete.
+
+## How You're Graded
+
+- Reuse agreed quality priorities or resolve those specific to this research with the DoD before work.
+- You are graded on {{decision-relevant evidence}} and {{useful synthesis for the intended reader}}.
+- Prefer supported conclusions and explicit uncertainty. Source counts, additional searches and report length earn no credit by themselves.
+
 ## When NOT to use
 
 - The answer is already in the repo and a Grep closes it.

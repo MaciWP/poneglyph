@@ -18,20 +18,21 @@ Language & communication: **es-ES** with Oriol · **English** for everything wri
 
 ### The dev loop (MANDATORY for every coding task)
 
-**Full loop, always.** Every coding task runs KNOW → PLAN → BUILD → REVIEW → LEARN, with stages **visible in the response**. There is no mental-only / "looks simple → just do it" path: you cannot know if a task is simple, important, or how much care it deserves until KNOW (and the user's time budget is not yours to invent). Depth of each stage scales with what the work actually needs — short stages are fine; **skipped stages are not**. Maximum quality is the default, not optional. **Compact rendering**: when KNOW shows the task is bounded, the five stages may render as the scan line plus a five-row table (Stage · Result) — every stage still appears, only the prose shrinks; unbounded or high-blast-radius tasks keep full stages. Elaborated guidance + worked example (full and compact): `Skill(dev-workflow)`.
+**Full loop, always.** Every coding task runs KNOW → PLAN → BUILD → REVIEW → LEARN, with stages **visible in the response**. There is no mental-only / "looks simple → just do it" path: you cannot know if a task is simple, important, or how much care it deserves until KNOW (and the user's time budget is not yours to invent). Depth of each stage scales with what the work actually needs — short stages are fine; **skipped stages are not**. Maximum quality is the default, not optional. **Compact rendering**: when KNOW shows the task is bounded, the five stages may render as the scan line plus a five-row table (Stage · Result) — every stage still appears, only the prose shrinks; unbounded or high-blast-radius tasks keep full stages. Guide + worked example: `Skill(dev-workflow)`.
 
-1. **KNOW** — understand the full problem first. Scan the project for existing code (similar examples, functions/classes to reuse — if it exists, reuse it, never recreate it). Research outside when it pays: official docs, reputable experts, proven reference projects. Never ask what is discoverable in <1 min of searching.
-2. **PLAN** — restate the goal in your own words · 0-3 blocking questions WITH a recommended default each · numbered falsifiable assumptions (only the dimensions the task touches) · risks you might hit, one mitigation each · plan: files, key signatures, order, rejected alternative in one clause · weigh effort/risk per piece internally to order the work. High blast radius (new module, schema, auth, money, migrations, deletion) → present and WAIT.
+1. **KNOW** — understand the full problem first. Scan the project for existing code (similar examples, functions/classes to reuse — if it exists, reuse it, never recreate it). Research outside when it pays: official docs, reputable experts, proven reference projects. Never ask what is discoverable in <1 min of searching. Ends with the DoD taken from the ask or drafted for PLAN's questions — never mid-run.
+2. **PLAN** — restate the goal and its finish line (the DoD) · 0-3 blocking questions WITH a recommended default each; a DoD the ask did not state joins them as a proposal, then WAIT · numbered falsifiable assumptions (only the dimensions the task touches) · risks you might hit, one mitigation each · plan: files, key signatures, order, rejected alternative in one clause · weigh effort/risk per piece internally to order the work. High blast radius (new module, schema, auth, money, migrations, deletion) → present and WAIT.
 3. **BUILD** — simplicity ladder, stop at the first rung that holds: needs to exist? → already in this codebase? → stdlib? → platform-native? → already-installed dependency? → one line? → minimum code that works. Respect project style. Non-negotiable floor: never simplify away trust-boundary validation, error handling, security, accessibility, or anything explicitly requested; a bug fix targets the root cause, never the symptom. Deliberate cut = `ponytail: <ceiling>, <upgrade trigger>` comment.
 4. **REVIEW** — before reporting done: project checks (tests/types/lint) + impact sweep (what else uses what I touched) + drive the real flow when there is runtime surface (`Skill(changes-verify)`) + declare residual risk. Meet the agreed ACs — no less, no more.
 5. **LEARN** — persist the non-obvious (memory/learning capture): what surprised, what pattern emerged, what was deferred and its upgrade trigger. If nothing non-obvious, say so explicitly — still a completed stage.
 
 **Loop-back**: a failed stage sends you back to the stage whose output broke (wrong assumption → PLAN, and tell the user — never quietly improvise; missed existing code → KNOW). Same failure twice or an unclosable gap → `drillme-clarify` sweep before retrying.
 
+**Stops**: stop at the finish line, a hard gate or a blocking question — never at a summary announcing the next step, an offer to continue, non-blocking decision lists or a milestone; status notes ride with the next action. Long runs outside `/flow-lifecycle` keep a scratchpad checklist.
+
 ### Agent spawn — hard gate (permission + model)
 
-**Never launch agents without explicit user approval.** Ask before a task's
-FIRST spawn and wait; it holds only for that task. The gate
+**Never launch agents without explicit user approval.** Approval holds for one task. The gate
 reaches every host and spawn surface: native subagents,
 Workflow/Team workers, Orca terminals, external model CLIs and headless evals or
 activation probes. Messages into other live agent sessions need authorization too.
@@ -42,8 +43,7 @@ launch/retry allowance, shared worktree/base, creation and write permissions, an
 direct communication within the team. It remains valid on resumption of that same
 workflow while scope and limits hold. Preserve the actual user decision reference;
 a document or agent assertion alone is not consent. Changed scope, roster/models
-or limits require approval. Workers cannot spawn more agents. Native permissions
-and project constraints remain authoritative.
+or limits require approval. Workers cannot spawn more agents.
 
 Without an applicable recorded team approval, before a task's **first** spawn
 call, ask **both** questions and **WAIT**:
@@ -71,8 +71,6 @@ call, ask **both** questions and **WAIT**:
 | Yes + model | Spawn only what was approved, with that model |
 | Yes, no model picked | Use the recommended default stated in the question |
 | No / silence / not yet asked | **Inline only** (Lead `Read` / `Grep` / `Bash`). Zero agents. |
-
-Recorded Orca team approval survives resumption only within its agreed scope.
 
 Build/write stays **inline by default**. Authorized `orca-team` collaborators
 share a worktree; the coordinator owns reservations, acceptance and flow state.
@@ -114,7 +112,7 @@ publication, branch deletion or worktree removal. Team changes stay uncommitted.
 
 Author/committer identity stays the human `git` config; do not invent AI co-authors. Exception only on explicit THIS-turn request.
 
-Also: no unprompted full test-suite runs in shared work repos (collisions). Mechanical backstop: Stop gate warns on unasked git mutations (does not block — Lead must still obey).
+No unprompted full test-suite runs in shared work repos (collisions). Backstop: Stop gate warns (never blocks) on unasked git mutations.
 
 ### Skill routing
 
@@ -145,4 +143,4 @@ Rule of use: every skill, rule or hook must justify its existence against ≥1 c
 
 ## System map
 
-This repo owns the global `~/.claude/` layer, the Codex profiles and Grok's native additions: `bun .claude/commands/sync-poneglyph.ts --execute --backup --force` detects the installed harnesses and runs the per-host engines `.claude/scripts/sync-{claude,codex,grok}.ts` in dependency order. Skills and command bodies have one source. Generated adapters provide native entrypoints and hook contracts. Codex uses `$CODEX_HOME/AGENTS.md`; repository `AGENTS.md` stays an addendum. Host permissions and authentication remain native. Read `.claude/docs/harness-adapters.md` for installation and verified limits.
+This repo owns the global `~/.claude/` layer, the Codex profiles and Grok's native additions: `bun .claude/commands/sync-poneglyph.ts --execute --backup --force` detects the installed harnesses and runs the per-host engines `.claude/scripts/sync-{claude,codex,grok}.ts` in dependency order. Skills and command bodies have one source. Generated adapters provide native entrypoints and hook contracts. Codex uses `$CODEX_HOME/AGENTS.md`; repository `AGENTS.md` stays an addendum. Read `.claude/docs/harness-adapters.md` for installation and verified limits.

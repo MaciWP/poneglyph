@@ -51,7 +51,7 @@ T1 + B: Grok 22, Claude permissions, Codex sandbox pages 2026-09-10. **sin evide
 
 ## 6. Poneglyph grain
 
-This repo keeps deny on `.env` / `secrets/`. Git commit/push stay asked. Impact before widening.
+This repo keeps deny on `.env` / `secrets/`. `settings.global.json` `ask` covers recursive delete, destructive git (reset --hard, clean, branch -D, stash drop/clear, worktree remove, checkout/restore, merge, rebase), `git push` and `gh pr create/merge`, in Bash and PowerShell; `git commit` is not asked (a local commit is reversible). Rules are prefix matches: a rewritten form such as `git -C <dir> push` escapes them — a net, not a boundary. `sync-claude` unions an overlay's `ask`/`deny` with the base. Impact before widening.
 
 ## 7. Absences
 

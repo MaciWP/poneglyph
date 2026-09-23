@@ -18,6 +18,17 @@ when_to_use: |
 
 One skill, two tiers. The classifier picks; the user can override either way.
 
+## Definition of Done
+
+- Define the decision, constraints, required evidence and quality priorities from the request; reuse agreed criteria.
+- Apply the selected tier and return a supported recommendation, trade-offs and remaining decision blockers. Leave the final choice with the user.
+- Stop when the comparison supports that decision; add another perspective only if it can resolve a material gap.
+
+## How You're Graded
+
+- You are graded on fair alternatives, decisive evidence and explicit uncertainty.
+- More alternatives, agents or debate rounds earn no credit by themselves.
+
 ## Underlying principle
 
 > "If everyone is thinking alike, then somebody isn't thinking." — Tenth Man Rule

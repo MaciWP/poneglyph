@@ -14,6 +14,15 @@ together with `tasks/`.
 Precondition: draft or approved HUs under an approved spec. A bug with a failing test
 already in the repo needs no design: that test is the oracle.
 
+## Definition of Done
+
+- Map every HU to an observable oracle in tests.md or validations.md, reusing existing relevant checks.
+- Present the tasks and oracle for the actual gate 2→3 decision. Do not implement while approval is pending.
+
+## How You're Graded
+
+- Favor checks that can distinguish the required behavior from a plausible failure. Test counts and implementation-mirroring assertions do not earn credit.
+
 ## Output-mode decision
 
 | HU `files` contains… | Mode | Artifact |

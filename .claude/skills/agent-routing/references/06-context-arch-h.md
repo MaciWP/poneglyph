@@ -114,8 +114,17 @@ loading), but DO read those where the Contents row describes your task situation
 [TASK]
 {task instructions}
 
+[DEFINITION OF DONE]
+{agreed scoped result, required checks and evidence, and return boundary}
+Reuse the criteria at {task/oracle path}. Resolve missing criteria before work.
+Return after verified completion. Report unmet criteria; do not claim success.
+
+[HOW YOU'RE GRADED]
+{task-specific outcomes and behaviors to favor, consistent with the agreed scope}
+Do not add work or repeat valid checks to improve a grade.
+
 [MEMORY OUTPUT]
-When finished, include "### Memory Insights" with 1-5 reusable insights discovered during this task.
+When finished, include "### Memory Insights" with grounded reusable insights, or "None" when no new lesson qualifies.
 ```
 
 | Rule | Detail |
@@ -124,6 +133,7 @@ When finished, include "### Memory Insights" with 1-5 reusable insights discover
 | Source of truth | manual keyword match (`05-skill-matching.md` + paths rules) > omit |
 | `Skill()` by the Lead | Loads context into Lead's OWN session only — does NOT propagate to subagents |
 | Empty blocks | Omit the header entirely rather than leaving an empty section |
+| Resume | Carry the same DoD and quality priorities, checked inputs/results, completed work, blockers and next pending action in the existing handoff. Reuse valid evidence; do not restart completed work. |
 | Memory reminder | Explicit `[MEMORY OUTPUT]` is NECESSARY — agents miss the system-prompt instruction without it |
 
 ## Skill Discovery (Global + Project)

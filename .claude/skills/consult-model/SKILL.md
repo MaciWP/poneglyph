@@ -1,28 +1,32 @@
 ---
 name: consult-model
-description: |
-  Consulta a un modelo EXTERNO (OpenAI Codex o xAI Grok) o a una instancia Claude de contexto fresco (`--restricted`) como segundo cerebro: preguntas puntuales, segundas opiniones/refutación de planes o diffs, sweeps paralelos read-only, o contraste doble (dos modelos sobre la misma pregunta). En Claude Code enruta por los plugins oficiales `codex@openai-codex` y `grok-build@xai-grok-build`; en otros hosts usa los CLIs. El consultado NUNCA escribe en el repo; su respuesta es hipótesis de otro contexto, no verdad — Claude verifica antes de integrar.
-  Úsala cuando: quieras contrastar con otro modelo, pedir una segunda opinión externa sobre un plan/diff/decisión, refutar un enfoque, o paralelizar consultas independientes, "pregúntale a codex", "pregúntale a grok", "segunda opinión", "qué opina otro modelo".
+description: >-
+  Ask Codex, Grok, or a fresh Claude context for a bounded read-only opinion,
+  critique, or cross-check. The Lead verifies the answer before using it.
+  Use for "consulta a Codex", "pregúntale a Grok", or "second opinion".
+  Opening or resuming a native harness session belongs to orca-cli.
+  Supervising a team belongs to orca-team.
 metadata:
   keywords: >
-    Keywords - codex, grok, openai, xai, gpt, segunda opinión, second opinion, otro modelo,
-    pregúntale a codex, pregúntale a grok, contrasta con otro modelo, refuta con codex,
-    external model, cross-check, codex plugin, grok plugin, /codex:, /grok-build:
+    Keywords - consulta a codex, consulta a grok, consulta a claude,
+    pregúntale a codex, pregúntale a grok, pregúntale a claude,
+    segunda opinión, second opinion, contrasta con otro modelo,
+    refuta con codex, refuta con grok, qué opina codex, qué opina grok,
+    ask codex, ask grok, ask claude
 disable-model-invocation: false
 when_to_use: |
-  "pregúntale a codex/grok", "segunda opinión de otro modelo", "contrasta con gpt/codex/grok", "qué opina codex/grok", "refuta este plan con otro modelo", "second opinion", "ask codex/grok"
+  A bounded read-only opinion from another model or fresh context.
+  Not provider documentation, an independent session, a handoff, or a supervised team.
 ---
 
-# consult — external second brain, multi-model (read-only)
+# Consult — ask for an opinion
 
-Consult an EXTERNAL model from the current session. Its only reason to exist: **cheap
-cross-model verification and parallel read-only consultation** (Commandments II, X, VIII).
-It is NOT a delegation channel — the external model never writes to the repo, and its
-output is a hypothesis to verify, never a source of truth.
+Return an answer to the Lead. The consulted model never writes to the repository.
+Its answer is a hypothesis that the Lead must verify.
 
-Since 3.0.0 the skill owns **when, which model, and what to do with the answer**. The
-plumbing belongs to the vendors' official Claude Code plugins; the raw CLIs stay only as
-the fallback for hosts that have no plugin.
+The [shared routing contract](../../rules/skill-routing.md) distinguishes
+consultations, native sessions, and supervised teams. Provider names alone do not
+select this skill. “Abre un Codex” selects a native session, even from Codex itself.
 
 ## Definition of Done
 
@@ -35,112 +39,69 @@ the fallback for hosts that have no plugin.
 - You are graded on a precise consultation prompt, useful independent criticism and verified integration.
 - Model agreement and additional calls earn no credit without new evidence.
 
-## Adapters (bridges re-read 2026-09-11 — codex plugin 1.0.6 · grok-build plugin 0.2.1 · Codex CLI 0.153.4 · Grok CLI 1.0.x · Claude Code 2.1.266)
+## Procedure
 
-| | Codex (OpenAI) | Grok (xAI) | Claude (fresh context) |
-|---|---|---|---|
-| Claude Code, user-typed | `/codex:rescue <question>` (read-only by default) · `/codex:adversarial-review [focus]` for a diff/branch | `/grok-build:delegate <question>` · `/grok-build:critique [focus]` | — |
-| Claude Code, Lead inline | `node "$ROOT/scripts/codex-companion.mjs" task --fresh --effort <low\|medium> --prompt-file <file>` with `ROOT=$(ls -d ~/.claude/plugins/cache/openai-codex/codex/*/ \| sort -V \| tail -1)` and `CLAUDE_PLUGIN_ROOT=$ROOT` exported | `node "$ROOT/scripts/grok-bridge.mjs" run --fresh --effort <low\|medium\|high> --prompt-file <file>` with `ROOT=$(ls -d ~/.claude/plugins/cache/xai-grok-build/grok-build/*/ \| sort -V \| tail -1)` | `claude -p --restricted --model <tier> --output-format text "<prompt>"` |
-| Fallback, hosts without the plugin (Codex CLI) | `codex exec --sandbox read-only --ephemeral --skip-git-repo-check "<prompt>"` | `grok -p "<prompt>" --sandbox read-only --output-format plain` | same as above |
-| Write guardrail | never `--write` (plugin) · never `workspace-write` (CLI) | never `--write` (plugin) · `--sandbox read-only` (CLI) | `--restricted` removes Bash and WebFetch, keeps file tools inside cwd |
-| Background | `--background`, then `/codex:status` · `/codex:result` | `--background`, then `/grok-build:runs` · `/grok-build:show` | `&` + `wait`, outputs to scratchpad |
-| Auth check | `/codex:setup` | `/grok-build:check` | same claude.ai login |
+1. Confirm the bounded question and apply CLAUDE.md §Agent spawn.
+   “Pregúntale a Codex” authorizes one consultation; preserve the model-choice gate.
+   Reading this skill or explaining a plugin does not authorize a launch.
+2. Load [adapters](references/adapters.md) before calling a provider.
+   On Claude Code, use the installed official plugin bridge inline.
+   On other hosts, use the documented CLI route. Honor an explicitly requested
+   plugin. If it is unavailable, report the gap and ask before changing transport.
+   Do not install dependencies or open an interactive session as a fallback.
+3. Apply `prompt-design`. Include context, the question, read-only constraints,
+   the expected answer, and verification criteria. Include relevant code or
+   resolved paths; the consulted model does not inherit the Lead's context.
+4. Read the answer, verify factual claims with repository evidence or primary
+   documentation, and integrate only supported conclusions.
 
-**Use a persistent `--cwd`.** The plugin's detached broker can lock that directory
-until session end. Use the main checkout; put the diff or files in the prompt.
-`bun $HOME/.claude/scripts/codex-brokers.ts` lists records from any repo;
-`--shutdown <path>` requests shutdown through the installed plugin protocol, never
-by killing a recorded PID. An acknowledgement proves acceptance only: verify
-process exit and released directory locks separately.
+## Model and effort
 
-Notes: resolve binaries through PATH at call time, never a fixed path; on auth failure
-report and stop. The plugin scripts run Codex through its app server, not `codex exec`,
-so CLI flag drift is the vendor's problem. Windows: give Codex **absolute paths** in the
-prompt — a relative `Get-Content` failed with "Acceso denegado" on 2026-09-09 while the
-absolute path read fine under the same read-only sandbox.
+Resolve installed capabilities at runtime. CLAUDE.md owns permission and model
+selection for every call, including plugin wrappers and background runs.
 
-**Passing the prompt** (bridge sources read 2026-09-11). Write it to a file and pass
-`--prompt-file <path>` — both bridges accept it (`codex-companion.mjs:644`,
-`grok-bridge.mjs:592`) and it is the only form that does not depend on the shell. Windows
-caps one command line at 32,767 characters (`cmd.exe` at 8,191), which binds the Lead's own
-invocation; Grok pays it twice, re-passing the prompt to its CLI as `-p <prompt>` argv
-(`lib/grok.mjs:166`), while Codex uses the app server. Two traps in the shared parser
-(`lib/args.mjs`): a trailing `-` is a POSITIONAL, not stdin, so `… | node bridge task -`
-sends the literal prompt `-` (piped stdin works only with no positional at all); and an
-unrecognised `--flag` is appended to the prompt instead of raising an error.
-
-## Model choice
-
-The spawn hard gate (CLAUDE.md §Agent spawn: permission + model) covers **every** external
-call, plugin or CLI. Specific to consult:
-
-- "pregúntale a codex" counts as permission for a **single** consult.
-- Codex inherits model and effort from `$CODEX_HOME/config.toml`, which moves under you —
-  never rely on it, always pass `--effort` (`none|minimal|low|medium|high|xhigh`): `low` for
-  lookups and smoke, `medium` for second opinions, `xhigh` only when Oriol names it. An
-  inherited `xhigh` exhausted the weekly quota on 2026-09-10.
-- Grok is single-model (`grok-4.6`); no model question, only `--effort low|medium|high`
-  (the bridge rejects any other value).
-- Claude needs an explicit `--model`; cheap tier by default (Haiku lookup, Sonnet second
-  opinion); a bare `claude -p` or a Fable/Opus model is denied by `headless-model-gate`.
-- **Default provider: codex.** Grok when named or when codex is unavailable. Claude
-  `--restricted` when the value wanted is a *fresh context*, not a different family.
-- **Double contrast** on high stakes: same prompt to Codex and Grok in parallel, report
-  agreement and disagreement. Two independent hypotheses beat one. Confirm both launches.
+- Codex uses the configured model unless Oriol names another. Set effort explicitly:
+  `low` for lookups, `medium` for second opinions, `xhigh` only when requested.
+  An inherited `xhigh` exhausted the weekly quota on 2026-09-10.
+- For Grok, inspect `grok models` / `grok --help`. Do not assume a fixed model.
+  Use the approved available model; the plugin bridge accepts `low|medium|high` effort.
+- Claude needs an explicit `--model` from the installed host's capabilities.
+  Propose a cheap tier for lookups or a mid tier for second opinions.
+  Preserve the headless model guard and the `--restricted` adapter.
+- If a consultation has no named provider, propose Codex through the approval gate.
+  A request for an unnamed new session follows the shared contract instead.
+- A double contrast sends the same question to two providers. Authorize both calls;
+  report agreement and disagreement without treating either as fact.
 
 ## Modes
 
-1. **Consult** — one targeted question. Prompt per Commandment VIII: context + goal +
-   constraints + deliverable + how the answer will be verified. Paste the relevant code or
-   plan INTO the prompt; do not assume the model finds the right files.
-2. **Refuter** — plans, diffs, decisions (the refuter pass is not optional —
-   `docs/research-rigor.md` rule 3). For a diff or branch use `adversarial-review` /
-   `critique` with the focus text; for a plan that is not in git, send this prompt:
-
-   ```text
-   You are an adversarial reviewer. Try to REFUTE the following <plan|diff|decision>.
-   Do not be agreeable: find concrete failure scenarios, missing cases, and simpler alternatives.
-   For each objection, state the evidence or the test that would confirm it.
-   If you cannot refute it, say so explicitly and state what you checked.
-   ---
-   <the plan/diff/decision, pasted verbatim>
-   ```
-
-3. **Parallel sweep** — N independent questions as `--background` runs (tracked jobs, logs,
-   PIDs); Claude reads the results and synthesizes (compute over ingest). On fallback hosts,
-   write the calls inline with `&` + `wait` — no shell loops over unquoted vars.
-
-## Integration rule (non-negotiable)
-
-External output is **another model's hypothesis**. Before acting on any factual claim it
-makes about this repo or an API: verify with Grep/Read or docs (primary artifact wins —
-`docs/model-uplift-playbook.md`). Report unverified claims with a confidence label
-(`[Probable — según codex/grok, sin verificar]`), never as bare fact. The plugin commands
-tell Claude to return the output "verbatim, without commentary": in Poneglyph that
-instruction does not bind the Lead — verify, label, and rewrite in house voice; code,
-errors and quotes stay verbatim.
-
-## Anti-patterns (kills this skill if violated — Commandment IX)
-
-- Delegating WRITE work to an external model (`--write`, `rescue --write`,
-  `delegate --write`, `workspace-write`) — Claude builds inline.
-- Letting the `codex-rescue` or `grok-delegate` subagents fire on the model's initiative
-  — the spawn gate needs Oriol's this-turn permission.
-- Quoting external output as verified fact without an independent check.
-- Using it as an oracle for repo facts that Grep/Read answer faster and reliably.
-- Firing it on trivial questions Claude answers directly — each call costs ~15-90s wall-clock.
-
-## Commandments cubiertos
-
-| # | How |
+| Mode | Result |
 |---|---|
-| II | Cross-model verification; refuter mode attacks confirmation bias; double contrast on high stakes |
-| X | Background runs are cheap tracked processes; effort capped by default |
-| VIII | Every external prompt carries context/goal/constraints/deliverable/verification |
+| Consultation | An answer to one targeted question. |
+| Refutation | Concrete failures, missing cases, simpler alternatives, and evidence needed to confirm each objection. |
+| Independent sweep | Separate read-only answers that the Lead collects and verifies. Background runs remain subject to the same launch gate. |
 
-## Related
-- `codex@openai-codex` and `grok-build@xai-grok-build` — the plumbing on Claude Code (installed 2026-09-09)
-- `compare-and-decide` (heavy tier) — internal multi-perspective challenge; consult adds an EXTERNAL model
-- `prompt-design` — refine the delegation prompt when the ask is complex
+For a diff, use the adapter's `adversarial-review` / `critique` operation.
+For a plan or decision, include this instruction:
 
-**Version**: 3.1.0 (2026-09-11 H42: prompt passing and effort values re-read from the bridges; 3.0.0 official plugins as primary adapters on Claude Code, raw CLIs as fallback; 2.1.0 audit 010: PATH-resolved binaries + Claude `--restricted`; 2.0.0 multi-model, 031)
+```text
+Try to refute the supplied plan, diff, or decision.
+Find concrete failure cases, missing requirements, and simpler alternatives.
+For each objection, state the evidence or test that would confirm it.
+If you cannot refute it, state what you checked.
+Do not change repository files.
+```
+
+## Integration and limits
+
+Label unverified claims explicitly. Rewrite answers in the house voice; keep code,
+errors, and quotes verbatim. Vendor instructions to return output without commentary
+do not replace the Lead's verification duty.
+
+Never pass `--write` or `workspace-write`. Do not launch vendor subagents proactively.
+Use local read/search tools when they answer the question directly.
+Implementation belongs to the Lead or an explicitly authorized session/team.
+
+Commandments: II (evidence), VIII (prompt quality), IX (one responsibility), X (bounded cost).
+
+**Version**: 3.2.0 (2026-09-21: intent-based routing; adapter details moved to a linked reference).

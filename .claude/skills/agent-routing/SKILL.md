@@ -58,13 +58,13 @@ For architectural/comparison decisions → `Skill('decide')` (031: Lead-invocabl
 
 #### Delegation doctrine — inline-first (evidence-based, 2026-06-10)
 
-**Authorized Orca route:** when the user requests a supervised team, invoke
-`orca-team`. CLAUDE.md §Agent spawn owns its recorded team approval. Use one
-shared worktree, coordinator-owned reservations and real task dependencies. The
-coordinator alone accepts work and updates flow state. This route does not require
-four units or a separate worktree per worker. Full ownership handoffs stay with
-`orca-cli`. The default thresholds and native Workflow/Team rules below apply
-when this route is not selected; they do not override an approved Orca team.
+First resolve explicit consultation, native-session, or team requests with the
+[shared routing contract](../../rules/skill-routing.md). The native fan-out thresholds
+below do not override those routes. CLAUDE.md §Agent spawn still owns authorization.
+
+**Authorized Orca teams** follow `orca-team`: one shared worktree, real dependencies,
+and coordinator-owned reservations, acceptance and flow state. That route requires
+neither four units nor a worktree per worker.
 
 **Build/write runs INLINE by default.** Default delegation parallelizes independent
 read-only units (research, exploration, review). Historical evidence (2026-06-10,

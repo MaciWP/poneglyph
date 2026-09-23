@@ -1,23 +1,23 @@
 {
-  "takenAt": "2026-09-22",
+  "takenAt": "2026-09-23",
   "alwaysLoaded": {
-    "CLAUDE.md": 14200,
-    "output-styles/poneglyph.md": 12640,
+    "CLAUDE.md": 14198,
+    "output-styles/poneglyph.md": 12636,
     "rules/error-recovery.md": 2484,
     "rules/harness-runtime.md": 1910,
-    "rules/skill-routing.md": 997,
-    "skills: description + when_to_use": 7211
+    "rules/skill-routing.md": 984,
+    "skills: description + when_to_use": 6671
   },
   "skillBodies": {
-    "agent-routing": 15883,
+    "agent-routing": 15799,
     "changes-explain": 10010,
-    "changes-verify": 5302,
-    "choose-skills": 6177,
+    "changes-verify": 5298,
+    "choose-skills": 6168,
     "code-quality": 7556,
     "compare-and-decide": 7593,
-    "consult-model": 10451,
+    "consult-model": 5523,
     "deep-research": 9269,
-    "dev-workflow": 11144,
+    "dev-workflow": 11129,
     "diagrams-interactive": 5232,
     "drillme-clarify": 13032,
     "flow": 7318,
@@ -25,7 +25,7 @@
     "html-report": 21663,
     "knowledge-graph": 18486,
     "lessons-learned": 19986,
-    "orca-team": 7181,
+    "orca-team": 7173,
     "pr-comments": 5610,
     "pr-review": 7578,
     "prompt-design": 8275,
@@ -35,6 +35,6 @@
     "ui-design": 4355
   },
   "informative": {
-    "installed plugins: description + when_to_use (this machine)": 3984
+    "installed plugins: description + when_to_use (this machine)": 4286
   }
 }

@@ -6,7 +6,7 @@ description: The dev loop by level — a trivial change with one line of evidenc
 
 # Worked examples
 
-## Trivial level (no new logic, 1 file, easy to revert)
+## Trivial level (behavior-neutral, 1 file)
 
 Task: "fix the typo `recieve` in the README install section".
 
@@ -14,11 +14,12 @@ KNOW still happens: Grep `recieve` finds one hit in `README.md` and no code
 reference. Nothing else uses the word, so the change is trivial. The response:
 
 ```text
-Corregido `recieve` → `receive` en `README.md:42`. Evidencia: `git grep recieve` ya no devuelve nada.
+Corregido `recieve` → `receive` en `README.md:42`. Evidencia: `git grep recieve` ya no devuelve nada; texto sin consumidores, no aplica la suite.
 ```
 
 No stages, no scan line. If the Grep had found the word in an identifier or an
-API field, the task would not be trivial: that is new behavior across files.
+API field, or were doctrine an agent reads, the task would not be trivial: it
+changes behavior, so it gets the project's checks.
 
 ## Normal level (small task, one loop-back)
 

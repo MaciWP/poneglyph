@@ -22,13 +22,13 @@ KNOW → PLAN → BUILD → REVIEW → LEARN is the recommended method for codin
 
 | Level | When | What the response shows |
 |---|---|---|
-| **Trivial** | A question, a read, or a change with no new logic (typo, wording, local rename) in ≤1 file, easy to revert | Do it. One line of evidence. No stages, no scan line |
+| **Trivial** | A question, a read, or a behavior-neutral change (typo, local rename) in ≤1 file, easy to revert. Any high-blast trait wins | Do it. One line of evidence. No stages, no scan line |
 | **Normal** (default) | Everything else | The loop at the depth the work needs. Show stages when they help follow multi-step work |
 | **High blast radius** | New module, schema, auth, money, migrations, deletion | Full visible stages. Present the plan and WAIT |
 
-Floor at every level: every change reports its evidence (the check you ran, or why none applies).
+Floor at every level: every change reports its evidence (the project's required checks, or why none applies).
 
-1. **KNOW** — understand the full problem first. Scan the project for existing code (similar examples, functions/classes to reuse — if it exists, reuse it, never recreate it). Research outside when it pays: official docs, reputable experts, proven reference projects. Never ask what is discoverable in <1 min of searching. Ends with the DoD taken from the ask or drafted for PLAN's questions — never mid-run.
+1. **KNOW** — understand the full problem first. Scan the project for existing code (similar examples, functions/classes to reuse — if it exists, reuse it, never recreate it). Research outside when it pays: official docs, reputable experts, proven reference projects. Never ask what is discoverable in <1 min. Ends with the DoD taken from the ask or drafted for PLAN's questions — never mid-run.
 2. **PLAN** — restate the goal and its finish line (the DoD) · 0-3 blocking questions WITH a recommended default each; a DoD the ask did not state joins them as a proposal, then WAIT · numbered falsifiable assumptions (only the dimensions the task touches) · risks you might hit, one mitigation each · plan: files, key signatures, order, rejected alternative in one clause · weigh effort/risk per piece internally to order the work.
 3. **BUILD** — simplicity ladder, stop at the first rung that holds: needs to exist? → already in this codebase? → stdlib? → platform-native? → already-installed dependency? → one line? → minimum code that works. Respect project style. Non-negotiable floor: never simplify away trust-boundary validation, error handling, security, accessibility, or anything explicitly requested; a bug fix targets the root cause, never the symptom. Deliberate cut = `ponytail: <ceiling>, <upgrade trigger>` comment.
 4. **REVIEW** — before reporting done: project checks (tests/types/lint) + impact sweep (what else uses what I touched) + drive the real flow when there is runtime surface (`Skill(changes-verify)`) + declare residual risk. Meet the agreed ACs — no less, no more.

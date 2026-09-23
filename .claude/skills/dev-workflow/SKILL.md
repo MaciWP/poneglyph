@@ -31,7 +31,7 @@ contractor protocol (Oriol, 2026-08-05). `changes-verify` owns stage 4's deep pr
 /flow-lifecycle wraps this same loop at feature scale — neither is duplicated here.
 
 The level rule (trivial · normal · high blast radius, and the evidence floor) is
-CLAUDE.md §The dev loop — the law is not restated here. Judging a task "trivial"
+CLAUDE.md §The dev loop. Judging a task "trivial"
 *before* looking is circular: read what you will change and what uses it, then judge.
 
 ## Definition of Done
@@ -77,9 +77,9 @@ migrations, deletion). Else proceed once the DoD is settled.
   Nothing blocking → say so, list zero.
 - **Assumptions**: numbered, specific, falsifiable. Cover only the dimensions the
   task touches: data · failure · boundaries · state · environment · scope · testing.
-- **Risks**: name the dangers/doubts/problems this task could hit (breakage
-  elsewhere, unknown data shapes, integration surprises, env differences) and one
-  mitigation each. Proportional — one line per REAL risk, none invented to fill space.
+- **Risks**: name the real risks this task could hit (breakage elsewhere,
+  unknown data shapes, integration surprises, env differences) and one
+  mitigation each. One line per REAL risk; none invented.
 - **Price it (internal)**: weigh which pieces carry the most effort/risk and order
   the work accordingly; surface the weighing only when it changes a decision.
 - Non-trivial task → run `choose-skills` (propose→ratify the skill shortlist).
@@ -119,7 +119,8 @@ scope in `references/02-on-request-lenses.md`.
 
 - Persist the non-obvious: surprises, emergent patterns, deferred cuts and their
   triggers — via memory (global) or the project's learning capture.
-- Nothing non-obvious → nothing to write. Mention LEARN only when it persisted something.
+- Nothing non-obvious → nothing to write. Mention LEARN only when it persisted
+  something, or at high blast radius ("nothing new").
 - **Debt harvest** (on request — "cosecha la deuda"): `references/02-on-request-lenses.md`.
 
 ## Loop-back — when a stage fails
@@ -164,7 +165,7 @@ A trivial change, and a small task with one loop-back in full and compact render
 
 | Anti-pattern | Correction |
 |---|---|
-| Calling a task trivial before reading what it touches | Look first; trivial means no new logic, ≤1 file, easy to revert |
+| Calling a task trivial before reading what it touches | Look first; trivial means behavior-neutral, ≤1 file, easy to revert; a high-blast trait wins |
 | Full five-stage ceremony on a typo or a question | Trivial level: do it, one line of evidence |
 | Judging importance or care level before KNOW | Investigate first; never invent the user's time budget |
 | Ladder applied before understanding the problem | "Read fully, then be lazy" — comprehension first |

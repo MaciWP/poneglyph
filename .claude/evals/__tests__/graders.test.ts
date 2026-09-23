@@ -195,6 +195,21 @@ describe("devLoopStages (029 US-dev)", () => {
     expect(r.pass).toBe(false);
   });
 
+  test("fails no-ceremony on a scan line inside a text fence", () => {
+    const r = devLoopStages("Corregido.\n```text\n🟢 KNOW · 🟢 PLAN · 🟢 BUILD\n```", { expected: "no-ceremony" });
+    expect(r.pass).toBe(false);
+  });
+
+  test("fails no-ceremony on a lone stage heading", () => {
+    const r = devLoopStages("## PLAN\nCambiar recieve por receive.", { expected: "no-ceremony" });
+    expect(r.pass).toBe(false);
+  });
+
+  test("passes no-ceremony when prose only mentions a plan", () => {
+    const r = devLoopStages("Corregido `recieve` → `receive`; revisa el plan de release si quieres.", { expected: "no-ceremony" });
+    expect(r.pass).toBe(true);
+  });
+
   test("code fences never poison the signal count", () => {
     const r = devLoopStages(
       "Listo.\n```py\nplan = build(know, review, learn)\n```",

@@ -39,9 +39,9 @@ Exit code ≠ 0 on any case failure.
 
 `source` is non-negotiable: a case without a traceable real-failure origin is synthetic and gets cut (spec 019 out-of-scope).
 
-## Clusters (25 cases: 18 from the 2026-06-10 harvest + calque-19 and devloop-20 from 024-029 + skill-meta-harness-22..25 from 037 + devloop-trivial-26)
+## Clusters (31 cases: 18 from the 2026-06-10 harvest + calque-19 and devloop-20 from 024-029 + skill-meta-harness-22..25 from 037 + behaviour/style-26..30 from the 2026-09-11 quality review + devloop-trivial-31)
 
-Declared count matches documented real failures only — no filler added (the original harvest was honestly 18, not a round 20). `devloop-trivial-21` (expected `no-ceremony` on a typo fix) was cut in audit 010 (2026-09-02): commit `ca797ff` (2026-08-10) made the full KNOW→LEARN loop mandatory on every coding task, so the case contradicted the doctrine it was meant to guard. On 2026-09-23 the dev loop became proportional (trivial · normal · high blast radius), so the case returns as `devloop-trivial-26` with the same prompt.
+Declared count matches documented real failures only — no filler added (the original harvest was honestly 18, not a round 20). `devloop-trivial-21` (expected `no-ceremony` on a typo fix) was cut in audit 010 (2026-09-02): commit `ca797ff` (2026-08-10) made the full KNOW→LEARN loop mandatory on every coding task, so the case contradicted the doctrine it was meant to guard. On 2026-09-23 the dev loop became proportional (trivial · normal · high blast radius), so the case returns as `devloop-trivial-31`. Its prompt now quotes the sentence to fix: the README never contained the typo, so a no-op reply passed (review PR #40).
 
 | Cluster | Cases | Grader | Failure origin |
 |---|---|---|---|
@@ -51,7 +51,10 @@ Declared count matches documented real failures only — no filler added (the or
 | es-ES register | eses-10..12 | `esEsDetect` | CLAUDE.md language convention; 017 translated-English debt |
 | BLUF position | bluf-13..15 | `blufPosition` | poneglyph.md §2 Glance anti-examples; `lessons-learned` G11 (brief by default, no bureaucracy) |
 | Confidence labels | label-16..18 | `labelPresence` | `lessons-learned` G9 (measure, don't estimate — 010 incident); `lessons-learned` G10 (verified line ≠ correct fix — 014) |
-| Dev-loop proportionality | devloop-nontrivial-20, devloop-trivial-26 | `devLoopStages` | 029 US-dev (2026-08-05); proportional loop decision 2026-09-23 |
+| es-ES calques | calque-eng-prompt-19 | `calqueDetect` | 017 retro (translated-English style debt); poneglyph.md §3 Voice |
+| Evidence and honesty | behaviour-evidence-done-26, behaviour-tagged-claim-27, behaviour-tagged-cause-30 | `evidenceBeforeDone` | quality review 2026-09-11 H56; ayghri/i-have-adhd evals/RESULTS.md (cause-then-fix regression) |
+| Terminal style | style-separators-27, style-prose-ceiling-28, style-step-state-29 | `cardSeparators` · `proseLength` · `stepState` | anthropics/claude-code#52755; poneglyph.md §2 and §4; Oriol 2026-09-11 |
+| Dev-loop proportionality | devloop-nontrivial-20, devloop-trivial-31 | `devLoopStages` | 029 US-dev (2026-08-05); proportional loop decision 2026-09-23 |
 
 ## Known gaps (declared)
 

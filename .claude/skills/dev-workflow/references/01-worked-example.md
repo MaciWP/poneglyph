@@ -18,7 +18,7 @@ shows up in the response — depth can be short; omission cannot.
 2. **PLAN** — Goal: `--json` prints the same report as JSON; pretty output stays
    default. The ask stated no DoD, so KNOW's research gives the proposal: "Hecho
    significa: `--json` output parses and matches the pretty report, suite green ·
-   Cuándo paro: after REVIEW" → the user answers "Adelante". Questions: 0 blocking.
+   Cuándo paro: after REVIEW" → the user answers "Adelante". Questions: only the DoD proposal.
    Assumptions: (1) report data is plain-serializable. Risks: scripts may parse
    current stdout → mitigation: flag is opt-in, default untouched. Price: S, one
    file. Low blast radius → proceed.
@@ -43,7 +43,7 @@ one row per stage. Every stage still appears; only the prose shrinks.
 | Stage | Result |
 |---|---|
 | KNOW | `--output` parser in `export.ts` reused; no external research needed |
-| PLAN | Goal: `--json` = same report as JSON, pretty stays default · DoD proposed (parses, matches pretty, suite green) → "Adelante" · 0 blocking questions · A1 data plain-serializable · R1 scripts parse stdout → opt-in flag |
+| PLAN | Goal: `--json` = same report as JSON, pretty stays default · DoD proposed (parses, matches pretty, suite green) → "Adelante" · only question: the DoD proposal · A1 data plain-serializable · R1 scripts parse stdout → opt-in flag |
 | BUILD | Rung 3, `JSON.stringify`, ~6 lines in `export.ts` style |
 | REVIEW | Suite green; impact sweep: `report.ts` `Date` fields broke A1 → loop-back to PLAN (ISO conversion), rebuilt, green; residual risk none |
 | LEARN | Report data is not plain-serializable: `Date` → ISO in `report.ts` |

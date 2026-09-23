@@ -90,13 +90,25 @@ export function privacyMatches(files: Map<string, string>, terms: string[]): str
 /** Structural authoring check only. Examples and comments cannot supply the contract. */
 function contractSections(body: string): Set<string> {
   const populated = new Set<string>();
-  let fence = "", section = "";
-  for (const line of body.replace(/<!--[\s\S]*?(?:-->|$)/g, "").split(/\r?\n/)) {
-    const marker = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
+  let fence = "", section = "", comment = false;
+  for (const raw of body.split(/\r?\n/)) {
     if (fence) {
-      if (marker && marker[1][0] === fence[0] && marker[1].length >= fence.length && !marker[2].trim()) fence = "";
+      const close = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(raw);
+      if (close && close[1][0] === fence[0] && close[1].length >= fence.length && !close[2].trim()) fence = "";
       continue;
     }
+    // Comments are stripped outside fences only: a "<!--" inside a code example must not hide the rest.
+    let line = raw;
+    if (comment) {
+      const end = line.indexOf("-->");
+      if (end < 0) continue;
+      line = line.slice(end + 3);
+      comment = false;
+    }
+    line = line.replace(/<!--[\s\S]*?-->/g, "");
+    const open = line.indexOf("<!--");
+    if (open >= 0) { line = line.slice(0, open); comment = true; }
+    const marker = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
     if (marker) { fence = marker[1]; continue; }
     // Four-space/tab-indented code cannot declare headings or prose criteria.
     if (/^(?: {4}|\t)/.test(line)) continue;
@@ -105,7 +117,8 @@ function contractSections(body: string): Set<string> {
       if (heading[1].length <= 2) section = heading[1].length === 2 ? (heading[2] ?? "").replace(/[ \t]+#+[ \t]*$/, "").trim() : "";
       continue;
     }
-    if (section && line.trim()) populated.add(section);
+    // A rule ("---") or a bare bullet is not prose: require a letter or digit.
+    if (section && /[\p{L}\p{N}]/u.test(line)) populated.add(section);
   }
   return populated;
 }

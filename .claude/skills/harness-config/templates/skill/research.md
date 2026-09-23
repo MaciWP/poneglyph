@@ -19,7 +19,7 @@ Instantiate: `{{SKILL_NAME}}` kebab 1–64 matching the directory; `description`
 
 ## Definition of Done
 
-- Before research, reuse or define the questions, deliverable and evidence that will resolve this request.
+- Before research, reuse the questions, deliverable and evidence that will resolve this request; propose any missing one and wait.
 - {{Required answers and the evidence that supports them}}
 - {{How to distinguish a resolved question from an unresolved evidence gap}}
 - Deliver and stop when the required questions are answered. Report irreducible gaps explicitly; never present a partial answer as complete.

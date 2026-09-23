@@ -20,7 +20,7 @@ Instantiate: `{{SKILL_NAME}}` kebab 1–64 matching the directory; `description`
 
 ## Definition of Done
 
-- Reuse the agreed task criteria. For variable scope, define the concrete result and required checks before Step 1.
+- Reuse the agreed task criteria. For variable scope, propose the concrete result and required checks, then wait before Step 1.
 - {{Observable result of this workflow or selected mode}}
 - {{Required verification and handoff that close this invocation}}
 - On success, return to the caller and stop this workflow. Failed required checks need repair or a reported blocker, not a success claim.

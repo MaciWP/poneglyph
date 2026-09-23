@@ -19,7 +19,7 @@ Instantiate: `{{SKILL_NAME}}` kebab 1–64 matching the directory; `description`
 
 ## Definition of Done
 
-- Reuse the caller's scope and acceptance criteria. Resolve any missing task-specific outcome before applying the patterns.
+- Reuse the caller's scope and acceptance criteria. Propose any missing task-specific outcome and wait before applying the patterns.
 - {{Observable answer or application of the reference that satisfies the request}}
 - {{Evidence needed to verify that outcome}}
 - Return the result when these criteria hold. Report unmet criteria honestly; do not expand the task after completion.

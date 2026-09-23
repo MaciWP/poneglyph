@@ -67,6 +67,17 @@ describe("core skill completion contract", () => {
       .toEqual([expect.objectContaining({ rule: "skill.contract.dod", severity: "error" })]);
   });
 
+  // PR #39 review, finding H7: a horizontal rule or a bare bullet is not a criterion.
+  it("rejects sections that hold only punctuation", () => {
+    expect(findings("## Definition of Done\n---\n## How You're Graded\n-\n")).toHaveLength(2);
+  });
+
+  // PR #39 review, finding H9: a comment opener inside a code example hid every later section.
+  it("keeps sections after a fence that contains a comment opener", () => {
+    expect(findings("```html\n<!-- example\n```\n" + contract)).toEqual([]);
+    expect(findings("<!-- one --> <!--\nstill hidden\n-->\n" + contract)).toEqual([]);
+  });
+
   it("accepts prose under subheadings, longer closing fences and CRLF", () => {
     const body = "```md\n## Definition of Done\nExample only.\n````\n" +
       "## Definition of Done\n### Required output\n- Return evidence.\n## How You're Graded\nPrefer accuracy.\n";

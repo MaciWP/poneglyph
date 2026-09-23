@@ -12,12 +12,12 @@ instructions instead of copying a second checklist. Keep detailed mode criteria
 in the mode's existing reference and name that reference from the entrypoint.
 
 - **Stable procedure:** specify its output, required evidence and local return condition directly.
-- **Variable task:** require the agent to reuse agreed criteria or define missing outcomes and evidence before execution.
+- **Variable task:** require the agent to reuse the caller's agreed criteria; missing outcomes and evidence are proposed with a default and waited on before execution (CLAUDE.md §The dev loop).
 - **Mixed skill:** keep stable requirements and bind only the variable criteria for the selected mode.
 
 Do not add a frontmatter field to classify these cases. A skill can have several
 modes. Put resolved criteria in the existing plan/task or a short inline PLAN;
-do not create a new ledger or ask for approval when no material decision is open.
+do not create a new ledger. Ask only for a missing DoD or an open material decision.
 
 ## Runtime meaning
 
@@ -70,7 +70,7 @@ results. Static section checks cannot prove these behaviors or token savings.
 |---|---|---|
 | All criteria and required checks pass | Deliver and return to the caller | Extra research, polishing or unchanged green checks |
 | A required check fails or cannot run | Repair within scope or report the blocker | A success claim or silently omitted check |
-| The task has variable scope | Define missing outcomes and evidence before execution | Execute first, invent acceptance later |
+| The task has variable scope | Propose missing outcomes and evidence, then wait before execution | Execute first, invent acceptance later |
 | The plan already defines acceptance | Reuse the plan and bind the selected mode | Reword criteria into a conflicting second contract |
 | Resume with completed work and valid evidence | Continue the next pending action only | Restart accepted work or claim unchecked results |
 | A review finds no issue or a retro has no lesson | Return an honest empty result | Invent findings, praise or lessons for a quota |
@@ -96,4 +96,4 @@ informs the continuity note, without introducing a compactor or new hooks.
 |---|---|---|
 | 2026-09-22 | Migrate the 24 core skills and three templates to an explicit DoD and Graded contract | User-approved plan: stop at verified completion; reward useful outcomes; resolve variable task criteria before execution |
 | 2026-09-22 | Narrow historical D12: avoid unsolicited catalog rewrites; allow this explicitly scoped migration | User requested the existing skills and templates together; names, activation and host adapters remain stable |
-| 2026-09-22 | Rebaseline the required on-demand contracts without weakening the zero-growth ratchet | The 24 SKILL.md files grow from 220,256 to 236,375 logical UTF-8 bytes (+16,119). The Claude always-loaded source estimate falls from 39,311 to 39,302 bytes. These are source sizes, not measured tokens, savings or model adherence. |
+| 2026-09-22 | Rebaseline the required on-demand contracts without weakening the zero-growth ratchet | The 24 SKILL.md files grow from 219,829 to 235,948 LF-normalized UTF-8 bytes (+16,119; `git cat-file` at `13c3c29` and `6c05910`). The Claude always-loaded source estimate falls from 39,311 to 39,302 bytes. These are source sizes, not measured tokens, savings or model adherence. |

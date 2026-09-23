@@ -264,6 +264,13 @@ describe("generateSpTwin (style SSOT → body-only twin)", () => {
     expect(formatSpTwinStatusLine("up-to-date", "")).toStartWith("🟢");
     expect(formatSpTwinStatusLine("error", "boom")).toContain("boom");
   });
+
+  // PR #39 review, finding H3: a style edit shipped without its twin twice (PR #20, PR #39).
+  // Codex and Grok read the twin, so a stale copy serves them the old doctrine.
+  it("the committed twin matches the committed style", () => {
+    const repoRoot = path.resolve(import.meta.dir, "..", "..", "..");
+    expect(generateSpTwin(repoRoot, false).status).toBe("up-to-date");
+  });
 });
 
 // 032/WP1 — the generated settings.json is ACCEPTED by Claude Code, not merely written.
@@ -404,6 +411,25 @@ describe("generateSettings — hooks union is wired, other arrays still replaced
     expect(out.permissions.allow).toEqual(["Bash(bun *)"]);
     expect(commands(out.hooks.PreToolUse)).toEqual([GATE, SHAPER, ORCA]);
     expect(Object.keys(out.hooks).sort()).toEqual(["InstructionsLoaded", "PreToolUse", "SubagentStart"]);
+  });
+
+  it("unions permissions.ask and deny so an overlay never drops a base safety rule (H8)", () => {
+    const root = mkdtempSync(path.join(tmpdir(), "settings-perms-"));
+    const repo = path.join(root, "repo");
+    const profile = path.join(root, "profile");
+    mkdirSync(path.join(repo, ".claude"), { recursive: true });
+    writeFileSync(
+      path.join(repo, ".claude", "settings.global.json"),
+      JSON.stringify({ permissions: { ask: ["Bash(git push *)"], deny: ["Bash(rm -rf /)"] } }),
+    );
+    writeFileSync(
+      path.join(repo, ".claude", "settings.machine.json"),
+      JSON.stringify({ permissions: { ask: ["Bash(git push *)", "Bash(npm publish *)"], deny: ["Read(.env)"] } }),
+    );
+    generateSettings(repo, profile, { execute: true, backup: false });
+    const out = JSON.parse(readFileSync(path.join(profile, ".claude", "settings.json"), "utf-8"));
+    expect(out.permissions.ask).toEqual(["Bash(git push *)", "Bash(npm publish *)"]);
+    expect(out.permissions.deny).toEqual(["Bash(rm -rf /)", "Read(.env)"]);
   });
 
   it("copies the base hooks untouched when the overlay has no hooks key", () => {

@@ -66,7 +66,9 @@ obviously trivial is not scored at all — scoring it is the ceremony the score 
 | > 60 | 3+ domains (4-gate pass) | Yes | **team** (experimental) | 3-7x |
 | > 60 | 3+ (4-gate fail) | — | **inline / Workflow (read-only)** | 1x+ |
 
-Default is inline. An explicitly authorized supervised Orca team uses
+Default is inline. First resolve explicit consultation, native-session, or team
+requests with the [shared routing contract](../../../rules/skill-routing.md).
+An explicitly authorized supervised Orca team uses
 `orca-team` instead of this native Workflow/Team routing matrix. It selects
 concurrency from real dependencies and uses coordinator reservations in one shared
 worktree; the thresholds and isolation table below do not apply to that route.

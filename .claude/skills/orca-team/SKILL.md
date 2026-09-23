@@ -1,22 +1,25 @@
 ---
 name: orca-team
 description: >-
-  Coordinate a supervised team in one shared Orca worktree with explicit roles,
-  task dependencies, definitions of done, cooperative file reservations and
-  direct traced messages. Start or resume a team through flow or dev. Use for
-  coordinated parallel implementation or research; use orca-cli for a full
-  ownership handoff or ordinary terminal control.
+  Supervise work across sessions with task owners, dependencies, file reservations,
+  traced messages and acceptance in one shared Orca worktree. Use when asked to
+  coordinate a team. Opening sessions or handing off work belongs to orca-cli;
+  asking for a read-only opinion belongs to consult-model.
 metadata:
   keywords: >
-    Keywords - orca workflow, shared worktree, equipo coordinado, agentes en paralelo,
-    reservas de ficheros, orquestación, coordinación, DAG, DoD, resume team
+    Keywords - equipo coordinado, coordina un equipo, supervisa un equipo,
+    coordina codex, coordina claude, coordina grok, coordinate a team,
+    supervise a team, supervised team, resume team, reanuda el equipo,
+    reservas de ficheros
 argument-hint: "<objective> | --resume <run-id>"
 disable-model-invocation: false
 ---
 
-# Orca workflow
+# Orca team — supervise work
 
-Coordinate specialists in **one worktree per workflow**. Orca owns terminals,
+Select this route through the [shared contract](../../rules/skill-routing.md).
+
+Use **one worktree per workflow**. Orca owns terminals,
 Tasks, Dispatches and messages. Poneglyph owns scope, reservations and acceptance.
 Reservations are cooperative instructions, not filesystem access control.
 Resolve shared skills/docs from the installed root in `rules/harness-runtime.md`,
@@ -39,9 +42,8 @@ If the current prompt carries a live Orca Dispatch, read the worker contract in
 [coordination](references/coordination.md). Perform that assignment; do not create
 a Run, worktree or team. A quoted or inherited preamble is not a live assignment.
 
-Otherwise act as coordinator. A full ownership handoff belongs to `orca-cli`.
-For a feature, invoke `flow-lifecycle`; for bounded work, invoke `dev-workflow`. Do not replace their
-quality gates or invent a feature lifecycle for a small task.
+Otherwise act as coordinator. For a feature, invoke `flow-lifecycle`; for bounded
+work, invoke `dev-workflow`. Preserve their quality gates.
 
 ## Prepare and authorize
 

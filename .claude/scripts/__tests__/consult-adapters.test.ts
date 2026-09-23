@@ -11,11 +11,17 @@ import { join, resolve } from "node:path";
 //   - both `config.toml` profiles now read model_reasoning_effort = "high", not "xhigh"
 // The skill is prose, so these assertions are what makes the correction checkable.
 const root = resolve(import.meta.dir, "..", "..", "..");
-const md = readFileSync(join(root, ".claude", "skills", "consult-model", "SKILL.md"), "utf8");
+const skillDir = join(root, ".claude", "skills", "consult-model");
+const entrypoint = readFileSync(join(skillDir, "SKILL.md"), "utf8");
+const md = entrypoint + "\n" + readFileSync(join(skillDir, "references", "adapters.md"), "utf8");
 // Markdown escapes the pipe inside table cells; compare against the unescaped text.
 const flat = md.split("\\|").join("|");
 
 describe("consult — documented adapters match the installed bridges (H42)", () => {
+  it("makes the adapter safeguards reachable from the skill", () => {
+    expect(entrypoint).toContain("[adapters](references/adapters.md)");
+  });
+
   it("does not present a trailing `-` as stdin", () => {
     expect(md).not.toMatch(/\|\s*\.{3}\s*-`/);
   });

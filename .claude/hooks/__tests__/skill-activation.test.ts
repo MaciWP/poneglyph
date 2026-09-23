@@ -82,6 +82,64 @@ writeFileSync(
 
 const skills = loadSkills([fixtures]);
 
+// Provider names previously matched consult-model even for session or team requests.
+// Exercise the real catalog and emitted hints; a hint is not launch authorization.
+for (const host of ["claude", "codex", "grok"] as const) {
+  describe(`consultation vs session vs team — ${host} catalog`, () => {
+    const catalog = loadSkills([join(import.meta.dir, "../../skills")], host);
+
+    test.each([
+      "pregúntale a Codex si este diseño tiene errores",
+      "consulta a Grok sobre este plan",
+      "consulta a Claude sobre este diff",
+      "pide una segunda opinión sobre este diseño",
+      "ask Codex to refute this plan",
+      "ask Grok for a second opinion",
+    ])("consultation: %s", (prompt) => {
+      const result = analyzePayload(JSON.stringify({ prompt }), catalog);
+      expect(result.skills).toContain("consult-model");
+      expect(result.injection).toContain("Skill(consult-model)");
+      expect(result.skills).not.toContain("orca-team");
+    });
+
+    test.each([
+      "coordina Codex y Claude para implementar estas tareas",
+      "coordina un equipo con Codex y Grok",
+      "supervisa un equipo para completar estas tareas",
+      "resume team with the approved tasks",
+      "coordinate a team with Codex and Grok",
+    ])("supervised team: %s", (prompt) => {
+      const result = analyzePayload(JSON.stringify({ prompt }), catalog);
+      expect(result.skills).toContain("orca-team");
+      expect(result.injection).toContain("Skill(orca-team)");
+      expect(result.skills).not.toContain("consult-model");
+    });
+
+    // orca-cli is Orca-owned. Its native description handles session selection;
+    // this catalog must not hijack that request with consult-model or orca-team.
+    test.each([
+      "explica las diferencias entre Codex y Grok",
+      "busca documentación del codex plugin y grok plugin",
+      "abre un Codex",
+      "estamos en Codex, abre otro Codex",
+      "estamos en Claude, abre una sesión de Codex",
+      "abre otra sesión de Codex o Grok",
+      "abre un Claude",
+      "abre otra sesión",
+      "abre Codex y Grok en paralelo",
+      "reanuda la sesión de Grok",
+      "pasa el trabajo a esa sesión de Codex",
+      "open a Codex session and a Grok session",
+    ])("no consultation or team hint: %s", (prompt) => {
+      const result = analyzePayload(JSON.stringify({ prompt }), catalog);
+      expect(result.skills).not.toContain("consult-model");
+      expect(result.skills).not.toContain("orca-team");
+      expect(result.injection).not.toContain("Skill(consult-model)");
+      expect(result.injection).not.toContain("Skill(orca-team)");
+    });
+  });
+}
+
 test("the shared Archify entry is discoverable by the native hook loader", () => {
   const catalog = loadSkills([join(import.meta.dir, "../../skills")]);
   const archify = catalog.find((entry) => entry.name === "diagrams-interactive");

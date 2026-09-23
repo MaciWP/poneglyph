@@ -96,6 +96,10 @@ The "Suggested skills to Read (for delegation)" column lists `.claude/skills/<na
 
 ### Workflow wiring
 
+First resolve explicit consultation, native-session, or team requests with the
+[shared routing contract](../../../rules/skill-routing.md). The native delegation
+recipes below do not override those routes or their authorization requirements.
+
 For a supervised Orca team, use `orca-team` instead of the native Workflow/Team
 recipes below. Its approved roster and real dependencies determine concurrency;
 its shared-worktree reservations serialize collisions. The default thresholds

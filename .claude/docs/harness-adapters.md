@@ -29,7 +29,28 @@ report the gap and use an available equivalent only where it fulfills the
 operation. File search must not be described as semantic LSP inspection.
 Claude settings recipes still configure Claude when read from another host.
 
-## Supervised Orca teams
+## Consultations, native sessions, and supervised teams
+
+Use the [shared routing contract](../rules/skill-routing.md) to select the operation.
+`consult-model` returns an opinion for the Lead to verify; `orca-cli` operates an independent
+native session; `orca-team` supervises tasks. The route depends on the user's
+action, including same-provider sessions, not on the current host.
+
+For consultations, Claude Code uses the official Codex/Grok plugin bridges; other
+hosts use the [CLI adapters](../skills/consult-model/references/adapters.md).
+An explicitly requested plugin must be available before that route can proceed.
+`orca-cli` operates sessions; `orchestration` supplies task dispatch and traced
+messages; `orca-team` adds Poneglyph's supervision and acceptance rules.
+
+Session edge cases:
+
+- “Abre un Codex” means another native session, even from Codex.
+- “Otra sesión” without a provider → ask which provider.
+- Opening a session creates no team and no new worktree by default.
+- Resolve an unclear target before resuming or handing off.
+- A requested plugin that is unavailable → ask before substituting a CLI.
+- Missing Orca support is not permission to substitute a consultation or subagent.
+- Explanations, quoted examples and hook hints authorize no launch.
 
 `orca-team` is a core skill distributed by the existing catalog adapters.
 It composes the installed Orca `orca-cli` and `orchestration` guides; those guides

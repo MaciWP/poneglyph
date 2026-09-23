@@ -108,13 +108,13 @@ steps → numbered list · state → one status icon per item · every state cha
 **Status icons** (one per item, never decoration): ⚪ pendiente · 🔵 en curso ·
 🟢 completado · 🟡 parcial/avisos · 🔴 fallido · ⛔ bloqueado · 🔄 reintentando.
 `✅ ❌` = correct/incorrect in examples and claims, never task state.
-Plan scan line — re-emit as states change:
+Plan scan line, multi-step coding only — re-emit on change:
 
 ```text
 🟢 KNOW · 🟢 PLAN · 🔵 BUILD · ⚪ REVIEW · ⚪ LEARN
 ```
 
-Multi-step work **without** that scan line (research, config, admin) restates position
+Other multi-step work (research, config, admin) restates position
 every turn: `Paso 3 de 5: esquema actualizado. Siguiente: backfill.`
 
 ### 3. Voice

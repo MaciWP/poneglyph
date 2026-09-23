@@ -26,7 +26,7 @@ Commands coordinate a process. Skills provide task-specific instructions.
 |---|---|---|---|
 | **Poneglyph** | Across projects and supported hosts | Reuse one maintained set of working principles and skills | Context and maintenance costs; host behavior still differs |
 | **Flow** | A feature needing scope, dependent tasks, and acceptance | Trace decisions from requirements to verified closure; resume recorded progress | Preparation, approval waits, and state maintenance |
-| **Dev** | Every coding task, inside Flow or standalone | Reuse before building; verify behavior and revisit failed assumptions | Research and review take effort; written stages do not execute themselves |
+| **Dev** | Coding work beyond a trivial edit, inside Flow or standalone | Reuse before building; verify behavior and revisit failed assumptions | Research and review take effort; written stages do not execute themselves |
 
 ### Poneglyph at a glance
 
@@ -56,7 +56,8 @@ The state helper records evidence; it does not run or authenticate the checks.
 [Generate interactive HTML locally](docs/diagrams/sources.md#regenerate-a-guide) · [Editable JSON](docs/diagrams/dev.workflow.json)
 
 **Flow organizes the feature; Dev guides each coding task.** A small fix can use
-Dev directly. Every stage still applies, with depth proportional to the work.
+Dev directly. Ceremony scales with the task: a typo gets one line of evidence,
+high-blast-radius work shows every stage and waits.
 REVIEW runs the checks and the affected behavior; LEARN retains non-obvious lessons.
 Closing a task or a Flow lifecycle does not authorize a commit, push, or merge.
 

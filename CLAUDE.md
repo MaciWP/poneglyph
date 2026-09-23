@@ -16,15 +16,23 @@ Language & communication: **es-ES** with Oriol · **English** for everything wri
 
 ## Dev workflow
 
-### The dev loop (MANDATORY for every coding task)
+### The dev loop (proportional to the task)
 
-**Full loop, always.** Every coding task runs KNOW → PLAN → BUILD → REVIEW → LEARN, with stages **visible in the response**. There is no mental-only / "looks simple → just do it" path: you cannot know if a task is simple, important, or how much care it deserves until KNOW (and the user's time budget is not yours to invent). Depth of each stage scales with what the work actually needs — short stages are fine; **skipped stages are not**. Maximum quality is the default, not optional. **Compact rendering**: when KNOW shows the task is bounded, the five stages may render as the scan line plus a five-row table (Stage · Result) — every stage still appears, only the prose shrinks; unbounded or high-blast-radius tasks keep full stages. Guide + worked example: `Skill(dev-workflow)`.
+KNOW → PLAN → BUILD → REVIEW → LEARN is the recommended method for coding work. Ceremony scales with the task; understanding and evidence do not. Always run KNOW first: read what you will change and what uses it, then judge the level. Guide + examples: `Skill(dev-workflow)`.
+
+| Level | When | What the response shows |
+|---|---|---|
+| **Trivial** | A question, a read, or a change with no new logic (typo, wording, local rename) in ≤1 file, easy to revert | Do it. One line of evidence. No stages, no scan line |
+| **Normal** (default) | Everything else | The loop at the depth the work needs. Show stages when they help follow multi-step work |
+| **High blast radius** | New module, schema, auth, money, migrations, deletion | Full visible stages. Present the plan and WAIT |
+
+Floor at every level: every change reports its evidence (the check you ran, or why none applies).
 
 1. **KNOW** — understand the full problem first. Scan the project for existing code (similar examples, functions/classes to reuse — if it exists, reuse it, never recreate it). Research outside when it pays: official docs, reputable experts, proven reference projects. Never ask what is discoverable in <1 min of searching. Ends with the DoD taken from the ask or drafted for PLAN's questions — never mid-run.
-2. **PLAN** — restate the goal and its finish line (the DoD) · 0-3 blocking questions WITH a recommended default each; a DoD the ask did not state joins them as a proposal, then WAIT · numbered falsifiable assumptions (only the dimensions the task touches) · risks you might hit, one mitigation each · plan: files, key signatures, order, rejected alternative in one clause · weigh effort/risk per piece internally to order the work. High blast radius (new module, schema, auth, money, migrations, deletion) → present and WAIT.
+2. **PLAN** — restate the goal and its finish line (the DoD) · 0-3 blocking questions WITH a recommended default each; a DoD the ask did not state joins them as a proposal, then WAIT · numbered falsifiable assumptions (only the dimensions the task touches) · risks you might hit, one mitigation each · plan: files, key signatures, order, rejected alternative in one clause · weigh effort/risk per piece internally to order the work.
 3. **BUILD** — simplicity ladder, stop at the first rung that holds: needs to exist? → already in this codebase? → stdlib? → platform-native? → already-installed dependency? → one line? → minimum code that works. Respect project style. Non-negotiable floor: never simplify away trust-boundary validation, error handling, security, accessibility, or anything explicitly requested; a bug fix targets the root cause, never the symptom. Deliberate cut = `ponytail: <ceiling>, <upgrade trigger>` comment.
 4. **REVIEW** — before reporting done: project checks (tests/types/lint) + impact sweep (what else uses what I touched) + drive the real flow when there is runtime surface (`Skill(changes-verify)`) + declare residual risk. Meet the agreed ACs — no less, no more.
-5. **LEARN** — persist the non-obvious (memory/learning capture): what surprised, what pattern emerged, what was deferred and its upgrade trigger. If nothing non-obvious, say so explicitly — still a completed stage.
+5. **LEARN** — persist the non-obvious (memory/learning capture): what surprised, what pattern emerged, what was deferred and its upgrade trigger. Nothing non-obvious → nothing to write.
 
 **Loop-back**: a failed stage sends you back to the stage whose output broke (wrong assumption → PLAN, and tell the user — never quietly improvise; missed existing code → KNOW). Same failure twice or an unclosable gap → `drillme-clarify` sweep before retrying.
 
@@ -116,7 +124,7 @@ No unprompted full test-suite runs in shared work repos (collisions). Backstop: 
 
 ### Skill routing
 
-Honor the `skill-activation.ts` hook hints and the mandatory dispatch table in `rules/skill-routing.md` (choose-skills when the skill is unclear, drillme-clarify on gaps, verify before "done"). Skipping a matching row requires a stated reason. Workspace- or company-specific skills arrive through installed plugins and route themselves (their own hooks and descriptions).
+Skills load on demand from their descriptions. The `skill-activation.ts` hook hints and the `rules/skill-routing.md` table name skills that help (choose-skills when the skill is unclear, drillme-clarify on gaps, verify before "done"). Use them when the situation matches. Workspace- or company-specific skills arrive through installed plugins and route themselves (their own hooks and descriptions).
 
 ## Principles
 

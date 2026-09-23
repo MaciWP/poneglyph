@@ -1,17 +1,31 @@
 ---
 parent: dev-workflow
 name: worked-example
-description: The dev loop on a small task with one loop-back — full and compact renderings of the same five stages.
+description: The dev loop by level — a trivial change with one line of evidence, and a normal task with one loop-back in full and compact rendering.
 ---
 
-# Worked example (small task, one loop-back)
+# Worked examples
 
-Relocated verbatim from `SKILL.md` on 2026-09-03 (plan 032/WP4 — progressive disclosure; nothing changed but the address).
+## Trivial level (no new logic, 1 file, easy to revert)
+
+Task: "fix the typo `recieve` in the README install section".
+
+KNOW still happens: Grep `recieve` finds one hit in `README.md` and no code
+reference. Nothing else uses the word, so the change is trivial. The response:
+
+```text
+Corregido `recieve` → `receive` en `README.md:42`. Evidencia: `git grep recieve` ya no devuelve nada.
+```
+
+No stages, no scan line. If the Grep had found the word in an identifier or an
+API field, the task would not be trivial: that is new behavior across files.
+
+## Normal level (small task, one loop-back)
 
 Task: "add a `--json` flag to the report CLI".
 
-Even if this had looked like "one flag, five minutes", every stage still runs and
-shows up in the response — depth can be short; omission cannot.
+A new flag is new logic, so this is normal work. The stages carry real content
+here, so the response shows them.
 
 1. **KNOW** — read the CLI entry; Grep flags: an `--output` pattern exists in
    `export.ts` → reuse its parser. External research: not needed (internal pattern).
@@ -31,10 +45,10 @@ shows up in the response — depth can be short; omission cannot.
 5. **LEARN** — persist: "report data is NOT plain-serializable — `Date` fields need
    ISO conversion (`report.ts`)".
 
-## Compact rendering of the same loop (CLAUDE.md §The dev loop, 032/WP5)
+## Compact rendering of the same loop
 
-When KNOW shows the task is bounded, the five stages may render as the scan line plus
-one row per stage. Every stage still appears; only the prose shrinks.
+For bounded normal work, the stages can render as the scan line plus one row per
+stage. Only the prose shrinks. Drop a row that would only hold filler.
 
 ```text
 🟢 KNOW · 🟢 PLAN · 🟢 BUILD · 🟢 REVIEW · 🟢 LEARN
@@ -48,5 +62,5 @@ one row per stage. Every stage still appears; only the prose shrinks.
 | REVIEW | Suite green; impact sweep: `report.ts` `Date` fields broke A1 → loop-back to PLAN (ISO conversion), rebuilt, green; residual risk none |
 | LEARN | Report data is not plain-serializable: `Date` → ISO in `report.ts` |
 
-Unbounded or high-blast-radius tasks (new module, schema, auth, money, migrations,
-deletion) keep the full stages above.
+High-blast-radius tasks (new module, schema, auth, money, migrations, deletion)
+keep the full stages above and wait for approval after PLAN.

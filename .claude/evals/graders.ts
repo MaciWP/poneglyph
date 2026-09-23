@@ -172,8 +172,7 @@ export const skillTriggerParse: Grader = (transcript, caseSpec) => {
 const STAGE_NAMES = ["KNOW", "PLAN", "BUILD", "REVIEW", "LEARN"] as const;
 
 /** expected "stages-visible": a coding reply must name all five stages. expected
- * "no-ceremony": a reply to a task with no dev loop must name at most one (the mode has no
- * live case since audit 010 — see evals/README.md — and is kept for a future one). */
+ * "no-ceremony": a reply to a trivial task must name at most one (case devloop-trivial-26). */
 export const devLoopStages: Grader = (transcript, caseSpec) => {
   // Whole-word, case-insensitive: split on runs of non-letters so "PLAN:" and "el plan"
   // both count, while "planificacion" does not.

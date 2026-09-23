@@ -1,6 +1,6 @@
-# Skill Routing — mandatory dispatch table
+# Skill Routing — when a skill helps
 
-Invoke matching skills; explain any skip. The full discipline catalog remains
+Use the skill when its situation matches. The full discipline catalog remains
 in `.claude/docs/model-uplift-playbook.md`.
 
 | Situation | Skill |

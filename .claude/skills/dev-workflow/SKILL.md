@@ -30,15 +30,14 @@ field manual. Adapted from ponytail (MIT, DietrichGebert/ponytail) and the
 contractor protocol (Oriol, 2026-08-05). `changes-verify` owns stage 4's deep protocol;
 /flow-lifecycle wraps this same loop at feature scale — neither is duplicated here.
 
-The full-loop rule (every stage visible, depth scales, omission never, compact
-rendering when KNOW shows the task is bounded) is CLAUDE.md §The dev loop — the law
-is not restated here. Judging a task "simple" *before* KNOW is circular: you only
-know that after investigating.
+The level rule (trivial · normal · high blast radius, and the evidence floor) is
+CLAUDE.md §The dev loop — the law is not restated here. Judging a task "trivial"
+*before* looking is circular: read what you will change and what uses it, then judge.
 
 ## Definition of Done
 
 - Between KNOW and PLAN, settle the observable outcomes, required checks and stop condition: from the ask, or proposed in PLAN's question round (then wait). Pure questions are exempt.
-- Close after those outcomes are verified, REVIEW reports residual risk and LEARN records a justified lesson or explicitly finds none.
+- Close after those outcomes are verified, REVIEW reports residual risk and LEARN records any justified lesson.
 - Deliver and stop. Reopen work only for changed scope, changed inputs, a new failure or invalidated evidence; use the existing loop-back rules.
 
 ## How You're Graded
@@ -120,8 +119,7 @@ scope in `references/02-on-request-lenses.md`.
 
 - Persist the non-obvious: surprises, emergent patterns, deferred cuts and their
   triggers — via memory (global) or the project's learning capture.
-- Nothing non-obvious → say so explicitly (`LEARN: nothing non-obvious`). Still a
-  completed stage — silence is not a skip.
+- Nothing non-obvious → nothing to write. Mention LEARN only when it persisted something.
 - **Debt harvest** (on request — "cosecha la deuda"): `references/02-on-request-lenses.md`.
 
 ## Loop-back — when a stage fails
@@ -142,17 +140,18 @@ Never a louder retry of the same attack.
 
 ## Worked example
 
-A small task with one loop-back, in full and in compact rendering:
+A trivial change, and a small task with one loop-back in full and compact rendering:
 `references/01-worked-example.md`.
 
 ## SIEMPRE rules
 
-- **Full loop always, stages always visible.** No mental-only path. No "looks
-  simple → skip PLAN/REVIEW". You only learn complexity *by doing KNOW*.
-- **Depth scales; stages do not.** A rename still has restated goal, assumptions
-  (or "none"), risks (or "none real"), REVIEW, and LEARN (or "nothing non-obvious").
-  Short and professional beats long and padded — never skip, never invent filler.
-- Stage order is fixed; skipping KNOW to "save time" is the root cause of rework.
+- **Look first, then pick the level.** KNOW always happens; you only learn the
+  real size of a task by looking. The level decides what the response shows,
+  never whether you understood the change.
+- **Ceremony scales with the level.** A trivial change gets one line of evidence.
+  Normal work shows stages when they help the user follow it. High blast radius
+  shows every stage and waits. Never invent filler to fill a stage.
+- Skipping KNOW to "save time" is the root cause of rework.
 - The floor is absolute — no rung of the ladder ever overrides it.
 - Loop-back over push-forward: a broken premise invalidates everything built on it.
 - Maximum quality is the default for every task — the user's care budget is not
@@ -165,7 +164,8 @@ A small task with one loop-back, in full and in compact rendering:
 
 | Anti-pattern | Correction |
 |---|---|
-| "Looks simple / typo / <20 lines → mental + just do it" | Full loop, short stages, still visible |
+| Calling a task trivial before reading what it touches | Look first; trivial means no new logic, ≤1 file, easy to revert |
+| Full five-stage ceremony on a typo or a question | Trivial level: do it, one line of evidence |
 | Judging importance or care level before KNOW | Investigate first; never invent the user's time budget |
 | Ladder applied before understanding the problem | "Read fully, then be lazy" — comprehension first |
 | Simplifying away validation/errors to score fewer lines | Floor violation — restore it |
@@ -174,7 +174,6 @@ A small task with one loop-back, in full and in compact rendering:
 | Inventing the finish line, or asking for it mid-run | Settle the DoD at KNOW→PLAN; propose it with a default |
 | Improvising when an assumption breaks mid-task | Loop-back to PLAN and tell — always |
 | Risks section padded with invented dangers | Proportionality of *depth* — real risks only, or none |
-| Silent LEARN because "nothing to say" | Explicit `LEARN: nothing non-obvious` |
 | End-of-task shipping (commit / push / PR / "¿hago commit?") or AI authorship in a commit | CLAUDE.md §Git / PR — about to slip → drillme-clarify/AskUserQuestion, leave the tree dirty |
 
 ## Commandments cubiertos
@@ -191,5 +190,5 @@ A small task with one loop-back, in full and in compact rendering:
 
 | Topic | File |
 |---|---|
-| Worked example — full and compact rendering of the five stages | `references/01-worked-example.md` |
+| Worked examples — trivial level; full and compact rendering of the five stages | `references/01-worked-example.md` |
 | Diff review lens (over-engineering tags) · ponytail debt harvest | `references/02-on-request-lenses.md` |

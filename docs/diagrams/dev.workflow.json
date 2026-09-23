@@ -16,7 +16,7 @@
           "exercise",
           "capture"
         ],
-        "note": "Use every stage for every coding task. Scale the depth to the work, inside Flow or standalone."
+        "note": "Always look first. Ceremony scales with the task: trivial, normal or high blast radius, inside Flow or standalone."
       },
       {
         "id": "human-decision",
@@ -44,7 +44,7 @@
   "lanes": [
     {
       "id": "coding",
-      "label": "Every coding task: inside Flow or standalone"
+      "label": "Coding task: inside Flow or standalone"
     },
     {
       "id": "decisions",

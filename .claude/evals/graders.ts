@@ -172,19 +172,24 @@ export const skillTriggerParse: Grader = (transcript, caseSpec) => {
 const STAGE_NAMES = ["KNOW", "PLAN", "BUILD", "REVIEW", "LEARN"] as const;
 
 /** expected "stages-visible": a coding reply must name all five stages. expected
- * "no-ceremony": a reply to a task with no dev loop must name at most one (the mode has no
- * live case since audit 010 — see evals/README.md — and is kept for a future one). */
+ * "no-ceremony": a reply to a trivial task shows no stage label and no scan line
+ * (case devloop-trivial-31). */
 export const devLoopStages: Grader = (transcript, caseSpec) => {
+  if (caseSpec?.expected === "no-ceremony") {
+    // Raw text on purpose: the house style renders the scan line inside a ```text fence,
+    // so stripping code hid it (review PR #40). Stage labels are UPPERCASE; lowercase code
+    // identifiers and prose such as "revisa el plan" stay exempt.
+    const upper = STAGE_NAMES.filter((name) => new RegExp(`\\b${name}\\b`).test(transcript));
+    const label = transcript.match(/^[\s>#*\d.|-]*\**(KNOW|PLAN|BUILD|REVIEW|LEARN)\b\**\s*(?:$|[:—|·-])/m);
+    if (upper.length >= 2) return { pass: false, detail: `ceremony on trivial task: stages [${upper.join(", ")}]` };
+    if (label) return { pass: false, detail: `ceremony on trivial task: stage label "${label[0].trim()}"` };
+    return { pass: true, detail: `proportional: ${upper.length} stage name(s), no label` };
+  }
   // Whole-word, case-insensitive: split on runs of non-letters so "PLAN:" and "el plan"
   // both count, while "planificacion" does not.
   const words = new Set(stripCode(transcript).toUpperCase().split(/[^A-Z]+/i));
   const present = STAGE_NAMES.filter((name) => words.has(name));
   const missing = STAGE_NAMES.filter((name) => !present.includes(name));
-  if (caseSpec?.expected === "no-ceremony") {
-    return present.length <= 1
-      ? { pass: true, detail: `proportional: ${present.length} stage name(s)` }
-      : { pass: false, detail: `ceremony on trivial task: stages [${present.join(", ")}]` };
-  }
   return missing.length === 0
     ? { pass: true, detail: `all five stages visible: [${present.join(", ")}]` }
     : { pass: false, detail: `dev-loop stages missing: [${missing.join(", ")}] (found: [${present.join(", ")}])` };

@@ -53,7 +53,7 @@ disable-model-invocation: false
 3. **Auto-invoke the obvious one (031)** — skip ratification and invoke `Skill(<name>)` directly,
    SAYING SO ("auto-invoco X: <motivo>"), when either executable condition holds:
    - exactly ONE candidate survives step 2 (lexical + semantic pass agree on a single skill), or
-   - the task matches a mandatory row of `rules/skill-routing.md` (that table already carries
+   - the task matches a row of `rules/skill-routing.md` (that table already carries
      the user's standing ratification).
    Anything else → step 4. Never auto-invoke two-or-more "obvious" skills — plural = doubt.
 4. **Ratify** — present the shortlist to the human via `AskUserQuestion`:
@@ -75,7 +75,7 @@ disable-model-invocation: false
 ## SIEMPRE rules
 
 - Propose→ratify by default; auto-invoke ONLY under the two executable conditions of step 3
-  (single survivor, or mandatory skill-routing row) and always declaring it (Commandment III, symbiosis).
+  (single survivor, or a matching skill-routing row) and always declaring it (Commandment III, symbiosis).
 - Never re-implement the model's semantic matching; reason over the in-context listing + the disk shortlist.
 - Empty shortlist → say it; do not invent candidates. Discarded near-misses get a one-line motive.
 - Cheap: the per-turn surfacing is the hook's job; run this skill at decision points, not every turn.

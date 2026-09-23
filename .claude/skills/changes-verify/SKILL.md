@@ -23,7 +23,7 @@ when_to_use: |
 
 # verify — the pre-done gate
 
-Makes "done" mean verified. This skill is the executor of the dev loop's REVIEW
+Makes "done" mean verified. It executes the dev loop's REVIEW
 stage (CLAUDE.md §The dev loop); `flow` (review phase) invokes it for the happy-path E2E row.
 
 For authorized publication, read [the publication protocol](references/publication.md)
@@ -44,9 +44,9 @@ A claim resting on a file, symbol or route existing →
 
 ## Anti-trigger (proportionality)
 
-Doc/markdown-only diffs and test-only diffs with no runtime surface do NOT get
-the full protocol — the project suite alone suffices. The gain is on code with
-runtime surface (product code, hooks, CLIs, UI).
+Doc- and test-only diffs with no runtime surface get the project suite, not
+the full protocol; text no code, test or agent reads may say why no check applies.
+The gain is on runtime surface (product code, hooks, CLIs, UI).
 
 ## The 4-step protocol
 

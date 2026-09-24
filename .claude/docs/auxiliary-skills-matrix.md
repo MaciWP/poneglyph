@@ -1,6 +1,6 @@
 # Auxiliary skills matrix (canon — referenced by the `flow` skill)
 
-> Source of truth for which auxiliary skills each `flow` phase invokes, **and** (since 2026-09-03, plan 032/WP4) for the per-phase "when + manual fallback" rows (§Fallbacks per phase below). `skills/flow/SKILL.md` keeps a one-line pointer; since the 2026-09-17 merge the review and retro rows live here too; drillme-clarify's row is behavioral-only. Relocated here from `001-poneglyph-5phase-workflow/tasks/index.md` when that plan was archived (2026-06-24); the matrix is live canon, the plan is history.
+> Source of truth for which auxiliary skills each `flow` phase invokes, **and** for the per-phase "when + manual fallback" rows (§Fallbacks per phase below), including review and retro. `skills/flow/SKILL.md` keeps a one-line pointer; drillme-clarify's row is behavioral-only.
 
 ## Catálogo de auxiliaries
 
@@ -30,7 +30,7 @@
 
 Leyenda: ✅ = invocación canónica esperada · ⚠️ = condicional según contexto · — = no aplica
 
-## Pointer in `skills/flow/SKILL.md` (since 2026-09-03, plan 032/WP4)
+## Pointer in `skills/flow/SKILL.md`
 
 No phase reference carries its own "Auxiliary skills invoked" table — the per-phase rows with the **when** and the **manual fallback** live here (§Fallbacks per phase). `SKILL.md` §Shared discipline keeps the one-line pointer; skill-to-skill invocation is probabilistic (issue #59968), so on a miss the Lead applies the fallback row.
 
@@ -45,7 +45,7 @@ No phase reference carries its own "Auxiliary skills invoked" table — the per-
 | `drillme-clarify` | Before closing Phase 1 (hard gate 1->2) — applies 5 phase questions + canonical 4 Socratic categories | Lead invokes `/drillme-clarify "Phase 1 closing for <NNN-slug>"` manually before approving |
 | `prompt-design` | When the user's initial brief is too vague (multiple interpretations, missing success criteria) and refinement is warranted before the questionnaire | Lead applies the 5-criteria rubric inline; refines manually |
 
-The plan phase is NOT invoked by scope — it waits on the human hard gate 1->2. (The former full-mode product perspectives were cut in the 2026-09-17 merge.)
+The plan phase is NOT invoked by scope — it waits on the human hard gate 1->2.
 
 ### plan (phase 2 — `references/02-plan.md`)
 

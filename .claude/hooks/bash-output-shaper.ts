@@ -9,6 +9,8 @@
 // hook rewrites or refuses a command before its output ever reaches the model.
 //
 //   deny     `cat` / `sed -n` on a file above BIG_FILE_BYTES with no pipe → Read (offset/limit) or Grep
+//            (a `sed -n` printing only numeric ranges totalling ≤ SED_MAX_LINES passes — audit 012)
+//   rewrite  unquoted `grep --include=*.py`-style globs → quoted (zsh nomatch, audit 012)
 //   rewrite  `git log` without a bound → `--oneline -n 30` · `ls -R` / `find` / `tree` with no pipe → `| head -n 200`
 //   never    tests, `git diff`, anything piped, redirections/heredocs (writes), or a command ending in `# raw`
 //
@@ -18,11 +20,26 @@ import { posix, win32 } from "node:path";
 import { readHookStdin } from "./lib/hook-stdin";
 
 export const BIG_FILE_BYTES = 12 * 1024;
+// A `sed -n` whose script prints only numeric ranges costs what Read with offset/limit costs.
+// Audit 012 (H2): all ~32 real denials were such ranges, the largest ~140 lines.
+export const SED_MAX_LINES = 200;
 export type Shape = { action: "allow" } | { action: "deny"; reason: string } | { action: "rewrite"; command: string };
 export type FileSize = (absolutePath: string) => number | null;
 
 // Splits on command separators and keeps them (odd indexes) so the line can be rebuilt verbatim.
-const SEPARATOR_RE = /(\s*(?:&&|\|\||;|\r?\n)\s*)/;
+// A separator inside quotes is data (`sed -n '1,5p;9,12p'`), so quoted spans are masked first.
+const SEPARATOR_RE = /(\s*(?:&&|\|\||;|\r?\n)\s*)/g;
+function splitCommands(command: string): string[] {
+  const masked = command.replace(/'[^']*'|"[^"]*"/g, (q) => "\0".repeat(q.length));
+  const parts: string[] = [];
+  let last = 0;
+  for (const m of masked.matchAll(SEPARATOR_RE)) {
+    parts.push(command.slice(last, m.index), command.slice(m.index, m.index + m[0].length));
+    last = m.index + m[0].length;
+  }
+  parts.push(command.slice(last));
+  return parts;
+}
 const GIT_LOG_BOUND_RE = /^(-n|-\d+|--oneline|--max-count(=.*)?|--since(=.*)?|--after(=.*)?|-p|--patch|--stat|--format(=.*)?|--pretty(=.*)?)$/;
 
 function unquote(token: string): string {
@@ -58,6 +75,39 @@ function sizeOf(file: string, dir: string, fileSize: FileSize): number | null {
   return fileSize(win32.join(dir, file)) ?? fileSize(posix.join(dir.replace(/\\/g, "/"), file));
 }
 
+// Total lines a `sed -n` script prints when every command is `N p` or `N,M p`; null otherwise.
+function sedRangeSpan(script: string): number | null {
+  let total = 0;
+  for (const cmd of script.split(";")) {
+    const m = cmd.trim().match(/^(\d+)(?:,(\d+))?p$/);
+    if (!m) return null;
+    const from = Number(m[1]);
+    const to = m[2] === undefined ? from : Number(m[2]);
+    if (to < from) return null;
+    total += to - from + 1;
+  }
+  return total;
+}
+
+function isBoundedSed(toks: string[]): boolean {
+  const script = toks[toks.indexOf("-n") + 1];
+  if (script === undefined) return false;
+  const span = sedRangeSpan(unquote(script));
+  return span !== null && span <= SED_MAX_LINES;
+}
+
+// zsh `nomatch` aborts a line whose unquoted glob matches no file (audit 012, H3: ~80 hits, most
+// `grep --include=*.py`). Quoting the option value changes nothing for grep. A value inside a
+// double-quoted string (`bash -c "…"`) is never globbed, so it is left alone.
+const GREP_GLOB_OPT_RE = /(\s--(?:include|exclude|exclude-dir)=)([^\s'"]*[*?[{][^\s'"]*)/g;
+function quoteGrepGlobs(segment: string): string {
+  return segment.replace(GREP_GLOB_OPT_RE, (whole, opt: string, glob: string, offset: number) => {
+    const before = segment.slice(0, offset);
+    const insideQuotes = (before.match(/"/g) ?? []).length % 2 === 1 || (before.match(/'/g) ?? []).length % 2 === 1;
+    return insideQuotes ? whole : `${opt}'${glob}'`;
+  });
+}
+
 function denial(cmd: string, file: string, size: number): string {
   return `\`${cmd}\` would dump ${file} (${Math.round(size / 1024)} KB) whole into the context; tool output is already 56 % of it and the same 28 KB file was catted four times in one session (plan 037, H6). Use Read with offset/limit, or Grep the section you need. Append \`# raw\` to bypass.`;
 }
@@ -74,12 +124,18 @@ export function hasHeredoc(command: string): boolean {
 export function shapeCommand(command: string, cwd: string, fileSize: FileSize = realFileSize): Shape {
   if (/#\s*raw\s*$/.test(command.trim())) return { action: "allow" };
   if (hasHeredoc(command)) return { action: "allow" };
-  const parts = command.split(SEPARATOR_RE);
+  const parts = splitCommands(command);
   let dir = cwd;
   let rewritten = false;
   for (let i = 0; i < parts.length; i += 2) {
-    const segment = parts[i].trim();
+    let segment = parts[i].trim();
     if (!segment) continue;
+    const quotedSegment = quoteGrepGlobs(segment);
+    if (quotedSegment !== segment) {
+      parts[i] = parts[i].replace(segment, quotedSegment);
+      segment = quotedSegment;
+      rewritten = true;
+    }
     const toks = tokens(segment);
     const cmd = toks[0];
     if (cmd === "cd" && toks[1]) {
@@ -92,7 +148,7 @@ export function shapeCommand(command: string, cwd: string, fileSize: FileSize = 
     const piped = segment.includes("|");
     if (piped) continue; // a consumer (head, grep, wc…) already bounds the output
 
-    if (cmd === "cat" || (cmd === "sed" && toks.includes("-n"))) {
+    if (cmd === "cat" || (cmd === "sed" && toks.includes("-n") && !isBoundedSed(toks))) {
       // sed's file operand comes last; cat may name several files.
       const files = cmd === "sed" ? [unquote(toks[toks.length - 1])] : toks.slice(1).filter((t) => !t.startsWith("-")).map(unquote);
       for (const f of files) {

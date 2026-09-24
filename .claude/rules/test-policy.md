@@ -3,7 +3,7 @@ paths:
   - ".claude/plans/**"
 ---
 
-<!-- Path-scoped (021): the flow plan, test-plan and build phases Read this file explicitly when they run, so it never needs eager always-load. Lazy-trigger on planning artefacts is belt-and-suspenders; the skills' explicit Read is the real delivery. -->
+<!-- Path-scoped: the flow plan, test-plan and build phases Read this file explicitly when they run, so it never needs eager always-load. Lazy-trigger on planning artefacts is belt-and-suspenders; the skills' explicit Read is the real delivery. -->
 
 # Test Policy
 

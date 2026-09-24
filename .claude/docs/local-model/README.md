@@ -80,7 +80,7 @@ What it costs:
 | The advisor is disabled | The model has no rank in the model catalog |
 | Whole-session switch | It is one model or the other; you cannot mix a frontier model for thinking and the local one for execution in a single conversation |
 | ~25-30K of system prompt | Leaves ~100K of working context out of 128K |
-| Unrecognized model ID (CC ≥2.1.233/2.1.251) | `claude -p` prints `[claude-code:unrecognized_model]` to stderr (informational); and the default commit trailer becomes `Co-Authored-By: Claude Code` — neutralized by `attribution.commit/pr = ""` in `settings.global.json` (audit 010) |
+| Unrecognized model ID (CC ≥2.1.233/2.1.251) | `claude -p` prints `[claude-code:unrecognized_model]` to stderr (informational); and the default commit trailer becomes `Co-Authored-By: Claude Code` — neutralized by `attribution.commit/pr = ""` in `settings.global.json` |
 
 ## Dead ends — do not repeat
 

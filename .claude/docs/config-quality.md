@@ -53,7 +53,7 @@ cannot pass.
 | Surface | Blocking rule | Basis |
 |---|---|---|
 | Skill entrypoint | YAML mapping, matching name, non-empty instructions, required description | [Agent Skills specification](https://agentskills.io/specification); the `metadata` field is optional |
-| Core skill completion contract | Non-empty `## Definition of Done` and `## How You're Graded` prose sections, outside code examples and comments (`skill.contract.dod`, `skill.contract.graded`) | [Poneglyph authoring convention](../skills/harness-config/references/completion-contract.md), explicitly adopted 2026-09-22; not a vendor requirement or a semantic/model-quality check. Applies to direct core skill entrypoints, not addons, commands or generated adapters. |
+| Core skill completion contract | Non-empty `## Definition of Done` and `## How You're Graded` prose sections, outside code examples and comments (`skill.contract.dod`, `skill.contract.graded`) | [Poneglyph authoring convention](../skills/harness-config/references/completion-contract.md); not a vendor requirement or a semantic/model-quality check. Applies to direct core skill entrypoints, not addons, commands or generated adapters. |
 | Name | 1-64 characters, ASCII lowercase kebab-case, no name collisions | Portable naming subset chosen by this project; not a claim that every host rejects Unicode |
 | Description | Non-whitespace string, 1-1024 Unicode code points after YAML decoding | [Agent Skills specification](https://agentskills.io/specification); no invented 150-character target |
 | Optional metadata | String-to-string `metadata`, compatibility up to 500 characters, documented field types | Agent Skills baseline plus [Claude fields](https://code.claude.com/docs/en/skills) |

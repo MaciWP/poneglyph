@@ -152,6 +152,8 @@ A trivial change, and a small task with one loop-back in full and compact render
 - **Ceremony scales with the level.** A trivial change gets one line of evidence.
   Normal work shows stages when they help the user follow it. High blast radius
   shows every stage and waits. Never invent filler to fill a stage.
+- **Scan line** for multi-step coding, re-emitted on change:
+  `🟢 KNOW · 🟢 PLAN · 🔵 BUILD · ⚪ REVIEW · ⚪ LEARN`.
 - Skipping KNOW to "save time" is the root cause of rework.
 - The floor is absolute — no rung of the ladder ever overrides it.
 - Loop-back over push-forward: a broken premise invalidates everything built on it.

@@ -80,6 +80,7 @@ Before sending `Agent(subagent_type=…, prompt=…)`:
 1. Verify every block of `agent-routing/references/06-context-arch-h.md` §Arch H Delegation Template. Skills enter as `Read .claude/skills/<name>/SKILL.md`, not `Skill()` calls.
 2. Score the same 5 criteria against the *subagent's perspective* (Context = files the agent will need to read; Success = the exact return shape the Lead expects).
 3. If a criterion scores low, fix before invoking — every back-and-forth round-trip with a subagent costs 2-5K tokens.
+4. Write it in plain English for any model (subagent, Codex, Grok, a local model): one instruction per sentence, one term per concept, no metaphors. State the reply format you need back. The house style for the user applies to neither the prompt nor its reply.
 
 ### Context 4 — Audit an inter-agent communication
 

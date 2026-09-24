@@ -1,6 +1,6 @@
 # Model-uplift playbook — instruction set for non-Fable models (Opus / Sonnet / local)
 
-> Written 2026-07-07 by Fable 5 itself, when it was about to leave this harness, distilling first-hand what it does natively that the poneglyph doctrine does not spell out. Re-scoped 2026-09-02 (audit 010): Fable 5.1 is the GA default again since CC 2.1.257, so this playbook is the discipline set to apply whenever the session runs on a **smaller model** (Opus 4.8, Sonnet 5, the local Qwen) — not a farewell document. Consumed on demand; the always-loaded routing core is `.claude/rules/skill-routing.md` (this playbook is **not** always-loaded). Scope: ONLY deltas — everything CLAUDE.md / the output style / skills already demand is deliberately absent here.
+> What the top-tier model does natively that the poneglyph doctrine does not spell out, written down as the discipline set to apply whenever the session runs on a **smaller model** (see §4 for the current tiers). Consumed on demand; the always-loaded routing core is `.claude/rules/skill-routing.md` (this playbook is **not** always-loaded). Scope: ONLY deltas — everything CLAUDE.md / the output style / skills already demand is deliberately absent here.
 
 ## 1. Honest expectations
 
@@ -85,16 +85,16 @@ Watchpoints where smaller models historically relapse in this setup — each map
 
 **Task → model routing** (the criterion lives here, not in settings):
 
-- Deep review / architecture / security / escalation → **Fable 5.1 or Opus 5.5 + `/effort xhigh`** (skills critic/security-audit/task-unblock already pin xhigh via frontmatter — that wiring keeps working; `compare-and-decide`'s heavy tier escalates effort per-invocation, 031).
+- Deep review / architecture / security / escalation → **Fable 5.1 or Opus 5.5 + `/effort xhigh`** (skills critic/security-audit/task-unblock already pin xhigh via frontmatter — that wiring keeps working; `compare-and-decide`'s heavy tier escalates effort per invocation).
 - Standard feature build → Opus 5.5 high (session default) — Sonnet 5 when budget matters.
 - Bulk mechanical work (sweeps, renames, formatting, doc batches) → Sonnet 5, or Opus 5.5 at `medium` (its own default).
 - A durable model or effort choice goes in `settings.global.json` / `settings.machine.json`: sync-claude rebuilds `~/.claude/settings.json` and drops what `/model` or `/effort` wrote there.
 - Massive-corpus analysis (multi-repo audits, huge logs, long-lived sessions) → **Sonnet 5** for the 1M window; prefer it over compacting Opus mid-task.
-- Degradation cascade on overload: `settings.global.json.fallbackModel` (kept current by feature 026/US3).
+- Degradation cascade on overload: `settings.global.json.fallbackModel`.
 - One-turn deep reasoning boost: the `ultrathink` keyword instead of switching effort for the whole session.
 
 ## 5. Load & verify
 
 - The always-loaded routing core is `.claude/rules/skill-routing.md` (synced per-entry to `~/.claude/rules/`). This playbook stays on-demand. Verify routing loads: `grep skill-routing .claude/learned/instructions-loaded.log` in any session (verify the load layer from the log; never assume it loaded).
-- Behavioral validation happens in the first real Opus 5.5 sessions (spec 026 AC5, deliberately deferred; the Opus 4.8 run never happened): judge against §2 — is it refuting itself, running before claiming, keeping status bookkeeping? Refine via `flow` (retro phase).
+- Behavioral validation happens in the first real sessions on a smaller model: judge against §2 — is it refuting itself, running before claiming, keeping status bookkeeping? Refine via `flow` (retro phase).
 - Lifecycle: when the model era changes again, update §4 first (it decays fastest), re-verify §2 still reads as deltas, and prune what the new model does natively.

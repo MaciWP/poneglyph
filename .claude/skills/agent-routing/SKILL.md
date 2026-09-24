@@ -162,7 +162,7 @@ Direct action (the default for ALL write work): Read always permitted. Edit/Writ
 
 **NEVER report "completed" without confirmation that tests pass.** Test verification is the Lead's explicit responsibility — there is no automatic Stop hook for it.
 
-Retry budget, stuck detection, escalation rung → `error-recovery.md` rule (project root, always-loaded). Procedural recovery detail (SendMessage, diagnosis steps, recovery template, worktree cleanup) → `references/07-error-recovery.md` (on-demand). Output style baseline + escape triggers → `output-styles/poneglyph.md`.
+Retry budget, stuck detection, escalation rung → `error-recovery.md` rule (project root, always-loaded). Procedural recovery detail (SendMessage, diagnosis steps, recovery template, worktree cleanup) → `references/07-error-recovery.md` (on-demand). House style (how the Lead writes to the user) → `output-styles/poneglyph.md`; delegation prompts carry their own `[REPLY FORMAT]` (`references/06-context-arch-h.md`).
 
 ---
 
@@ -186,4 +186,4 @@ Retry budget, stuck detection, escalation rung → `error-recovery.md` rule (pro
 - `/flow-lifecycle` command — orchestrates a FEATURE lifecycle (5 phases, multi-turn). This skill orchestrates each Lead TURN within or outside a flow.
 - `prompt-design` skill — prompt quality refinement (replaces prompt-scoring reference).
 - `.claude/rules/error-recovery.md` — Lead-driven error diagnosis + retry policy.
-- `output-styles/poneglyph.md` — terse-first response style.
+- `output-styles/poneglyph.md` — house style for replies to the user.

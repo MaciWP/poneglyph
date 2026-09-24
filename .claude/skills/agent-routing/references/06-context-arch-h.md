@@ -123,6 +123,10 @@ Return after verified completion. Report unmet criteria; do not claim success.
 {task-specific outcomes and behaviors to favor, consistent with the agreed scope}
 Do not add work or repeat valid checks to improve a grade.
 
+[REPLY FORMAT]
+Your reader is the Lead agent, not the user. Reply in plain English.
+Ignore house-style rules meant for the user, including the `ROBIN:` closing line.
+
 [MEMORY OUTPUT]
 When finished, include "### Memory Insights" with grounded reusable insights, or "None" when no new lesson qualifies.
 ```
@@ -134,6 +138,7 @@ When finished, include "### Memory Insights" with grounded reusable insights, or
 | `Skill()` by the Lead | Loads context into Lead's OWN session only — does NOT propagate to subagents |
 | Empty blocks | Omit the header entirely rather than leaving an empty section |
 | Resume | Carry the same DoD and quality priorities, checked inputs/results, completed work, blockers and next pending action in the existing handoff. Reuse valid evidence; do not restart completed work. |
+| Reply format | `[REPLY FORMAT]` is NECESSARY for Codex/Grok workers — they load the house style from their host config and would otherwise answer in Spanish with a `ROBIN:` line |
 | Memory reminder | Explicit `[MEMORY OUTPUT]` is NECESSARY — agents miss the system-prompt instruction without it |
 
 ## Skill Discovery (Global + Project)

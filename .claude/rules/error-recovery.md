@@ -1,5 +1,3 @@
-<!-- Last verified: 2026-06-22 (021 — split: behavioral triggers stay always-loaded here; procedural reference (SendMessage, diagnosis steps, recovery template, worktree cleanup) moved to agent-routing/references/07-error-recovery.md; hook-reliability table folded into rules/paths/hooks.md) -->
-
 # Error Recovery
 
 The Lead diagnoses failures inline with `troubleshooting` when needed, then

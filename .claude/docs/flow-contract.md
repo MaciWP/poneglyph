@@ -11,8 +11,7 @@ not inferred permission. It does not authenticate callers or run their checks.
 finished. This file is its single owner: a skill cites this table and states no
 number of its own. Before this was written down, the build phase handed over `4`, review
 asked for `3`, retro asked for `4` while the helper had already written `5`, so
-each phase entry check contradicted the state the previous phase produced
-(findings H24 and H71, quality review 2026-09-11).
+each phase entry check contradicted the state the previous phase produced.
 
 | Value | Ready to run | Written by |
 |---|---|---|

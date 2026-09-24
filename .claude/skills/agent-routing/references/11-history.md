@@ -14,7 +14,7 @@ Relocated verbatim from `SKILL.md` §Content Map on 2026-09-03 (plan 032/WP4).
 |---|---|
 | `02-prompt-scoring.md` | `prompt-engineer` skill (covers prompt quality + scoring) |
 | `07-delegation-recovery.md` | split (021): always-loaded triggers in `.claude/rules/error-recovery.md`; procedural detail back in `references/07-error-recovery.md` |
-| `08-output-style.md` | `output-styles/poneglyph.md` (terse-first rules, escape triggers) |
+| `08-output-style.md` | `output-styles/poneglyph.md` (house style) |
 
 ## 2026-09-03 (plan 032)
 

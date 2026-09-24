@@ -279,7 +279,8 @@ export const cardSeparators: Grader = (transcript) => {
   return { pass: true, detail: "no rule or box-drawing separators" };
 };
 
-// §4's ceiling measures RUNNING PROSE only. Tables, lists, numbered steps and headings are
+// Heuristic, no longer a style rule (v4 dropped the numeric ceiling for "fits on one
+// screen", §2): it still flags padding. It measures RUNNING PROSE only. Tables, lists, numbered steps and headings are
 // the structure §2 mandates: counting them would fail the very shape the style demands.
 export const PROSE_CEILING = 15;
 const STRUCTURE_LINE_RE = /^\s*(?:[|>]|[-*+]\s|\d+[.)]\s|#{1,6}\s)/;

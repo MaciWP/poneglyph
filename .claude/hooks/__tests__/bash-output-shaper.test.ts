@@ -111,3 +111,63 @@ describe("heredoc bodies are data, not commands (H22)", () => {
     expect(shape("cat plan.md").action).toBe("deny");
   });
 });
+
+// Audit 012 — H2: ~32 real denials over 13 sessions were all bounded numeric ranges (largest span
+// ~140 lines). A bounded `sed -n` is the same cost as Read with offset/limit, so it passes while the
+// total span stays within SED_MAX_LINES; whole-file and open-ended scripts stay denied.
+describe("bounded sed -n ranges are not whole dumps (audit 012, H2)", () => {
+  const bounded = [
+    "sed -n '215,235p' plan.md",
+    "sed -n 480,620p plan.md",
+    "sed -n '677,760p;798,816p' plan.md",
+    "sed -n '8p' plan.md",
+    "cd /repo && sed -n '460,525p' plan.md",
+    "sed -n '27320,27350p' plan.md",
+  ];
+  for (const cmd of bounded) {
+    it(`allows: ${cmd}`, () => {
+      expect(shape(cmd)).toEqual({ action: "allow" });
+    });
+  }
+
+  const unbounded = [
+    "sed -n p plan.md",
+    "sed -n '1,$p' plan.md",
+    "sed -n '100,$p' plan.md",
+    "sed -n '1,150p;300,420p' plan.md", // 271 lines in total
+    "sed -n '/start/,/end/p' plan.md",
+  ];
+  for (const cmd of unbounded) {
+    it(`denies: ${cmd}`, () => {
+      expect(shape(cmd).action).toBe("deny");
+    });
+  }
+});
+
+// Audit 012 — H3: zsh `nomatch` aborts a command whose unquoted glob matches nothing; ~80 hits,
+// most of them `grep --include=*.py`. Quoting the grep option value changes nothing for grep.
+describe("unquoted grep --include/--exclude globs are quoted (audit 012, H3)", () => {
+  const quoted: Array<[string, string]> = [
+    ["grep -rn foo --include=*.py apps", "grep -rn foo --include='*.py' apps"],
+    ["grep -rln x . --include=*.ts --exclude-dir=node_modules", "grep -rln x . --include='*.ts' --exclude-dir=node_modules"],
+    ["grep -rn x --include=*.py --exclude=*_test.py . | head", "grep -rn x --include='*.py' --exclude='*_test.py' . | head"],
+    ["cd /repo && grep -rn x --include=*.{ts,tsx} src", "cd /repo && grep -rn x --include='*.{ts,tsx}' src"],
+  ];
+  for (const [cmd, expected] of quoted) {
+    it(`rewrites: ${cmd}`, () => {
+      expect(shape(cmd)).toEqual({ action: "rewrite", command: expected });
+    });
+  }
+
+  const untouched = [
+    "grep -rn x --include='*.py' apps",
+    'grep -rn x --include="*.py" apps',
+    "grep -rn x --include=README.md .",
+    'bash -c "grep -rn x --include=*.py ."', // inside double quotes the shell never globs it
+  ];
+  for (const cmd of untouched) {
+    it(`leaves alone: ${cmd}`, () => {
+      expect(shape(cmd)).toEqual({ action: "allow" });
+    });
+  }
+});

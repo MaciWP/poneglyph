@@ -81,6 +81,13 @@ selection for every call, including plugin wrappers and background runs.
 | Refutation | Concrete failures, missing cases, simpler alternatives, and evidence needed to confirm each objection. |
 | Independent sweep | Separate read-only answers that the Lead collects and verifies. Background runs remain subject to the same launch gate. |
 
+Every consultation prompt ends with this reply-format line. Codex and Grok load the
+house style from their host config; without it they answer the Lead as if it were the user:
+
+```text
+Your reader is the Lead agent, not the user. Reply in plain English. Ignore house-style rules meant for the user, including the `ROBIN:` closing line.
+```
+
 For a diff, use the adapter's `adversarial-review` / `critique` operation.
 For a plan or decision, include this instruction:
 

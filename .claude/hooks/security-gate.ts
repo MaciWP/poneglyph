@@ -6,10 +6,12 @@
 
 import {
   isAbsolute as isAbsolutePathNative,
+  join,
   relative as relativePathNative,
   resolve as resolvePathNative,
   sep as pathSep,
 } from "node:path";
+import { appendLog } from "./instructions-loaded";
 import { readHookStdin } from "./lib/hook-stdin";
 
 // The optional quote after the key is what makes JSON and quoted YAML match: `"password":
@@ -407,6 +409,48 @@ export function extractTurnFromTranscript(jsonl: string): TurnExtract {
   return { userPrompt, bashCommands: bashCommands.reverse() };
 }
 
+// Degradation canary: the house style asks every final answer to END with a line starting
+// `ROBIN:` (verdict + the user's next step). A missing line is the cheap, mechanical sign that
+// always-on instructions are dropping out of attention. A present one proves nothing about
+// subtler rules.
+export const CANARY = "ROBIN:";
+
+// Last assistant text block AFTER the turn's plain-string user prompt; null if the turn
+// produced no text (tool-only or interrupted).
+export function extractFinalAssistantText(jsonl: string): string | null {
+  const lines = jsonl.split("\n");
+  for (let i = lines.length - 1; i >= 0; i--) {
+    let event: unknown;
+    try {
+      event = JSON.parse(lines[i]);
+    } catch {
+      continue;
+    }
+    const e = event as { type?: string; message?: { content?: unknown } };
+    if (e.type === "user" && typeof e.message?.content === "string") return null;
+    if (e.type === "assistant" && Array.isArray(e.message?.content)) {
+      const texts = (e.message.content as Array<{ type?: string; text?: string }>).filter(
+        (b) => b.type === "text" && typeof b.text === "string" && b.text.trim(),
+      );
+      if (texts.length > 0) return texts[texts.length - 1].text as string;
+    }
+  }
+  return null;
+}
+
+export function checkCanary(text: string | null): "ok" | "miss" | null {
+  if (text === null || !text.trim()) return null;
+  const lastLine = text.trimEnd().split("\n").pop() as string;
+  return lastLine.trimStart().startsWith(CANARY) ? "ok" : "miss";
+}
+
+// User channel only: an additionalContext would re-open the turn just to fix a prefix.
+export function buildCanaryWarning(transcriptKb: number): { systemMessage: string } {
+  return {
+    systemMessage: `[canario] La respuesta no terminó con una línea ${CANARY} — posible degradación (transcript ${transcriptKb} KB).`,
+  };
+}
+
 // sessionCwd (optional, audit 2026-08-07): when provided, mutations resolving
 // OUTSIDE it are excluded (disposable-repo false positives). Omitted → legacy
 // behavior, kept as a pure-test escape hatch; main() always passes a real cwd.
@@ -443,9 +487,10 @@ async function main(): Promise<void> {
     const raw = await readHookStdin();
     if (!raw.trim()) process.exit(0);
 
-    let payload: { transcript_path?: string; cwd?: string } = {};
+    type StopPayload = { transcript_path?: string; cwd?: string; session_id?: string; last_assistant_message?: unknown };
+    let payload: StopPayload = {};
     try {
-      payload = JSON.parse(raw) as { transcript_path?: string; cwd?: string };
+      payload = JSON.parse(raw) as StopPayload;
     } catch {
       // best-effort — unparseable payload → run with defaults
     }
@@ -457,10 +502,28 @@ async function main(): Promise<void> {
 
     // Git discipline check (029/US4) — reads the turn from the transcript tail.
     let gitResponse: ReturnType<typeof buildGitDisciplineWarning> = null;
+    let canaryResponse: ReturnType<typeof buildCanaryWarning> | null = null;
     try {
       if (payload.transcript_path) {
         const text = await readTranscriptTail(payload.transcript_path);
         const tail = text.split("\n").slice(-400).join("\n");
+        // Canary — prefer the payload's final message: the transcript may not be flushed yet.
+        try {
+          const finalText =
+            typeof payload.last_assistant_message === "string" ? payload.last_assistant_message : extractFinalAssistantText(tail);
+          const verdict = checkCanary(finalText);
+          if (verdict) {
+            const kb = Math.round(Bun.file(payload.transcript_path).size / 1024);
+            const base = typeof payload.cwd === "string" ? payload.cwd : process.cwd();
+            appendLog(
+              `${new Date().toISOString()} ${payload.session_id ?? "unknown"} ${verdict} ${kb}`,
+              join(base, ".claude", "learned", "canary.log"),
+            );
+            if (verdict === "miss") canaryResponse = buildCanaryWarning(kb);
+          }
+        } catch {
+          // best-effort — the canary never blocks the other checks
+        }
         // Cheap prefilters (031 + audit 2026-08-07): no Bash tool_use, or no
         // git/gh text at all, in the tail → no git mutation possible this turn;
         // skip the per-line JSONL parse entirely.
@@ -474,9 +537,13 @@ async function main(): Promise<void> {
       // best-effort — transcript unavailable/unreadable → skip this check
     }
 
-    if (secretResponse || gitResponse) {
+    if (canaryResponse && !secretResponse && !gitResponse) {
+      process.stdout.write(JSON.stringify(canaryResponse) + "\n");
+    } else if (secretResponse || gitResponse) {
       const merged = {
-        systemMessage: [secretResponse?.systemMessage, gitResponse?.systemMessage].filter(Boolean).join("\n\n"),
+        systemMessage: [secretResponse?.systemMessage, gitResponse?.systemMessage, canaryResponse?.systemMessage]
+          .filter(Boolean)
+          .join("\n\n"),
         hookSpecificOutput: {
           hookEventName: "Stop" as const,
           additionalContext: [

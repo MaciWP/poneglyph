@@ -116,7 +116,7 @@ bun run doctor --ci
 bun run doctor
 ```
 
-### Shared context/effort policy (plan 037)
+### Shared context/effort policy
 
 All three hosts carry one tiered policy, so a session behaves the same everywhere:
 compact at **200k tokens** by default, raise to **400k** per session when a task

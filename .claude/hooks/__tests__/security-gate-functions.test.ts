@@ -153,3 +153,53 @@ describe("buildStopResponse (028/US4)", () => {
     expect(buildStopResponse([])).toBeNull();
   });
 });
+
+import { buildCanaryWarning, checkCanary, extractFinalAssistantText } from "../security-gate";
+
+describe("degradation canary (2026-09-24)", () => {
+  const user = (content: string) => JSON.stringify({ type: "user", message: { content } });
+  const assistant = (...blocks: object[]) => JSON.stringify({ type: "assistant", message: { content: blocks } });
+  const text = (t: string) => ({ type: "text", text: t });
+  const tool = { type: "tool_use", name: "Bash", input: { command: "ls" } };
+
+  test("an answer whose last line starts with ROBIN: is ok, whitespace allowed", () => {
+    expect(checkCanary("ROBIN: Hecho.")).toBe("ok");
+    expect(checkCanary("Pasan los tests.\n  ROBIN: Hecho.\n\n")).toBe("ok");
+  });
+
+  test("a missing, early, lowercased or decorated closing line is a miss", () => {
+    expect(checkCanary("Hecho.")).toBe("miss");
+    expect(checkCanary("ROBIN: Hecho.\nY un detalle más.")).toBe("miss");
+    expect(checkCanary("Detalle.\noriol: Hecho.")).toBe("miss");
+    expect(checkCanary("Detalle.\n**ROBIN:** Hecho.")).toBe("miss");
+    expect(checkCanary("Hecho. ROBIN:")).toBe("miss");
+  });
+
+  test("no text this turn yields no verdict", () => {
+    expect(checkCanary(null)).toBeNull();
+    expect(checkCanary("   ")).toBeNull();
+  });
+
+  test("the final text block of the current turn is the one checked", () => {
+    const jsonl = [user("old"), assistant(text("ROBIN: old answer")), user("new"), assistant(text("interim")), assistant(tool), assistant(text("final"))].join("\n");
+    expect(extractFinalAssistantText(jsonl)).toBe("final");
+  });
+
+  test("a tool-only turn never reads the previous turn's answer", () => {
+    const jsonl = [user("old"), assistant(text("ROBIN: old answer")), user("new"), assistant(tool)].join("\n");
+    expect(extractFinalAssistantText(jsonl)).toBeNull();
+  });
+
+  test("tool_result user entries do not end the turn; malformed lines are skipped", () => {
+    const toolResult = JSON.stringify({ type: "user", message: { content: [{ type: "tool_result", content: "x" }] } });
+    const jsonl = [user("new"), assistant(text("ROBIN: final")), "{not json", toolResult].join("\n");
+    expect(extractFinalAssistantText(jsonl)).toBe("ROBIN: final");
+  });
+
+  test("the warning reaches the user only and carries the transcript size", () => {
+    const w = buildCanaryWarning(812);
+    expect(w.systemMessage).toContain("ROBIN:");
+    expect(w.systemMessage).toContain("812 KB");
+    expect(Object.keys(w)).toEqual(["systemMessage"]);
+  });
+});

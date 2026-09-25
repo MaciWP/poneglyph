@@ -6,7 +6,7 @@
     "rules/error-recovery.md": 2185,
     "rules/harness-runtime.md": 1910,
     "rules/skill-routing.md": 984,
-    "skills: description + when_to_use": 6671
+    "skills: description + when_to_use": 7171
   },
   "skillBodies": {
     "agent-routing": 15903,
@@ -25,8 +25,9 @@
     "html-report": 21663,
     "knowledge-graph": 18486,
     "lessons-learned": 20016,
+    "natural-writing": 7286,
     "orca-team": 7173,
-    "pr-comments": 5610,
+    "pr-comments": 8659,
     "pr-review": 7592,
     "prompt-design": 8536,
     "security-audit": 11696,
@@ -35,6 +36,6 @@
     "ui-design": 4355
   },
   "informative": {
-    "installed plugins: description + when_to_use (this machine)": 4286
+    "installed plugins: description + when_to_use (this machine)": 4321
   }
 }

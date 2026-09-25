@@ -103,7 +103,8 @@ Cycles and waves of >10 HUs are smells: refactor the boundaries. Rules:
 ## Step 10 — Produce the artifacts
 
 1. `tasks/index.md` from its template: frontmatter (`spec`, `phase: 2`, `total_us`,
-   `dag_complete`), executive summary, effort per wave + critical path, mermaid DAG by wave,
+   `dag_complete`), executive summary, effort per wave + critical path, time budget in
+   minutes (per HU and total, start time from `date`), mermaid DAG by wave,
    HU table, cross-cutting decisions, open questions deferred to phase 3, next step.
 2. `tasks/US{N}.md` per HU from its template: frontmatter (`us`, `title`, `wave`,
    `depends_on`, `tdd_mode`, `estimate`, `status: draft`); the mandatory **Execution prompt

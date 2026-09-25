@@ -59,7 +59,8 @@ the [flow contract](../docs/flow-contract.md) defines the helper and recovery.
 
 Record the phase used, the previous artifact/check, and the transition with
 the helper's `boundary-check` command. Confirm the human decision at gates 1→2
-and 2→3. At planning/build entry, apply `choose-skills` and the `drillme-clarify` gap sweep;
+and 2→3. Check the time budget from `tasks/index.md` with `date`; spent → report and ask
+before the next phase. At planning/build entry, apply `choose-skills` and the `drillme-clarify` gap sweep;
 zero unresolved gaps means zero questions. Invoke `flow` with the phase explicitly;
 do not rely on automatic activation or reconstruct its instructions from memory.
 

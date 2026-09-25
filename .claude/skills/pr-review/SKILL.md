@@ -10,6 +10,7 @@ metadata:
     request
 disable-model-invocation: false
 argument-hint: "[PR number | PR URL | branch] (empty = local mode: current branch vs base)"
+effort: xhigh
 when_to_use: |
   "revisa la pr", "revisa esta pr", "review this pr", "revisa mi rama contra el ticket", "code review de la pr", "revisa la pull request", before approving/merging a PR
 ---

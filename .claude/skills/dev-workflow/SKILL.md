@@ -70,8 +70,10 @@ migrations, deletion). Else proceed once the DoD is settled.
   hold yourself to. Wrong restatement = cheapest possible failure point.
 - **Completion contract**: reuse the agreed DoD and quality priorities. Missing
   outcomes, evidence or stop condition → propose one line (Tarea · Hecho
-  significa · Cuándo paro) with an "Adelante" option.
+  significa · Cuándo paro · Presupuesto) with an "Adelante" option.
   Keep them in the existing plan or inline PLAN, not a second ledger.
+- **Time budget**: estimate the minutes the work needs and record the start time
+  with `date`. The model has no clock; only a tool reading counts.
 - **Blocking questions (0-3)**: only where a wrong answer means throwing work away.
   Each carries your recommended default so "yes to all" is a valid reply.
   Nothing blocking → say so, list zero.
@@ -104,6 +106,15 @@ root cause (the guard goes in the shared function, not per-caller patches).
 **Debt convention**: a deliberate cut carries
 `ponytail: <ceiling>, <upgrade trigger>` (e.g. `# ponytail: breaks >10k rows, batch it when datasets grow`).
 No trigger = not a cut, just a bug you documented.
+
+**Checklist**: work with several parts keeps a checklist (the host's to-do tool,
+else a scratchpad file). Tick each part as it closes. Before you end a turn, read
+it: items open and no blocker → continue. A text-only update is a report, not
+the end of the task.
+
+**Budget checkpoint**: at the end of each stage, compare with `date`. Budget spent
+→ report the position, what remains and a new estimate, then ask whether to
+continue. Hard gates and blocking questions still apply.
 
 ## Stage 4 — REVIEW (analyze / comply)
 
@@ -169,7 +180,7 @@ A trivial change, and a small task with one loop-back in full and compact render
 |---|---|
 | Calling a task trivial before reading what it touches | Look first; trivial means behavior-neutral, ≤1 file, easy to revert; a high-blast trait wins |
 | Full five-stage ceremony on a typo or a question | Trivial level: do it, one line of evidence |
-| Judging importance or care level before KNOW | Investigate first; never invent the user's time budget |
+| Judging importance or care level before KNOW | Investigate first; never infer care from diff size; propose the time estimate for the user to confirm |
 | Ladder applied before understanding the problem | "Read fully, then be lazy" — comprehension first |
 | Simplifying away validation/errors to score fewer lines | Floor violation — restore it |
 | `ponytail:` comment without an upgrade trigger | Add the trigger or treat as a bug |

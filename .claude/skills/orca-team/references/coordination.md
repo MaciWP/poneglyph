@@ -60,6 +60,8 @@ approval evidence requires clarification, not reconstruction.
 6. Completion stops writes but can leave a reservation held for verification.
    Release or transfer only after the previous owner acknowledges its handoff
    or the runtime proves it stopped. Elapsed time, silence and TUI idle are not proof.
+   A worker turn that ends with text only has not finished. Send one continuation
+   that names its open items; after 2, mark the task blocked and tell the user.
 7. Failed tasks may leave partial changes. Inspect them with their owner before
    authorizing repair. Do not reset the shared checkout or remove another task's work.
 
@@ -105,6 +107,9 @@ If blocked, ask the coordinator and preserve the pending question ID.
 Report the task and current attempt, changed files, findings and remaining work.
 Report executed checks, actual outcomes and the checked input fingerprint.
 Use failed when a required worker check fails or cannot run.
+A turn that ends without worker_done or a question to the coordinator does not
+end the task. Continue until the DoD is met or you are blocked. Report progress
+between substantial steps.
 Send worker_done once through the current preamble, then stop writing and idle.
 Return useful non-obvious lessons when present.
 ```

@@ -81,6 +81,10 @@ file holds what every phase shares. Read exactly one phase reference per entry.
 - **Execution model.** Inline in the main session. A single HU is never a reason to spawn.
   An authorized Orca team uses the supervised-worker branch in `references/04-build.md`;
   only the coordinator records transitions.
+- **Checklist and time budget.** `tasks/index.md` and `state.json` are the checklist:
+  read them before ending a turn; open HUs and no blocker → continue. Phase 2 records the
+  budget in minutes; each boundary compares it with `date`. Budget spent → report the
+  position, what remains and a new estimate, then ask.
 - **Effort.** Review (phase 4) runs at `/effort xhigh`; the other phases follow
   `docs/model-uplift-playbook.md` §4. The frontmatter pins no effort.
 

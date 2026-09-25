@@ -36,7 +36,7 @@ Floor at every level: every change reports its evidence (the project's required 
 
 **Loop-back**: a failed stage sends you back to the stage whose output broke (wrong assumption → PLAN, and tell the user — never quietly improvise; missed existing code → KNOW). Same failure twice or an unclosable gap → `drillme-clarify` sweep before retrying.
 
-**Stops**: stop at the finish line, a hard gate or a blocking question — never at a summary announcing the next step, an offer to continue, non-blocking decision lists or a milestone; status notes ride with the next action. Long runs outside `/flow-lifecycle` keep a scratchpad checklist.
+**Stops**: stop at the finish line, a hard gate, a blocking question or a spent time budget — never at a summary announcing the next step, an offer to continue, non-blocking decision lists or a milestone; status notes ride with the next action. Multi-part work keeps a checklist: tick it as parts close and read it before ending a turn.
 
 ### Agent spawn — hard gate (permission + model)
 
@@ -147,7 +147,7 @@ Rule of use: every skill, rule or hook must justify its existence against ≥1 c
 | **VII** | **Observability** | Everything we do should be observable — from the product's point of view, or for the AI itself. |
 | **VIII** | **Internal prompting quality** | Know when a prompt is weak; before calling an agent or another AI, apply `prompt-design`. |
 | **IX** | **Poneglyph maintainability** | Beyond the meta skills: always advise well and keep REDUCING code and config — efficient and useful; no duplicates, no contradictions, no dead references. The system doesn't rot. |
-| **X** | **Efficiency — right model, right worker** | Prefer inline Lead tools. Follow §Agent spawn for permission, model choice and the bounded Orca team exception. Choose the cheapest capable tier from actual host capabilities. Parallelize only independent work; each token must yield product, not ceremony. |
+| **X** | **Efficiency — right model, right worker** | Prefer inline Lead tools. Follow §Agent spawn for permission, model choice and the bounded Orca team exception. Choose the cheapest capable tier from actual host capabilities. Parallelize only independent work; each token and each minute of the user's time must yield product, not ceremony. |
 
 ## System map
 

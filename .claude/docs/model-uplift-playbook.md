@@ -85,7 +85,7 @@ Watchpoints where smaller models historically relapse in this setup — each map
 
 **Task → model routing** (the criterion lives here, not in settings):
 
-- Deep review / architecture / security / escalation → **Fable 5.1 or Opus 5.5 + `/effort xhigh`** (skills critic/security-audit/task-unblock already pin xhigh via frontmatter — that wiring keeps working; `compare-and-decide`'s heavy tier escalates effort per invocation).
+- Deep review / architecture / security / escalation → **Fable 5.1 or Opus 5.5 + `/effort xhigh`** (skills security-audit/task-unblock/pr-review pin xhigh via frontmatter; never lower effort in a skill, because the override lasts for the rest of the turn; `compare-and-decide`'s heavy tier escalates effort per invocation).
 - Standard feature build → Opus 5.5 high (session default) — Sonnet 5 when budget matters.
 - Bulk mechanical work (sweeps, renames, formatting, doc batches) → Sonnet 5, or Opus 5.5 at `medium` (its own default).
 - A durable model or effort choice goes in `settings.global.json` / `settings.machine.json`: sync-claude rebuilds `~/.claude/settings.json` and drops what `/model` or `/effort` wrote there.

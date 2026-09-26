@@ -139,7 +139,7 @@ Full Arch H template with all blocks, propagation model, skill discovery: `refer
 | Tool | Usage |
 |---|---|
 | `Skill('orca-team')` | Authorized supervised Orca team; one shared worktree, direct traced messages, coordinator reservations and acceptance |
-| `Skill('orca-swarm')` | orca-team + claim board, time budget, leaderboard |
+| `Skill('orca-swarm')` | orca-team + bid board, time budget, leaderboard |
 | `Workflow` (≥4 independent **read-only** units) | Fan-out: research sweeps / exploration / decision-review panel in parallel (`agentType` `default`, or built-ins like `Explore`). Write fan-out: explicit user opt-in only (`isolation: 'worktree'` on file collision) |
 | `Explore` | Read-only codebase sweep (built-in, session model; not a work-spawn) |
 | `Agent(subagent_type: "fork")` | Read-only sweep that needs the session's thread (inherits conversation + cache, parent model). Never for the fresh-context reviewer. Same hard gate |

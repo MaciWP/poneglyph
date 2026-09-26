@@ -2,16 +2,16 @@
 name: orca-swarm
 description: >-
   Run a hive of Orca workers toward one shared objective: a global DoD, a
-  shared task board that workers claim from, a hard time budget and a
+  task board that workers bid on, a hard time budget and a
   coordinator-awarded leaderboard with a final podium. Layered on orca-team.
   A team without a board or scoring belongs to orca-team; a read-only opinion
   belongs to consult-model; one native session belongs to orca-cli.
 metadata:
   keywords: >
-    Keywords - orca swarm, orca-swarm, agent swarm, swarm of agents,
-    enjambre de agentes, un enjambre, monta una colmena, una colmena,
-    colmena de agentes, hive of agents, agent hive, leaderboard de agentes,
-    marcador de agentes, podio de agentes, reanuda la colmena, resume the swarm
+    Keywords - orca swarm, orca-swarm, run an agent swarm, swarm of agents,
+    enjambre de agentes, lanza un enjambre, monta una colmena,
+    colmena de agentes, hive of agents, agent hive, reanuda la colmena,
+    resume the swarm
 argument-hint: "<objective> | --resume <run-id>"
 disable-model-invocation: false
 ---
@@ -21,13 +21,13 @@ disable-model-invocation: false
 An orca-swarm run **is an orca-team workflow**. Load installed `orca-team` first
 and keep all of it: authorization, the coordination record, cooperative
 reservations, the worker contract, Orca execution and recovery. This skill adds
-only four things on top: a hive charter, a pull-based task board, a hard time
-budget and a leaderboard. Where the two disagree, orca-team wins.
+only four things on top: a hive charter, a task board that bees bid on, a hard
+time budget and a leaderboard. Where the two disagree, orca-team wins.
 
 ## Definition of Done
 
-- The charter is approved inside orca-team's single team authorization before the first spawn: objective, global DoD, board, budget, roster and scoring rules.
-- A bee claims board tasks, executes one at a time under orca-team's worker contract plus the bee addendum, sends evidence and stops writing. Only the coordinator grants claims, accepts tasks and awards points.
+- Before the first spawn, orca-team's single team authorization records every field it requires plus the charter: objective, global DoD, board with eligible bees per task, budget and scoring rules.
+- The coordinator dispatches each board task to one eligible bee. The bee executes it under orca-team's worker contract plus the bee addendum, reports evidence and its next bid in `worker_done`, then idles. Only the coordinator dispatches, accepts and awards points.
 - The coordinator closes when the global DoD is accepted with evidence, the time budget is spent, or a real blocker stands. The close reports accepted and pending tasks, measured time, cost (or "unknown") and the final podium.
 
 ## How You're Graded
@@ -50,23 +50,30 @@ budget and a leaderboard. Where the two disagree, orca-team wins.
 1. Run orca-team's "Prepare and authorize" steps. Split only real independent
    work into board tasks, each with a DoD, dependencies and exclusive resources.
 2. Draft the charter from [hive](references/hive.md): objective, global DoD,
-   board, time budget in minutes, attempt cap per task, roster and models, and
-   the scoring table from [scoring](references/scoring.md).
+   board with the eligible bees per task, time budget in minutes, attempt cap
+   per task, roster and models, and the scoring table from
+   [scoring](references/scoring.md). A bee is eligible when its approved role and
+   model fit that task.
 3. Show the charter inside orca-team's authorization question and wait. The
-   recorded approval covers the charter; changing the budget, roster, limits or
-   scoring later needs a new approval. Points never widen that envelope: no
-   score grants spawning, commits, publishing, branch changes or scope changes.
+   recorded approval covers the charter; changing the budget, roster, limits,
+   eligibility or scoring later needs a new approval. Points never widen that
+   envelope: no score grants spawning, commits, publishing, branch changes or scope changes.
 4. Record the start time with `date` in the charter. The model has no clock.
 
-## 2. The board (bees pull, the coordinator grants)
+## 2. The board (bees bid, the coordinator dispatches)
+
+An Orca worker holds one Task and idles after `worker_done`, so bees bid.
 
 - The board lives in orca-team's `coordination.md`; only the coordinator writes it.
-- A bee without work asks for a task with `ask`: task ID and one line of reason.
-  The coordinator grants the first valid request whose dependencies are
-  accepted and whose resources are free, reserving them per orca-team. A
-  conflicting claim queues; it never shares a path.
-- On acceptance, reuse the settled terminal for that bee's next granted task
-  when the roster permits; otherwise release it per orca-team.
+- The coordinator dispatches the first wave from the charter.
+- A bee ends its `worker_done` report with `Next bid: <task ID> — <reason>` or
+  `Next bid: none`. It never bids with `ask`, which is only for a blocking
+  question about its current task.
+- On acceptance, grant the bid when the bee is eligible, the task's dependencies
+  are accepted and its resources are free: reserve them per orca-team and
+  dispatch the task on the same terminal. Bids that arrive together are granted
+  in `worker_done` order. A bid that cannot be granted now never shares a path:
+  release the terminal per orca-team and leave the task open.
 - The coordinator can still assign directly to break a deadlock or keep a
   critical path moving; say so in the grant.
 
@@ -75,18 +82,20 @@ budget and a leaderboard. Where the two disagree, orca-team wins.
 Encourage task-referenced peer messages inside the approved team: interface
 questions, findings about another bee's work, offers to unblock. Shared
 decisions still reach the coordinator in the same thread. No progress
-broadcasts. The coordinator attaches the one-line leaderboard to each grant and
-acceptance message; bees never award, request or trade points.
+broadcasts. The coordinator puts the one-line leaderboard in every task dispatch
+and in the final report; bees never award, request or trade points.
 
 ## 4. Budget
 
 - Checkpoint with `date` on every wait cycle (at most 60 seconds, per orca-team).
-- At 80 % of the time budget: grant no new claims; let in-flight tasks finish.
-- At 100 %: stop grants, request stable handoffs, run the assembled checks and
-  close as partial. Never extend the budget without the user.
-- The attempt cap per task stands in for a cost cap during the run. Orca does
-  not expose token usage; after the close, measure it from the providers'
-  session logs where available. Unavailable cost is "unknown", never zero.
+  The clock holds only while the coordinator session lives; nothing else schedules.
+- At 80 % of the time budget: grant no new bids; let in-flight tasks finish.
+- At 100 %: grant nothing and request stable handoffs. Run the assembled checks
+  only after every writer has handed off. A writer still silent after two more
+  wait cycles leaves its task blocked and the checks pending: tell the user and
+  never kill it. Close as partial. Never extend the budget without the user.
+- The attempt cap per task stands in for a cost cap. Orca exposes no token
+  usage; after the close, measure it from provider session logs, else "unknown", never zero.
 
 ## 5. Acceptance, scoring and close
 
@@ -99,10 +108,11 @@ worktree and uncommitted changes.
 
 | Prompt / situation | Expected behavior |
 |---|---|
-| "Monta una colmena de 3 agentes para migrar estos 3 endpoints en 40 min" | Loads orca-team, drafts the charter with board, 40-minute budget and scoring, asks for authorization and models, spawns nothing before approval |
-| Two bees claim the same task, or tasks sharing a file | First valid claim wins; the other queues; no shared reservation |
+| "Monta una colmena de 3 agentes para migrar estos 3 endpoints en 40 min" | Loads orca-team, drafts the charter, asks for authorization and models, spawns nothing before approval |
+| Two bids for one task, or for tasks sharing a file | The earlier `worker_done` wins; the other bee is released; no shared path |
+| A bee bids on a task it is not eligible for | Bid refused; changing eligibility needs a new approval |
 | A bee reports green checks that the coordinator cannot reproduce | Task unaccepted, −10 penalty in the ledger, partial work preserved |
-| The clock reaches 80 % and then 100 % | No new grants at 80 %; stable handoffs, assembled checks and a partial close with podium at 100 % |
+| The clock reaches 80 % and then 100 % | No grants at 80 %; at 100 % handoffs, then assembled checks and a partial close with podium |
 | "Coordina Codex y Claude para estas tareas" (no hive, no scoring) | Routes to orca-team, not orca-swarm |
 
 ## Anti-patterns
@@ -110,7 +120,7 @@ worktree and uncommitted changes.
 | Anti-pattern | Correction |
 |---|---|
 | Copying orca-team rules into the charter | Link them; this skill adds only charter, board, budget and scoring |
-| A bee self-awarding points or claiming without a grant | Only the coordinator grants and awards, on verified evidence |
+| A bee asking for work with `ask`, editing without a grant or self-awarding | It bids in `worker_done`; only the coordinator dispatches and awards |
 | Scoring messages, activity or self-reported checks | Score accepted outcomes and verified cooperation only |
 | Extending the budget "to finish" | Close partial at 100 %; ask the user for more time |
 | Letting points unlock permissions | The authorization envelope is fixed by the user |
@@ -124,7 +134,7 @@ worktree and uncommitted changes.
 | Achievements, penalties, leaderboard line and podium | [scoring](references/scoring.md) | Drafting the scoring table, awarding points or closing |
 
 Validation: static checks prove discovery only. A live hive needs orca-team's
-[pilot](../orca-team/references/pilot.md) plus a claim conflict, a leaderboard
+[pilot](../orca-team/references/pilot.md) plus a bid conflict, a leaderboard
 line and a podium, run with approved models; until then it is unverified.
 
 ## Commandments

@@ -23,17 +23,19 @@ except through a recorded user amendment.
 
 ## Board
 
-One row per task. The board is the backlog bees claim from; the task DoD and
-reservation rules are orca-team's.
+One row per task. The board is the backlog bees bid on; the task DoD and
+reservation rules are orca-team's. `Eligible` lists the approved bees whose
+role and model fit the task.
 
 ```markdown
-| Task | DoD | Deps | Resources | Status | Bee | Orca Task / Dispatch |
-|---|---|---|---|---|---|---|
-| T1 | <criteria + checks> | — | `src/a.ts` | open / claimed / writing / review / accepted / failed | bee-a | ids |
+| Task | DoD | Deps | Resources | Eligible | Status | Bee | Orca Task / Dispatch |
+|---|---|---|---|---|---|---|---|
+| T1 | <criteria + checks> | — | `src/a.ts` | bee-a, bee-b | open / granted / accepted / failed | bee-a | ids |
 ```
 
-A claim moves a row from `open` to `claimed` only when the coordinator grants
-it and records the reservation. Queue conflicting claims in grant order.
+Status holds coordinator decisions only: `granted` when it dispatches the task
+and records the reservation, `accepted` or `failed` at acceptance. Runtime state
+stays in Orca; read it through the ids.
 
 ## Budget log
 
@@ -70,11 +72,13 @@ in every bee prompt, filled with real values. Review the whole prompt with
 You are <bee name> in a hive working toward: <objective>.
 The global DoD is: <global DoD>. Your task serves it; do not widen your task.
 The time budget ends at <hard-stop time>. At <soft-stop time> no new tasks are granted.
-When you have no granted task, ask the coordinator for one board task: task ID and one line of reason.
+Open board tasks you are eligible for: <task IDs>.
+End your worker_done report with `Next bid: <task ID> — <reason>` or `Next bid: none`.
+Use ask only for a blocking question about your current task, never to request work.
 Never edit before the grant names your reserved resources.
 Message other bees about interfaces, findings or help, always with a task reference.
 Send shared decisions to the coordinator in the same thread.
 The coordinator awards points only for accepted work and verified cooperation.
-The current leaderboard arrives at the end of grant and acceptance messages.
-Do not award, request or trade points. A false check report costs 10 points and the task.
+Current leaderboard: <leaderboard line>.
+Do not award, request or trade points. A false check report costs 10 points and the task stays unaccepted.
 ```

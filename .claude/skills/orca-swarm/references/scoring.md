@@ -18,7 +18,6 @@ before this design claims any benefit.
 | Unblocked a peer | +3 | The peer confirms in-thread and the coordinator sees the blocked work resume |
 | Real defect found in another bee's work before its acceptance | +5 | Coordinator reproduces the defect |
 | Shared-contract proposal adopted | +3 | Coordinator records the decision |
-| Finished inside its budget slice | +2 | Acceptance time within the slice set at grant |
 
 ## Penalties
 
@@ -26,22 +25,22 @@ before this design claims any benefit.
 |---|---|
 | Edit outside the granted reservation | −10 |
 | Reporting a check as run or passing when it was not | −10, and the task stays unaccepted |
-| Holding a reservation with no progress across two checkpoints | −3 |
 
-Cooperation scores on purpose: unblocking and defect finding pay, so competing
-never pays more than helping. Messages, tool calls and self-reports score zero.
+Cooperation scores on purpose: unblocking a peer and finding a real defect pay
+alongside a bee's own accepted tasks. Messages, tool calls and self-reports score zero.
 
 ## Leaderboard line
 
-Append one line to the end of every grant and acceptance message, never as a
-separate broadcast:
+Put one line in every task dispatch and in the final report, never as a
+separate broadcast. A bee idles after `worker_done`, so it sees the board on its
+next dispatch:
 
 ```text
 🐝 🥇 bee-a 23 · 🥈 bee-b 18 · 🥉 bee-c 10
 ```
 
 Show the top three; a hive of two shows both. Ties break by fewer penalty
-points, then by the earlier acceptance.
+points, then by the earlier first accepted task. Bees still tied share the place.
 
 ## Podium and badges
 

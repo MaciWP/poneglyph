@@ -192,11 +192,11 @@ const INTENT: Record<RemoteAction, RegExp> = {
     "giu",
   ),
   "push-force": /\b(?:force[- ]push|push\s+(?:--)?force\w*|push\s+forzad[oa]|forza\w*\s+(?:el\s+)?push|fuerza\s+(?:el\s+)?push)\b|--force(?:-with-lease)?\b|\bborra\w*\s+(?:la\s+)?rama\s+remota\b|\bdelete\s+(?:the\s+)?remote\s+branch\b/giu,
-  "pr-create": /\b(?:crea|abre|haz|monta|create|open|make)\w*\s+(?:(?:la|una|el|the|a)\s+)?(?:pr|pull request)\b/giu,
+  "pr-create": /\b(?:crea|crear|abre|abrir|haz|monta|montar|create|open|make)\w*\s+(?:(?:la|las|una|unas|el|los|dos|the|a|both|two)\s+)?(?:prs?|pull requests?)\b/giu,
   "pr-merge": new RegExp(
     [
-      String.raw`\b(?:mergea|fusiona|merge)\w*\s+(?:(?:la|el|esta|the|this)\s+)?(?:pr|pull request)\b`,
-      String.raw`\bmerg(?:e|é)a(?:la|lo)?\b`,
+      String.raw`\b(?:mergea|fusiona|merge)\w*\s+(?:(?:la|las|el|los|esta|estas|the|this|these|both)\s+)?(?:prs?|pull requests?)\b`,
+      String.raw`\bmerg(?:e|é)a(?:la|lo|las|los)?\b`,
       String.raw`\b(?:haz|hacer|hazme|do)\s+(?:(?:el|un|the|a)\s+)?merge\b`,
       String.raw`\bmerge\s+it\b`,
       String.raw`\b(?:y|e|and|then|luego)\s+merge\b`,

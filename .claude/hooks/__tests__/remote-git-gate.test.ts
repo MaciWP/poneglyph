@@ -96,6 +96,10 @@ describe("remote-git-gate — authorized", () => {
     [turn("No esperes más, haz push"), "push"],
     [turn("sin miedo, haz push"), "push"],
     [turn("crea la PR y mergéala"), "pr-merge"],
+    [turn("abre las PRs"), "pr-create"],
+    [turn("commit, push y abrir la PR"), "pr-create"],
+    [turn("mergéalas"), "pr-merge"],
+    [turn("mergea las PRs"), "pr-merge"],
     [turn("haz el merge de la PR"), "pr-merge"],
     [turn("merge it"), "pr-merge"],
   ];
@@ -111,6 +115,7 @@ describe("remote-git-gate — authorized", () => {
     // A bare enclitic order names no target: "súbelo a 30" raises a value. Needs "súbelo a origin".
     [turn("súbelo"), "push"],
     [turn("no hagas push todavía"), "push"],
+    [turn("no mergees las PRs todavía"), "pr-merge"],
     [turn("commit pero sin push"), "push"],
     [turn("¿por qué me pides permiso para git push?"), "push"],
     [turn("haz push"), "pr-create"],

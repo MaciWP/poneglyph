@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { PLUGIN_SURFACE_LABEL, activationSurface, compare, loadSnapshot, measure, ratchetedSnapshotTotal, total } from "../lib/budget";
+import { PLUGIN_SURFACE_LABEL, activationSurface, compare, loadSnapshot, measure, ratchetedSnapshotTotal, slack, tighten, total } from "../lib/budget";
 
 const REPO = join(import.meta.dir, "..", "..", "..");
 const SNAPSHOT_DIR = join(import.meta.dir, "..", "lib");
@@ -98,6 +98,53 @@ describe("the real layer stays within its snapshot (ratchet — Cmd IX)", () => 
     expect(snapshot, "budget-snapshot.json missing — run `bun .claude/scripts/budget.ts --update`").not.toBeNull();
     const violations = compare(measure(REPO), snapshot!);
     expect(violations, violations.map((v) => `${v.key}: ${v.snapshot} → ${v.current}`).join("; ")).toEqual([]);
+  });
+
+  it("no tracked row sits below its snapshot — lock the win with `--tighten`", () => {
+    const unlocked = slack(measure(REPO), loadSnapshot(SNAPSHOT_DIR)!);
+    expect(unlocked, `${unlocked.map((v) => `${v.key}: ${v.snapshot} → ${v.current}`).join("; ")} — run \`bun .claude/scripts/budget.ts --tighten\``).toEqual([]);
+  });
+});
+
+// The article behind I1 (claude.ai 3x faster, 2026-09-23): a ceiling that only moves down
+// when someone remembers to move it lets every saving be spent again unnoticed.
+describe("slack and tighten (the ratchet locks savings)", () => {
+  const snapshot = {
+    alwaysLoaded: { "CLAUDE.md": 1000, "rules/a.md": 300, "retired-row": 50 },
+    skillBodies: { dev: 500 },
+    informative: { [PLUGIN_SURFACE_LABEL]: 100 },
+  };
+
+  it("reports only the tracked rows that shrank", () => {
+    const current = { alwaysLoaded: { "CLAUDE.md": 990, "rules/a.md": 310, "rules/new.md": 5 }, skillBodies: { dev: 480 } };
+    expect(slack(current, snapshot)).toEqual([
+      { key: "CLAUDE.md", snapshot: 1000, current: 990 },
+      { key: "skill dev", snapshot: 500, current: 480 },
+    ]);
+  });
+
+  it("lowers a shrunk row, never raises a grown one, and keeps the growth a compare failure", () => {
+    const current = { alwaysLoaded: { "CLAUDE.md": 990, "rules/a.md": 310 }, skillBodies: { dev: 500 } };
+    const t = tighten(current, snapshot);
+    expect(t.alwaysLoaded).toEqual({ "CLAUDE.md": 990, "rules/a.md": 300 });
+    expect(compare(current, t).map((v) => v.key)).toContain("rules/a.md");
+  });
+
+  it("admits no new row and drops a retired one", () => {
+    const current = { alwaysLoaded: { "CLAUDE.md": 1000, "rules/a.md": 300, "rules/new.md": 5 }, skillBodies: { dev: 500, shiny: 10 } };
+    const t = tighten(current, snapshot);
+    expect(Object.keys(t.alwaysLoaded)).toEqual(["CLAUDE.md", "rules/a.md"]);
+    expect(t.skillBodies).toEqual({ dev: 500 });
+  });
+
+  it("keeps the machine-dependent informative row as recorded", () => {
+    const current = { alwaysLoaded: { "CLAUDE.md": 900 }, skillBodies: {}, informative: { [PLUGIN_SURFACE_LABEL]: 9999 } };
+    expect(tighten(current, snapshot).informative).toEqual({ [PLUGIN_SURFACE_LABEL]: 100 });
+  });
+
+  it("leaves no slack once applied", () => {
+    const current = { alwaysLoaded: { "CLAUDE.md": 990, "rules/a.md": 250 }, skillBodies: { dev: 480 } };
+    expect(slack(current, tighten(current, snapshot))).toEqual([]);
   });
 });
 

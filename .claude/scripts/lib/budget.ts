@@ -7,8 +7,9 @@
 // when loaded. The legacy row key stays stable for historical comparisons.
 //
 // The snapshot (budget-snapshot.json) is the ratchet: the suite fails when a tracked
-// size grows more than TOLERANCE over its snapshot. Lowering is free; raising is a
-// deliberate `bun .claude/scripts/budget.ts --update` after a decision.
+// size grows more than TOLERANCE over its snapshot, and also while a tracked size sits
+// below it: a saving is locked with `--tighten`, or the next change could spend it
+// unnoticed. Raising is a deliberate `bun .claude/scripts/budget.ts --update`.
 
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -189,6 +190,33 @@ export function compare(current: Measurement, snapshot: Measurement, tolerance =
     out.push({ key: "always-loaded TOTAL", snapshot: totalBefore, current: totalNow });
   }
   return out;
+}
+
+// Pure: every tracked row now below its snapshot, i.e. a saving the snapshot does not lock yet.
+export function slack(current: Measurement, snapshot: Measurement): Violation[] {
+  const out: Violation[] = [];
+  const check = (group: Record<string, number>, base: Record<string, number>, prefix: string) => {
+    for (const [key, value] of Object.entries(group)) {
+      const before = base[key];
+      if (before !== undefined && value < before) out.push({ key: `${prefix}${key}`, snapshot: before, current: value });
+    }
+  };
+  check(current.alwaysLoaded, snapshot.alwaysLoaded, "");
+  check(current.skillBodies, snapshot.skillBodies, "skill ");
+  return out;
+}
+
+// Pure: the snapshot with every saving locked. It only ever lowers a row: growth and new
+// rows stay a decision for `--update`, retired rows drop out, and the machine-dependent
+// `informative` row is kept as recorded so that tightening does not add noise to the diff.
+export function tighten(current: Measurement, snapshot: Measurement): Measurement {
+  const lower = (group: Record<string, number>, base: Record<string, number>) =>
+    Object.fromEntries(Object.entries(trackedOnly(base, group)).map(([k, v]) => [k, Math.min(v, group[k])]));
+  return {
+    alwaysLoaded: lower(current.alwaysLoaded, snapshot.alwaysLoaded),
+    skillBodies: lower(current.skillBodies, snapshot.skillBodies),
+    ...(snapshot.informative ? { informative: snapshot.informative } : {}),
+  };
 }
 
 export function loadSnapshot(dir: string): Snapshot | null {

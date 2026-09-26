@@ -27,7 +27,7 @@ bun test ./.claude/evals/                                  # grader unit suite (
 bun .claude/evals/compare.ts "<prompt>" [--preset sp|stock|style-vs-sp|dupe]
 ```
 
-`run.ts` is the regression **gate**. `compare.ts` is an exploration A/B (eyeball + markers), not a pass/fail suite — run it outside a sandboxed session.
+`run.ts` is the regression **gate**. `compare.ts` is an exploration A/B (eyeball + markers), not a pass/fail suite — run it outside a sandboxed session. `field.ts [--days 14] [--split YYYY-MM-DD]` is a field read, not a gate: the case-free graders over the final text of real interactive turns, printed as aggregates only.
 
 Exit code ≠ 0 on any case failure.
 

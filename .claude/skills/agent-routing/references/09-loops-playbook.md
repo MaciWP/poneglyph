@@ -79,18 +79,11 @@ Poll a CI run / background `Workflow` / remote queue and resume when state flips
 - **Rule**: inside a loop, use agents only for read-only fan-out; the Lead must **re-verify inline** anything the stop condition depends on (run the test itself, print the output) — never trust an agent's "I did it".
 - **Stronger judge**: don't try to make the Haiku evaluator smarter (its model is the global small-fast slot, no per-goal effort control). Put the strong judgment in a `flow` (review phase) step (Opus, inline) and let the evaluator only check "is critic's verdict APPROVED?" — a cheap read over evidence already in the transcript.
 
-## Effort selection for loops (Opus 4.8)
+## Effort selection for loops
 
-On the FrontierCode *diamond* subset (hardest 50/150 — coding), Opus 4.8 is roughly: low ~8 %, med ~6 %, high ~8.7 %, xhigh ~13.4 %, max ~11.4 %. Reading (1 coding benchmark, noisy non-monotonic curve — don't over-fit):
+Effort levels do not map one-to-one across models: measure a loop's effort on the model that runs it. The per-model defaults live in `docs/model-uplift-playbook.md` §4 and `settings.global.json`.
 
-| Effort | For loops on Opus 4.8 |
-|---|---|
-| **low** | Default for the bulk of iterations — ≈ high quality at ~half the cost. Best for mechanical/verifiable/read-only steps |
-| **high** | **Dominated** — low matches it cheaper, xhigh beats it. Avoid for hard tasks |
-| **xhigh** | The only real score jump — reserve for the genuinely hard step |
-| **max** | *Worse* than xhigh here (overthinking). Avoid |
-
-Effort is **not changeable dynamically mid-session** (the user sets `/effort`; the Lead cannot self-switch). Project policy: skills carry NO `effort:` (they inherit the session = low) **except** the strong-judgment gates `flow` (review phase), `security-audit` (xhigh) and the `task-unblock` stuck-buster (xhigh); `compare-and-decide`'s heavy tier escalates effort per-invocation instead. For "low bulk / xhigh on the hard step", route the hard step through one of those skills, or a Workflow agent with per-agent `effort`. When a loop is stuck, `task-unblock` is the xhigh rung. Caveat: diamond subset exaggerates effort's value vs everyday tasks, where low suffices even more.
+Effort is **not changeable dynamically mid-session** (the user sets `/effort`; the Lead cannot self-switch). Project policy: skills carry NO `effort:` and inherit the session effort, **except** `security-audit`, `pr-review` and the `task-unblock` stuck-buster (xhigh in frontmatter); `flow` asks for `/effort xhigh` in its review phase; `compare-and-decide`'s heavy tier escalates effort per-invocation instead. For "cheap bulk / xhigh on the hard step", route the hard step through one of those skills, or a Workflow agent with per-agent `effort`. When a loop is stuck, `task-unblock` is the xhigh rung.
 
 ## Guardrails (non-negotiable for any adopted loop)
 - **Hard gates are never crossed unattended.** A loop runs *after* a gate, or only on read-only work, or stops and reports when a gate is pending.

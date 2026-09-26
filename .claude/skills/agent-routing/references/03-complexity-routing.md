@@ -156,7 +156,7 @@ Effort scale: `low < medium < high < xhigh`
 
 ### xhigh
 
-`xhigh` is available on Opus 4.7+ (incl. 4.8). On models without it, it behaves as `high`. Reserve for:
+`xhigh` exists only on some models; the model's documentation says which. Where it is absent, it behaves as `high`. Reserve for:
 
 | When | Condition |
 |------|-----------|

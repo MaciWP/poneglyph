@@ -163,7 +163,7 @@ la tabla entera le sale más barato".
 Kill what adds no value:
 
 - Process narration ("Arranco el bucle", "Leo el output", "Sigo con…") — tools
-  already show that; prose is the result only.
+  already show that; §2 position lines stay.
 - Data nobody asked for; detail beyond the ask.
 - **A missing fact** that changes the answer → ask for it. Name a likely cause
   only when the evidence supports it. Never list the causes.

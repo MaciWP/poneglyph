@@ -2,7 +2,7 @@
   "takenAt": "2026-09-26",
   "alwaysLoaded": {
     "CLAUDE.md": 14281,
-    "output-styles/poneglyph.md": 12941,
+    "output-styles/poneglyph.md": 12940,
     "rules/error-recovery.md": 2185,
     "rules/harness-runtime.md": 1910,
     "rules/skill-routing.md": 984,
@@ -37,6 +37,6 @@
     "ui-design": 4355
   },
   "informative": {
-    "installed plugins: description + when_to_use (this machine)": 4321
+    "installed plugins: description + when_to_use (this machine)": 3984
   }
 }

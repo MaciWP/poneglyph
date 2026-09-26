@@ -108,6 +108,8 @@ describe("remote-git-gate — authorized", () => {
     [turn("commitea los cambios"), "push"],
     [turn("guarda los cambios y versiona"), "push"],
     [turn("sube el timeout a 30"), "push"],
+    // A bare enclitic order names no target: "súbelo a 30" raises a value. Needs "súbelo a origin".
+    [turn("súbelo"), "push"],
     [turn("no hagas push todavía"), "push"],
     [turn("commit pero sin push"), "push"],
     [turn("¿por qué me pides permiso para git push?"), "push"],

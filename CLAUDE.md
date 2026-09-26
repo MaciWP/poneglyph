@@ -108,7 +108,7 @@ publication, branch deletion or worktree removal. Team changes stay uncommitted.
 | Drafting a commit message or PR body **as text** for the user to copy | `gh pr create`, `gh pr merge`, force-push, any remote publish |
 | Saying the working tree is dirty | "I'll commit/push/open the PR" or running those commands |
 
-**If about to slip** (temptation, "finishing the loop", ambiguous "guarda", end-of-task habit): **STOP** → ask with `AskUserQuestion` or `Skill(drillme-clarify)` — never silently mutate. Do **not** proactively offer "¿hago commit/push/PR?" as a default closing; wait for the user to request it.
+**If about to slip** ("finishing the loop", ambiguous "guarda", end-of-task habit): **STOP** → ask (`AskUserQuestion`, `Skill(drillme-clarify)`), never silently mutate; push/PR needs a chat ask (`remote-git-gate` ignores `AskUserQuestion`). Never close by offering "¿hago commit/push/PR?".
 
 **No AI authorship in commits / PRs (default).** When drafting or executing a commit message (or PR body), never attribute the work to an AI — any host, any path (`git commit`, HEREDOC, commit/PR text):
 

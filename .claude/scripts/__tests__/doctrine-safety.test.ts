@@ -131,11 +131,15 @@ describe("recursive deletes always prompt; git is gated only on the remote", () 
     for (const shell of ["Bash", "PowerShell"]) expect(prompts(shell, cmd)).toBe(false);
   });
 
-  it("registers the remote gate for both shells", () => {
+  it("registers the remote gate for every tool that runs a command", () => {
     const entry = settings.hooks.PreToolUse.find((e: { hooks: Array<{ command: string }> }) =>
       e.hooks.some((h) => h.command.includes("remote-git-gate.ts")),
     );
-    expect(entry?.matcher.split("|").sort()).toEqual(["Bash", "PowerShell"]);
+    expect(entry?.matcher.split("|").sort()).toEqual(["Bash", "Monitor", "PowerShell"]);
+    // A hook that times out does not block, so the timeout must leave room for the gate's own
+    // 10 s deadline, which fails closed.
+    const hook = entry?.hooks.find((h: { command: string }) => h.command.includes("remote-git-gate.ts"));
+    expect(hook?.timeout).toBeGreaterThan(10);
   });
 });
 

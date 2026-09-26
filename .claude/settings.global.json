@@ -39,35 +39,7 @@
       "Bash(rm -fR *)",
       "Bash(rm -rfv *)",
       "Bash(rm --recursive *)",
-      "Bash(git reset --hard *)",
-      "Bash(git clean *)",
-      "Bash(git branch -D *)",
-      "Bash(git stash drop *)",
-      "Bash(git worktree remove *)",
-      "Bash(git checkout -- *)",
-      "Bash(git restore *)",
-      "Bash(git checkout . *)",
-      "Bash(git stash clear *)",
-      "Bash(git merge *)",
-      "Bash(git rebase *)",
-      "Bash(git push *)",
-      "Bash(gh pr create *)",
-      "Bash(gh pr merge *)",
-      "PowerShell(Remove-Item *)",
-      "PowerShell(git reset --hard *)",
-      "PowerShell(git clean *)",
-      "PowerShell(git branch -D *)",
-      "PowerShell(git stash drop *)",
-      "PowerShell(git worktree remove *)",
-      "PowerShell(git checkout -- *)",
-      "PowerShell(git restore *)",
-      "PowerShell(git checkout . *)",
-      "PowerShell(git stash clear *)",
-      "PowerShell(git merge *)",
-      "PowerShell(git rebase *)",
-      "PowerShell(git push *)",
-      "PowerShell(gh pr create *)",
-      "PowerShell(gh pr merge *)"
+      "PowerShell(Remove-Item *)"
     ],
     "deny": [
       "Bash(rm -rf /*)",
@@ -107,6 +79,16 @@
             "type": "command",
             "command": "bun \"$HOME/.claude/hooks/bash-output-shaper.ts\"",
             "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|PowerShell|Monitor",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun \"$HOME/.claude/hooks/remote-git-gate.ts\"",
+            "timeout": 15
           }
         ]
       }

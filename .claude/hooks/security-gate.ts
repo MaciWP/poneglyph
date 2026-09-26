@@ -379,8 +379,23 @@ export interface TurnExtract {
   bashCommands: string[];
 }
 
+// The text the human typed, or null when a "user" event is not a prompt: tool results
+// come back as user events too, and meta or compaction-summary events are harness text.
+// A prompt with an image or a pasted block is an array of text/image blocks, not a string.
+export function userPromptOf(event: unknown): string | null {
+  const e = event as { type?: string; isMeta?: boolean; isCompactSummary?: boolean; message?: { content?: unknown } };
+  if (e?.type !== "user" || e.isMeta || e.isCompactSummary) return null;
+  const content = e.message?.content;
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return null;
+  const blocks = content as Array<{ type?: string; text?: unknown }>;
+  if (blocks.some((b) => b?.type === "tool_result")) return null;
+  const texts = blocks.filter((b) => b?.type === "text" && typeof b.text === "string").map((b) => b.text as string);
+  return texts.length ? texts.join("\n") : null;
+}
+
 // Walks the transcript JSONL from the end: collects Bash tool_use commands seen
-// AFTER the last plain-string user message (the turn's prompt). Malformed lines
+// AFTER the last user prompt (the turn's prompt). Malformed lines
 // are skipped (best-effort by contract).
 export function extractTurnFromTranscript(jsonl: string): TurnExtract {
   const lines = jsonl.split("\n");
@@ -394,8 +409,9 @@ export function extractTurnFromTranscript(jsonl: string): TurnExtract {
       continue;
     }
     const e = event as { type?: string; message?: { content?: unknown } };
-    if (e.type === "user" && typeof e.message?.content === "string") {
-      userPrompt = e.message.content;
+    const prompt = userPromptOf(event);
+    if (prompt !== null) {
+      userPrompt = prompt;
       break; // everything below this is a previous turn
     }
     if (e.type === "assistant" && Array.isArray(e.message?.content)) {

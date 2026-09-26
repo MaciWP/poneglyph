@@ -102,8 +102,12 @@ describe("hook commands quote their interpolated paths (H40)", () => {
 // Opus 5.5 playbook, 2026-09-23: "Keep permission prompts on for destructive commands too".
 // An explicit ask rule prompts in every mode, auto and bypassPermissions included; the
 // doctrine alone does not. Allow rules never cancel it, so the broad "Bash" allow is safe.
-describe("destructive commands always prompt", () => {
-  const ask: string[] = JSON.parse(readFileSync(join(root, ".claude", "settings.global.json"), "utf8")).permissions.ask;
+// 2026-09-26, Oriol: git no longer prompts. Local git runs freely; remote git is gated by the
+// remote-git-gate hook, which lets it through when he asked this turn. An ask rule would
+// prompt even then, so no git or gh command may sit in `ask`.
+describe("recursive deletes always prompt; git is gated only on the remote", () => {
+  const settings = JSON.parse(readFileSync(join(root, ".claude", "settings.global.json"), "utf8"));
+  const ask: string[] = settings.permissions.ask;
   // The documented prefix contract (code.claude.com/docs/en/permissions): "Tool(x *)" matches
   // "x" and "x ..."; a rule without a trailing " *" matches the exact command only.
   const prompts = (shell: string, cmd: string) =>
@@ -123,12 +127,19 @@ describe("destructive commands always prompt", () => {
     expect(prompts("PowerShell", "Remove-Item -Recurse d")).toBe(true);
   });
 
-  it.each(GIT)("asks before %s in both shells", (cmd) => {
-    for (const shell of ["Bash", "PowerShell"]) expect(prompts(shell, cmd)).toBe(true);
+  it.each(GIT)("never prompts for %s in either shell", (cmd) => {
+    for (const shell of ["Bash", "PowerShell"]) expect(prompts(shell, cmd)).toBe(false);
   });
 
-  it("does not prompt for read-only git", () => {
-    for (const cmd of ["git status", "git diff", "git log --oneline"]) expect(prompts("Bash", cmd)).toBe(false);
+  it("registers the remote gate for every tool that runs a command", () => {
+    const entry = settings.hooks.PreToolUse.find((e: { hooks: Array<{ command: string }> }) =>
+      e.hooks.some((h) => h.command.includes("remote-git-gate.ts")),
+    );
+    expect(entry?.matcher.split("|").sort()).toEqual(["Bash", "Monitor", "PowerShell"]);
+    // A hook that times out does not block, so the timeout must leave room for the gate's own
+    // 10 s deadline, which fails closed.
+    const hook = entry?.hooks.find((h: { command: string }) => h.command.includes("remote-git-gate.ts"));
+    expect(hook?.timeout).toBeGreaterThan(10);
   });
 });
 

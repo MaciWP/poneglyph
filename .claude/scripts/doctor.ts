@@ -13,7 +13,7 @@ import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { compare, loadSnapshot, measure, ratchetedSnapshotTotal, total } from "./lib/budget";
+import { compare, loadSnapshot, measure, ratchetedSnapshotTotal, slack, total } from "./lib/budget";
 import { detectHosts, realProbe } from "./lib/hosts";
 import { check, type Report } from "./check-config";
 import { checkOrca } from "./sync-orca";
@@ -208,7 +208,13 @@ async function main(): Promise<void> {
     checks.push({ name: "Always-loaded budget", status: "🟡", detail: `${total(m.alwaysLoaded)} B, no snapshot — bun .claude/scripts/budget.ts --update` });
   } else {
     const viol = compare(m, snapshot);
-    checks.push({ name: "Always-loaded budget", status: viol.length ? "🔴" : "🟢", detail: viol.length ? viol.map((x) => `${x.key} ${x.snapshot}→${x.current}`).join("; ") : `${total(m.alwaysLoaded)} B ≤ snapshot ${ratchetedSnapshotTotal(m, snapshot)} B (ratchet 0 %, plan 037)` });
+    const unlocked = slack(m, snapshot).reduce((sum, x) => sum + x.snapshot - x.current, 0);
+    const within = `${total(m.alwaysLoaded)} B ≤ snapshot ${ratchetedSnapshotTotal(m, snapshot)} B (ratchet 0 %, plan 037)`;
+    checks.push({
+      name: "Always-loaded budget",
+      status: viol.length ? "🔴" : unlocked ? "🟡" : "🟢",
+      detail: viol.length ? viol.map((x) => `${x.key} ${x.snapshot}→${x.current}`).join("; ") : unlocked ? `${unlocked} B unlocked — bun .claude/scripts/budget.ts --tighten` : within,
+    });
   }
 
   try {

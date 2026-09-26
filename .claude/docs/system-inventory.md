@@ -145,7 +145,7 @@ Test: "does the agent need this in EVERY prompt?" — no → skill.
 | Component | Audit baseline (early 2026) | Post-cleanup (2026-05-28) | Current | Detail |
 |---|---|---|---|---|
 | Agents | 7 + 1 meta | 3 | **0 custom** | builder/reviewer/scout were removed; work runs inline (delegation doctrine), read-only fan-out via Workflow/`Explore`. The ONE sanctioned single-agent dispatch is critic's fresh-context reviewer (P1 exception) — ad-hoc, no agent file |
-| Skills | 28 | 14 | **24** (source count 2026-09-18) | the 6 phase skills live in one `flow` skill (shared body + one reference per phase); `decision-stress-test` merged into `compare-and-decide` (heavy tier); `consult-model` is multi-model |
+| Skills | 28 | 14 | **26** (source count 2026-09-26) | the 6 phase skills live in one `flow` skill (shared body + one reference per phase); `decision-stress-test` merged into `compare-and-decide` (heavy tier); `consult-model` is multi-model |
 | Hooks | 15+ | 6 | **5 handlers / 4 events** (settings.global.json, 2026-09-13) | authoritative list = user profile source; event table with per-hook detail: `rules/paths/hooks.md` |
 | Slash commands | 10 | 4 | **3** (source count 2026-09-13) | `flow-lifecycle`, `sync-poneglyph`, `expert-role` (decide/changes-explain were thin command wrappers → pruned; they remain as skills) |
 | Rules | 7 | 2 + paths/ | **4 top-level + 2 path rules** (source count 2026-09-13) | `error-recovery.md`, `test-policy.md`, `skill-routing.md` + `paths/{hooks,orchestration}.md` |

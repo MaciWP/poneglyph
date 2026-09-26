@@ -113,6 +113,33 @@ for (const host of ["claude", "codex", "grok"] as const) {
       expect(result.skills).toContain("orca-team");
       expect(result.injection).toContain("Skill(orca-team)");
       expect(result.skills).not.toContain("consult-model");
+      expect(result.skills).not.toContain("orca-swarm");
+    });
+
+    test.each([
+      "monta una colmena de agentes para migrar el módulo de pagos",
+      "lanza un enjambre de agentes con Codex y Claude",
+      "orca swarm para este objetivo con un presupuesto de 40 minutos",
+      "run an agent swarm with a leaderboard",
+      "reanuda la colmena del run anterior",
+    ])("hive: %s", (prompt) => {
+      const result = analyzePayload(JSON.stringify({ prompt }), catalog);
+      expect(result.skills).toContain("orca-swarm");
+      expect(result.injection).toContain("Skill(orca-swarm)");
+      expect(result.skills).not.toContain("orca-team");
+      expect(result.skills).not.toContain("consult-model");
+    });
+
+    // Product copy, negations and consultations that mention a hive are not a run.
+    test.each([
+      "añade un leaderboard de agentes a la landing del producto",
+      "no quiero una colmena, solo arregla el test",
+      "pregúntale a Codex si montamos una colmena",
+      "el logo es una colmena amarilla",
+      "compara agent swarm frameworks para un post",
+    ])("not a hive: %s", (prompt) => {
+      const result = analyzePayload(JSON.stringify({ prompt }), catalog);
+      expect(result.skills).not.toContain("orca-swarm");
     });
 
     // orca-cli is Orca-owned. Its native description handles session selection;

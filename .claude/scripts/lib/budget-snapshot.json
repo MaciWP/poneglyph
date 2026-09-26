@@ -1,15 +1,15 @@
 {
-  "takenAt": "2026-09-25",
+  "takenAt": "2026-09-26",
   "alwaysLoaded": {
     "CLAUDE.md": 14281,
     "output-styles/poneglyph.md": 12941,
     "rules/error-recovery.md": 2185,
     "rules/harness-runtime.md": 1910,
     "rules/skill-routing.md": 984,
-    "skills: description + when_to_use": 7171
+    "skills: description + when_to_use": 7181
   },
   "skillBodies": {
-    "agent-routing": 15903,
+    "agent-routing": 15900,
     "changes-explain": 10010,
     "changes-verify": 5298,
     "choose-skills": 6168,
@@ -26,6 +26,7 @@
     "knowledge-graph": 18486,
     "lessons-learned": 20016,
     "natural-writing": 7286,
+    "orca-swarm": 8367,
     "orca-team": 7173,
     "pr-comments": 8659,
     "pr-review": 7592,

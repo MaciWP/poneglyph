@@ -113,6 +113,21 @@ for (const host of ["claude", "codex", "grok"] as const) {
       expect(result.skills).toContain("orca-team");
       expect(result.injection).toContain("Skill(orca-team)");
       expect(result.skills).not.toContain("consult-model");
+      expect(result.skills).not.toContain("orca-swarm");
+    });
+
+    test.each([
+      "monta una colmena de agentes para migrar el módulo de pagos",
+      "lanza un enjambre de agentes con Codex y Claude",
+      "orca swarm para este objetivo con un presupuesto de 40 minutos",
+      "run an agent swarm with a leaderboard",
+      "reanuda la colmena del run anterior",
+    ])("hive: %s", (prompt) => {
+      const result = analyzePayload(JSON.stringify({ prompt }), catalog);
+      expect(result.skills).toContain("orca-swarm");
+      expect(result.injection).toContain("Skill(orca-swarm)");
+      expect(result.skills).not.toContain("orca-team");
+      expect(result.skills).not.toContain("consult-model");
     });
 
     // orca-cli is Orca-owned. Its native description handles session selection;

@@ -139,15 +139,16 @@ Full Arch H template with all blocks, propagation model, skill discovery: `refer
 | Tool | Usage |
 |---|---|
 | `Skill('orca-team')` | Authorized supervised Orca team; one shared worktree, direct traced messages, coordinator reservations and acceptance |
+| `Skill('orca-swarm')` | orca-team + claim board, time budget, leaderboard |
 | `Workflow` (≥4 independent **read-only** units) | Fan-out: research sweeps / exploration / decision-review panel in parallel (`agentType` `default`, or built-ins like `Explore`). Write fan-out: explicit user opt-in only (`isolation: 'worktree'` on file collision) |
-| `Explore` | Explore codebase (massive read-only — built-in, inherits session model; not a work-spawn) |
+| `Explore` | Read-only codebase sweep (built-in, session model; not a work-spawn) |
 | `Agent(subagent_type: "fork")` | Read-only sweep that needs the session's thread (inherits conversation + cache, parent model). Never for the fresh-context reviewer. Same hard gate |
 | `Skill(flow, "plan")` | Plan complex tasks — Lead inline, no dedicated agent |
 | `Skill('troubleshooting')` | Diagnose failures — Lead inline, no dedicated agent |
 | `Skill()` | Load context into the Lead's OWN session only |
 | `/goal` / `/loop` (native autonomous iteration) | Drive a gated build→critic to a verifiable stop, or recurring read-only audit/research. Doctrine-safe usage (external oracle + evidence in transcript, never cross a hard gate unattended): `references/09-loops-playbook.md` |
 
-Direct action (the default for ALL write work): Read always permitted. Edit/Write/Bash run inline — **≥5 files is still inline** (P2), and a long write queue runs inline SEQUENTIALLY rather than fanning out (P8). On sensitive paths declare inline `sensitive: <reason ≥8 chars>`. Destructive patterns — escalate with explicit reason. No automated gate enforces this; the Lead is responsible.
+Direct action (the default for ALL write work): Read always permitted. Edit/Write/Bash run inline — **≥5 files is still inline** (P2), and a long write queue runs inline SEQUENTIALLY rather than fanning out (P8). On sensitive paths declare inline `sensitive: <reason ≥8 chars>`. Destructive patterns — escalate with explicit reason.
 
 **Parallelize**: parallelism inside the Lead's own session is free — batch independent tool calls (Reads, Greps, disjoint Writes) in one message. Agent fan-out via `Workflow` requires ≥4 independent READ-ONLY units (P3); for write waves, inline sequential is the default and Workflow needs explicit user opt-in (P8). Multi-agent patterns + anti-patterns: `references/04-agent-selection.md`.
 

@@ -57,6 +57,8 @@ It composes the installed Orca `orca-cli` and `orchestration` guides; those guid
 remain owned by Orca. One shared worktree hosts the team's terminals. CLAUDE.md
 owns team authorization; the skill owns reservations, role contracts and recovery.
 Flow state stays coordinator-owned. Native Workflow tools are not required.
+`orca-swarm` is a layer on an orca-team workflow: same authorization, record
+and reservations, plus a claimable board, a time budget and a leaderboard.
 
 Static adapter success proves discovery, not cooperation. Validate Claude and
 Codex through the [live pilot](../skills/orca-team/references/pilot.md). Grok

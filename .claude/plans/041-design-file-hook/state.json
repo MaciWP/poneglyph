@@ -1,0 +1,44 @@
+{
+  "spec_slug": "041-design-file-hook",
+  "mode": "full",
+  "current_phase": 2.5,
+  "phases_completed": [
+    1,
+    2,
+    2.5
+  ],
+  "gates_approved": {
+    "1->2": true,
+    "2->3": false
+  },
+  "us_completed": [],
+  "us_pending": [],
+  "us_history": [],
+  "gate_history": [
+    {
+      "gate": "1->2",
+      "at": "2026-10-02",
+      "reference": "user chat 2026-10-02: APROVE",
+      "artifacts": [
+        "spec.md"
+      ]
+    }
+  ],
+  "boundary_checks": [
+    {
+      "phase": "2",
+      "item": "spec.md approved, gate 1-2 recorded",
+      "at": "2026-10-02"
+    },
+    {
+      "phase": "2.5",
+      "item": "tasks drafted, complete-phase 2 recorded",
+      "at": "2026-10-02"
+    }
+  ],
+  "feature_closed": false,
+  "review_verdict": null,
+  "retro_status": null,
+  "started_at": "2026-10-02",
+  "updated_at": "2026-10-02"
+}

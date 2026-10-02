@@ -20,7 +20,7 @@ Any edit that changes what OTHER files assert: defaults (review form, spawn rule
 2. **Size the blast radius into the plan**: >5 files of doctrine sites → split propagation into its own HU/step (lesson 019: US1 owner-file + US2 propagation).
 3. **Edit each doctrine site** — re-scope, don't delete blindly: a demoted pattern usually remains valid in a narrower scope (e.g. panels stayed valid for decision review).
 4. **Re-grep until zero stale**: every remaining hit must be historical/decision-history context. A live file asserting the old doctrine = not done.
-5. **Record the decision**: add a dated row to the owning skill's decision history (e.g. `critic/references/01-decisions-and-auxiliaries.md`) citing the evidence and what changed.
+5. **Record the decision**: add a dated row to the owning skill's decision history (e.g. `flow/references/07-history.md`) citing the evidence and what changed.
 6. **Verify**: tests green; if the change touches behavioral meta-config, run the golden-prompt regression (`bun .claude/evals/run.ts` — in the poneglyph repo; evals/ is not synced).
 
 ## Smells

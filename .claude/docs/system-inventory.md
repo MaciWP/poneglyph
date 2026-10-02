@@ -72,12 +72,12 @@ graph TD
     S -->|doubt| AQ[AskUserQuestion or Skill prompt-design]
     AQ --> S
     S -->|clear| C[Calculate complexity]
-    C -->|< 30| SK[Pick relevant skills via path hints / keywords]
-    C -->|30-60| P1[Skill flow plan phase optional]
+    C -->|33-45| SK[Pick relevant skills via path hints / keywords]
+    C -->|45-60| P1[Skill flow plan phase optional]
     C -->|> 60| P2[Skill flow plan phase mandatory]
     P1 & P2 --> SK
-    SK --> B[build inline -- Skill build]
-    B --> R[critic checkpoint -- Skill critic]
+    SK --> B[build inline -- Skill flow build phase]
+    B --> R[review checkpoint -- Skill flow review phase]
     R -->|APPROVED| D[Done]
     R -->|NEEDS_CHANGES| B
     B -->|Error| DG[Lead diagnoses with Skill troubleshooting]
@@ -145,7 +145,7 @@ Test: "does the agent need this in EVERY prompt?" — no → skill.
 | Component | Audit baseline (early 2026) | Post-cleanup (2026-05-28) | Current | Detail |
 |---|---|---|---|---|
 | Agents | 7 + 1 meta | 3 | **0 custom** | builder/reviewer/scout were removed; work runs inline (delegation doctrine), read-only fan-out via Workflow/`Explore`. The ONE sanctioned single-agent dispatch is critic's fresh-context reviewer (P1 exception) — ad-hoc, no agent file |
-| Skills | 28 | 14 | **26** (source count 2026-09-26) | the 6 phase skills live in one `flow` skill (shared body + one reference per phase); `decision-stress-test` merged into `compare-and-decide` (heavy tier); `consult-model` is multi-model |
+| Skills | 28 | 14 | **24** (source count 2026-10-02) | the 6 phase skills live in one `flow` skill (shared body + one reference per phase); `decision-stress-test` merged into `compare-and-decide` (heavy tier); `code-quality` folded into `pr-review` lenses; `task-unblock` folded into `troubleshooting` §Stuck; `consult-model` is multi-model |
 | Hooks | 15+ | 6 | **5 handlers / 4 events** (settings.global.json, 2026-09-13) | authoritative list = user profile source; event table with per-hook detail: `rules/paths/hooks.md` |
 | Slash commands | 10 | 4 | **3** (source count 2026-09-13) | `flow-lifecycle`, `sync-poneglyph`, `expert-role` (decide/changes-explain were thin command wrappers → pruned; they remain as skills) |
 | Rules | 7 | 2 + paths/ | **4 top-level + 2 path rules** (source count 2026-09-13) | `error-recovery.md`, `test-policy.md`, `skill-routing.md` + `paths/{hooks,orchestration}.md` |
@@ -185,7 +185,7 @@ Activation/observability hooks (event verified in official hooks docs 2026-06-10
 
 - **5-phase workflow refactor (W1-W5, 2026-05-28)**: W1 plan structure + 8 templates · W2 7 new skills (6 phase + drillme-clarify; planner-protocol MIGRATE-AND-CUT) · W3 `/flow-lifecycle` + agent-routing SIMPLIFY · W4 CLAUDE.md update · W5 dogfooding + retro. Detail archived under `.claude/plans/_archive/001-poneglyph-5phase-workflow/` (historical; the live auxiliary matrix now lives at `docs/auxiliary-skills-matrix.md`).
 - **Feature 006 (2026-06-08)**: always-on honesty layer + base role senior engineer-advisor + `/expert-role` (13 roles).
-- **Feature 008 (2026-06-05/09)**: builder/reviewer/scout agents cut; spawn decision tree canonical in agent-routing. The W2 KEEP-cond decisions for builder/reviewer were superseded here; `code-quality` KEEP still holds.
+- **Feature 008 (2026-06-05/09)**: builder/reviewer/scout agents cut; spawn decision tree canonical in agent-routing. The W2 KEEP-cond decisions for builder/reviewer were superseded here; `code-quality` KEEP held until its catalog moved into the `pr-review` lenses.
 - **Feature 012**: `choose-skills` (turn-level propose→validate skill routing).
 - **Feature 017 (2026-06-10, closed)**: inline-first delegation doctrine (evidence-based), es-ES natural style, this eviction, hygiene waves.
 - **Feature 018 (2026-06-10, closed)**: evidence roadmap — 5 research waves, decision memos W1-W5, roadmap 019+.

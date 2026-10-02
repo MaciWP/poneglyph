@@ -1,18 +1,22 @@
 ---
 name: pr-review
-description: |
-  Revisión generalista de una PR o rama en CUALQUIER repo: resuelve el target (PR#/URL/rama o modo local), detecta el ticket (id de Jira u otro) y TRAZA sus criterios de aceptación contra el diff (✓/✗/⚠ con evidencia file:line), corre los checks reales del proyecto (check fallando = Critical bloqueante), aplica criterios core + extensión por proyecto con scoring ponderado, y reporta en Conventional Comments con veredicto. Si el repo tiene su propio comando review-pr, defiere a él.
-  Úsala cuando: "revisa la pr", "revisa esta pr", "review this pr", "revisa mi rama", "code review de la pr", "revisa el diff contra el ticket", antes de aprobar/mergear una PR.
+description: >-
+  Reviews a PR, a branch or a module: traces the ticket's acceptance criteria
+  against the diff, runs the project's checks, applies core criteria plus
+  maintainability and performance lenses, and gives a verdict. Use for "revisa
+  la pr", "revisa mi rama", "huele mal este código", "refactoriza esto", "está
+  lento", N+1 or memory leaks. Not for checking your own work before done.
 metadata:
   keywords: >
     Keywords - pr-review, revisa la pr, revisa esta pr, review this pr, revisa mi rama, code
     review de la pr, review de la rama, revisa el diff, pull request review, revisa la pull
-    request
+    request, code smell, huele mal, principios solid, refactoriza esto, endpoint lento, está
+    lento, fuga de memoria, memory leak, queries n+1, cuello de botella
 disable-model-invocation: false
-argument-hint: "[PR number | PR URL | branch] (empty = local mode: current branch vs base)"
+argument-hint: "[PR number | PR URL | branch | file-or-module] (empty = local mode: current branch vs base)"
 effort: xhigh
 when_to_use: |
-  "revisa la pr", "revisa esta pr", "review this pr", "revisa mi rama contra el ticket", "code review de la pr", "revisa la pull request", before approving/merging a PR
+  Reviewing a PR, a branch or a module for quality or performance.
 ---
 
 # pr-review — generalist PR/branch review (any repo)
@@ -26,10 +30,10 @@ spec.md-anchored, /flow-lifecycle Phase 4 after all HUs close) — the two never
 - Complete the applicable review steps and return evidence-backed findings, check results and the supported verdict. Failed required checks block approval, not an honest review report.
 - Stop after the requested assessment; fixes or publication require their own authorization.
 
-## How You're Graded
+## Quality Bar
 
-- You are graded on accurate requirement coverage, consequential findings and a verdict supported by real checks.
-- Use the existing review rubric. Finding counts, praise quotas and repeated reviews of unchanged evidence earn no credit.
+- Success means accurate requirement coverage, consequential findings and a verdict supported by real checks.
+- Use the existing review rubric. Finding counts, praise quotas and repeated reviews of unchanged evidence add no value.
 
 ## Steps (all executed or explicitly skipped with a reason — see step 9)
 
@@ -40,8 +44,12 @@ This skill is the repo-agnostic default, not an absorption layer.
 
 ### 1. Target resolution (do not skip — misparse class, 029)
 `$ARGUMENTS` is a target ONLY if it looks like one: PR number, PR URL, or a branch that
-verifies via `git rev-parse --verify <arg>`. Anything else (prose, empty) → **local mode**:
-current branch vs the base branch. State which mode was resolved.
+verifies via `git rev-parse --verify <arg>`. An existing file or folder, or a request about
+code rather than a change ("huele mal este módulo", "está lento") → **module mode**: run only
+steps 3 (read the code), 4 and 5 with the lenses, then report; there is no diff, ticket or
+score. Anything else (prose, empty) → **local mode**: current branch vs the base branch.
+State which mode was resolved. A PR you already reviewed → follow-up round
+(`references/04-follow-up-round.md`).
 
 ### 2. Ticket detection → acceptance criteria
 Scan branch name + PR title for `[A-Z]{2,}-\d+`:
@@ -64,12 +72,23 @@ Find the check command per `references/03-check-discovery.md` (project CLAUDE.md
 
 ### 5. Criteria pass (core + project extension)
 Apply `references/01-criteria-core.md` (Correctness / Tests / Security / Style /
-Scope-discipline) plus any project-specific criteria found in the repo's rules. It owns the
+Scope-discipline / Maintainability / Performance) plus any project-specific criteria found in the repo's rules. It owns the
 weights, the score and the verdict — consequence floor included: a required AC at `✗` or a red
 gate forbids APPROVE. Read it there. Before scoring, run the **lessons pass**: `Skill(lessons-learned)` — cross-repo
 guards (G6 forbids APPROVE while a merge gate is red) plus the `references/<stack>` file
 matching the diff (Django, React, …). A lesson violated in the diff is a finding like any
 other, quoted with its rule.
+
+**Lenses.** Load each lens the code calls for; both when both apply:
+
+| Lens | When | Load |
+|---|---|---|
+| Maintainability | Smells, SOLID, complexity, duplication, a refactor request; the default lens | `references/05-lens-maintainability.md` |
+| Performance | Queries, loops over I/O, async, caches, hot paths, "está lento" | `references/06-lens-performance.md` |
+
+Lens severities map onto the core scale: High → Major, Medium and Low → Minor; Critical
+stays Critical. A requested refactor follows the lens's safety classification: risky
+changes need the user's confirmation, and the tests pass after each step.
 
 ### 6. AC-trace (requisito 9.2 — the net-new piece)
 For EACH acceptance criterion from step 2: `✓` implemented (evidence: `file:line`) /
@@ -106,6 +125,8 @@ no hay ticket en la rama y el usuario no aportó ACs"). A silent skip is a revie
 2. Repo genérico sin Jira, sin argumento → modo local declarado, sin AC-trace (declarado),
    criterios core + score.
 3. Repo con `.claude/commands/review-pr.md` propio → paso 0 defiere y lo dice (no ejecuta el core).
+4. PR con una review previa propia → tabla comentario → commit → estado, checks sobre el head
+   completo y tests nuevos ejecutados contra el head anterior.
 
 ## Commandments cubiertos
 

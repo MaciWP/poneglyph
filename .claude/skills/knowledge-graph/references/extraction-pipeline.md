@@ -105,7 +105,7 @@ Load files from `graphify-out/.graphify_uncached.txt`. Split into chunks of 20-2
 
 Call the Agent tool multiple times IN THE SAME RESPONSE - one call per chunk. This is the only way they run in parallel. If you make one Agent call, wait, then make another, you are doing it sequentially and defeating the purpose.
 
-**IMPORTANT - subagent type:** Always use `subagent_type="general-purpose"`. Do NOT use `Explore` - it is read-only and cannot write chunk files to disk, which silently drops extraction results. General-purpose has Write and Bash access which the subagent needs. Set `model` explicitly on every call (extraction needs a capable model; the `CLAUDE_CODE_SUBAGENT_MODEL` default is a cheap tier). The calls run in the background: wait for every task notification before Step B3.
+**Subagent type:** use `subagent_type="general-purpose"`, not `Explore`: Explore is read-only and cannot write chunk files to disk, which silently drops extraction results. General-purpose has Write and Bash access which the subagent needs. Set `model` explicitly on every call (extraction needs a capable model; the `CLAUDE_CODE_SUBAGENT_MODEL` default is a cheap tier). The calls run in the background: wait for every task notification before Step B3.
 
 Concrete example for 3 chunks:
 ```

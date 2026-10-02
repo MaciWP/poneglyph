@@ -68,15 +68,15 @@ The "Suggested skills to Read (for delegation)" column lists `.claude/skills/<na
 | Signal | Execution | Skill/Mode | Suggested skills to Read (Arch H) | Fallback |
 |--------|-----------|------------|-------------------------------------------|----------|
 | implement, create, fix, build | `flow` (build phase) inline by default; authorized Orca teams use its supervised-worker branch | (by prompt) | (match domain via skill-matching) | — |
-| refactor, extract, simplify, restructure | inline | code-quality | code-quality | — |
+| refactor, extract, simplify, restructure | inline | pr-review (maintainability lens) | pr-review | — |
 | merge conflict, git conflict | inline | (prompt context) | — | — |
 | docs, sync, documentation | inline | (doc task) | — | — |
 | bug documentation, knowledge base | inline | troubleshooting | troubleshooting | — |
-| review, validate, check (generic) | `Skill('critic')` inline + ONE fresh-context read-only reviewer (P1 exception, 019) | standard mode | code-quality | — |
-| security, audit, vulnerability, owasp | `Skill('critic')` + `Skill('security-audit')` | security-audit | security-audit | — |
-| code quality, smells, SOLID, complexity | `Skill('critic')` / code-quality (quality) | code-quality (quality mode) | code-quality | — |
-| performance, slow, bottleneck, N+1 | `Skill('critic')` / code-quality (performance) | code-quality (performance mode) | code-quality | — |
-| plan, design, decompose, RFC, architecture, contract | Lead via `Skill(flow, "plan")` | (no dedicated agent) | decide (heavy tier) (for design risk), code-quality | — |
+| review, validate, check (generic) | `Skill(flow, "review")` inline + ONE fresh-context read-only reviewer (P1 exception, 019) | standard mode | pr-review | — |
+| security, audit, vulnerability, owasp | `Skill(flow, "review")` + `Skill('security-audit')` | security-audit | security-audit | — |
+| code quality, smells, SOLID, complexity | `Skill(flow, "review")` / pr-review (maintainability lens) | pr-review (maintainability lens) | pr-review | — |
+| performance, slow, bottleneck, N+1 | `Skill(flow, "review")` / pr-review (performance lens) | pr-review (performance lens) | pr-review | — |
+| plan, design, decompose, RFC, architecture, contract | Lead via `Skill(flow, "plan")` | (no dedicated agent) | decide (heavy tier) (for design risk), pr-review | — |
 | >3 subtasks, breakdown, dependencies | Lead via `Skill(flow, "plan")` | (decomposition in skill) | — | — |
 | find, explore, search codebase | `Explore` (built-in); ≥4 sweeps → `Workflow` | — | — | Lead `Read` inline |
 | error, failing, debug, diagnose | Lead via `Skill('troubleshooting')` | (no dedicated agent) | troubleshooting | fix inline (obvious fix) |
@@ -87,10 +87,10 @@ The "Suggested skills to Read (for delegation)" column lists `.claude/skills/<na
 |---------|-----------|------|
 | **Explore then Build** | `Explore` (read) → inline build | exploration provides context, Lead implements inline |
 | **Plan then Build** | Lead `Skill(flow, "plan")` → inline build (sequential; write fan-out = opt-in) | complexity >60 |
-| **Build then Review** | inline build → `Skill('critic')` | mandatory for multi-file changes |
+| **Build then Review** | inline build → `Skill(flow, "review")` | mandatory for multi-file changes |
 | **Diagnose then Fix** | Lead `Skill('troubleshooting')` → fix inline | diagnosis before fix |
 | **Worktree Parallel** | ≥4 `Workflow` WRITE units with `isolation: 'worktree'` — explicit user opt-in only | user opted in (ultracode) AND files may overlap |
-| **Security Review** | `Skill('critic')` + `Skill('security-audit')` | auth/security changes |
+| **Security Review** | `Skill(flow, "review")` + `Skill('security-audit')` | auth/security changes |
 | **Tiered Build** | Lead `Skill(flow, "plan")` Mode B contracts → inline sequential | complexity 45-60, 2-3 domains with shared interfaces |
 | **Team Parallel** | Team mode (experimental) | 3+ independent domains negotiating interfaces, complexity >60 |
 
@@ -157,8 +157,8 @@ prohibit the explicitly authorized `orca-team` route.
 | Anti-Pattern | Problem | Use Instead |
 |--------------|---------|-------------|
 | Spawning an agent for exploration | misses context, wastes tokens | `Explore` (read) or Lead `Read` inline |
-| `flow` skill (plan phase) for complexity <30 | overkill, slows execution | act inline |
-| skipping `flow` (review phase) after multi-file changes | quality risk | `Skill('critic')` checkpoint |
+| `flow` skill (plan phase) for complexity 33-45 or an obviously trivial task | overkill, slows execution | act inline |
+| skipping `flow` (review phase) after multi-file changes | quality risk | `Skill(flow, "review")` checkpoint |
 | no `flow` (plan phase) for >60 complexity | uncoordinated, error-prone | Lead `Skill(flow, "plan")` → inline (≥4 HUs → `Workflow`) |
 | ≥4 `Workflow` units without worktree on overlapping files | Write conflicts | `isolation: "worktree"` per unit |
 | team mode for <3 domains | 3-7x cost with no real benefit | inline, or `Workflow` at ≥4 independent units |

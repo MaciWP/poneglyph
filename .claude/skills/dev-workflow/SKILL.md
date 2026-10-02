@@ -1,26 +1,19 @@
 ---
 name: dev-workflow
-description: |
-  El bucle de desarrollo de poneglyph elaborado: premisas y pasos de cómo debe
-  actuar la IA al programar — conocer/reutilizar antes de escribir, planear con
-  preguntas-con-default, asunciones falsables y riesgos con mitigación, ejecutar
-  con la escalera de simplicidad y suelo de seguridad, revisar con barrido de
-  impacto, y aprender guardando lo no-obvio. Incluye la regla de loop-back entre
-  etapas, la lente de review anti-over-engineering para diffs y la cosecha de
-  deuda `ponytail:`.
-  Úsala cuando: quieras aplicar o consultar el bucle dev en detalle, revisar un
-  diff por over-engineering, cosechar deuda técnica, o cuando algo parezca
-  demasiado complejo, "simplifica", "sobreingeniería", "mínimas líneas de código",
-  "lente ponytail", "deuda técnica", "cómo deberías desarrollar esto".
+description: >-
+  Field manual for the CLAUDE.md dev loop: reuse scan, a plan with defaulted
+  questions, the simplicity ladder, an impact review and loop-back. Use for
+  "planea cómo arreglar estos findings", a pasted ticket or bug to fix,
+  "simplifica esto" or "revisa este diff por sobreingeniería". Not for a
+  question, a read or a one-line fix.
 metadata:
   keywords: >
-    Keywords - bucle dev, como desarrollar, simplifica, sobreingenieria, over-engineering,
-    demasiado complejo, minimas lineas, mínimas líneas, YAGNI, lente ponytail, deuda
-    tecnica, deuda técnica, ponytail, elegante, mantenible
+    Keywords - bucle dev, aplica el bucle dev, planea cómo arreglar, arregla estos findings,
+    cómo deberías desarrollar, simplifica esto, demasiado complejo, over-engineering,
+    sobreingeniería, mínimas líneas, lente ponytail, cosecha la deuda, deuda técnica, YAGNI
 disable-model-invocation: false
 when_to_use: |
-  "simplifica esto", "es demasiado complejo", "revisa este diff por sobreingeniería",
-  "cosecha la deuda", "aplica el bucle dev", "/dev-workflow", "cómo deberías desarrollar esto"
+  Fixing review findings or a pasted ticket; reviewing a diff for excess.
 ---
 
 # dev — the development loop, elaborated
@@ -40,10 +33,10 @@ CLAUDE.md §The dev loop. Judging a task "trivial"
 - Close after those outcomes are verified, REVIEW reports residual risk and LEARN records any justified lesson.
 - Deliver and stop. Reopen work only for changed scope, changed inputs, a new failure or invalidated evidence; use the existing loop-back rules.
 
-## How You're Graded
+## Quality Bar
 
-- You are graded on solving the agreed problem, reusing existing code and delivering the simplest maintainable result above the safety floor.
-- Verified correctness and scope compliance come first. Extra code, repeated green checks and speculative improvements earn no credit.
+- Success means solving the agreed problem, reusing existing code and delivering the simplest maintainable result above the safety floor.
+- Verified correctness and scope compliance come first. Extra code, repeated green checks and speculative improvements add no value.
 - Define task-specific quality priorities in PLAN when needed. Do not lower acceptance criteria or add scope to improve a grade.
 
 ## Stage 1 — KNOW (learn / investigate / reuse)

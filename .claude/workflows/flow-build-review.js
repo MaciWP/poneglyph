@@ -1,13 +1,13 @@
 export const meta = {
   name: 'flow-build-review',
   description:
-    'Ciclo trasero de /flow-lifecycle COMPLETO y determinista: preflight del plan, build por waves con la disciplina de la skill build (style anchors, oracle red→green, drillme-clarify intra-HU, docs-sync, retry con diagnóstico), fase 4 estilo critic (base checks + fresh reviewer + code-quality + security condicional + spec-drift) y review.md escrito desde el template con veredicto PROPUESTO. Los gates humanos (ratificar veredicto, retro, state.json) quedan fuera.',
+    'Ciclo trasero de /flow-lifecycle COMPLETO y determinista: preflight del plan, build por waves con la disciplina de la skill build (style anchors, oracle red→green, drillme-clarify intra-HU, docs-sync, retry con diagnóstico), fase 4 estilo critic (base checks + fresh reviewer + lentes de calidad + security condicional + spec-drift) y review.md escrito desde el template con veredicto PROPUESTO. Los gates humanos (ratificar veredicto, retro, state.json) quedan fuera.',
   whenToUse:
     'Plan /flow-lifecycle con tasks/ aprobado y fase 2.5 cerrada, cuando quieres el ciclo trasero COMPLETO — build + fase 4 con artefacto review.md — y no solo ejecutar las HUs. Opt-in explícito: ~2x el coste de un build directo por la fase 4 instrumentada.',
   phases: [
     { title: 'Preflight', detail: 'readiness del plan + comandos de verificación + review_level + fecha (1 agente lector)' },
     { title: 'Build', detail: 'HUs por waves del DAG con la disciplina de flow/references/04-build.md; 1 retry con diagnóstico', model: 'sonnet' },
-    { title: 'Review', detail: 'base checks + fresh reviewer (opus) + code-quality + security-audit condicional' },
+    { title: 'Review', detail: 'base checks + fresh reviewer (opus) + lentes de calidad + security-audit condicional' },
     { title: 'Synthesize', detail: 'veredicto determinista + writer escribe review.md desde el template' },
   ],
 }
@@ -100,7 +100,7 @@ const plan = await agent(
     `3) For each US id in us_pending, read ${PLAN}/tasks/US{n}.md and extract: id, title, wave, depends_on, files, and the FULL "Execution prompt (Phase 3 input)" block VERBATIM as execution_prompt.\n` +
     `   Flow defaults to forced TDD for behavior changes, including auxiliary code. Use validation for documents; optional/skip requires a recorded exception before execution. Resolve oracle_mode per US from ${PLAN}/tests.md frontmatter (tdd_policy) + per-node overrides + .claude/rules/test-policy.md: "forced" (strict red→green), "optional" (impl + suite verify), "validation" (markdown/config US covered by validations.md), "skip" (node carries tdd-skip: <reason> → copy it into oracle_skip_reason). oracle_ref = the exact section that covers this US.\n` +
     `4) check_command / typecheck_command / lint_command = the project's verification commands (project CLAUDE.md, .claude/rules/test-policy.md). Empty string when the project has none. test_policy = the declared level.\n` +
-    `5) spec_summary = problem statement + acceptance criteria of ${PLAN}/spec.md, condensed to ≤15 lines (the review writer works from this).\n` +
+    `5) spec_summary = problem statement + acceptance criteria of ${PLAN}/spec.md, condensed to what the review writer needs: the problem and every acceptance criterion.\n` +
     `6) review_level per .claude/skills/flow/references/05-review.md Step 3: "light" (1-2 HUs, no security/perf surface), "standard" (3-N HUs, no critical area), "full" (architectural, or the diff will touch auth/payments/secrets/crypto/session). Give the reason in one line.\n` +
     `Return ONLY the structured object.`,
   { label: 'preflight:plan', phase: 'Preflight', schema: PREFLIGHT_SCHEMA, model: 'sonnet', effort: 'low' },
@@ -297,7 +297,7 @@ const wantQuality = done.length > 0 && level !== 'light'
 const wantPerf = hasCode && level === 'full'
 const wantSecurity = securityHit.length > 0
 if (wantSecurity) log(`🔒 security-audit disparado por: ${securityHit.join(', ')}`)
-if (hasCode && level === 'standard') log('code-quality performance omitido (level standard) — súbelo con level:"full" si el diff tiene hot paths')
+if (hasCode && level === 'standard') log('lente de performance omitida (level standard) — súbelo con level:"full" si el diff tiene hot paths')
 
 const [base, reviewer, quality, perf, security] = await parallel([
   () =>
@@ -327,7 +327,7 @@ const [base, reviewer, quality, perf, security] = await parallel([
   wantQuality
     ? () =>
         agent(
-          `Apply the project's OWN quality catalog to the delivered diff. Read .claude/skills/code-quality/references/01-mode-quality.md and the checklists under .claude/skills/code-quality/references/quality/, then review \`git diff HEAD\` on: ${filesLine}.\n` +
+          `Apply the project's OWN quality catalog to the delivered diff. Read .claude/skills/pr-review/references/05-lens-maintainability.md and the checklists under .claude/skills/pr-review/references/maintainability/, then review \`git diff HEAD\` on: ${filesLine}.\n` +
             `Scope: SOLID/DRY violations, code smells, complexity, duplication of something the repo already has, over-engineering beyond the ACs, naming and comment noise, TODOs without a linked task. Correctness and security are NOT yours.\n` +
             `Read-only. Each finding: exact file:line, the catalog rule it breaks, and a concrete fix. Empty array if the diff is clean.`,
           { label: 'review:quality', phase: 'Review', schema: FINDINGS_SCHEMA, model: 'sonnet' },
@@ -336,7 +336,7 @@ const [base, reviewer, quality, perf, security] = await parallel([
   wantPerf
     ? () =>
         agent(
-          `Apply the project's performance catalog to the delivered diff. Read .claude/skills/code-quality/references/02-mode-performance.md and the checklists under .claude/skills/code-quality/references/performance/, then review \`git diff HEAD\` on: ${filesLine}.\n` +
+          `Apply the project's performance catalog to the delivered diff. Read .claude/skills/pr-review/references/06-lens-performance.md and the checklists under .claude/skills/pr-review/references/performance/, then review \`git diff HEAD\` on: ${filesLine}.\n` +
             `Scope: O(n²) where O(n) is reachable, I/O inside loops (N+1), missed batching/parallelism, unbounded buffers that should stream, leaks. Only flag what the DIFF introduces, on a path that can actually grow — do not report theoretical micro-optimizations.\n` +
             `Read-only. Each finding: exact file:line + concrete fix.`,
           { label: 'review:performance', phase: 'Review', schema: FINDINGS_SCHEMA, model: 'sonnet' },
@@ -358,8 +358,8 @@ const tag = (res, source) => ((res && res.findings) || []).map((f) => ({ ...f, s
 const findings = [
   ...tag(reviewer, 'fresh-reviewer'),
   ...tag(security, 'security-audit'),
-  ...tag(quality, 'code-quality:quality'),
-  ...tag(perf, 'code-quality:performance'),
+  ...tag(quality, 'pr-review:maintainability'),
+  ...tag(perf, 'pr-review:performance'),
 ]
 const count = (s) => findings.filter((f) => f.severity === s).length
 const findings_count = { blocker: count('BLOCKER'), major: count('MAJOR'), minor: count('MINOR'), nit: count('NIT') }
@@ -434,7 +434,7 @@ const written = await agent(
     `- "Oracle ejecutado": one row per US from per_hu (oracle_evidence + check). Aggregate, never copy the oracle's content.\n` +
     `- Requirements: copy acceptance_checks into a requirement/status/evidence table. Missing evidence is not a pass.\n` +
     `- Checklist of 5 sections: tick each item ONLY with evidence from the digest; an item without evidence stays unticked with "sin evidencia" — do not invent a check that nobody ran.\n` +
-    `- Findings table: severity · description · file:line · recommendation, with the source in parentheses (fresh-reviewer / code-quality:quality / code-quality:performance / security-audit). Sort BLOCKER → NIT. Do NOT re-judge severities.\n` +
+    `- Findings table: severity · description · file:line · recommendation, with the source in parentheses (fresh-reviewer / pr-review:maintainability / pr-review:performance / security-audit). Sort BLOCKER → NIT. Do NOT re-judge severities.\n` +
     `- "Living-spec deltas": only if spec_drift ≠ none; propose the patch, never apply it.\n` +
     `- HUs blocked/failed get their own short section with their exact question or error — these are what the Lead resolves with the user.\n` +
     `- Spanish (es-ES), same register as the template. No invented data: everything comes from the digest.\n\n` +
@@ -449,7 +449,7 @@ const boundary_checks = [
   `phase-3: ${done.length}/${selected.length} HUs cerradas con oracle honrado (${plan.oracle_source})`,
   `phase-3: docs-sync intra-HU en ${done.filter((r) => r.docs_sync && r.docs_sync !== 'n/a').length}/${done.length} HUs`,
   `phase-4: base checks ejecutados (${checks.map((c) => `${c.name}:${c.ok ? 'ok' : 'red'}`).join(', ') || 'ninguno'})`,
-  `phase-4: fresh reviewer ${wantReviewer ? 'invocado' : 'no aplica'} · security-audit ${wantSecurity ? 'invocado' : 'no aplica'} · code-quality [${[wantQuality ? 'quality' : null, wantPerf ? 'performance' : null].filter(Boolean).join(', ') || 'ninguno'}]`,
+  `phase-4: fresh reviewer ${wantReviewer ? 'invocado' : 'no aplica'} · security-audit ${wantSecurity ? 'invocado' : 'no aplica'} · lentes [${[wantQuality ? 'maintainability' : null, wantPerf ? 'performance' : null].filter(Boolean).join(', ') || 'ninguno'}]`,
   `phase-4: review.md ${written && written.written ? 'escrito' : 'NO escrito'} con veredicto propuesto ${verdict}`,
 ]
 

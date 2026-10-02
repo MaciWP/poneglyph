@@ -24,11 +24,11 @@ Instantiate: `{{SKILL_NAME}}` kebab 1–64 matching the directory; `description`
 - {{Evidence needed to verify that outcome}}
 - Return the result when these criteria hold. Report unmet criteria honestly; do not expand the task after completion.
 
-## How You're Graded
+## Quality Bar
 
 - For variable scope, reuse the caller's quality priorities or resolve them with the DoD before work.
-- You are graded on {{specific useful behavior or outcome}} and {{evidence that demonstrates its quality}}.
-- Preserve the reference's constraints when adapting it to the task. Additional patterns, prose or changes earn no credit.
+- Success means {{specific useful behavior or outcome}} and {{evidence that demonstrates its quality}}.
+- Preserve the reference's constraints when adapting it to the task. Additional patterns, prose or changes add no value.
 
 ## When to use
 

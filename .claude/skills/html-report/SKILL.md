@@ -20,14 +20,14 @@ Turns a poneglyph markdown artefact (or structured data) into one **self-contain
 - Generation requires the requested HTML, applicable pre-flight checks and observed rendering; pure-offline requests require zero external assets. Critique requires supported findings and a verdict, not a rewritten artifact.
 - Deliver the artifact or assessment and stop when the mode's criteria are satisfied. Report missing visual evidence explicitly.
 
-## How You're Graded
+## Quality Bar
 
-- You are graded on faithful content, readability, accessibility and working requested interactions.
-- Additional panels, decorative content and polishing after the checks pass earn no credit.
+- Success means faithful content, readability, accessibility and working requested interactions.
+- Additional panels, decorative content and polishing after the checks pass add no value.
 
 ## Underlying Principle
 
-> Distinctiveness comes from execution (type-scale discipline, a signature serif on headings, tight tabular tables, a hand-built SVG gauge), NOT from gimmicks. The output must read as part of the same design family as `/compare-and-decide`'s memo — and never as generic AI filler.
+> Distinctiveness comes from execution (type-scale discipline, a signature serif on headings, tight tabular tables, a hand-built SVG gauge), NOT from gimmicks. Every output reads as one design system: all five templates, the dynamic mode and the inline SVG diagrams take their colors, type, spacing and radius from `templates/tokens.css` — and never as generic AI filler.
 
 ## Taste corpus & critique (references/ — load on demand)
 
@@ -56,7 +56,7 @@ The design quality bar lives in `references/`, loaded only when needed (keeps th
 
 | Situation | Use instead |
 |---|---|
-| User wants a strategic DECISION memo (3 perspectives) | `compare-and-decide` skill (already emits its own HTML memo) |
+| User wants a strategic DECISION memo (3 perspectives) | `compare-and-decide` skill (its HTML memo, on request, is `templates/decision.template.html`) |
 | User wants the markdown CONTENT authored/edited, not rendered | the relevant phase of the `flow` skill (review, retro, scope…) |
 | User wants a PDF | render HTML then print-to-PDF (the template's `@media print` is built for this) |
 | Trivial one-paragraph note | plain markdown — HTML scaffolding is over-engineering here (Commandment V) |
@@ -92,12 +92,12 @@ graph TD
 |---|---|
 | Reader needs the full evidence (sections 1–9, tables, prose) | Reader wants status at a glance: score + severity mix + top findings |
 | Default for `report.md` / `retro.md` | Default for "dashboard", "estado", standups |
-| Layout: sticky TOC sidebar + readable main column | Layout: KPI-card row + severity-bar + health panels + findings list (dark-first, shadcn/Raycast language) |
+| Layout: sticky TOC sidebar + readable main column | Layout: KPI-card row + severity-bar + health panels + findings list (opens dark, shadcn/Raycast language) |
 
 When unsure, default to `report` (long-form loses no information; dashboard compresses).
 
 > **v2 layouts (feature 007)** — two more templates extend the system:
-> - **`glance.template.html`** — scan-at-a-glance dark report: KPI row (color=info) + immediate-action callout + CSS-only filterable/expandable cards + drawer + next-steps. Pick for "se lee de un vistazo". **Defines the canonical dark token block** (decision template inlines it verbatim — Cmd IX).
+> - **`glance.template.html`** — scan-at-a-glance dark report: KPI row (color=info) + immediate-action callout + CSS-only filterable/expandable cards + drawer + next-steps. Pick for "se lee de un vistazo". Opens dark; inlines the token block from `templates/tokens.css`.
 > - **`decision.template.html`** — decisions WITH comparable options (dev or non-dev: monitor/PC/shoes): recommendation hero + weighted options×criteria matrix + per-option pros/cons + criteria&weights. The `compare-and-decide` skill reuses this as its base (single visual system).
 >
 > **Diagrams / charts — hybrid SVG-first**: compose inline SVG by hand for simple flows/comparisons/charts (self-contained, 0 JS, like the gauge/sevbar); `mermaid.js` runtime is an **opt-in declared exception** for complex graphs only (no `mmdc` in this env). Patterns + decision rule: `references/visuals-svg-first.md`.
@@ -110,9 +110,10 @@ When unsure, default to `report` (long-form loses no information; dashboard comp
 
 ### Step 4 — Fill placeholders + compose components
 
-- `templates/report.template.html` is a **composition of the fixed C1–C8 inventory + an inlined token block** (authoring no new CSS beyond sidebar layout glue). `templates/dashboard.template.html` is a **self-contained v7/v8 redesign** (KPI-card row + health panels + findings drawer) with its own component CSS and its own dark-native token set — NOT a C1–C8 composition. Treat the two templates as distinct architectures.
+- `templates/report.template.html` is a **composition of the fixed C1–C8 inventory + an inlined token block** (authoring no new CSS beyond sidebar layout glue). `templates/dashboard.template.html` is a **self-contained v7/v8 redesign** (KPI-card row + health panels + findings drawer) with its own component CSS and the same inlined token block — NOT a C1–C8 composition. Treat the two templates as distinct architectures.
 - For the report template, copy component markup from `templates/components.html` (the C1–C8 reference units) and fill them with the real data.
-- **Token block (report template)**: `templates/tokens.css` is the single source of truth for `report.template.html` — inline it **byte-identical** inside the `<style>` (no external `tokens.css` at render time; copy verbatim, never re-author, rename, or re-value a `--token`). The **dashboard template** intentionally ships its own dark-native token set (`--bg`, `--ink`, `--accent`, score/sev scales — shadcn/Raycast language), separate from `tokens.css`; that is by design, not a bug. Keep `tokens.css` ↔ `report.template` in lockstep; the dashboard owns its palette.
+- **Token block (every template)**: `templates/tokens.css` is the single source of truth for `report`, `dashboard`, `glance`, `decision`, `components.html` and the dynamic mode (`scripts/theme.ts` reads it at render time). Each template inlines it **byte-identical** between the `/* tokens:begin */` and `/* tokens:end */` markers (no external `tokens.css` at render time; never re-author, rename, or re-value a `--token`, and never add a palette of your own). Change a value in `tokens.css` only, then run `bun scripts/tokens.ts --check|--write [file...]` (default: `templates/*.html`) — `--check` reports templates that differ, `--write` re-inlines them. Layout width (`--maxw`) is per template, not a token.
+- **Published copy**: the private claude.ai Design System Artifact https://claude.ai/artifact/Sg6Feha4ZqHxis65PW8pRL mirrors `tokens.css`. It is republished by hand after a token change: `bun scripts/tokens.ts --export-ds <scratch-dir>`, then publish its `project/` folder to that URL.
 - **Dynamic-mode prose can be Markdown + copy** (`scripts/comments.ts`): a `prose` block accepts `md` (a small **code-safe** CommonMark subset — `**`bold/`*`italic/`` `code` ``/links/lists/headings + fenced code; dunders/`snake_case`/`*args` survive verbatim) instead of hand-written `html`; a `comment` block (`{md, title?, copy?}`) renders Markdown and, with `copy:true`, adds a copy-to-clipboard button that copies the RAW md (e.g. paste a review note into GitHub). Fenced code is always copyable. Self-contained, no deps, escaped + link-sanitized.
 - **Two separate visual languages**: severity (`sev--blocker|major|minor|nit|ok`, tags findings) is NOT score (`score--bad|warn|mid|good`, tags numbers). Never interchange them.
 - **Exact math the agent bakes in:**
@@ -139,18 +140,18 @@ When asked to **critique/audit** an HTML/CSS or a render: load `references/criti
 |---|---|
 | **Self-contained (near)** | All CSS in one inlined `<style>`. The only external request is one Google Fonts `<link>` (v1.2.0 client-grade); omit it for pure-offline (system-stack fallback). Verify the rest is inlined by opening with network disabled. |
 | **Static modes: no JS** | TOC nav = anchor links + `scroll-behavior:smooth`; active state via `:target`. Gauge/bars are static markup with computed values baked in. |
-| **Dark/light** | `report.template`: single `@media (prefers-color-scheme: dark)` block flips every token (inherits the memo's flip mechanism), every severity + score color has both-scheme variants. `dashboard.template`: **dark-first by design** (premium dark palette, no OS flip) — its light variant comes from `@media print`. |
+| **Dark/light** | One mechanism from `tokens.css`: light at `:root`; dark at `html[data-theme="dark"]` and, with no `data-theme`, under `prefers-color-scheme: dark`; `@media print` restates the light values. `report.template` and the dynamic mode follow the system preference; `dashboard`, `glance` and `decision` set `data-theme="dark"` on `<html>` and open dark. Every severity + score color has both-scheme variants. |
 | **Print-friendly** | `@media print`: white bg, drop shadows/transforms, `break-inside:avoid` on cards/tables/callouts, hide sidebar + main full width, expand link URLs via `a[href^="http"]::after`. |
 | **Motion safety** | Entrance animations wrapped in `@media (prefers-reduced-motion: no-preference)`; default state is the final state. |
 | **Accessibility** | Charts carry `role="img"` + `aria-label`; severity conveyed by **text label**, not color alone; amber (not yellow) for minor text to pass contrast in both modes. |
-| **Anti-generic AI look** | This skill's identity: warm paper `#f7f6f3` (no pure white), one signature accent (deep teal, no purple), serif display headings, tabular numerals. Distinctiveness via execution, not gimmicks. The full **Absolute-Bans + AI-slop tells catalog lives in `references/anti-slop.md`** (canonical source — do not restate here). |
+| **Anti-generic AI look** | This skill's identity: cool-neutral surfaces (no pure white page background), one signature accent (deep teal, no purple), serif display headings, tabular numerals. Distinctiveness via execution, not gimmicks. The full **Absolute-Bans + AI-slop tells catalog lives in `references/anti-slop.md`** (canonical source — do not restate here). |
 | **Fonts** | The v1.2.0 canonical render uses **Geist + Newsreader + Geist Mono via one Google Fonts `<link>`** (client-grade). System-stack fallback (`Newsreader`/Iowan/Palatino/Georgia + system sans/mono) is the pure-offline path — omit the `<link>` and the stack degrades gracefully, zero embedded bytes. Data-URI woff2 subset remains an opt-in alternative documented with KB cost. |
 
 ## Reutiliza (build on existing precedent)
 
 | Precedent | What it provides | How html-report extends it |
 |---|---|---|
-| The `compare-and-decide` skill's HTML memo | Inline CSS, `prefers-color-scheme` flip, `@media print`, radius/shadow scale, `--color-*` naming | html-report's `tokens.css` is a **superset** of that token architecture (same naming, same flip mechanism). `/compare-and-decide` and `/html-report` must read as ONE design family (Commandment IX). |
+| `templates/decision.template.html` (used by `compare-and-decide`) | Weighted options × criteria matrix, recommendation hero | Same inlined token block as every other template: `/compare-and-decide` and `/html-report` are ONE design system (Commandment IX). |
 | `references/` taste corpus | Sourced hard rules + bans + pre-flight + critique mode | The measurable bar (Step 3) + the review side. |
 | `ui-design` skill | Craft mode for new visual surfaces | Arbitrary UI, not Claude Code's own output. |
 
@@ -160,8 +161,8 @@ When asked to **critique/audit** an HTML/CSS or a render: load `references/criti
 |---|---|---|
 | **V** | Delivered code quality — simple by default, best practices, no over-engineering | One self-contained HTML, no JS framework, no build step, no CDN. Charts via plain SVG + CSS, not a charting library. System stack fonts, not embedded webfonts. Critique is markdown-mode, no helper unless justified. |
 | **IV** | Blocking quality gates | The pre-flight checklist (Step 5a) gates the write; critique emits a verdict. |
-| **VIII** | Optimal output — invoke the right capability well | Applies a sourced taste corpus instead of hand-rolling mediocre CSS; reuses the decide memo precedent; routes arbitrary UI to `ui-design`. Good output by composition, not improvisation. |
-| **IX** | Poneglyph maintainability | `tokens.css` is the single source of truth for the report template (inlined byte-identical); the dashboard owns its dark-native palette by design; bans/tells live once in `references/anti-slop.md` (no dual source); `/compare-and-decide` + `/html-report` share one design language. |
+| **VIII** | Optimal output — invoke the right capability well | Applies a sourced taste corpus instead of hand-rolling mediocre CSS; reuses the shared decision template; routes arbitrary UI to `ui-design`. Good output by composition, not improvisation. |
+| **IX** | Poneglyph maintainability | `tokens.css` is the single source of truth for every template and `theme.ts` (inlined byte-identical, checked by `tokens.ts`); bans/tells live once in `references/anti-slop.md` (no dual source); `/compare-and-decide` + `/html-report` share one design language. |
 
 ## Verification (smoke test)
 
@@ -174,7 +175,7 @@ The canonical smoke test: render the real audit at `.claude/skills/html-report/e
    - Severity-bar (C5) = 1 BLOCKER (10%) · 6 MAJOR (60%) · 3 MINOR (30%) · 0 NIT (legend only).
    - Scoring table (C2) renders the `3` for Critic as a `score--bad` pill, distinct from the BLOCKER finding row.
    - Verdict badge (C8) = `verdict--minor` (amber) for `APPROVED_WITH_WARNINGS`.
-4. Toggle OS dark mode — `report.template` flips every token; `dashboard.template` is dark-first (no OS flip — its light variant is the print stylesheet). Severity/score colors stay legible (amber, not yellow).
+4. Toggle OS dark mode — `report.template` flips every token; `dashboard`, `glance` and `decision` open dark (their light values are the print stylesheet). Severity/score colors stay legible (amber, not yellow).
 5. Print-preview — sidebar hidden, no shadows, link URLs expanded, cards don't break across pages.
 6. Run `references/pre-flight-checklist.md` against the render — all items pass.
 
@@ -194,7 +195,7 @@ The canonical smoke test: render the real audit at `.claude/skills/html-report/e
 > | §5 Cross (Genuine/Parcial verdicts) | C2 tables + verdict badges |
 > | §6 Rúbrica + `> Techo n=1` | C2 + C4 callout |
 > | §7 Inventory counts | C2 / C5 stat-tile grid |
-> | §8 Corpus numbered lists + links | ordered lists, `--color-link` (print expands URLs) |
+> | §8 Corpus numbered lists + links | ordered lists, `--link` (print expands URLs) |
 > | §8.5 Síntesis (ordered decisions) | ordered list |
 > | §9 Limitations table | C2 data-table |
 > | AC-compliance 8/8 | C6 progress-bar or C5 tile |
@@ -210,7 +211,7 @@ Para informes **interactivos self-contained** (ver/presentar/compartir, PC+móvi
 | Pieza | Path |
 |---|---|
 | Contrato de datos | `scripts/contract.ts` (`ReportData`) |
-| Tokens light/dark (jerarquía editorial) | `scripts/theme.ts` |
+| Tokens light/dark: lee `templates/tokens.css` (fuente única) | `scripts/theme.ts` |
 | Generador (shell + nav sticky/scrollspy + colapsables + theme toggle) | `scripts/render.ts` |
 | Tabla filtrable + búsqueda | `scripts/components.ts` |
 | Charts SVG + tooltip (Observable Plot opt-in) | `scripts/charts.ts` |

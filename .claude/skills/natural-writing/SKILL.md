@@ -28,10 +28,10 @@ level is stated in `references/tells-es.md`.
 - Return the rewrite in the mode's shape (below) with every supported fact, name, number, date, quote and claim preserved, and no fact added.
 - Evidence: the draft check of step 3 ran, and the surviving strong tells were searched for by name. Report any tell kept on purpose.
 
-## How You're Graded
+## Quality Bar
 
-- You are graded on text that a careful human editor would accept as written by a person, with its meaning intact.
-- An added or lost fact is a failure even when the prose improves. Over-editing (flattening a real voice, stripping a weak tell that stood alone) earns no credit.
+- Success means text that a careful human editor would accept as written by a person, with its meaning intact.
+- An added or lost fact is a failure even when the prose improves. Over-editing (flattening a real voice, stripping a weak tell that stood alone) adds no value.
 
 ## When to use
 

@@ -27,7 +27,7 @@ before replacement. Retry only proven failures within the approved allowance.
 | 2+ diagnoses without a working fix | STOP → AskUserQuestion |
 | Same exact error 2 times | STOP → AskUserQuestion |
 
-> **Escalation rung**: before STOP→AskUserQuestion, invoke the `task-unblock` skill (`effort: xhigh`) for ONE deep change-of-technique pass — attack the *class* with a method not yet tried (`troubleshooting`/`drillme-clarify`). If it still fails, then STOP→AskUserQuestion. Do not repeat the same attack louder.
+> **Escalation rung**: before STOP→AskUserQuestion, run `Skill(troubleshooting)` §Stuck for ONE deep change-of-technique pass — attack the *class* with a method not yet tried. If it still fails, then STOP→AskUserQuestion. Do not repeat the same attack louder.
 
 When blocked, ask: (1) missing context, (2) approach change, (3) task split.
 

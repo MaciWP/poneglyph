@@ -19,7 +19,7 @@ already in the repo needs no design: that test is the oracle.
 - Map every HU to an observable oracle in tests.md or validations.md, reusing existing relevant checks.
 - Present the tasks and oracle for the actual gate 2→3 decision. Do not implement while approval is pending.
 
-## How You're Graded
+## Quality Bar
 
 - Favor checks that can distinguish the required behavior from a plausible failure. Test counts and implementation-mirroring assertions do not earn credit.
 

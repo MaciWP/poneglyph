@@ -31,10 +31,10 @@ not from a Codex profile's parent directories.
 - A collaborator returns scoped results and actual checks through the worker contract, then stops writing. Only the coordinator accepts tasks and closes workflow state.
 - A coordinator closes when the agreed tasks are accepted with required evidence, or reports the actual blocker or agreed pause. Resume existing work and criteria without creating duplicate workers.
 
-## How You're Graded
+## Quality Bar
 
-- You are graded on safe coordination, correct acceptance and useful evidence within the recorded authorization.
-- Worker counts, dispatch completion alone and repeated execution of accepted work earn no credit.
+- Success means safe coordination, correct acceptance and useful evidence within the recorded authorization.
+- Worker counts, dispatch completion alone and repeated execution of accepted work add no value.
 
 ## Choose the role first
 

@@ -65,13 +65,14 @@ describe("usage-profile — summaries", () => {
 
   it("contextRow reproduces the 2026-09-09 baseline as a warning and a healthy week as green", () => {
     const baseline = { sessions: 122, messages: 3785, totalTokens: 1e9, p50: 193_735, p90: 584_988, overCap: 1854, overCapShare: 0.487, overCapTokenShare: 0.807, topSessionShare: 0.519, floorP50: 50_804 };
-    const warn = contextRow(baseline);
+    const warn = contextRow(baseline, 200_000); // the baseline was measured against the 200k ceiling
     expect(warn.status).toBe("🟡");
     expect(warn.detail).toContain("49 % of msgs above 200k carry 81 % of context");
     expect(warn.detail).toContain("plan 037");
     const healthy = contextRow({ ...baseline, overCapShare: 0.05, overCapTokenShare: 0.1, topSessionShare: 0.2 });
     expect(healthy.status).toBe("🟢");
     expect(contextRow({ ...baseline, messages: 0 }).detail).toBe("no transcripts in the window");
+    expect(contextRow(baseline).detail).toContain("above 300k"); // default cap follows CONTEXT_POLICY
   });
 });
 

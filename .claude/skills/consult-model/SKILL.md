@@ -34,10 +34,10 @@ select this skill. “Abre un Codex” selects a native session, even from Codex
 - Verify the useful claims against primary evidence and return the integrated answer or the unresolved disagreement. An external response alone is not verification.
 - Stop after answering the question or reporting the consultation blocker; do not repeat a call merely for agreement.
 
-## How You're Graded
+## Quality Bar
 
-- You are graded on a precise consultation prompt, useful independent criticism and verified integration.
-- Model agreement and additional calls earn no credit without new evidence.
+- Success means a precise consultation prompt, useful independent criticism and verified integration.
+- Model agreement and additional calls add no value without new evidence.
 
 ## Procedure
 

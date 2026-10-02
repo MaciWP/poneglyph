@@ -1,14 +1,11 @@
 ---
 name: changes-verify
-description: |
-  Gate pre-done: hace que "hecho" signifique verificado. Protocolo de 4 pasos
-  tras implementar — checks del proyecto, barrido de impacto (qué más usa lo
-  tocado), ejercer el flujo real end-to-end cuando hay superficie de runtime
-  (ejecutar, no predecir), y reporte de riesgo residual con status por claim.
-  Es el ejecutor de la etapa REVIEW del dev loop (CLAUDE.md §The dev loop).
-  Úsala cuando: acabas de implementar y vas a reportar "hecho" o a commitear,
-  "¿estás 100% seguro?", "¿no hemos roto nada?", "haz una prueba manual",
-  "verifica el cambio", "¿funciona de verdad?", "barrido de impacto".
+description: >-
+  Pre-done gate: before reporting "hecho" on code that runs (hook, CLI, API,
+  UI), runs the project's checks, sweeps what else uses what you touched,
+  drives the real flow end to end and reports residual risk. Use for "¿estás
+  seguro?", "¿no hemos roto nada?", "haz una prueba manual", "verifica el
+  cambio". Not for docs-only diffs or reviewing someone else's PR.
 metadata:
   keywords: >
     Keywords - verifica el cambio, estás seguro, estas seguro, no hemos roto, prueba manual,
@@ -16,9 +13,7 @@ metadata:
     impact sweep, end-to-end manual, smoke manual
 disable-model-invocation: false
 when_to_use: |
-  "¿estás 100% seguro?", "¿no hemos roto nada?", "haz una prueba manual tú mismo",
-  "verifica antes de commitear", "¿qué más usa esto?", tras cerrar cualquier
-  implementación con superficie de runtime
+  About to report done, or commit, on a change with runtime surface.
 ---
 
 # verify — the pre-done gate
@@ -37,10 +32,10 @@ A claim resting on a file, symbol or route existing →
 - A passing result requires the applicable protocol below, evidence for the checked inputs and a residual-risk report.
 - Failed or unavailable required checks return the task to repair or a reported blocker. After a passing report, return to the caller; rerun only for changed inputs, new failures or invalidated evidence.
 
-## How You're Graded
+## Quality Bar
 
-- You are graded on checks that prove the requested behavior, an accurate impact sweep and honest claim status.
-- Reuse valid evidence for unchanged inputs. Repeating green checks earns no credit; omitting required checks cannot earn a pass.
+- Success means checks that prove the requested behavior, an accurate impact sweep and honest claim status.
+- Reuse valid evidence for unchanged inputs. Repeating green checks adds no value; omitting required checks cannot earn a pass.
 
 ## Anti-trigger (proportionality)
 

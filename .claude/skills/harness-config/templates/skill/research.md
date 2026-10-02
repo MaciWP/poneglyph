@@ -24,11 +24,11 @@ Instantiate: `{{SKILL_NAME}}` kebab 1–64 matching the directory; `description`
 - {{How to distinguish a resolved question from an unresolved evidence gap}}
 - Deliver and stop when the required questions are answered. Report irreducible gaps explicitly; never present a partial answer as complete.
 
-## How You're Graded
+## Quality Bar
 
 - Reuse agreed quality priorities or resolve those specific to this research with the DoD before work.
-- You are graded on {{decision-relevant evidence}} and {{useful synthesis for the intended reader}}.
-- Prefer supported conclusions and explicit uncertainty. Source counts, additional searches and report length earn no credit by themselves.
+- Success means {{decision-relevant evidence}} and {{useful synthesis for the intended reader}}.
+- Prefer supported conclusions and explicit uncertainty. Source counts, additional searches and report length add no value by themselves.
 
 ## When NOT to use
 

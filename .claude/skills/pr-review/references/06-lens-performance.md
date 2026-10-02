@@ -1,10 +1,10 @@
 ---
-parent: code-quality
-name: mode-performance
-description: Performance mode — bottlenecks, memory leaks, N+1, async patterns, metrics, profiling.
+parent: pr-review
+name: lens-performance
+description: Performance lens — bottlenecks, memory leaks, N+1, async patterns, metrics, profiling.
 ---
 
-# Performance Mode
+# Performance Lens
 
 ## Contents
 
@@ -195,3 +195,7 @@ For memory leak, event listener, and serialization patterns, see `${CLAUDE_SKILL
 | Connection pool != cache (pool manages connections, not query results) | Confusing the two leads to wrong architecture decisions | Don't confuse pooling with caching, they solve different problems |
 | `async/await` in loops looks sequential but may be batched by runtime | Some runtimes optimize sequential awaits internally | Verify actual execution order with timing logs, not just code reading |
 | Micro-benchmarks don't reflect production (JIT warmup, GC pressure differ) | Isolated benchmarks miss real-world contention and memory pressure | Use realistic workloads and sustained load tests |
+
+## Script
+
+`bun ${CLAUDE_SKILL_DIR}/scripts/find-n-plus-one.ts <file-or-directory>` flags queries and awaits inside loops. Confirm each hit against the generated SQL before reporting it.

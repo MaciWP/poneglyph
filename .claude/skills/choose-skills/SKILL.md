@@ -1,8 +1,11 @@
 ---
 name: choose-skills
-description: |
-  Propone un shortlist ratificable de las skills relevantes y pregunta cuáles activar.
-  Úsala cuando dos o más skills podrían aplicar y la tarea no nombra ninguna, en fronteras de fase de /flow-lifecycle, o a petición.
+description: >-
+  Proposes a shortlist of the skills that fit the task and asks which to
+  activate. Use when two or more skills could apply and the task names none,
+  at /flow-lifecycle phase boundaries, or for "qué skills uso para esto", "qué
+  skill aplica aquí", "no sé qué activar". Not when the user already named the
+  skill or a single skill clearly fits.
 metadata:
   keywords: >
     Keywords - choose-skills, skill routing, shortlist, activar skill, propón skills,
@@ -10,6 +13,8 @@ metadata:
     qué skill aplica aquí, no sé qué activar, drillme-clarify de skills, which skills apply,
     suggest relevant skills, what skill should I use here, qué skills necesito
 disable-model-invocation: false
+when_to_use: |
+  Several skills could apply and none was named.
 ---
 
 # choose-skills — propose→ratify skill shortlist
@@ -24,10 +29,10 @@ disable-model-invocation: false
 - Resolve the current task and apply the existing shortlist, ratification and model/effort rules.
 - Return the activated selection, an explicit empty match, or the pending user choice. Do not treat silence as ratification or repeat selection without a changed task.
 
-## How You're Graded
+## Quality Bar
 
-- You are graded on relevant candidates, concrete selection reasons and preserving the user's decision.
-- A larger shortlist or more skill activations earn no credit.
+- Success means relevant candidates, concrete selection reasons and preserving the user's decision.
+- A larger shortlist or more skill activations add no value.
 
 ## When to run
 
@@ -94,7 +99,7 @@ disable-model-invocation: false
 ## Verificación
 
 - `bun test ./.claude/skills/choose-skills/__tests__/rank.test.ts` verde.
-- Smoke: `/choose-skills "optimiza el endpoint lento"` → shortlist con code-quality + AskUserQuestion.
+- Smoke: `/choose-skills "optimiza el endpoint lento"` → shortlist con pr-review + AskUserQuestion.
 
 ## Reutiliza
 

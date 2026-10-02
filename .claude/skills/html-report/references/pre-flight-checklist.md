@@ -44,7 +44,7 @@ Run before declaring any `html-report` render done. **Gate semantics: if any ite
 
 ## Self-contained (html-report invariants)
 - [ ] Single inlined `<style>`; the only allowed external request is one Google Fonts `<link>` (v1.2.0 client-grade). For pure-offline: omit it and confirm the system-stack fallback renders.
-- [ ] `report.template`: dark/light both render. `dashboard.template`: dark-first + print-light (no OS flip, by design). Print stylesheet intact in both.
+- [ ] `report.template`: dark/light both render. `dashboard`, `glance` and `decision` templates: dark-first + print-light (no OS flip, by design). Print stylesheet intact in both.
 
 ## Cliente-ready / v2 (feature 007)
 - [ ] **Vistazo**: la acción/conclusión principal + KPIs/distribución se captan above-the-fold (sin scroll).

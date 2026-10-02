@@ -142,7 +142,9 @@
     "padding": 0,
     "refreshInterval": 10
   },
-  "enabledPlugins": {},
+  "enabledPlugins": {
+    "cowork-plugin-management@synced": false
+  },
   "attribution": {
     "commit": "",
     "pr": ""
@@ -185,7 +187,7 @@
   "editorMode": "normal",
   "skipDangerousModePermissionPrompt": true,
   "autoCompactEnabled": true,
-  "autoCompactWindow": 200000,
+  "autoCompactWindow": 300000,
   "skipAutoPermissionPrompt": true,
   "autoMode": {
     "hard_deny": [
@@ -206,18 +208,8 @@
     ]
   },
   "skillOverrides": {
-    "diagrams-interactive": "name-only",
     "flow": "name-only",
-    "dev-workflow": "name-only",
-    "troubleshooting": "name-only",
-    "drillme-clarify": "name-only",
-    "lessons-learned": "name-only",
     "orca-team": "name-only",
-    "orca-swarm": "name-only",
-    "agent-routing": "name-only",
-    "prompt-design": "name-only",
-    "choose-skills": "name-only",
-    "task-unblock": "name-only",
-    "changes-verify": "name-only"
+    "orca-swarm": "name-only"
   }
 }

@@ -5,7 +5,7 @@ vendor requirement or evidence that a model follows a prompt.
 
 ## Authoring
 
-Keep `## Definition of Done` and `## How You're Graded` before the procedure in
+Keep `## Definition of Done` and `## Quality Bar` before the procedure in
 each core `SKILL.md`. Each section needs concrete prose. Preserve the three
 template flavors and existing activation settings. Replace equivalent completion
 instructions instead of copying a second checklist. Keep detailed mode criteria
@@ -33,11 +33,11 @@ scope change can reopen work. Return to PLAN when an assumption changes. Never
 lower criteria retrospectively to fit the output or skip a mandatory check to
 save resources. Report blockers and follow the existing recovery protocol.
 
-Graded names observable outcomes and behaviors to favor during work. Give
+Quality Bar names observable outcomes and behaviors to favor during work. Give
 task-specific quality priorities when the task needs them. Correctness, safety,
 truthful evidence and authorized scope are requirements. Efficiency means avoiding
 unnecessary work while satisfying them. Extra code, sources, questions, findings,
-lessons, praise and tool calls do not earn credit by volume.
+lessons, praise and tool calls add no value by volume.
 
 Keep any existing domain rubric; do not add another numerical score. Do not
 print a self-grade unless requested. Do not run an extra improvement loop after
@@ -47,7 +47,7 @@ is a repair signal, not a reason to abandon the workflow.
 
 ## Examples
 
-| Invocation | Definition of Done | How You're Graded |
+| Invocation | Definition of Done | Quality Bar |
 |---|---|---|
 | `pr-comments` on supplied findings | Deliver actionable Conventional Comments tied to the reviewed lines; publish only if authorized | Accurate, useful feedback; zero praise is valid without a grounded positive finding |
 | `deep-research` comparing storage choices | Before research, resolve the workload, constraints and decision questions; return supported answers and trade-offs | Evidence relevant to that workload, explicit uncertainty, a usable recommendation; no source quota |

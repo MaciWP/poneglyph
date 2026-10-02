@@ -28,10 +28,10 @@ There is no companion `/harness-config` command or workflow.
 - Consult returns sourced facts and lookup limitations. Mutating verbs require the impact sweep, requested change and applicable source checks.
 - Report source, installation and runtime status separately. Return when the selected verb is satisfied; missing runtime evidence cannot become a verified activation claim.
 
-## How You're Graded
+## Quality Bar
 
-- You are graded on correct native contracts, minimal changes and evidence appropriate to each claim.
-- Extra configuration, catalog-wide rewrites outside the agreed scope and successful file creation without required checks earn no credit.
+- Success means correct native contracts, minimal changes and evidence appropriate to each claim.
+- Extra configuration, catalog-wide rewrites outside the agreed scope and successful file creation without required checks add no value.
 
 ## Verbs
 

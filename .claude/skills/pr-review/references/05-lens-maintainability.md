@@ -1,10 +1,10 @@
 ---
-parent: code-quality
-name: mode-quality
-description: Quality mode — code smells, SOLID, complexity, refactoring patterns, review process.
+parent: pr-review
+name: lens-maintainability
+description: Maintainability lens — code smells, SOLID, complexity, refactoring patterns, review process.
 ---
 
-# Quality Mode
+# Maintainability Lens
 
 ## Contents
 
@@ -94,20 +94,20 @@ Code quality analysis and refactoring guidance. Patterns are language-agnostic.
 - [x] / [ ] checklist items
 ```
 
-For the full template with all sections, load `${CLAUDE_SKILL_DIR}/templates/review-template.md`.
+For the full template with all sections, load `${CLAUDE_SKILL_DIR}/references/maintainability/review-template.md`.
 
 ## When to Refactor (Decision Criteria)
 
 | Trigger | Pattern | Reference |
 |---------|---------|-----------|
-| Function > 20 lines | Extract Function | `${CLAUDE_SKILL_DIR}/references/quality/extract-function.md` |
-| Comment explains "what it does" | Extract Function | `${CLAUDE_SKILL_DIR}/references/quality/extract-function.md` |
-| Complex nested conditionals | Extract Conditional | `${CLAUDE_SKILL_DIR}/references/quality/extract-function.md` |
-| Functions share same data | Extract Class | `${CLAUDE_SKILL_DIR}/references/quality/extract-class.md` |
-| Handler > 30 lines | Extract Service | `${CLAUDE_SKILL_DIR}/references/quality/extract-class.md` |
-| SRP violation | Apply SOLID | `${CLAUDE_SKILL_DIR}/references/quality/solid-violations.md` |
-| > 4 parameters | Parameter Object | `${CLAUDE_SKILL_DIR}/references/quality/common-issues.md` |
-| Primitives for domain concepts | Value Object | `${CLAUDE_SKILL_DIR}/references/quality/common-issues.md` |
+| Function > 20 lines | Extract Function | `${CLAUDE_SKILL_DIR}/references/maintainability/extract-function.md` |
+| Comment explains "what it does" | Extract Function | `${CLAUDE_SKILL_DIR}/references/maintainability/extract-function.md` |
+| Complex nested conditionals | Extract Conditional | `${CLAUDE_SKILL_DIR}/references/maintainability/extract-function.md` |
+| Functions share same data | Extract Class | `${CLAUDE_SKILL_DIR}/references/maintainability/extract-class.md` |
+| Handler > 30 lines | Extract Service | `${CLAUDE_SKILL_DIR}/references/maintainability/extract-class.md` |
+| SRP violation | Apply SOLID | `${CLAUDE_SKILL_DIR}/references/maintainability/solid-violations.md` |
+| > 4 parameters | Parameter Object | `${CLAUDE_SKILL_DIR}/references/maintainability/common-issues.md` |
+| Primitives for domain concepts | Value Object | `${CLAUDE_SKILL_DIR}/references/maintainability/common-issues.md` |
 
 ## Refactoring Anti-Patterns
 
@@ -123,22 +123,22 @@ For the full template with all sections, load `${CLAUDE_SKILL_DIR}/templates/rev
 
 | Phase | File |
 |-------|------|
-| Before starting | `${CLAUDE_SKILL_DIR}/checklists/pre-refactoring.md` |
-| After completing | `${CLAUDE_SKILL_DIR}/checklists/post-refactoring.md` |
+| Before starting | `${CLAUDE_SKILL_DIR}/references/maintainability/pre-refactoring.md` |
+| After completing | `${CLAUDE_SKILL_DIR}/references/maintainability/post-refactoring.md` |
 
 ## Reference Files
 
 | Topic | File | Contents |
 |-------|------|----------|
-| Checklist | `${CLAUDE_SKILL_DIR}/references/quality/review-checklist.md` | Naming, functions, classes, files, error handling, types |
-| Red Flags | `${CLAUDE_SKILL_DIR}/references/quality/red-flags.md` | Detection patterns table with severity |
-| Common Issues | `${CLAUDE_SKILL_DIR}/references/quality/common-issues.md` | 9 code smell patterns with before/after + fix patterns |
-| SOLID | `${CLAUDE_SKILL_DIR}/references/quality/solid-violations.md` | 5 SOLID violations with fixes |
-| Complexity | `${CLAUDE_SKILL_DIR}/references/quality/complexity-metrics.md` | Cyclomatic + cognitive complexity |
-| Anti-Patterns | `${CLAUDE_SKILL_DIR}/references/quality/anti-patterns-reference.md` | Anti-patterns table with detection |
-| Extract Function | `${CLAUDE_SKILL_DIR}/references/quality/extract-function.md` | Extract Calculation + Extract Conditional patterns |
-| Extract Class | `${CLAUDE_SKILL_DIR}/references/quality/extract-class.md` | Data cohesion + Extract Service patterns |
-| Refactoring Process | `${CLAUDE_SKILL_DIR}/references/quality/refactoring-process.md` | Safety-first flow, characterization tests, anti-patterns |
+| Checklist | `${CLAUDE_SKILL_DIR}/references/maintainability/review-checklist.md` | Naming, functions, classes, files, error handling, types |
+| Red Flags | `${CLAUDE_SKILL_DIR}/references/maintainability/red-flags.md` | Detection patterns table with severity |
+| Common Issues | `${CLAUDE_SKILL_DIR}/references/maintainability/common-issues.md` | 9 code smell patterns with before/after + fix patterns |
+| SOLID | `${CLAUDE_SKILL_DIR}/references/maintainability/solid-violations.md` | 5 SOLID violations with fixes |
+| Complexity | `${CLAUDE_SKILL_DIR}/references/maintainability/complexity-metrics.md` | Cyclomatic + cognitive complexity |
+| Anti-Patterns | `${CLAUDE_SKILL_DIR}/references/maintainability/anti-patterns-reference.md` | Anti-patterns table with detection |
+| Extract Function | `${CLAUDE_SKILL_DIR}/references/maintainability/extract-function.md` | Extract Calculation + Extract Conditional patterns |
+| Extract Class | `${CLAUDE_SKILL_DIR}/references/maintainability/extract-class.md` | Data cohesion + Extract Service patterns |
+| Refactoring Process | `${CLAUDE_SKILL_DIR}/references/maintainability/refactoring-process.md` | Safety-first flow, characterization tests, anti-patterns |
 
 ## Gotchas
 
@@ -165,3 +165,7 @@ For the full template with all sections, load `${CLAUDE_SKILL_DIR}/templates/rev
 - Refactoring affects multiple files AND no tests cover the changed code
 - Changing a public API that other modules depend on
 - Replacing inheritance hierarchies
+
+## Script
+
+`bun ${CLAUDE_SKILL_DIR}/scripts/complexity-report.ts <file-or-directory>` lists per-file complexity, skipping dependency folders.

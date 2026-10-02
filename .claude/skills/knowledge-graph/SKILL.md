@@ -14,10 +14,10 @@ Turn any folder of files into a navigable knowledge graph with community detecti
 - Build/update returns the requested outputs with observed integrity results. Watch/MCP reports verified startup and the active process; startup does not mean the service has finished.
 - Stop the invocation after its result or report a blocker. Reuse an existing graph for queries; do not rebuild or expand the corpus without need.
 
-## How You're Graded
+## Quality Bar
 
-- You are graded on useful, traceable relationships and preserving graph integrity.
-- Graph size and additional extraction earn no credit. Keep extracted facts, inferences and ambiguous relationships distinct.
+- Success means useful, traceable relationships and preserving graph integrity.
+- Graph size and additional extraction add no value. Keep extracted facts, inferences and ambiguous relationships distinct.
 
 ## Usage
 

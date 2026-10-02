@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { rank, SHORTLIST_MAX, USAGE_TIER, type SkillMeta } from "../lib/rank";
 
 const FIXTURES: SkillMeta[] = [
-  { name: "code-quality", description: "Code review: SOLID, performance, slow endpoint, N+1", keywords: ["performance", "slow", "endpoint", "refactor", "solid"] },
+  { name: "pr-review", description: "Code review: SOLID, performance, slow endpoint, N+1", keywords: ["performance", "slow", "endpoint", "refactor", "solid"] },
   { name: "security-audit", description: "Auth, jwt, password review", keywords: ["auth", "jwt", "security"] },
   { name: "flow-test-plan", description: "Test design before implementation", keywords: ["tests", "tdd", "oracle"] },
   { name: "drillme-clarify", description: "Socratic check for plans", keywords: ["drill", "socratic", "valida"] },
@@ -13,11 +13,11 @@ const FIXTURES: SkillMeta[] = [
 ];
 
 describe("rank() — T1.1 happy: rankea y recorta a ≤5", () => {
-  test("optimiza el endpoint lento → code-quality primero, ≤5", () => {
+  test("optimiza el endpoint lento → pr-review primero, ≤5", () => {
     const out = rank("optimiza el endpoint lento de performance", FIXTURES);
     expect(out.length).toBeLessThanOrEqual(SHORTLIST_MAX);
     expect(out.length).toBeGreaterThan(0);
-    expect(out[0].name).toBe("code-quality");
+    expect(out[0].name).toBe("pr-review");
   });
 });
 

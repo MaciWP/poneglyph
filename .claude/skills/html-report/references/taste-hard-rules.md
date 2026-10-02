@@ -2,7 +2,7 @@
 
 Expert-vetted design rules consumed by `html-report` during generation (and available to any visual surface). **HARD** = measurable/checkable; **TASTE** = expert consensus. Every rule carries its source.
 
-> Scope: this reference ADDS measurable rules. It does NOT restate html-report's own doctrine (warm paper, single deep-teal accent, serif display, tabular numerals) — that lives in `SKILL.md`. No overlap by design (Cmd IX).
+> Scope: this reference ADDS measurable rules. It does NOT restate html-report's own doctrine (single deep-teal accent, serif display, tabular numerals) — that lives in `SKILL.md`. No overlap by design (Cmd IX).
 
 ## Spacing
 

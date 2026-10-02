@@ -30,10 +30,10 @@ time budget and a leaderboard. Where the two disagree, orca-team wins.
 - The coordinator dispatches each board task to one eligible bee. The bee executes it under orca-team's worker contract plus the bee addendum, reports evidence and its next bid in `worker_done`, then idles. Only the coordinator dispatches, accepts and awards points.
 - The coordinator closes when the global DoD is accepted with evidence, the time budget is spent, or a real blocker stands. The close reports accepted and pending tasks, measured time, cost (or "unknown") and the final podium.
 
-## How You're Graded
+## Quality Bar
 
-- You are graded on the accepted global DoD within the agreed budget and authorization, with honest evidence.
-- Points measure contribution inside the run; they are never the goal. A high score on work that fails acceptance earns nothing, and bee count, message volume and dispatch completion alone earn no credit.
+- Success means the accepted global DoD within the agreed budget and authorization, with honest evidence.
+- Points measure contribution inside the run; they are never the goal. A high score on work that fails acceptance earns nothing, and bee count, message volume and dispatch completion alone add no value.
 
 ## When NOT to use
 

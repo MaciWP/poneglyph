@@ -17,7 +17,7 @@ On-demand detail behind `.claude/rules/error-recovery.md` (which keeps only the 
 | Workflow unit failed a test | SendMessage to that unit | The unit already has its code context |
 | Workflow unit failed on a stale edit | SendMessage | Re-read and retry in the same context |
 | Lead diagnosed a fix for a live unit | SendMessage to that unit | Avoids re-exploring the codebase |
-| Unit failed 2+ times | Re-run unit with full diagnosis | Original context may be contaminated |
+| Unit's one retry also failed | Fold inline or escalate | Retry budget spent (`rules/error-recovery.md`); its context may be contaminated |
 | Error in a different agent | New unit / inline | SendMessage does not cross agents |
 
 ```

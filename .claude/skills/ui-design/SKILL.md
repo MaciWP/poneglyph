@@ -3,7 +3,7 @@ name: ui-design
 description: |
   Diseña interfaces y adapta componentes al estilo de la aplicación. Comprueba usos compartidos, estados y accesibilidad. Úsala al modificar UI compartida, crear pantallas o revisar consistencia visual.
 metadata:
-  keywords: ui compartida, cambia el hover, ajusta el badge, consistencia visual, diseño de interfaz, diseña la pantalla
+  keywords: ui compartida, cambia el hover, ajusta el badge, consistencia visual, diseño de interfaz, diseña la pantalla, mismo estilo que el resto
 disable-model-invocation: false
 when_to_use: |
   "cambia el hover de este componente", "¿dónde más se usan estos badges?",
@@ -28,15 +28,18 @@ floor, not the brief.
 - Deliver the requested design or verified UI change with applicable accessibility and shared-usage checks. Report any unobserved visual behavior.
 - Stop when the brief and checks pass. Apply the bounded inspection rules; do not redesign a committed direction while polishing.
 
-## How You're Graded
+## Quality Bar
 
-- You are graded on usable requested states, consistency, accessibility and fidelity to the brief.
-- Novelty, extra screens and additional visual iterations earn no credit without a concrete unmet criterion.
+- Success means usable requested states, consistency, accessibility and fidelity to the brief.
+- Novelty, extra screens and additional visual iterations add no value without a concrete unmet criterion.
 
 ## Mode 1 — Consistency (default for work repos)
 
 **Before the first edit to any shared UI element:**
 
+0. **Design file**: read `docs/DESIGN_SYSTEM.md`, `DESIGN_SYSTEM.md`,
+   `DESIGN.md` before the first UI edit; name it in the report. None: offer
+   extraction in `Aviso:`, no file until yes (`references/design-file.md`).
 1. **Usage sweep**: enumerate every usage of the touched component/token
    (Grep references) and NAME the affected screens — proactively, without
    being asked. A shared symbol changed without its usages checked is the
@@ -63,6 +66,7 @@ floor, not the brief.
 
 ## Shared rules (both modes)
 
+- **Design file**: step 0 applies in Mode 2 too.
 - **Bounded verification**: ONE batched inspection round (screenshots from the
   user — the browser connector is unreliable, memoria 2026-06) + at most one
   confirm round. Open-ended self-QA burns money.

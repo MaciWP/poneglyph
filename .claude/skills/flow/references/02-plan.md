@@ -19,7 +19,7 @@ STOP and escalate. Open questions in the spec are resolved with the user before 
 - Reuse approved scope and deliver tasks/index.md plus atomic HU files with dependencies, acceptance and verification needs.
 - Record phase 2 completion only after its checks pass, then hand the package to test-plan. The joint gate remains separate.
 
-## How You're Graded
+## Quality Bar
 
 - Favor complete AC coverage, executable tasks and real dependencies. Additional HUs or architecture do not earn credit.
 

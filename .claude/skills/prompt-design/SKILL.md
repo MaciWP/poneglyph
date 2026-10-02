@@ -1,16 +1,20 @@
 ---
 name: prompt-design
-description: |
-  Skill para la calidad de prompts en cuatro contextos: refinar prompts vagos del USUARIO, GENERAR prompts nuevos cuando el usuario pide uno como output, revisar PROMPTS-A-AGENTES antes de delegar con Agent() (Commandment VIII), y auditar la comunicación inter-agente/skill.
-  Úsala cuando: refinar un prompt vago/ambiguo, generar un prompt a petición, revisar un prompt-a-agente antes de Agent(), "genera un prompt", "mejora este prompt", "redacta el prompt de".
+description: >-
+  Prompt quality in four contexts: sharpening a vague user prompt, writing a
+  new prompt on request, reviewing a prompt before delegating to an agent, and
+  auditing agent-to-agent messages. Use for "genera un prompt", "mejora este
+  prompt", "redacta el prompt de", "este prompt es vago" or before an Agent()
+  call. Not for auditing a repo's CLAUDE.md or skills for stale patterns
+  (/claude-api prompt-audit).
 metadata:
   keywords: >
-    Keywords - prompt, prompts, generar prompt, genera prompt, crea prompt, redacta prompt,
-    escribe prompt, mejorar prompt, refine prompt, vague prompt, ambiguous, delegate agent,
-    invoke agent, agent prompt, subagent prompt, meta-prompting, prompt engineering, write a
+    Keywords - prompt-design, genera un prompt, generar prompt, crea un prompt, redacta el
+    prompt, mejora este prompt, mejorar prompt, refina este prompt, este prompt es vago,
+    refine prompt, vague prompt, agent prompt, subagent prompt, prompt engineering, write a
     prompt, create a prompt
 when_to_use: |
-  "genera un prompt para X", "redacta el prompt de Z", "mejora este prompt", "refina este prompt", "este prompt es vago", "revisa el prompt antes de delegar", "audita la comunicación entre agentes"; cuando un prompt del usuario es ambiguo (score < 70 en la rúbrica, sin criterios de éxito, múltiples interpretaciones); antes de invocar `Agent(subagent_type=…)` para reforzar el prompt de delegación contra la plantilla Arch H (Commandment VIII).
+  Writing, refining or reviewing a prompt, including one for an agent.
 argument-hint: "[prompt text or task description]"
 disable-model-invocation: false
 ---
@@ -23,9 +27,9 @@ disable-model-invocation: false
 - Deliver or validate the prompt using the existing rubric and context-specific threshold. For variable tasks, include instructions to resolve missing DoD and quality priorities before execution.
 - Preserve the user's intent and required confirmation. Stop at the required threshold with a usable prompt; do not iterate for a perfect score.
 
-## How You're Graded
+## Quality Bar
 
-- You are graded on executable instructions, observable success criteria and accurate transfer of scope and constraints.
+- Success means executable instructions, observable success criteria and accurate transfer of scope and constraints.
 - Use the existing scoring rubric without a second score. Numbers are optional when the result can be verified directly.
 
 ## Overview

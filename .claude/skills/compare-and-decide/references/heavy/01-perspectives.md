@@ -441,7 +441,7 @@ See `${CLAUDE_SKILL_DIR}/prompts/karpathy-agent.md` (full body, including explic
 - **What an LLM agent would struggle with here**: 1-3 bullets on points where the design is hostile to agent-driven editing/maintenance (implicit state, magical decorators, deep dynamic dispatch, no traces/evals). Honest "the design is genuinely AI-friendly" is a valid answer.
 - **What I'd actually build first**: 1-2 sentences on the smallest reproducible version that would generate signal for the real decision.
 
-### Complementarity with Linus (CRITICAL)
+### Complementarity with Linus
 | Linus | Karpathy |
 |---|---|
 | Brutal, destructive | Sharp, constructive |

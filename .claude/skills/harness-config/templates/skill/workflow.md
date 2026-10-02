@@ -2,21 +2,21 @@
 name: {{SKILL_NAME}}
 description: |
   {{DESCRIPTION}}
-  Úsala cuando: {{TRIGGER_CONDITION}}.
+  Use for "{{TRIGGER_PHRASE_1}}", "{{TRIGGER_PHRASE_2}}". Not for {{NOT_FOR}}.
 metadata:
   keywords: >
     Keywords - {{KEYWORD_1}}, {{KEYWORD_2}}, {{KEYWORD_3}}
 disable-model-invocation: true
 argument-hint: "[{{ARG1}}] [{{ARG2}}]"
 when_to_use: |
-  "{{TRIGGER_PHRASE_1}}", "{{TRIGGER_PHRASE_2}}", "{{TRIGGER_PHRASE_3}}"
+  {{TRIGGER_CONDITION}}
 ---
 
 # {{SKILL_TITLE}}
 
 {{Purpose of this workflow}}
 
-Instantiate: `{{SKILL_NAME}}` kebab 1–64 matching the directory; `description` 1–1024; `argument-hint` is a string. `disable-model-invocation: true` blocks auto-invoke (Claude/Grok). Codex: also set `agents/openai.yaml` `allow_implicit_invocation: false` if implicit match must not fire. This-repo activation copy stays es-ES.
+Instantiate: `{{SKILL_NAME}}` kebab 1–64 matching the directory; `description` 1–1024; `argument-hint` is a string. `disable-model-invocation: true` blocks auto-invoke (Claude/Grok). Codex: also set `agents/openai.yaml` `allow_implicit_invocation: false` if implicit match must not fire. This-repo activation copy is English with the user's literal es-ES trigger phrases.
 
 ## Definition of Done
 

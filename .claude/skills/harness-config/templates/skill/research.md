@@ -2,20 +2,20 @@
 name: {{SKILL_NAME}}
 description: |
   {{DESCRIPTION}}
-  Úsala cuando: {{TRIGGER_CONDITION}}.
+  Use for "{{TRIGGER_PHRASE_1}}", "{{TRIGGER_PHRASE_2}}". Not for {{NOT_FOR}}.
 metadata:
   keywords: >
     Keywords - {{KEYWORD_1}}, {{KEYWORD_2}}, {{KEYWORD_3}}
 disable-model-invocation: false
 when_to_use: |
-  "{{TRIGGER_PHRASE_1}}", "{{TRIGGER_PHRASE_2}}", "{{TRIGGER_PHRASE_3}}"
+  {{TRIGGER_CONDITION}}
 ---
 
 # {{SKILL_TITLE}}
 
 Research {{TOPIC}} thoroughly and provide well-sourced findings.
 
-Instantiate: `{{SKILL_NAME}}` kebab 1–64 matching the directory; `description` 1–1024; `when_to_use` and `metadata.keywords` strings. Portable default omits Claude-only `context: fork`. This-repo activation copy stays es-ES.
+Instantiate: `{{SKILL_NAME}}` kebab 1–64 matching the directory; `description` 1–1024; `when_to_use` and `metadata.keywords` strings. Portable default omits Claude-only `context: fork`. This-repo activation copy is English with the user's literal es-ES trigger phrases.
 
 ## Definition of Done
 

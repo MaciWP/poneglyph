@@ -56,8 +56,8 @@ Copy one flavor, then instantiate (replace `{{…}}`). Instantiated output must 
 Instantiation rules:
 
 - `{{SKILL_NAME}}` = kebab 1–64, **equals** the directory name.
-- Keep `{{DESCRIPTION}}` **one line**. It sits in an indented `\|` block; a multiline fill that is not re-indented ends the scalar (`metadata.parse`). Budget the **whole decoded description** (including `Úsala cuando:`) against 1024.
-- `description` 1–1024 after YAML decode. This repo: es-ES, third person, qué + cuándo. Foreign repo: portable English (or that repo's language).
+- Keep `{{DESCRIPTION}}` **one line**. It sits in an indented `\|` block; a multiline fill that is not re-indented ends the scalar (`metadata.parse`). Budget the **whole decoded description** (including the `Use for` / `Not for` sentences) against 1024.
+- `description` 1–1024 after YAML decode. This repo: English, third person, what + when, the user's literal es-ES trigger phrases in quotes and a `Not for` clause. Foreign repo: portable English (or that repo's language).
 - `metadata.keywords` is a **string** (this-repo hook). Empty string disables the description fallback.
 - `when_to_use` is a **string**. `argument-hint` is a **string**, not a YAML list.
 - Body: when-NOT, content map, ≥3 eval scenarios, anti-patterns. Core skills also require `## Definition of Done` and `## Quality Bar` before the procedure.
@@ -78,8 +78,8 @@ Labels and E1–E6: [evidence.md](evidence.md). Compact curated default is **A**
 |---|---|
 | Quality | Eval-first (≥3 scenarios) on **new** skills in this repo. When-NOT. Description = routing code, not docs. |
 | Tokens | SKILL.md short; refs one level; do not load other type packs. Compact beats exhaustive (E1). |
-| This repo (AC13) | `description` + `when_to_use` es-ES; `metadata.keywords` for the activation hook; evals. |
-| Foreign repo | Portable nucleus only. No es-ES, no keywords requirement. |
+| This repo (AC13) | English `description` + one-line `when_to_use`, with literal es-ES trigger phrases; `metadata.keywords` for the activation hook; evals. |
+| Foreign repo | Portable nucleus only. No es-ES triggers, no keywords requirement. |
 | Gate | `check:config` errors block. Core DoD and Quality Bar sections must contain prose outside examples. Description 1–1024. Body ≥500 lines = warning, not failure. No second validator. |
 
 Do not rewrite the catalog without an explicitly agreed migration scope. The

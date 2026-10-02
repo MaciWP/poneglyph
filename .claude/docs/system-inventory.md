@@ -191,6 +191,7 @@ Activation/observability hooks (event verified in official hooks docs 2026-06-10
 - **Feature 018 (2026-06-10, closed)**: evidence roadmap — 5 research waves, decision memos W1-W5, roadmap 019+.
 - **Feature 019 (2026-06-10, closed, archived)**: quality gates — critic fresh-context reviewer (panel → decisions only), evals harness, best-of-n pilot.
 - **Polish & prune (2026-06-11)**: dead-weight deletions (cost-budget, 2 docs, dead `choose-skills` section in CLAUDE.md, 3 stale LINK_FOLDERS), plans archive policy executed, doctrine-sweep protocol (now `harness-config` reference), failure→eval-case wiring in retro, flow-state helper.
+- **Skill review (2026-10-02)**: `code-quality` folded into `pr-review` (maintainability and performance lenses), `task-unblock` into `troubleshooting` §Stuck; changes-verify, choose-skills, diagrams-interactive, agent-routing, prompt-design and troubleshooting made visible (only flow, orca-team and orca-swarm stay `name-only`); the synced cowork-plugin-management plugin disabled. Evidence: 0 autonomous calls in 30 days for the `name-only` skills (`bun run skill-usage --days 30`).
 - Audit trail: the 002 config audit (archived; sample render preserved at `.claude/skills/html-report/examples/sample-audit-report.md`) + audit 011.
 
 ## Retrospective closure — 2026-09-13

@@ -17,11 +17,11 @@ A green native tool is **not** the gate. After the draft, this skill still owns:
 1. **Lookup** — live official docs for the type and host ([lookup.md](lookup.md)).
 2. **Impact** — grep consumers before modify / disable / delete (§Impact in [SKILL.md](../SKILL.md)).
 3. **`bun run check:config`** — source floor in this repo.
-4. **Poneglyph layer** — this-repo activation copy (es-ES `description` / `when_to_use`, `metadata.keywords`, ≥3 evals). Portable nucleus only when authoring for a foreign repo (AC13).
+4. **Poneglyph layer** — this-repo activation copy (English `description` / `when_to_use` with literal es-ES trigger phrases, `metadata.keywords`, ≥3 evals). Portable nucleus only when authoring for a foreign repo (AC13).
 
 ## Do not
 
 - Skip lookup because the creator wrote a file.
-- Treat creator output as already gate-clean (placeholders, extra host keys, English-only description in this repo).
+- Treat creator output as already gate-clean (placeholders, extra host keys, a description without the user's literal es-ES trigger phrases in this repo).
 - Let the creator replace `harness-config` as the entry for consult / disable / delete.
 - Add a companion `/harness-config` command or workflow (D7).

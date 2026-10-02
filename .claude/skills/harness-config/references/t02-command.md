@@ -39,7 +39,7 @@ T1/B: Claude Skills page 2026-09-10 (custom commands folded into skills). Compac
 
 ## 6. Poneglyph grain
 
-This repo: es-ES description. Do not add `/harness-config`. Codex cell is `$name`, never “copy the Claude commands folder”.
+This repo: English description; quote the user's literal es-ES trigger phrases when it routes on them. Do not add `/harness-config`. Codex cell is `$name`, never “copy the Claude commands folder”.
 
 ## 7. Absences
 

@@ -1,10 +1,10 @@
-# Model-uplift playbook — instruction set for non-Fable models (Opus / Sonnet / local)
+# Model-uplift playbook — instruction set for models below the top tier
 
 > What the top-tier model does natively that the poneglyph doctrine does not spell out, written down as the discipline set to apply whenever the session runs on a **smaller model** (see §4 for the current tiers). Consumed on demand; the always-loaded routing core is `.claude/rules/skill-routing.md` (this playbook is **not** always-loaded). Scope: ONLY deltas — everything CLAUDE.md / the output style / skills already demand is deliberately absent here.
 
 ## 1. Honest expectations
 
-Instructions recover **discipline, not capability**. What this playbook restores is the *process* that made Fable's output trustworthy — verification cadence, honest bookkeeping, self-refutation. What it cannot restore: insight density, one-shot correctness on hard problems, or how much held context stays coherent. Expect the same quality to take **more iterations** with Opus 4.8/Sonnet 5, and treat that as normal, not as failure. Where a failure is *procedural* (skipped check, unverified claim, inflated finding), this playbook closes the gap almost entirely — those were never capability problems.
+Instructions recover **discipline, not capability**. What this playbook restores is the *process* that made Fable's output trustworthy — verification cadence, honest bookkeeping, self-refutation. What it cannot restore: insight density, one-shot correctness on hard problems, or how much held context stays coherent. Expect the same quality to take **more iterations** on a lower tier, and treat that as normal, not as failure. Where a failure is *procedural* (skipped check, unverified claim, inflated finding), this playbook closes the gap almost entirely — those were never capability problems.
 
 ## 2. Behavioral deltas (what Fable did unprompted — now do it by instruction)
 
@@ -85,11 +85,11 @@ Watchpoints where smaller models historically relapse in this setup — each map
 
 **Task → model routing** (the criterion lives here, not in settings):
 
-- Deep review / architecture / security / escalation → **Fable 5.1 or Opus 5.5 + `/effort xhigh`** (skills security-audit/task-unblock/pr-review pin xhigh via frontmatter; never lower effort in a skill, because the override lasts for the rest of the turn; `compare-and-decide`'s heavy tier escalates effort per invocation).
-- Standard feature build → Opus 5.5 high (session default) — Sonnet 5 when budget matters.
-- Bulk mechanical work (sweeps, renames, formatting, doc batches) → Sonnet 5, or Opus 5.5 at `medium` (its own default).
+- Deep review / architecture / security / escalation → **Fable 5.1 or Opus 5.5 + `/effort xhigh`** (skills security-audit/pr-review pin xhigh via frontmatter; never lower effort in a skill, because the override lasts for the rest of the turn; `compare-and-decide`'s heavy tier escalates effort per invocation).
+- Standard feature build → Opus 5.5 high (session default) — the current Sonnet (check `/model`) when budget matters.
+- Bulk mechanical work (sweeps, renames, formatting, doc batches) → the current Sonnet, or Opus 5.5 at `medium` (its own default).
 - A durable model or effort choice goes in `settings.global.json` / `settings.machine.json`: sync-claude rebuilds `~/.claude/settings.json` and drops what `/model` or `/effort` wrote there.
-- Massive-corpus analysis (multi-repo audits, huge logs, long-lived sessions) → **Sonnet 5** for the 1M window; prefer it over compacting Opus mid-task.
+- Massive-corpus analysis (multi-repo audits, huge logs, long-lived sessions) → **the current Sonnet** for the 1M window (re-verify its window in §4); prefer it over compacting Opus mid-task.
 - Degradation cascade on overload: `settings.global.json.fallbackModel`.
 - One-turn deep reasoning boost: the `ultrathink` keyword instead of switching effort for the whole session.
 

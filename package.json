@@ -10,6 +10,7 @@
     "doctor:fast": "bun .claude/scripts/doctor.ts --fast",
     "budget": "bun .claude/scripts/budget.ts",
     "usage": "bun .claude/scripts/usage-profile.ts",
+    "skill-usage": "bun .claude/scripts/skill-usage.ts",
     "check:config": "bun .claude/scripts/check-config.ts",
     "prepare": "husky"
   },

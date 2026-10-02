@@ -1,22 +1,20 @@
 ---
 name: lessons-learned
-description: |
-  Cross-project lessons learned: real mistakes made in any repo Oriol works on, each
-  carrying the evidence that produced it and the rule to apply. Not a best-practices
-  list — every entry earned its place by causing a real bug, a PR rejection or a
-  wasted cycle. Read it before reviewing a diff/PR and before declaring work done;
-  append to it when a review surfaces a mistake that would repeat in another repo.
-  Úsala cuando: vas a revisar una PR o un diff, vas a declarar "hecho", acabas de
-  recibir feedback de review, o quieres registrar una lección aprendida.
+description: >-
+  Cross-project log of real mistakes, each with its evidence and the rule to
+  apply. Read it when a review command runs on a diff or PR, and when checking
+  that a fix holds ("haz un repaso para saber si lo hemos solucionado"). Append
+  when review feedback exposes a mistake that would repeat ("apunta esta
+  lección").
 metadata:
   keywords: >
-    Keywords - lecciones, lecciones aprendidas, lección aprendida, lessons, lessons learned,
-    qué aprendimos, no repitamos el error, registra la lección, apunta esta lección, errores
-    recurrentes, pitfalls, guards, review lessons, past mistakes, no volver a fallar
+    Keywords - lecciones, lecciones aprendidas, lección aprendida, lessons learned,
+    qué aprendimos, no repitamos el error, registra la lección, apunta esta lección,
+    errores recurrentes, review lessons, past mistakes, no volver a fallar,
+    haz un repaso, lo hemos solucionado
 disable-model-invocation: false
 when_to_use: |
-  "apunta esta lección", "no repitamos este error", "qué lecciones tenemos",
-  before reviewing a PR/diff, before declaring done, right after review feedback lands
+  A PR or diff review, a "did we fix it" check, or a lesson to record.
 ---
 
 # lessons — cross-project lessons learned
@@ -31,10 +29,10 @@ works without that addon and must not discover or activate it automatically.
 - For review, apply the relevant existing lessons to the actual change and return to the caller.
 - For capture, persist only an incident-backed, reusable lesson that passes the admission rule and is not already recorded. Otherwise state that no new lesson qualifies and stop.
 
-## How You're Graded
+## Quality Bar
 
-- You are graded on preventing a demonstrated repeat failure and keeping one accurate home for each lesson.
-- Lesson counts and generic best-practice entries earn no credit. No new lesson is a valid result.
+- Success means preventing a demonstrated repeat failure and keeping one accurate home for each lesson.
+- Lesson counts and generic best-practice entries add no value. No new lesson is a valid result.
 
 ## Frontier — what lives where
 
@@ -82,9 +80,9 @@ Entry format: `| Lesson | Evidence (where it bit us) | Rule to apply |`.
 | **G7 — Sibling timeouts travel together** | An environment boot budget increased, but a dependent readiness check retained a shorter deadline and silently lost tools. Detailed evidence remains private. | When raising a shared timeout/budget, grep every literal timeout in the same flow and point them at the one constant; a clock left behind turns the fix into a new downstream failure |
 | **G8 — Do not skip Phase 1 without a same-day spec stub** | 029-workflow-uplift: user skipped `spec.md`; critic still claimed “resolves spec.md”; retro 13 days later had no primary product artefact | If Phase 1 is skipped, write a `spec.md` stub the same day (problem, AC, out-of-scope) or you cannot later run an honest retro / living-spec. A mini-spec buried in `tasks/index.md` is not a spec |
 | **G9 — Measure, don't estimate** | Feature 010 (html-report): the dark theme's AA contrast was *estimated* as passing; the measured ratio of the `ink-3` colour was 3.64 — below the 4.5 floor. The founding incident behind the confidence tags (`[Seguro]`/`[Suposición]`) | A number that can be measured (contrast, size, count, timing) is measured before it is asserted; an unmeasured figure carries `[Suposición]`, never a bare value. Recovered from the lost memory `feedback-measure-dont-estimate` (2026-09-03) |
-| **G10 — A verified line is not a verified fix** | Feature 014: a review confirmed the changed line existed and concluded the fix was correct; the conclusion was wrong — existence checks say nothing about behaviour | Existence checks verify premises (file, line, symbol exist); correctness needs its own evidence (test, run, trace). An unverified conclusion is labelled, not asserted. Recovered from the lost memory `feedback-antihallucination-not-fix-correctness` |
+| **G10 — A verified line is not a verified fix** | Feature 014: a review confirmed the changed line existed and concluded the fix was correct; the conclusion was wrong — existence checks say nothing about behaviour. Vacuous tests are the same shape: asserts that pass whether or not the fix exists (memory `tests_vacuous_asserts_on_commit_and_pk`); a 2026-10-01 follow-up review reran a fix's new tests on the pre-fix head before accepting them | Existence checks verify premises (file, line, symbol exist); correctness needs its own evidence (test, run, trace). A fix that brings new tests: run them against the pre-fix head too; passing there means they do not test the fix. An unverified conclusion is labelled, not asserted. Recovered from the lost memory `feedback-antihallucination-not-fix-correctness` |
 | **G11 — Brief by default, no bureaucracy** | Repeated user feedback: answers opened with preamble ("I'll look at the config…") or process narration before the finding, and open questions got recaps instead of framing | No preamble; short answer on the first line, verdict + next step on the closing `ROBIN:` line (style §2); process narration and recaps are cut (§4 Cost). Recovered from the lost memory `feedback-default-brief-no-bureaucracy` |
-| **G13 — A headless run is a spawn** | 2026-09-03 (plan 032): the Lead launched 82 `claude -p` sessions in one day for activation probes, evals and reruns — 44 on Opus (no `--model`, the print default) and 29 on Fable by explicit choice — treating them as "verification commands"; 24 % of the weekly quota and 43 % of Fable in one conversation | Every `claude -p` is a separate model worker under CLAUDE.md §Agent spawn: permission + model, cheap tier by default (Haiku for prose graders and smoke, Sonnet for skill triggers), Fable/Opus only with `--allow-expensive` and this-turn permission, one rerun at most. Mechanised in `scripts/lib/headless.ts` + the `headless-model-gate` PreToolUse hook (plan 033) |
+| **G13 — A headless run is a spawn** | 2026-09-03 (plan 032): the Lead launched 82 `claude -p` sessions in one day for activation probes, evals and reruns — 44 on Opus (no `--model`, the print default) and 29 on Fable by explicit choice — treating them as "verification commands"; 24 % of the weekly quota and 43 % of Fable in one conversation | Every `claude -p` is a separate model worker under CLAUDE.md §Agent spawn: permission + model, cheap tier by default (cheapest tier for prose graders and smoke, mid tier for skill triggers), top tier only with `--allow-expensive` and this-turn permission, one rerun at most. Mechanised in `scripts/lib/headless.ts` + the `headless-model-gate` PreToolUse hook (plan 033) |
 | **G12 — Wire skills, don't hope for auto-trigger** | `_research-skill-activation-2026-06-09.md`: native auto-activation under-fires (baselines Haiku 20 % / Sonnet 55 % / Opus 87.5 %); flows that relied on it lost their phase skills mid-feature | Deterministic wiring wins: `/flow-lifecycle` invokes each phase skill explicitly, `skill-activation.ts` injects `Skill()` on precise keywords, `choose-skills` ratifies; a gate never depends on a description match alone. Recovered from the lost memory `feedback-skill-wiring-over-autotrigger` |
 | **G15 — The Bash tool eats doubled backslashes, quoted heredoc included** | 2026-09-03, `sync-claude.test.ts`: every `\\` written through `cat > file <<'EOF'` arrived as `\`, so `"C:\\Users\\..."` stopped being a valid path string. One test passed falsely (both sides of the `toBe` equally broken) and another failed with no visible cause; three attempts went by before the channel, not the code, was suspected. Re-verified on Claude Code 2.1.269 (2026-09-12): the same heredoc produced 2 backslashes where 4 were written | Content carrying backslashes — Windows paths, regexes, escape sequences — is written with Write/Edit, never a heredoc from the Bash tool. The collapse also rewrites the **command's own** flags and patterns, so a probe that spells backslashes to detect the collapse silently tests the wrong string: confirm byte counts with a command that contains none |
 | **G16 — A live sibling session invalidates the measurement you are taking** | 2026-09-03: one session validated plan 032 while another was fixing it; files changed every 2-3 minutes underneath, so the figures expired before they could be reported, and two sessions could touch one file with no git warning | Pin the measurement to what you measured: record the commit, or a hash of each file the figure depends on, and re-check it before reporting. A changed hash invalidates the number — re-measure, and only then look for the sibling session that moved it. Waiting to watch a transcript grow proves nothing: another session can be idle and the files still change, or busy elsewhere and they do not |

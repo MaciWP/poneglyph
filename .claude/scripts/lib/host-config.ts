@@ -4,11 +4,14 @@
 // messages ran with >200k tokens of context and carried 80.7 % of all context tokens; two
 // sessions (890k and 654k max context) were 71 % of the spend. The same shape sat in Codex
 // (`model_auto_compact_token_limit = 800000`, xhigh) and Grok (xhigh). The policy is tiered:
-// compact at 200k by default, raise to 400k per session when a task needs it, effort `high`
+// compact at 300k by default, raise to 400k per session when a task needs it, effort `high`
 // with the stronger tier one command away. `high` was the hosts' own default until Opus 5.5,
 // which defaults to `medium` (Claude Code 2.1.280); the policy pins `high` there explicitly.
+// The default was 200k until 2026-10-02: below it Opus 5.5 showed no measurable rise in latency
+// or tool errors, while 137 compactions in 8 days cost ~19 min/day; the Claude Code team places
+// context rot at ~300-400k on the 1M model, so 300k sits at the lower edge of that band.
 //
-//   Claude  settings.global.json → autoCompactWindow 200000 · effortLevel "high"
+//   Claude  settings.global.json → autoCompactWindow 300000 · effortLevel "high"
 //           · modelSettings["claude-opus-5-5"].effortLevel "high": in USER settings Opus 5.5
 //           and later models ignore the top-level key (settings-reference, 2026-09-22).
 //           The settings key is validated as an INTEGER (100k-1M) with `.catch(undefined)`:
@@ -23,7 +26,7 @@
 import { parse, stringify } from "smol-toml";
 
 export const CONTEXT_POLICY = {
-  defaultTokens: 200_000,
+  defaultTokens: 300_000,
   largeTokens: 400_000,
   effort: "high",
   /** Codex plan mode keeps the stronger tier: planning is where the extra reasoning pays. */
@@ -55,7 +58,7 @@ export function grokDesired(): Record<string, unknown> {
   // Grok has no absolute compaction limit, only a PERCENT of the model window. Left implicit,
   // Grok "assumes 200,000 tokens and mis-times auto-compaction" (its config guide), so 40 % would
   // silently mean 80k — the opposite of the ceiling. Pin the window (comment in the guide:
-  // "context window size (for auto-compact)") so percent × window is a stated 200k on this machine.
+  // "context window size (for auto-compact)") so percent × window is a stated ceiling on this machine (60 % = 300k).
   return {
     compat: { claude: { hooks: false } },
     models: { default_reasoning_effort: CONTEXT_POLICY.effort },

@@ -1,16 +1,18 @@
 ---
 name: diagrams-interactive
-description: |
-  Crea diagramas técnicos interactivos con Archify: arquitectura, procesos,
-  secuencias de llamadas, flujos de datos y ciclos de vida. Entrega JSON editable
-  y HTML autocontenido con el visor original, navegación, temas y exportación.
-  Se usa al pedir un diagrama explorable, visualizar una arquitectura o flujo
-  técnico, o convertir Mermaid en una presentación interactiva. Los diagramas
-  sencillos dentro del chat siguen usando Mermaid; los informes usan html-report.
+description: >-
+  Builds interactive technical diagrams with Archify (architecture, process,
+  call sequence, data flow, lifecycle) as editable JSON plus a self-contained
+  HTML viewer with navigation, themes and export. Use for "diagrama
+  interactivo", "visualiza la arquitectura", "diagrama explorable" or turning
+  Mermaid into an explorable page. Not for a simple in-chat diagram (Mermaid)
+  or a report (html-report).
 metadata:
   keywords: >
     Keywords - archify, diagrama interactivo, arquitectura, workflow, sequence, dataflow,
     lifecycle, flujo de datos, secuencia de llamadas, diagrama explorable
+when_to_use: |
+  An explorable diagram of an architecture or a technical flow.
 ---
 
 # Archify
@@ -24,10 +26,10 @@ contract to Poneglyph's shared installation and the user's target project.
 - Deliver editable JSON and self-contained HTML through the existing engine. Validate the data and inspect the rendered diagram and applicable controls.
 - Stop after the requested relationships are clear and the artifact is verified. Missing engine or rendering evidence remains an explicit limitation.
 
-## How You're Graded
+## Quality Bar
 
-- You are graded on accurate relationships, readable navigation and a usable delivered artifact.
-- More nodes, decoration or repeated visual polishing earn no credit once the brief and checks are satisfied.
+- Success means accurate relationships, readable navigation and a usable delivered artifact.
+- More nodes, decoration or repeated visual polishing add no value once the brief and checks are satisfied.
 
 ## Resolve the engine
 

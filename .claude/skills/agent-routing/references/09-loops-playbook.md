@@ -83,7 +83,7 @@ Poll a CI run / background `Workflow` / remote queue and resume when state flips
 
 Effort levels do not map one-to-one across models: measure a loop's effort on the model that runs it. The per-model defaults live in `docs/model-uplift-playbook.md` §4 and `settings.global.json`.
 
-Effort is **not changeable dynamically mid-session** (the user sets `/effort`; the Lead cannot self-switch). Project policy: skills carry NO `effort:` and inherit the session effort, **except** `security-audit`, `pr-review` and the `task-unblock` stuck-buster (xhigh in frontmatter); `flow` asks for `/effort xhigh` in its review phase; `compare-and-decide`'s heavy tier escalates effort per-invocation instead. For "cheap bulk / xhigh on the hard step", route the hard step through one of those skills, or a Workflow agent with per-agent `effort`. When a loop is stuck, `task-unblock` is the xhigh rung.
+Effort is **not changeable dynamically mid-session** (the user sets `/effort`; the Lead cannot self-switch). Project policy: skills carry NO `effort:` and inherit the session effort, **except** `security-audit` and `pr-review` (xhigh in frontmatter); `flow` asks for `/effort xhigh` in its review phase; `compare-and-decide`'s heavy tier escalates effort per-invocation instead. For "cheap bulk / xhigh on the hard step", route the hard step through one of those skills, or a Workflow agent with per-agent `effort`. When a loop is stuck, `troubleshooting` §Stuck is the escalation rung; ask the user for `/effort xhigh` if the deep pass needs it.
 
 ## Guardrails (non-negotiable for any adopted loop)
 - **Hard gates are never crossed unattended.** A loop runs *after* a gate, or only on read-only work, or stops and reports when a gate is pending.
@@ -93,7 +93,7 @@ Effort is **not changeable dynamically mid-session** (the user sets `/effort`; t
 
 ## Related
 - `.claude/loop.md` — single generic doctrine-safe default for bare `/loop`, synced to `~/.claude/loop.md` (poneglyph is the global source, so one file serves project + global; other repos override locally)
-- `task-unblock` skill — xhigh stuck-buster for a loop that stops converging
+- `troubleshooting` §Stuck — the escalation rung for a loop that stops converging
 - `references/09-loops-analysis-source.md` — the analysis this playbook operationalizes
 - `/flow-lifecycle` command — the gated lifecycle a goal-loop (R1) advances
 - `flow` skill (review phase) — the external auditor / stop oracle

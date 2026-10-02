@@ -25,15 +25,15 @@ Once a role is active, operate as a **senior {role}**:
 
 | Role | Composes | Lens / deliverable |
 |------|----------|--------------------|
-| `backend` | `flow` (plan phase) + `flow` (build phase) + `code-quality` | APIs, services, data flow; production-grade + scalable code |
+| `backend` | `flow` (plan phase) + `flow` (build phase) + `pr-review` (maintainability lens) | APIs, services, data flow; production-grade + scalable code |
 | `frontend` | `ui-design` + `html-report` | components, states (loading/empty/error), a11y, responsive, reusability |
 | `devops` | *gap lens* + `troubleshooting` | deploy, CI/CD, infra, observability, reliability, rollback, scaling |
 | `security` | `security-audit` | vulns, authn/authz, injection, secrets exposure; severity + secure fixes |
-| `performance` | `code-quality` (perf) + `troubleshooting` | bottlenecks, N+1, memory leaks, rendering; profile → optimize |
+| `performance` | `pr-review` (performance lens) + `troubleshooting` | bottlenecks, N+1, memory leaks, rendering; profile → optimize |
 | `debugging` | `troubleshooting` | root cause (5-whys), repro, hidden edge cases, robust fix |
 | `architect` | `compare-and-decide` (heavy tier) + `flow` (plan phase) + `flow` (scope phase) | system design, tradeoffs, clean architecture, scalability |
 | `data` | *gap lens* | data modeling, SQL, pipelines/ETL, schema, integrity |
-| `testing` | `flow` (test-plan phase) + `code-quality` + `flow` (review phase) | test strategy, coverage, edge cases, oracle design |
+| `testing` | `flow` (test-plan phase) + `pr-review` + `flow` (review phase) | test strategy, coverage, edge cases, oracle design |
 
 ### General (ad-hoc, beyond co-programming)
 

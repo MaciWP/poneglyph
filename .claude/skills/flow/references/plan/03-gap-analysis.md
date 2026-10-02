@@ -6,7 +6,7 @@ description: Gap Analysis + Ground Truth — files to touch/create/delete with v
 
 # Gap Analysis + Ground Truth — references/03
 
-## Gap Analysis (MANDATORY)
+## Gap Analysis
 
 Before each Execution Roadmap, complete this table:
 
@@ -33,7 +33,7 @@ Before each Execution Roadmap, complete this table:
 
 **Principle**: According to [Anthropic](https://www.anthropic.com/research/building-effective-agents), get feedback from the real environment at each step.
 
-### Mandatory Verification
+### Verification
 
 | After... | Run | Expect |
 |----------|-----|--------|
@@ -55,8 +55,8 @@ graph TD
     F --> B
 ```
 
-### FORBIDDEN
+### Done means verified
 
-- Marking a step as "complete" without environment verification
-- Assuming code works without running it
-- Continuing to the next step if there are pending errors
+- A step is complete only after the environment confirms it
+- Code works once it has run, not when it reads correctly
+- Move to the next step only when no errors are pending

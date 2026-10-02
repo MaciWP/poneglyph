@@ -19,6 +19,8 @@ not how many rows the table has. This file owns the thresholds; no other file re
 | 3 | **Security** | Hardcoded secret/credential; injection vector (SQL/XSS/command); authz check removed or bypassed | Input from a trust boundary unvalidated; sensitive data logged | Overly broad permissions defaulted |
 | 4 | **Style & conventions** | — (style is never Critical) | Violates a documented project convention (linter rule, naming standard, architectural boundary) | Inconsistent with surrounding code; decorative comments |
 | 5 | **Scope** | Unrelated destructive change smuggled in (migration, deletion) | Diff includes changes unrelated to the ticket/purpose | Opportunistic refactor mixed into the diff without mention |
+| 6 | **Maintainability** (`05-lens-maintainability.md`) | — (never Critical on its own) | God class, cyclomatic > 10, duplicated block, a new abstraction with one caller | Long function, magic values, deep nesting |
+| 7 | **Performance** (`06-lens-performance.md`) | Query inside a loop on a request path; sync I/O in a handler | Unbounded list or collection; sequential awaits in a loop | Missing compression or cache on a cold path |
 
 ## Project extension point
 

@@ -20,7 +20,7 @@ questionnaire; it does not skip the drillme sweep or the gate.
 - Produce spec.md with the agreed problem, outcomes, observable ACs, boundaries and unresolved decisions.
 - Present the actual gate 1→2 decision. While approval is pending, report that state and do not advance.
 
-## How You're Graded
+## Quality Bar
 
 - Favor clear product outcomes and explicit boundaries. Technical design or extra requirements do not improve this phase.
 

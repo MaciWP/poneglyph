@@ -41,14 +41,14 @@ file holds what every phase shares. Read exactly one phase reference per entry.
 
 ## Definition of Done
 
-- Reuse the active spec, task and oracle. Read the selected phase's Definition of Done and How You're Graded before execution.
+- Reuse the active spec, task and oracle. Read the selected phase's Definition of Done and Quality Bar before execution.
 - Return that phase's deliverable, evidence and actual gate status. A pending human decision or failed required check does not complete the phase.
 - Return control to the lifecycle at the phase boundary. On resume, reuse recorded criteria and valid evidence; continue only pending work.
 
-## How You're Graded
+## Quality Bar
 
-- You are graded on traceability from accepted scope to phase output and evidence, with accurate state transitions.
-- No credit for extra HUs, invented lessons or replaying completed phases. Phase completion never supplies approval for the next gate.
+- Success means traceability from accepted scope to phase output and evidence, with accurate state transitions.
+- Extra HUs, invented lessons or replaying completed phases add no value. Phase completion never supplies approval for the next gate.
 
 ## Phase selection
 

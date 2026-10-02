@@ -1,34 +1,148 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{{TITLE}} — Dashboard</title>
+<title>{{PAGE_TITLE}} — Dashboard</title>
 <!-- ============================================================
      html-report DASHBOARD template (v7/v8 design, dark-first)
      Masthead (serif italic title) + KPI-card row + health panels +
      findings + recommendation. Color = información (shadcn/Raycast lang).
      Self-contained EXCEPT the one Google-Fonts <link> (Geist + Newsreader
      + Geist Mono). Generator fills {{PLACEHOLDERS}} — see comments.
+     {{PAGE_TITLE}} is the browser-tab title in plain text: {{TITLE}}
+     without its <em> tags.
      Motion = ONE page fade (no per-element pops). Dark-first + print-light.
 ============================================================ -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0a0a0c; --panel: #0f0f12; --panel-2: #15151a;
-    --line: #26262c; --line-soft: #1c1c22;
-    --ink: #edecf0; --ink-2: #a4a3ad; --ink-3: #6c6b76;
-    --accent: #6ee7d3;
-    --good: #5ec98f; --mid: #d6c267; --warn: #e0a35e; --bad: #e8716f;
-    --blocker: #e8716f; --major: #e0a35e; --minor: #d6c267; --nit: #7d7d87;
-    --track: rgba(255,255,255,.06);
-    --serif: "Newsreader", Georgia, "Times New Roman", serif;
-    --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-    --mono: "Geist Mono", ui-monospace, "SF Mono", Consolas, monospace;
-    --maxw: 1120px;
+  /* tokens:begin */
+/* ============================================================
+   Poneglyph DESIGN TOKENS — single source of truth
+   ------------------------------------------------------------
+   This file is the single source of the Poneglyph HTML design
+   system: the report family, the dashboard family and the dynamic
+   theme (scripts/theme.ts) all read their colors, type, spacing
+   and radius from here. Change a value here and nowhere else.
+
+   NAMES: the v2 short names (--bg, --surface, --ink, --line,
+   --accent, --good, --t-*). Extras the report family needs:
+   --accent-bd, --line-soft, --info-bg/-bd (the info callout,
+   read with --link), --{blocker,major,minor,nit,ok}-bg and -bd,
+   --shadow-hover, --lh-*, --space-*, --radius-*.
+
+   CONTRAST: every text token reaches WCAG AA 4.5:1 on --bg,
+   --surface and --surface-2, every severity reaches it on its own
+   -bg tint and --link reaches it on --info-bg, in light and in
+   dark (scripts/tokens.test.ts). Light accent and status colors
+   are darkened only as far as AA requires; surfaces, lines, ink
+   and every other dark value are v2.
+
+   BLOCKS: light at :root; dark at html[data-theme="dark"] and,
+   for no-JS visitors, under prefers-color-scheme with
+   html:not([data-theme]); light again under @media print. The two
+   dark blocks and the print block repeat values on purpose, and
+   the test fails when a pair drifts. The print block is last so
+   it beats both dark selectors.
+
+   SEVERITY (5: blocker|major|minor|nit|ok) tags findings.
+   SCORE   (4: bad|warn|mid|good) tags numbers. NOT interchangeable.
+
+   LAYOUT: --maxw is not a token; each template sets its own.
+============================================================ */
+
+/* ---- LIGHT: clean cool-neutral, deep teal ---- */
+:root {
+  --bg:#f3f5f9; --surface:#ffffff; --surface-2:#e9eef5;
+  --line:#d9e0ea; --line-soft:#e4e9f1; --line-strong:#bcc6d4;
+  --ink:#0f1620; --ink-2:#404a59; --ink-3:#5d6776;
+  --accent:#0b786e; --accent-2:#0f766e; --accent-bg:#dcf5f0; --accent-bd:#a9dcd3; --link:#0e7490;
+  --info-bg:#e6f4f8; --info-bd:#b4dbe6;
+  --good:#117b38; --mid:#906303; --warn:#b9460a; --bad:#d12222;
+  --blocker:#d12222; --blocker-bg:#fef2f2; --blocker-bd:#f6c9c9;
+  --major:#b9460a;   --major-bg:#fff4ec;   --major-bd:#f8cfae;
+  --minor:#906303;   --minor-bg:#fdf8e7;   --minor-bd:#ecd9a0;
+  --nit:#5e6d82;     --nit-bg:#eef2f7;     --nit-bd:#d3dbe6;
+  --ok:#117b38;      --ok-bg:#edf7ee;      --ok-bd:#b9e2bf;
+  --track:rgba(15,22,32,.08);
+  --serif:"Newsreader","Iowan Old Style",Palatino,Georgia,serif;
+  --sans:"Geist",ui-sans-serif,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Geist Mono",ui-monospace,"SF Mono",Consolas,monospace;
+  --shadow:0 1px 2px rgba(17,22,29,.08),0 8px 24px rgba(17,22,29,.10);
+  --shadow-hover:0 4px 12px rgba(17,22,29,.12),0 12px 36px rgba(17,22,29,.12);
+}
+
+/* ---- Scales (theme-independent) ---- */
+:root {
+  --t-xs:.75rem; --t-sm:.8125rem; --t-base:.9375rem; --t-md:1.0625rem;
+  --t-lg:1.375rem; --t-xl:1.75rem; --t-2xl:2.25rem; --t-3xl:clamp(2.1rem,5vw,3.2rem);
+  --lh-tight:1.2; --lh-snug:1.35; --lh-normal:1.6;
+  --space-1:.25rem; --space-2:.5rem; --space-3:.75rem; --space-4:1rem;
+  --space-5:1.5rem; --space-6:2rem; --space-7:3rem; --space-8:4rem;
+  --radius-sm:6px; --radius-md:10px; --radius-lg:16px; --radius-full:9999px;
+}
+
+/* ---- DARK: deep blue-black, vivid teal, lively data ---- */
+html[data-theme="dark"] {
+  --bg:#0a0e1a; --surface:#1a2236; --surface-2:#232e48;
+  --line:#33415f; --line-soft:#29344f; --line-strong:#475a7e;
+  --ink:#eef1f6; --ink-2:#c4ccda; --ink-3:#959fb1;
+  --accent:#2dd4bf; --accent-2:#5eead4; --accent-bg:#0e3330; --accent-bd:#14534c; --link:#38bdf8;
+  --info-bg:#0c2436; --info-bd:#16425c;
+  --good:#34d399; --mid:#fbbf24; --warn:#fb923c; --bad:#f87171;
+  --blocker:#f87171; --blocker-bg:#2c1212; --blocker-bd:#5c1f1f;
+  --major:#fb923c;   --major-bg:#2a1808;   --major-bd:#5a3411;
+  --minor:#fbbf24;   --minor-bg:#261f08;   --minor-bd:#524212;
+  --nit:#94a3b8;     --nit-bg:#1f2a40;     --nit-bd:#3a4869;
+  --ok:#34d399;      --ok-bg:#0e2415;      --ok-bd:#1d4d2c;
+  --track:rgba(255,255,255,.06);
+  --shadow:0 1px 2px rgba(0,0,0,.55),0 12px 32px rgba(0,0,0,.5);
+  --shadow-hover:0 4px 12px rgba(0,0,0,.6),0 16px 40px rgba(0,0,0,.55);
+}
+
+/* ---- No-JS fallback: honor OS preference (same values as the dark block) ---- */
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme]) {
+    --bg:#0a0e1a; --surface:#1a2236; --surface-2:#232e48;
+    --line:#33415f; --line-soft:#29344f; --line-strong:#475a7e;
+    --ink:#eef1f6; --ink-2:#c4ccda; --ink-3:#959fb1;
+    --accent:#2dd4bf; --accent-2:#5eead4; --accent-bg:#0e3330; --accent-bd:#14534c; --link:#38bdf8;
+    --info-bg:#0c2436; --info-bd:#16425c;
+    --good:#34d399; --mid:#fbbf24; --warn:#fb923c; --bad:#f87171;
+    --blocker:#f87171; --blocker-bg:#2c1212; --blocker-bd:#5c1f1f;
+    --major:#fb923c;   --major-bg:#2a1808;   --major-bd:#5a3411;
+    --minor:#fbbf24;   --minor-bg:#261f08;   --minor-bd:#524212;
+    --nit:#94a3b8;     --nit-bg:#1f2a40;     --nit-bd:#3a4869;
+    --ok:#34d399;      --ok-bg:#0e2415;      --ok-bd:#1d4d2c;
+    --track:rgba(255,255,255,.06);
+    --shadow:0 1px 2px rgba(0,0,0,.55),0 12px 32px rgba(0,0,0,.5);
+    --shadow-hover:0 4px 12px rgba(0,0,0,.6),0 16px 40px rgba(0,0,0,.55);
   }
+}
+
+/* ---- PRINT: paper is light whatever the screen theme (same values as :root) ---- */
+@media print {
+  :root, html[data-theme], html:not([data-theme]) {
+    --bg:#f3f5f9; --surface:#ffffff; --surface-2:#e9eef5;
+    --line:#d9e0ea; --line-soft:#e4e9f1; --line-strong:#bcc6d4;
+    --ink:#0f1620; --ink-2:#404a59; --ink-3:#5d6776;
+    --accent:#0b786e; --accent-2:#0f766e; --accent-bg:#dcf5f0; --accent-bd:#a9dcd3; --link:#0e7490;
+    --info-bg:#e6f4f8; --info-bd:#b4dbe6;
+    --good:#117b38; --mid:#906303; --warn:#b9460a; --bad:#d12222;
+    --blocker:#d12222; --blocker-bg:#fef2f2; --blocker-bd:#f6c9c9;
+    --major:#b9460a;   --major-bg:#fff4ec;   --major-bd:#f8cfae;
+    --minor:#906303;   --minor-bg:#fdf8e7;   --minor-bd:#ecd9a0;
+    --nit:#5e6d82;     --nit-bg:#eef2f7;     --nit-bd:#d3dbe6;
+    --ok:#117b38;      --ok-bg:#edf7ee;      --ok-bd:#b9e2bf;
+    --track:rgba(15,22,32,.08);
+    --shadow:0 1px 2px rgba(17,22,29,.08),0 8px 24px rgba(17,22,29,.10);
+    --shadow-hover:0 4px 12px rgba(17,22,29,.12),0 12px 36px rgba(17,22,29,.12);
+  }
+}
+/* tokens:end */
+  :root { --maxw: 1120px; }
   *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
   html { font-size: 16px; scroll-behavior: smooth; }
   body {
@@ -44,7 +158,7 @@
     body { animation: pagefade .45s ease-out both; }
     @keyframes pagefade { from { opacity: 0; } }
   }
-  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: clamp(1.4rem, 3vw, 2rem); }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: clamp(1.4rem, 3vw, 2rem); }
 
   .top { display: flex; align-items: center; gap: 1rem; padding-bottom: 1.3rem; border-bottom: 1px solid var(--line); margin-bottom: 2.4rem; flex-wrap: wrap; }
   .top .lbl.brand { color: var(--accent); }
@@ -59,7 +173,7 @@
   .lede { margin-top: 1rem; font-family: var(--serif); font-size: clamp(1.05rem, 2vw, 1.3rem); line-height: 1.5; color: var(--ink-2); max-width: 46ch; }
 
   .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: .9rem; margin-bottom: 1.25rem; }
-  .kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 1.05rem 1.15rem 1.15rem; display: flex; flex-direction: column; gap: .55rem; min-width: 0; }
+  .kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 1.05rem 1.15rem 1.15rem; display: flex; flex-direction: column; gap: .55rem; min-width: 0; }
   .kpi-k { font-family: var(--mono); font-size: .625rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); display: flex; align-items: center; gap: .4rem; }
   .kpi-k .pip { width: 6px; height: 6px; border-radius: 50%; background: var(--bad); }
   .kpi-val { display: flex; align-items: baseline; gap: .25rem; }
@@ -99,8 +213,8 @@
   .heat-cap b { color: var(--bad); font-family: var(--mono); font-weight: 500; }
 
   .finds { display: grid; gap: 1px; background: var(--line-soft); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
-  .find { display: grid; grid-template-columns: 3px 1fr auto; gap: 1.1rem; align-items: center; padding: 1.3rem 1.5rem; background: var(--panel); transition: background .2s; }
-  .find:hover { background: var(--panel-2); }
+  .find { display: grid; grid-template-columns: 3px 1fr auto; gap: 1.1rem; align-items: center; padding: 1.3rem 1.5rem; background: var(--surface); transition: background .2s; }
+  .find:hover { background: var(--surface-2); }
   .find .mark { align-self: stretch; border-radius: 999px; background: var(--c); }
   .find .body { min-width: 0; }
   .find .sev { font-family: var(--mono); font-size: .625rem; letter-spacing: .12em; text-transform: uppercase; color: var(--c); }
@@ -108,12 +222,13 @@
   .find .act { font-size: .8125rem; color: var(--ink-2); max-width: 62ch; }
   .find .flow { font-family: var(--mono); font-size: .7rem; color: var(--ink-3); white-space: nowrap; text-align: right; }
 
-  .drawer { margin-top: 1rem; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); overflow: hidden; }
+  .drawer { margin-top: 1rem; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); overflow: hidden; }
   .drawer summary { cursor: pointer; padding: .95rem 1.5rem; font-family: var(--mono); font-size: .6875rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); list-style: none; display: flex; align-items: center; gap: .65rem; }
   .drawer summary::-webkit-details-marker { display: none; }
   .drawer summary::before { content: '+'; color: var(--accent); font-size: 1.1rem; line-height: 1; }
   .drawer[open] summary::before { content: '\2013'; }
   .drawer[open] summary { border-bottom: 1px solid var(--line-soft); }
+  .tbl-wrap { overflow-x: auto; } /* a wide table scrolls on mobile, never clips */
   .tbl { width: 100%; border-collapse: collapse; font-size: .8125rem; }
   .tbl th { text-align: left; padding: .65rem 1.5rem; font-family: var(--mono); font-size: .5625rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); border-bottom: 1px solid var(--line-soft); }
   .tbl td { padding: .65rem 1.5rem; border-bottom: 1px solid var(--line-soft); color: var(--ink-2); vertical-align: top; line-height: 1.45; }
@@ -135,8 +250,7 @@
   @media (max-width: 920px){ .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
   @media (max-width: 600px){ .kpi-grid { grid-template-columns: repeat(2, 1fr); } .find { grid-template-columns: 3px 1fr; } .find .flow { display: none; } }
   @media print {
-    :root { --bg:#fff; --panel:#fff; --panel-2:#f6f6f4; --ink:#15150e; --ink-2:#444; --ink-3:#777; --line:#ddd; --line-soft:#eee; --track:#eee; }
-    body { background:#fff; color:#000; } .find:hover{ background:none; }
+    .find:hover{ background:none; }
     a[href^="http"]::after { content:" ("attr(href)")"; font-size:.8em; }
   }
 </style>
@@ -191,7 +305,11 @@
     </div>
   </section>
 
-  <!-- 01 SALUD -->
+  <!-- 01 SALUD. Generator rules:
+       - SEV_BAR: one <i class="b|m|n"> per severity, width = its share of findings
+       - HEAT_COLS: one column per module, height = score/10*100 (taller = better),
+         --c = the score threshold (good/mid/warn/bad):
+         <div class="col"><div class="seg" style="--c:var(--good);height:82%"></div></div> -->
   <section class="block air">
     <div class="head"><span class="n">01</span><span class="t">{{HEALTH_TITLE}}</span><span class="rule"></span><span class="aside">{{HEALTH_ASIDE}}</span></div>
     <div class="panel health">
@@ -215,10 +333,10 @@
     <div class="finds">{{TOP_FINDINGS}}</div>
     <details class="drawer">
       <summary>{{DRAWER_LABEL}}</summary>
-      <table class="tbl">
+      <div class="tbl-wrap"><table class="tbl">
         <thead><tr><th>#</th><th>Sev</th><th>Finding</th><th>Acción</th><th>/flow</th></tr></thead>
         <tbody>{{ALL_FINDINGS_ROWS}}</tbody>
-      </table>
+      </table></div>
       <p class="qw">{{QUICK_WINS}}</p>
     </details>
   </section>

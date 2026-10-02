@@ -109,7 +109,7 @@ function quoteGrepGlobs(segment: string): string {
 }
 
 function denial(cmd: string, file: string, size: number): string {
-  return `\`${cmd}\` would dump ${file} (${Math.round(size / 1024)} KB) whole into the context; tool output is already 56 % of it and the same 28 KB file was catted four times in one session (plan 037, H6). Use Read with offset/limit, or Grep the section you need. Append \`# raw\` to bypass.`;
+  return `\`${cmd}\` would dump ${file} (${Math.round(size / 1024)} KB) whole into the context; tool output is already 56 % of it and the same 28 KB file was catted four times in one session. Use Read with offset/limit, or Grep the section you need. Append \`# raw\` to bypass.`;
 }
 
 // Pure. One Bash command line (plus the session cwd) in, a verdict out.

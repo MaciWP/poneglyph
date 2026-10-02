@@ -81,6 +81,8 @@ export function render(data: ReportData): string {
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>${themeCss()}${filterCss}${chartCss}${copyCss}
+/* layout width is per template, not a theme token */
+:root{--maxw:1180px}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:16px;scroll-behavior:smooth}
 body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.6;font-size:var(--t-base);-webkit-font-smoothing:antialiased;padding:clamp(1.5rem,4vw,3rem) clamp(1rem,4vw,2rem) 4rem}
@@ -105,7 +107,7 @@ h1.title em{font-style:italic;color:var(--ink-2);font-weight:400}
 /* KPI row: subtle bg, no heavy borders */
 .kpi-grid{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.7rem;margin-bottom:2rem}
 .kpi{background:var(--surface);border:1px solid var(--line);border-top:2px solid color-mix(in srgb,var(--accent) 60%,var(--line));border-radius:12px;padding:.85rem 1rem;display:flex;flex-direction:column;gap:.35rem;box-shadow:var(--shadow);transition:transform .2s ease,box-shadow .2s ease}
-.kpi:hover{transform:translateY(-3px);box-shadow:var(--shadow),0 14px 30px rgba(0,0,0,.16)}
+.kpi:hover{transform:translateY(-3px);box-shadow:var(--shadow-hover)}
 .kpi-k{font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);display:flex;align-items:center;gap:.4rem}
 .kpi-k .pip{width:6px;height:6px;border-radius:50%;background:var(--bad)}
 .kpi-v{font-family:var(--sans);font-weight:600;font-size:1.9rem;line-height:1;letter-spacing:-.01em;color:var(--accent)}
@@ -139,17 +141,17 @@ h3.blk{font-family:var(--sans);font-weight:600;font-size:var(--t-md);margin:1.2r
 .chart{display:flex;flex-direction:column;gap:.5rem;margin:.6rem 0;max-width:68ch}
 .chart-block{display:inline-block;vertical-align:top;width:min(100%,380px);margin:0 1.6rem 1.4rem 0}
 .chart-block figcaption{font-family:var(--sans);font-weight:600;font-size:var(--t-sm);color:var(--ink);margin-bottom:.55rem;letter-spacing:-.01em}
-/* Tufte-style sidenote: margin on desktop, inline on mobile */
+/* Sidenote: floats beside the prose on desktop (inside main, never past it), inline on mobile */
 .sidenote{font-size:var(--t-sm);color:var(--ink-2);border-left:2px solid var(--line-strong);padding-left:.7rem;margin:.6rem 0}
-@media(min-width:1100px){.sidenote{float:right;clear:right;width:14rem;margin-right:-15.5rem;border-left:none;padding-left:0;border-top:1px solid var(--line-strong);padding-top:.4rem}}
+@media(min-width:1100px){.sidenote{float:right;clear:right;width:14rem;margin:.2rem 0 .8rem 1.4rem;border-left:none;padding-left:0;border-top:1px solid var(--line-strong);padding-top:.4rem}}
 .toolbar{grid-column:1/-1;display:flex;justify-content:flex-end;margin-bottom:.4rem}
 .tbtn{font-family:var(--mono);font-size:var(--t-xs);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:.3rem .7rem;cursor:pointer}
 .tbtn:hover{color:var(--accent);border-color:var(--accent)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
 footer{grid-column:1/-1;margin-top:2.5rem;padding-top:1.2rem;border-top:1px solid var(--line);font-family:var(--mono);font-size:var(--t-xs);color:var(--ink-3);display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
 @media(prefers-reduced-motion:no-preference){.sec-body{animation:fade .3s ease-out}@keyframes fade{from{opacity:0}}}
-@media(max-width:820px){.wrap{grid-template-columns:1fr}.toc{position:static;flex-flow:row wrap;max-height:none;margin-bottom:1.5rem;border:1px solid var(--line);border-radius:10px;padding:.5rem}.sidenote{float:none;width:auto;margin-right:0}}
-@media print{body{background:#fff;color:#000}.toc,.toolbar,.nowbar{display:none}.wrap{display:block}.sec{break-inside:avoid}a[href^="http"]::after{content:" ("attr(href)")";font-size:.8em}}
+@media(max-width:820px){.wrap{grid-template-columns:1fr}.toc{position:static;flex-flow:row wrap;max-height:none;margin-bottom:1.5rem;border:1px solid var(--line);border-radius:10px;padding:.5rem}.sidenote{float:none;width:auto;margin-right:0}.chart-block{margin-right:0}}
+@media print{.toc,.toolbar,.nowbar{display:none}.wrap{display:block}.sec{break-inside:avoid}a[href^="http"]::after{content:" ("attr(href)")";font-size:.8em}}
 </style>
 </head>
 <body>

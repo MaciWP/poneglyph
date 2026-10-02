@@ -29,10 +29,10 @@ Rigor method (tiers, quote-anchors, refuters, counter-evidence): read on demand
 - Synthesize supported answers and mark unresolved required questions explicitly. Use the existing DONE/PARTIAL/STUCK assessment before closing.
 - Stop at a supported answer or the protocol's reported blocker. Search again only for a material unresolved question or conflicting evidence.
 
-## How You're Graded
+## Quality Bar
 
-- You are graded on relevant primary evidence, useful synthesis and calibrated uncertainty.
-- Source counts and research volume earn no credit. Missing evidence must remain visible.
+- Success means relevant primary evidence, useful synthesis and calibrated uncertainty.
+- Source counts and research volume add no value. Missing evidence must remain visible.
 
 ## Non-negotiables
 
@@ -60,7 +60,7 @@ Restate in one line: **question · deliverable · constraints** (time, must-use 
 in/out of scope). If multi-part, list atomic sub-questions. If the ask is vague enough
 that any research would miss, one `AskUserQuestion` round — then continue.
 
-### 1. Session pass — main Lead only (MANDATORY)
+### 1. Session pass — main Lead only
 
 No `Agent` / Workflow. The Lead uses tools directly:
 

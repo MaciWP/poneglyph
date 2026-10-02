@@ -11,6 +11,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import type { Status } from "./doctor";
+import { CONTEXT_POLICY } from "./lib/host-config";
 
 export interface MsgStat { model: string; ctx: number; out: number }
 export interface ToolStat { tool: string; family: string; chars: number }
@@ -68,7 +69,7 @@ export interface ContextSummary {
   topSessionShare: number; floorP50: number;
 }
 
-export function summarizeContext(transcripts: Transcript[], cap = 200_000): ContextSummary {
+export function summarizeContext(transcripts: Transcript[], cap: number = CONTEXT_POLICY.defaultTokens): ContextSummary {
   const ctx: number[] = [];
   const floors: number[] = [];
   let total = 0, overTokens = 0, top = 0, sessions = 0;
@@ -115,7 +116,7 @@ export const TOP_SESSION_WARN = 0.4;
 const k = (n: number) => `${Math.round(n / 1000)}k`;
 const pct = (x: number) => `${Math.round(x * 100)} %`;
 
-export function contextRow(s: ContextSummary, cap = 200_000): { status: Status; detail: string } {
+export function contextRow(s: ContextSummary, cap: number = CONTEXT_POLICY.defaultTokens): { status: Status; detail: string } {
   if (!s.messages) return { status: "🟢", detail: "no transcripts in the window" };
   const status: Status = s.overCapShare > OVER_CAP_WARN || s.topSessionShare > TOP_SESSION_WARN ? "🟡" : "🟢";
   const detail = `${s.sessions} sessions · ctx/msg p50 ${k(s.p50)} p90 ${k(s.p90)} · ${pct(s.overCapShare)} of msgs above ${k(cap)} carry ${pct(s.overCapTokenShare)} of context · top session ${pct(s.topSessionShare)} · first-turn floor ${k(s.floorP50)}`;
@@ -167,7 +168,7 @@ if (import.meta.main) {
   const argv = process.argv.slice(2);
   const arg = (flag: string, fallback: number) => { const i = argv.indexOf(flag); return i >= 0 ? Number(argv[i + 1]) || fallback : fallback; };
   const days = arg("--days", 7);
-  const cap = arg("--cap", 200_000);
+  const cap = arg("--cap", CONTEXT_POLICY.defaultTokens);
   const files = collectTranscripts(join(homedir(), ".claude", "projects"), days);
   const transcripts = loadTranscripts(files);
   const summary = summarizeContext(transcripts, cap);

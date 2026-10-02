@@ -1,8 +1,9 @@
 #!/usr/bin/env bun
-// Precision regression (post-audit 2026-08-07) — the hook's goal flipped from
-// "surface more" (023) to "surface less noise": measured honor-rate was 2/54
-// because single common words ("revisa", "prompt", "agent") qualified alone.
-// This eval pins the fix against the REAL skills on disk: the measured false
+// Precision regression for the skill hint. Audit 2026-08-07 measured 2/54 hints
+// followed when single common words ("revisa", "prompt", "agent") qualified alone.
+// Over 2026-09-14 → 10-02 the ≥2-single-word rule still emitted 124 hints with 3
+// followed (`flow`, `error`, `retry`, `tenant`), so only multi-word phrases fire
+// now. This eval pins that against the REAL skills on disk: the measured false
 // positives must stay silent; the precise multi-word matches must still fire.
 //
 // Also a listing-budget check substituting for the interactive `/doctor` (AC4).
@@ -30,17 +31,22 @@ const MUST_STAY_SILENT = [
   "gracias",
   "hola",
   "/clear",
+  "quiero refactorizar este código, tiene mucha complexity y duplication", // two single words
+  "el workflow falla con un error, haz retry", // the 2026-09 noise words
+  "respecto al spec que hablamos", // a keyword inside a longer word
+  "si tienes dudas usa /drillme-clarify y valida el plan", // the user already named it
 ];
-// Precise matches that MUST keep firing (multi-word keyword or ≥2 distinct hits).
+// Precise multi-word matches that MUST keep firing.
 const MUST_STILL_SURFACE = [
-  "revisa la pr antes de aprobarla", // pr-review, multi-word
-  "quiero refactorizar este código, tiene mucha complexity y duplication", // code-quality, 2 hits
+  "revisa la pr antes de aprobarla", // pr-review
+  "esto huele a code smell, refactorízalo", // pr-review (maintainability lens)
+  "estas seguro de que funciona?", // changes-verify, typed without the accent
 ];
 
 const falseFires = MUST_STAY_SILENT.filter(surfaces);
 const falseSilences = MUST_STILL_SURFACE.filter((p) => !surfaces(p));
 
-console.log("# Skill-hint precision regression (audit 2026-08-07)");
+console.log("# Skill-hint precision regression");
 console.log(`must-stay-silent (n=${MUST_STAY_SILENT.length}): ${MUST_STAY_SILENT.length - falseFires.length} silent, ${falseFires.length} fired`);
 for (const p of falseFires) console.log(`  FALSE FIRE: "${p}"`);
 console.log(`must-still-surface (n=${MUST_STILL_SURFACE.length}): ${MUST_STILL_SURFACE.length - falseSilences.length} fired, ${falseSilences.length} silent`);

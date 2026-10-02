@@ -4,8 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 test.each([
-  "code-quality/scripts/complexity-report.ts",
-  "code-quality/scripts/find-n-plus-one.ts",
+  "pr-review/scripts/complexity-report.ts",
+  "pr-review/scripts/find-n-plus-one.ts",
   "security-audit/scripts/scan-secrets.ts",
 ])("scanner excludes dependency directories: %s", async script => {
   const root = mkdtempSync(join(tmpdir(), "scanner-path-"));

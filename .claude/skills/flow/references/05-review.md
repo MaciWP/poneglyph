@@ -21,7 +21,7 @@ review wastes effort.
 - Trace agreed ACs through the assembled change to actual check results and deliver review.md with the supported verdict.
 - Record the assessment through the existing contract. A blocked or negative verdict completes the assessment, not the feature.
 
-## How You're Graded
+## Quality Bar
 
 - Favor accurate coverage and consequential, evidence-backed findings. Zero findings is valid; never invent issues or approve missing checks.
 
@@ -45,9 +45,9 @@ starting revision and inspect committed **and** working-tree changes against it.
 
 | Level | When | Scope |
 |---|---|---|
-| **light** | 1-2 HUs, no security or performance surface | Base checks + the single most relevant drillme gap; no fresh reviewer, `code-quality` or `security-audit` |
-| **standard** (default) | 3-N HUs, no critical area | Full checklist, `code-quality` quality mode, ONE fresh-context reviewer, phase bank sweep |
-| **full** | Architectural, or the diff touches auth / payments / secrets / crypto / session | Standard + `security-audit` + `code-quality` both modes; the reviewer prompt carries the critical-area focus |
+| **light** | 1-2 HUs, no security or performance surface | Base checks + the single most relevant drillme gap; no fresh reviewer, quality lenses or `security-audit` |
+| **standard** (default) | 3-N HUs, no critical area | Full checklist, the maintainability lens, ONE fresh-context reviewer, phase bank sweep |
+| **full** | Architectural, or the diff touches auth / payments / secrets / crypto / session | Standard + `security-audit` + both quality lenses; the reviewer prompt carries the critical-area focus |
 
 Override with `--light` / `--standard` / `--full`. Declare `review_level` and its reason in
 the `review.md` frontmatter. Doc-only features skip Performance and Security.
@@ -84,11 +84,11 @@ New abstractions justified by ≥2 callers. Naming consistent. **Lessons pass**:
 `Skill(lessons-learned)` — a violated lesson is a finding quoted with its rule; G6 forbids
 APPROVED while a merge gate is red.
 
-## Step 6 — `code-quality` catalog
+## Step 6 — Quality lenses (from `pr-review`)
 
 Refactoring, SOLID/DRY, complexity → Read
-`../../code-quality/references/01-mode-quality.md` + `quality/`. Loops with I/O, async,
-memory, hot paths → `../../code-quality/references/02-mode-performance.md` + `performance/`.
+`../../pr-review/references/05-lens-maintainability.md` + `maintainability/`. Loops with I/O,
+async, memory, hot paths → `../../pr-review/references/06-lens-performance.md` + `performance/`.
 Both when both. The catalog
 is the checklist; this phase orchestrates it (AC8 KEEP, see `07-history.md`).
 
@@ -157,7 +157,7 @@ the user.
 - review.md: .claude/plans/{NNN}-{slug}/review.md · review_level: <light|standard|full>
 - Findings: <blocker>/<major>/<minor>/<nit> · spec_drift: <none|legitimate|scope_creep|skipped_ac>
 - fresh reviewer invoked: <yes | no (inline + declared bias) | n/a>
-- code-quality modes: [<quality?>, <performance?>] · security-audit invoked: <yes|no>
+- quality lenses: [<maintainability?>, <performance?>] · security-audit invoked: <yes|no>
 - drillme-clarify: <categories covered, gaps>
 
 Next: flow retro (approving verdict) | flow build US{N} (NEEDS_CHANGES) | STOP and escalate (BLOCKED)

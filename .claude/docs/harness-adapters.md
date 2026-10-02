@@ -121,20 +121,20 @@ bun run doctor
 ### Shared context/effort policy
 
 All three hosts carry one tiered policy, so a session behaves the same everywhere:
-compact at **200k tokens** by default, raise to **400k** per session when a task
+compact at **300k tokens** by default, raise to **400k** per session when a task
 needs it, reasoning effort **high** (each host's own default) with the stronger
 tier one command away. Source of truth: `.claude/scripts/lib/host-config.ts`.
 
 | Host | Keys written | Default | Raise for one session |
 |---|---|---|---|
-| Claude | `autoCompactWindow`, `effortLevel` + `modelSettings["claude-opus-5-5"].effortLevel` (settings.global.json; Opus 5.5+ ignore the top-level key in user settings). Also `switchModelsOnFlag: false`, taken from the Opus 5.5 playbook; the official settings reference does not list it (checked 2026-09-23), so its effect is unverified | 200000 (integer; a suffixed string is dropped silently) · high | `/autocompact 400k` · `/effort xhigh` |
-| Codex | `model_auto_compact_token_limit`, `model_reasoning_effort`, `plan_mode_reasoning_effort` (config.toml, via `sync-codex`) | 200k · high · plan xhigh | `codex -c model_auto_compact_token_limit=400000 -c model_reasoning_effort=xhigh` |
-| Grok | `session.auto_compact_threshold_percent`, `models.default_reasoning_effort`, `model."grok-4.6".context_window` (config.toml, via `sync-grok`) | 40 % of a pinned 500k = 200k · high | `grok --effort xhigh` (per session) |
+| Claude | `autoCompactWindow`, `effortLevel` + `modelSettings["claude-opus-5-5"].effortLevel` (settings.global.json; Opus 5.5+ ignore the top-level key in user settings). Also `switchModelsOnFlag: false`, taken from the Opus 5.5 playbook; the official settings reference does not list it (checked 2026-09-23), so its effect is unverified | 300000 (integer; a suffixed string is dropped silently) · high | `/autocompact 400k` · `/effort xhigh` |
+| Codex | `model_auto_compact_token_limit`, `model_reasoning_effort`, `plan_mode_reasoning_effort` (config.toml, via `sync-codex`) | 300k · high · plan xhigh | `codex -c model_auto_compact_token_limit=400000 -c model_reasoning_effort=xhigh` |
+| Grok | `session.auto_compact_threshold_percent`, `models.default_reasoning_effort`, `model."grok-4.6".context_window` (config.toml, via `sync-grok`) | 60 % of a pinned 500k = 300k · high | `grok --effort xhigh` (per session) |
 
 Grok has no absolute compaction limit, only a percent of the model window, and
 left implicit it "assumes 200,000 tokens and mis-times auto-compaction" (its
 config guide) — so the percent would silently mean 80k. `sync-grok` pins
-`model."grok-4.6".context_window = 500000` so `40 %` is a stated 200k; grok-4.6's
+`model."grok-4.6".context_window = 500000` so `60 %` is a stated 300k; grok-4.6's
 window is `[Probable — vendor pages, 2026-09-09]`, and `grok inspect` accepts the
 block. Codex and Claude take an absolute token limit directly, so they need no pin.
 

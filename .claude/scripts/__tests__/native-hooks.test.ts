@@ -56,7 +56,7 @@ describe("host-owned configuration preservation", () => {
     before.compat.claude.hooks = false;
     before.models = { default_reasoning_effort: "high" };
     before.model = { "grok-4.6": { context_window: 500000 } };
-    before.session = { auto_compact_threshold_percent: 40 };
+    before.session = { auto_compact_threshold_percent: 60 };
     expect(parse(result.content)).toEqual(before);
     expect(grokConfigPlan(result.content)).toEqual({ changed: false, content: result.content });
   });

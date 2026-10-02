@@ -1,19 +1,22 @@
 ---
 name: drillme-clarify
-description: |
-  Interrogatorio socrático exhaustivo EN RONDAS: barre una decisión/plan/output/duda en busca de gaps y pregunta lo que haga falta para cerrarlos — en rondas embudo (abrir → sondear → cerrar) mientras quede un gap que cambie la decisión — integrando las respuestas en el artefacto activo. Activación híbrida: produce CERO preguntas donde nada es ambiguo (sin ceremonia), y para en saturación, nunca en un número fijo.
-  Úsala cuando: cualquier decisión/plan/output no trivial, un gap o duda bloquea, antes de cerrar una fase o gate, "drill", "drillme-clarify", "clarifica", "especificar mejor", "no dejar gaps", "pregúntame todo", "interrógame", "valida", "cuestiona".
+description: >-
+  Socratic gap sweep before committing a decision, plan or spec: asks in rounds
+  only what would change the decision, bakes the answers in, and asks nothing
+  when nothing is ambiguous. Use for "si tienes dudas", "pregúntame lo que
+  falte", "guíame con preguntas", "valida el plan" or "no dejes gaps". A
+  multi-voice debate belongs to compare-and-decide.
 metadata:
   keywords: >
     Keywords - drill, drillme-clarify, socratic, 5-whys, first-principles, clarify, clarificar,
-    gaps, gap, especificar mejor, define requirements, ambiguity, ambigüedad, dudas, valida,
-    valida este plan, valida el plan, cuestiona, cuestiona el plan, challenge, interrogate,
-    antes de cerrar, antes de decidir, pregúntame, no dejar gaps, inversion, doubt, stuck,
-    ambiguous
+    gaps, especificar mejor, define requirements, ambigüedad, dudas, si tienes dudas, valida,
+    valida este plan, valida el plan, cuestiona el plan, challenge the plan, interrógame,
+    pregúntame todo, pregúntame lo que falte, guíame con preguntas, no dejes gaps, no dejar gaps,
+    cierra gaps, antes de decidir
 disable-model-invocation: false
 argument-hint: "[contexto o pregunta]"
 when_to_use: |
-  "pregúntame lo que falte", "interrógame", "cierra gaps", "no dejes dudas", "clarify the decision", "drill this", "challenge the plan"
+  An open doubt that would change what gets built, before acting on it.
 ---
 
 # Drillme — Exhaustive Socratic Check
@@ -26,10 +29,10 @@ A meta-skill any other skill (and the Lead) can invoke to **close every gap in a
 - Close when no remaining question would change the decision. Under the existing soft brake, return unresolved items explicitly; do not label them resolved.
 - Integrate answers into the active artifact. With no material gap, return immediately with zero questions.
 
-## How You're Graded
+## Quality Bar
 
-- You are graded on resolving consequential ambiguity with questions the available evidence cannot answer.
-- Question counts and repeated confirmations earn no credit. Do not declare saturation while a decision-changing gap remains.
+- Success means resolving consequential ambiguity with questions the available evidence cannot answer.
+- Question counts and repeated confirmations add no value. Do not declare saturation while a decision-changing gap remains.
 
 ## Underlying principle
 

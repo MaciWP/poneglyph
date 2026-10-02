@@ -39,9 +39,9 @@ Pre-flight: 18/22 pass (4 fail: contrast×2, centered long-form, missing reduced
 Verdict: FAIL — 1 BLOCKER, 2 MAJOR
 ```
 
-## Optional deterministic helper
+## Deterministic contrast
 
-Contrast-ratio math can be extracted to `scripts/contrast-check.ts` (with a paired test, red→green) IF deterministic checking is wanted. Default: the model estimates contrast guided by the WCAG rule. Keep markdown-mode unless precise automated contrast auditing is required (OQ3 / Cmd V).
+Measure contrast ratios with `contrast(fg, bg)` from `scripts/tokens.ts` (WCAG 2.x, covered by `tokens.test.ts`); do not estimate them. A ratio you could not measure is reported as an estimate.
 
 ## Source
 Pattern from impeccable (deterministic + LLM critique layering) + critic skill (severity vocabulary). Provenance: `.claude/plans/_research-skill-evolution-2026-05-29.md` Part B.

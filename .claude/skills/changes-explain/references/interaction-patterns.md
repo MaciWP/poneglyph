@@ -132,7 +132,7 @@ If the user asks to MODIFY code, DECIDE between alternatives, AUDIT quality, etc
 | User wants | Redirect to |
 |---|---|
 | "cambia esto" | `flow` skill (build phase) |
-| "esta bien hecho?" | `code-quality` skill |
+| "esta bien hecho?" | `pr-review` skill |
 | "deberiamos usar A o B?" | `compare-and-decide` skill |
 | "encuentra el bug" | `Skill('troubleshooting')` (Lead-invoked) |
 | "haz tests" | `flow` skill (build phase) |

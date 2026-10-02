@@ -2,21 +2,21 @@
 name: {{SKILL_NAME}}
 description: |
   {{DESCRIPTION}}
-  Úsala cuando: {{TRIGGER_CONDITION}}.
+  Use for "{{TRIGGER_PHRASE_1}}", "{{TRIGGER_PHRASE_2}}". Not for {{NOT_FOR}}.
 metadata:
   keywords: >
     Keywords - {{KEYWORD_1}}, {{KEYWORD_2}}, {{KEYWORD_3}}
 disable-model-invocation: true
 argument-hint: "[{{ARG1}}] [{{ARG2}}]"
 when_to_use: |
-  "{{TRIGGER_PHRASE_1}}", "{{TRIGGER_PHRASE_2}}", "{{TRIGGER_PHRASE_3}}"
+  {{TRIGGER_CONDITION}}
 ---
 
 # {{SKILL_TITLE}}
 
 {{Purpose of this workflow}}
 
-Instantiate: `{{SKILL_NAME}}` kebab 1–64 matching the directory; `description` 1–1024; `argument-hint` is a string. `disable-model-invocation: true` blocks auto-invoke (Claude/Grok). Codex: also set `agents/openai.yaml` `allow_implicit_invocation: false` if implicit match must not fire. This-repo activation copy stays es-ES.
+Instantiate: `{{SKILL_NAME}}` kebab 1–64 matching the directory; `description` 1–1024; `argument-hint` is a string. `disable-model-invocation: true` blocks auto-invoke (Claude/Grok). Codex: also set `agents/openai.yaml` `allow_implicit_invocation: false` if implicit match must not fire. This-repo activation copy is English with the user's literal es-ES trigger phrases.
 
 ## Definition of Done
 
@@ -25,11 +25,11 @@ Instantiate: `{{SKILL_NAME}}` kebab 1–64 matching the directory; `description`
 - {{Required verification and handoff that close this invocation}}
 - On success, return to the caller and stop this workflow. Failed required checks need repair or a reported blocker, not a success claim.
 
-## How You're Graded
+## Quality Bar
 
 - For variable scope, reuse agreed quality priorities or resolve them with the DoD before Step 1.
-- You are graded on {{desired result}} and {{observable behavior that produces it reliably}}.
-- Complete the required workflow within scope. Extra steps, repeated passing checks and unrelated improvements earn no credit.
+- Success means {{desired result}} and {{observable behavior that produces it reliably}}.
+- Complete the required workflow within scope. Extra steps, repeated passing checks and unrelated improvements add no value.
 
 ## When NOT to use
 

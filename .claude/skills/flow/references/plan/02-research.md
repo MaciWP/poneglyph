@@ -6,16 +6,16 @@ description: Deep Research Protocol + Anti-Obsolescence Detection — consult ex
 
 # Deep Research + Anti-Obsolescence — references/02
 
-## Deep Research Protocol (MANDATORY)
+## Deep Research Protocol
 
-**Principle**: FORBIDDEN to use outdated internal knowledge. Consult external sources BEFORE planning code.
+**Principle**: internal knowledge may be outdated, so consult external sources before planning code.
 
 ### When to Consult External Documentation
 
-| Condition | MANDATORY Action |
+| Condition | Action |
 |-----------|-----------------|
 | Framework API (Elysia, Bun) | Consult official documentation |
-| Little-known library (<10k stars) | WebSearch "[library] changelog 2025 2026" |
+| Little-known library (<10k stars) | WebSearch "[library] changelog [current year]" |
 | Design/architecture pattern | WebSearch + WebFetch from repo >1k stars |
 | Any doubt about syntax/API | Official documentation BEFORE writing code |
 | Suspected breaking changes | WebSearch "[library] breaking changes [version]" |
@@ -27,7 +27,7 @@ description: Deep Research Protocol + Anti-Obsolescence Detection — consult ex
 | Official docs | Official framework site | High |
 | GitHub issues/discussions | Official repo | Medium-High |
 | Engineering blogs | Vercel, Anthropic, Google | High |
-| Stack Overflow | Recent posts (2024-2026) | Medium |
+| Stack Overflow | Recent posts (last two years) | Medium |
 | Random tutorials | Avoid | Low |
 
 ---
@@ -36,7 +36,7 @@ description: Deep Research Protocol + Anti-Obsolescence Detection — consult ex
 
 **Problem**: According to [ICSE 2025](https://arxiv.org/abs/2406.09834), 25-38% of LLM-generated code uses deprecated APIs.
 
-### Mandatory Checklist
+### Checklist
 
 Before using any API, verify:
 
@@ -45,9 +45,9 @@ Before using any API, verify:
 | Is the API deprecated? | Official docs + search for "deprecated" in docs | Use replacement API |
 | Correct version? | Compare package.json vs consulted docs | Adjust to installed version |
 | Breaking changes? | WebSearch "[library] breaking changes [version]" | Apply migration guide |
-| Legacy pattern? | Search for "modern alternative" or "best practice 2025" | Use modern pattern |
+| Legacy pattern? | Search for "modern alternative" or "best practice [current year]" | Use modern pattern |
 
-### Patterns to REJECT
+### Patterns to replace
 
 | Legacy/Deprecated | Modern |
 |-------------------|--------|

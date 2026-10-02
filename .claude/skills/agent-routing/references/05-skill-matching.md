@@ -11,10 +11,10 @@ description: Keywords→skills table, task type detection, priority scoring, syn
 | Keywords in Prompt | Skill to Load |
 |--------------------|--------------|
 | auth, jwt, password, security, token, session | `security-audit` |
-| refactor, extract, SOLID, clean, simplify | `code-quality` |
+| refactor, extract, SOLID, clean, simplify | `pr-review` (maintainability lens) |
 | error, retry, circuit, fallback, recovery | `troubleshooting` |
-| performance, memory, optimization, bottleneck, slow, n+1 | `code-quality` |
-| code quality, code smells, SOLID, complexity, duplication | `code-quality` |
+| performance, memory, optimization, bottleneck, slow, n+1 | `pr-review` (performance lens) |
+| code quality, code smells, SOLID, complexity, duplication | `pr-review` (maintainability lens) |
 | decide, decision, choose, evaluate, trade-off | `compare-and-decide` |
 | stress-test, devil's advocate, challenge decision, pre-mortem | `compare-and-decide` (heavy tier) |
 | explain, walkthrough, diff, learn, onboarding | `changes-explain` |
@@ -27,9 +27,9 @@ When keywords don't match cleanly, detect by task type:
 
 | Task Type | Primary Skill |
 |-----------|--------------|
-| Performance investigation | `code-quality` |
+| Performance investigation | `pr-review` (performance lens) |
 | Auth/permissions change | `security-audit` |
-| Code cleanup/refactor | `code-quality` |
+| Code cleanup/refactor | `pr-review` (maintainability lens) |
 | Debugging unknown error | `troubleshooting` |
 
 ## Priority Scoring
@@ -51,7 +51,7 @@ Some skills reinforce each other — both receive +1 when paired:
 | Pair | Synergy |
 |------|---------|
 | `troubleshooting` + `changes-verify` | Error tracing with verified claims |
-| `code-quality` + `security-audit` | Quality + threat surface in one pass |
+| `pr-review` + `security-audit` | Quality + threat surface in one pass |
 
 ## Conflict Rules
 
@@ -59,7 +59,7 @@ If two skills compete for the same slot and one is more specific, discard the ge
 
 | Generic | Specific (wins) |
 |---------|----------------|
-| `code-quality` | `security-audit` (when security is the primary concern) |
+| `pr-review` | `security-audit` (when security is the primary concern) |
 
 ## Skills Without Keywords (Preload via agentType frontmatter)
 

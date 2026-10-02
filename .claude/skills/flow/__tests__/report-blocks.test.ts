@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 // Quality review 2026-09-11, H50. build and critic each stated their closing report
 // twice: once in the numbered step that produces it, once again in a trailing
 // "Output format reminder". Two copies of one contract drift apart -- critic's copies
-// already had: the reminder listed `code-quality modes` and `drillme-clarify`, the step did
+// already had: the reminder listed the quality-catalog modes and `drillme-clarify`, the step did
 // not. The step that produces the report is the single source; the reminder is gone.
 const root = resolve(import.meta.dir, "..", "..", "..", "..");
 const read = (rel: string) => readFileSync(resolve(root, rel), "utf8");
@@ -31,7 +31,7 @@ describe("closing report is stated once per skill", () => {
   // carries the two fields that lived exclusively in the deleted block.
   it("critic keeps the fields that only the reminder carried", () => {
     const critic = read(".claude/skills/flow/references/05-review.md");
-    expect(critic).toContain("code-quality modes:");
+    expect(critic).toContain("quality lenses:");
     expect(critic).toContain("drillme-clarify:");
   });
 });

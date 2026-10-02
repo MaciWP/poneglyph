@@ -29,10 +29,10 @@ OWASP Top 10 based security audit. Language-agnostic patterns applicable to any 
 - Return evidence-backed findings with severity, remediation and coverage limits. Distinguish confirmed vulnerabilities from hypotheses and untested areas.
 - Stop after the scoped assessment. A completed audit can identify blockers; it does not imply those blockers are fixed.
 
-## How You're Graded
+## Quality Bar
 
-- You are graded on accurate risk detection and actionable remediation proportional to the actual boundary.
-- Vulnerability counts and speculative findings earn no credit. Never claim security from the absence of a detected issue alone.
+- Success means accurate risk detection and actionable remediation proportional to the actual boundary.
+- Vulnerability counts and speculative findings add no value. Never claim security from the absence of a detected issue alone.
 
 ## When to Use
 

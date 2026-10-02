@@ -24,10 +24,10 @@ One skill, two tiers. The classifier picks; the user can override either way.
 - Apply the selected tier and return a supported recommendation, trade-offs and remaining decision blockers. Leave the final choice with the user.
 - Stop when the comparison supports that decision; add another perspective only if it can resolve a material gap.
 
-## How You're Graded
+## Quality Bar
 
-- You are graded on fair alternatives, decisive evidence and explicit uncertainty.
-- More alternatives, agents or debate rounds earn no credit by themselves.
+- Success means fair alternatives, decisive evidence and explicit uncertainty.
+- More alternatives, agents or debate rounds add no value by themselves.
 
 ## Underlying principle
 

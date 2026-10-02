@@ -1,14 +1,19 @@
 ---
 name: agent-routing
-description: |
-  Protocolo de orquestación del Lead a nivel de turno: principios de verificación, checklist de 5 pasos (Triage / Complexity / Context / Delegate / Validate), el árbol de decisión de spawn, skill matching y la plantilla de contexto de delegación (Arch H). Complementaria al command /flow-lifecycle (que orquesta el ciclo de FEATURE multi-turno).
-  Úsala cuando: se necesita guía de orquestación (routing complejo, decisiones de spawn, skill matching), "cómo orquesto esto", "delego o inline", "qué skills uso", "complejidad del turno".
+description: >-
+  Turn-level orchestration protocol for the Lead: verification principles,
+  the Triage/Complexity/Context/Delegate/Validate checklist, the spawn decision
+  tree and the delegation context template. Use for "delego o inline", "cómo
+  orquesto esto", "lanzo agentes para esto" or a spawn or Workflow decision.
+  Not for picking skills (choose-skills) or a multi-turn feature
+  (/flow-lifecycle).
 metadata:
   keywords: >
-    Keywords - orchestrate, delegate, complexity, routing, agent, skill, checklist
+    Keywords - agent-routing, delego o inline, cómo orquesto, lanzo agentes, spawn agents,
+    decisión de spawn, complejidad del turno, delegation decision, plantilla de delegación
 disable-model-invocation: false
 when_to_use: |
-  "cómo orquesto esto", "delego o inline", "qué skills uso", "complejidad del turno", "spawn agents", "routing", "delegation decision"
+  Deciding whether to delegate, spawn agents or stay inline.
 ---
 
 # Lead Orchestration Protocol (turn-level)
@@ -20,20 +25,20 @@ when_to_use: |
 - Resolve the turn's task, relevant skills and execution route through the five-step checklist.
 - Return the routing decision and required context to the caller. Missing spawn approval keeps work inline; routing completion does not complete the task.
 
-## How You're Graded
+## Quality Bar
 
-- You are graded on correct skill matching, bounded context and the cheapest capable authorized route.
-- Extra agents, repeated routing and unused context earn no credit. A route never supplies missing authorization.
+- Success means correct skill matching, bounded context and the cheapest capable authorized route.
+- Extra agents, repeated routing and unused context add no value. A route never supplies missing authorization.
 
 ## §0 Verify First
 
-Before asserting anything exists, verify with tools (Glob/Grep/Read); unresolved → `AskUserQuestion`, don't guess. What the tools do not prove, and the search ladder, live in `verify/references/existence-checks.md` (not restated here).
+Before asserting anything exists, verify with tools (Glob/Grep/Read); unresolved → `AskUserQuestion`, don't guess. What the tools do not prove, and the search ladder, live in `changes-verify/references/existence-checks.md` (not restated here).
 
 ---
 
 ## §1 Per-turn Checklist (5 steps)
 
-Execute steps 1-5 IN ORDER before responding. No exceptions.
+Run steps 1-5 in order; trivial work skips them.
 
 ### Step 1: Triage
 
@@ -96,7 +101,7 @@ Three axes — units (1–3 → inline), read-only?, negotiate interfaces? — d
 
 | # | Principio | Regla |
 |---|---|---|
-| **P1** | 1 agente = **PROHIBIDO** | Única excepción: el **fresh-context reviewer** de critic Phase 4 (read-only, correctness/requirements — su valor ES el contexto fresco; evidencia 018 W1 D1/D3, feature 019). Fuera de eso: no paraleliza; solo aísla contexto (que `/clear` limpia); encarece sin retorno. |
+| **P1** | 1 agente = **PROHIBIDO** | Única excepción: el **fresh-context reviewer** de `flow` (review phase) (read-only, correctness/requirements — su valor ES el contexto fresco; evidencia 018 W1 D1/D3, feature 019). Fuera de eso: no paraleliza; solo aísla contexto (que `/clear` limpia); encarece sin retorno. |
 | **P2** | "isolation" **no es excusa** | El main actúa y se ensucia antes que pagar 1 agente. **"≥5 files" NO es trigger de spawn → inline.** |
 | **P3** | Umbral **≥4** + **read-only** | 1-3 unidades → inline. ≥4 read-only → Workflow. ≥4 de ESCRITURA → inline secuencial salvo opt-in explícito del usuario. |
 | **P4** | research sí, code-review NO se delega en panel | Research delegada → ≥4 en paralelo (search barato `Explore`); si <4 → inline. Code review = checks mecánicos + **1 fresh-context reviewer** (P1-exception); panel ≥4 SOLO para decisiones (`compare-and-decide` (heavy tier)) — evidencia 018 W1/W2 (feature 019). |
@@ -113,13 +118,13 @@ Three axes — units (1–3 → inline), read-only?, negotiate interfaces? — d
 
 ### Step 2: Complexity
 
-Show inline: `Complexity: ~XX`.
+Weigh the five factors; never print a score.
 
 | Score | Routing | Mode |
 |---|---|---|
-| <30 | act inline (skip scoring/skills) | inline |
-| 30-60 | `Skill(flow, "plan")` optional | inline or Workflow (≥4) |
-| >60 | `Skill(flow, "plan")` MANDATORY | inline, Workflow, or Team |
+| Trivial or 33-45 | act inline, no plan | inline |
+| 45-60 | `Skill(flow, "plan")` optional | inline or Workflow (≥4) |
+| >60 | `Skill(flow, "plan")` required | inline, Workflow, or Team |
 
 > If complexity > 60, suggest `/effort xhigh` to the user.
 
@@ -157,9 +162,9 @@ Direct action (the default for ALL write work): Read always permitted. Edit/Writ
 | Change type | Validation |
 |---|---|
 | Single file, low complexity | Lead confirms tests passing inline |
-| Multi-file | `Skill('critic')` inline + **1 fresh-context read-only reviewer** (P1-exception, feature 019; `references/04-agent-selection.md` §Workflow wiring) |
+| Multi-file | `Skill(flow, "review")` inline + **1 fresh-context read-only reviewer** (P1-exception, feature 019; `references/04-agent-selection.md` §Workflow wiring) |
 | Security-related | `security-audit` skill (mandatory dispatch — Cmd VI) |
-| Cross-domain feature | `Skill('critic')` (Phase 4 of the 5-phase workflow) |
+| Cross-domain feature | `Skill(flow, "review")` |
 
 **NEVER report "completed" without confirmation that tests pass.** Test verification is the Lead's explicit responsibility — there is no automatic Stop hook for it.
 
@@ -171,7 +176,7 @@ Retry budget, stuck detection, escalation rung → `error-recovery.md` rule (pro
 
 | Topic | File |
 |---|---|
-| Verification and the search ladder | `verify/references/existence-checks.md` (`references/01-verification.md` is a pointer) |
+| Verification and the search ladder | `changes-verify/references/existence-checks.md` (`references/01-verification.md` is a pointer) |
 | Complexity factors × weight, mode selection, worktree, effort/model routing | `references/03-complexity-routing.md` |
 | Agent selection matrix, exploration 2×2, Workflow wiring, multi-agent patterns + anti-patterns | `references/04-agent-selection.md` |
 | Keywords→skills mapping, priority scoring, synergy/conflict rules | `references/05-skill-matching.md` |

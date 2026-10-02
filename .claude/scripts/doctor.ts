@@ -19,6 +19,7 @@ import { check, type Report } from "./check-config";
 import { checkOrca } from "./sync-orca";
 import { lintEstate, summarizeEstate } from "./lib/memory-estate";
 import { collectTranscripts, contextRow, loadTranscripts, summarizeContext } from "./usage-profile";
+import { defaultSkillDirs, knownSkills, loadSkillTurns, skillsRow, summarizeSkills } from "./skill-usage";
 
 export type Status = "🟢" | "🟡" | "🔴";
 export interface Check {
@@ -248,10 +249,12 @@ async function main(): Promise<void> {
       }
     }
     checks.push({ name: "Sessions today (this project)", ...summarizeSessions(models) });
-    // Shape of the spend across every project on this machine (plan 037): the ceiling is 200k by
+    // Shape of the spend across every project on this machine (plan 037): the ceiling is 300k by
     // default (`autoCompactWindow`), so messages above it are the sessions that cost.
-    const transcripts = loadTranscripts(collectTranscripts(join(homedir(), ".claude", "projects"), 7));
-    checks.push({ name: "Context (7d, this machine)", ...contextRow(summarizeContext(transcripts)) });
+    const weekFiles = collectTranscripts(join(homedir(), ".claude", "projects"), 7);
+    checks.push({ name: "Context (7d, this machine)", ...contextRow(summarizeContext(loadTranscripts(weekFiles))) });
+    // Whether hints get followed and which skills the user still has to name (skill-usage.ts).
+    checks.push({ name: "Skills (7d, this machine)", ...skillsRow(summarizeSkills(loadSkillTurns(weekFiles), knownSkills(defaultSkillDirs()))) });
 
     // The index is the only part of the estate loaded into every session, so its size is
     // reported here rather than by budget.ts, which measures the repo and never sees it.

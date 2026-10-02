@@ -1,5 +1,8 @@
 import { test, expect } from "bun:test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { render } from "./render.ts";
+import { themeCss } from "./theme.ts";
 import type { ReportData } from "./contract.ts";
 
 const data: ReportData = {
@@ -52,4 +55,25 @@ test("T3.5 — comment block with copy: raw md kept for clipboard", () => {
   expect(html).toContain("cmt-src");          // hidden raw-source payload
   expect(html).toContain("review **note**");  // raw md preserved for paste
   expect(html).toContain("file.ts:10");       // label
+});
+
+// ---- 039 US3 — theme.ts serves the canonical tokens ----
+// Named "US3/T3.x" because T3.1–T3.5 above predate feature 039.
+const tokensCss = readFileSync(join(import.meta.dir, "..", "templates", "tokens.css"), "utf8");
+
+test("US3/T3.1 — themeCss() is the canonical file", () => {
+  expect(themeCss()).toBe(tokensCss);
+});
+
+test("US3/T3.2 — render() inlines tokens.css once and keeps its layout width", () => {
+  const html = render(data);
+  const style = html.match(/<style>([\s\S]*?)<\/style>/)![1];
+  expect(style.split(tokensCss).length - 1).toBe(1);
+  expect(style).toContain("--maxw:1180px");
+});
+
+test("US3/T3.3 — guard: no data-theme without a defaultTheme", () => {
+  const html = render({ ...data, defaultTheme: undefined });
+  expect(html).toContain('<html lang="es">');
+  expect(/<html[^>]*data-theme/.test(html)).toBe(false);
 });

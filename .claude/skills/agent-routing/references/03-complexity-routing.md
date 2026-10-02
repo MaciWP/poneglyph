@@ -35,7 +35,7 @@ Calculate complexity before delegating to determine if invoking the `flow` skill
 score = Σ (factor_value × weight × 100 / 3)
 ```
 
-Each factor contributes a maximum of ~33 points (value=3 × 20% × 33.3). Total maximum = 100.
+Each factor contributes a maximum of ~20 points (value=3 × 20% × 33.3). Total maximum = 5 factors × 20 = 100.
 
 | Value | × Weight (20%) | × Scale (33.3) | Contribution |
 |-------|----------------|----------------|-------------|
@@ -83,7 +83,7 @@ graph TD
     P[flow (plan phase): Mode A roadmap + Mode B contracts]
     P --> D1[Lead builds domain A inline, honoring contract]
     D1 --> D2[Lead builds domain B inline, honoring contract]
-    D2 --> R[critic skill: validates cross-domain integration]
+    D2 --> R[flow review phase: validates cross-domain integration]
 ```
 
 | Step | Who | Action |
@@ -116,7 +116,7 @@ Opt-out: `PONEGLYPH_DISABLE_TEAM_MODE=1` forces subagents regardless.
 
 ### Teammate prompts, coordination & fallback
 
-Team mode is experimental and rarely used (4-gate + opt-in). The teammate prompt template, domain-boundary definition, coordination protocol and recovery/fallback table are canonical in `flow/references/plan/05-team-mode.md` — not duplicated here. Routing-level summary: spawn one teammate per domain; they negotiate contracts via the shared task list; the Lead runs `Skill('critic')` over the full changeset; any stuck/failed teammate folds back to inline or a `Workflow` unit.
+Team mode is experimental and rarely used (4-gate + opt-in). The teammate prompt template, domain-boundary definition, coordination protocol and recovery/fallback table are canonical in `flow/references/plan/05-team-mode.md` — not duplicated here. Routing-level summary: spawn one teammate per domain; they negotiate contracts via the shared task list; the Lead runs `Skill(flow, "review")` over the full changeset; any stuck/failed teammate folds back to inline or a `Workflow` unit.
 
 > Current limitation: teammates are always `general-purpose` (issue anthropics/claude-code#24316); each still loads `~/.claude/` automatically (Poneglyph rules/skills/hooks apply). Activation flag: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`.
 

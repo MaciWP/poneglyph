@@ -42,8 +42,22 @@ Unconditional. No exceptions, no reasoning required at use-time.
 | Beige + brass "premium" palette | dominates AI cookware/luxury sites | choose a context-specific palette |
 | `transition: all` / bounce easing | lazy defaults | explicit props + ease-out / custom cubic-bezier |
 
+## Motion tells (flag when)
+
+One instance can be polish; the same motion repeated across the page is the tell. Timing, easing and reduced-motion values live in `taste-hard-rules.md` §Motion.
+
+| Tell | Flag when | Use instead |
+|---|---|---|
+| Pulsing indicator | any looped `pulse`/`glow`/`breathe` or `infinite` opacity/shadow on a dot, badge or status | a static state color plus a text label |
+| Blur-everywhere entrance | ≥3 components in one view share the same `filter: blur()` enter | at most one blurred hero or modal entrance |
+| Hover-scale-on-everything | ≥3 components share the same `scale(1.0X)` on `:hover` | a shadow or background change; scale only a primary action |
+| Stagger on every list | ≥2 lists in one view use an index-based stagger entrance | lists appear at once; stagger one deliberate moment |
+| Bouncy utility action | any overshoot spring or `cubic-bezier` on a dropdown, toggle, menu or modal | ease-out under 300ms |
+| Uniform fade-in | ≥4 components share an identical opacity + translateY enter | vary by element role, or show it without motion |
+| Motion on static content | an entrance on a heading, paragraph or nav whose only purpose is the entrance | render it at once; motion only where it orients |
+
 ## Note for integration (US5)
 `SKILL.md` currently has an inline "anti-generic AI look" row. On integration, that row is **replaced by a pointer to this file** — single source of truth, no duplication.
 
 ## Sources
-github.com/pbakaus/impeccable · github.com/leonxlnx/taste-skill (Production-Test Tells) · prg.sh · dev.to/alanwest · Anthropic frontend-design (anti-pattern list). Full provenance: `.claude/plans/_research-skill-evolution-2026-05-29.md` Part B.
+github.com/pbakaus/impeccable · github.com/leonxlnx/taste-skill (Production-Test Tells) · prg.sh · dev.to/alanwest · Anthropic frontend-design (anti-pattern list) · github.com/kylezantos/design-motion-principles (MIT, motion tells adapted from `references/anti-checklist.md`). Full provenance: `.claude/plans/_research-skill-evolution-2026-05-29.md` Part B.

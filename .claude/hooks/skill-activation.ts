@@ -9,14 +9,19 @@
  * UserPromptSubmit stdout is injected as context Claude can act on.
  * Community-proven: explicit tool-call instructions fire; vague hints don't.
  *
- * Precision-first by design (audit 2026-08-07: honor-rate 2/54 under the old
- * length-based rule — injection noise costs more than a missed hint):
- *   - a keyword qualifies a skill alone ONLY if it is multi-word ("revisa la pr")
- *   - single-word keywords need ≥2 DISTINCT hits for the same skill, after
- *     containment collapse ("prompt"+"prompts" from one physical word = 1 hit)
+ * Precision-first by design. Over 2026-09-14 → 10-02 the old rule (a multi-word
+ * phrase, or ≥2 single words) emitted 124 hints and 3 were followed; the noise was
+ * single words (`flow`, `error`, `retry`). So:
+ *   - only a multi-word keyword qualifies a skill ("revisa la pr")
+ *   - it must match whole words, case- and accent-insensitive ("respecto" never
+ *     hits "spec", "estas seguro" hits "estás seguro")
+ *   - a skill the prompt already names as `/name` gets no hint
  *   - non-human payloads (task notifications, system reminders) are skipped
  *   - top 2 skills max; SILENT by default (031): no match, no shape → zero
  *     output; the always-loaded rules/skill-routing.md covers general routing
+ *
+ * Whether hints are followed is measured from the transcripts, which record every
+ * injected hint and every Skill call: `bun .claude/scripts/skill-usage.ts`.
  *
  * Slash commands are skipped (they self-route) EXCEPT `/goal <task>`: its
  * argument is real work, so it gets the same hint treatment as a plain prompt
@@ -28,7 +33,7 @@
  * Exits 0 always; silent (no stdout) when nothing matches.
  */
 
-import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { readHookStdin } from "./lib/hook-stdin";
@@ -108,34 +113,33 @@ export function isNonHumanPayload(prompt: string): boolean {
   return NON_PROMPT_PREFIXES.some((prefix) => p.startsWith(prefix));
 }
 
-// Precision rule (audit 2026-08-07 — replaces the length-≥5 "strong" tier that
-// caused "revisa"→critic, "prompt"→prompt-design, "agent"→orchestrator):
-//   strong  = a matched keyword containing a space (multi-word phrase)
-//   or else = ≥2 DISTINCT single-word hits for the same skill, where distinct
-//             means not a substring of another matched keyword of that skill
-//             ("prompt"+"prompts" collapse to one hit — one physical word).
-// Carries the first matched keyword as a human-readable reason.
+// Case- and accent-insensitive form of a prompt or keyword: the user often types
+// without accents ("estas seguro"), and keywords are written with them.
+export function foldText(text: string): string {
+  return text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+}
+
+// Whole-word containment: a keyword never matches inside a longer word or a
+// hyphenated identifier ("flow" in "workflow", "spec" in "respecto").
+function containsWord(text: string, word: string): boolean {
+  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?<![\\p{L}\\p{N}_-])${escaped}(?![\\p{L}\\p{N}_-])`, "u").test(text);
+}
+
+// A skill qualifies through a multi-word keyword only; single words were the
+// measured noise. Skills the prompt names as `/name` are skipped: the user chose.
+// Carries the first matched phrase as a human-readable reason.
 export function matchWithReasons(
   prompt: string,
   skills: SkillEntry[],
 ): { name: string; reason: string }[] {
-  const p = prompt.toLowerCase();
+  const p = foldText(prompt);
   if (!p.trim()) return [];
   const scored: { name: string; hits: number; reason: string }[] = [];
   for (const skill of skills) {
-    const matched = [...new Set(skill.keywords)].filter((kw) => p.includes(kw));
-    if (matched.length === 0) continue;
-    const distinct = matched.filter(
-      (kw) => !matched.some((other) => other !== kw && other.includes(kw)),
-    );
-    const strong = distinct.some((kw) => kw.includes(" "));
-    if (strong || distinct.length >= 2) {
-      scored.push({
-        name: skill.name,
-        hits: distinct.length,
-        reason: distinct.find((kw) => kw.includes(" ")) ?? distinct[0],
-      });
-    }
+    if (containsWord(p, `/${foldText(skill.name)}`)) continue;
+    const matched = [...new Set(skill.keywords)].filter((kw) => kw.includes(" ") && containsWord(p, foldText(kw)));
+    if (matched.length > 0) scored.push({ name: skill.name, hits: matched.length, reason: matched[0] });
   }
   return scored
     .sort((a, b) => b.hits - a.hits)
@@ -146,7 +150,7 @@ export function matchWithReasons(
 // Shortlist-with-reasons only (031: no unconditional advisor line — silent when empty).
 export function buildShortlistInjection(matched: { name: string; reason: string }[]): string {
   const lines = matched.map(
-    (m) => `Skill(${m.name}) — relevant (matched "${m.reason}"); consider invoking.`,
+    (m) => `Skill(${m.name}) — possibly relevant (matched "${m.reason}"); load it only if it applies.`,
   );
   if (lines.length === 0) return "";
   return ["<skill-activation-hint>", ...lines, "</skill-activation-hint>"].join("\n");
@@ -168,10 +172,10 @@ export function detectFeatureShape(prompt: string): boolean {
   return FEATURE_SHAPE_RES.some((re) => re.test(prompt));
 }
 
-// The second sentence is the tiered context ceiling (plan 037): 200k by default, 400k when a
+// The second sentence is the tiered context ceiling (plan 037): 300k by default, 400k when a
 // task spans many files. The hook cannot run slash commands; the Lead proposes, Oriol decides.
 export const FLOW_HINT_LINE =
-  "Feature-shaped task → consider /flow-lifecycle — the full lifecycle (Skill flow: scope→plan→test-plan→build→review→retro). Wide scope → propose `/autocompact 400k` for this session (default ceiling 200k, plan 037).";
+  "Feature-shaped task → consider /flow-lifecycle — the full lifecycle (Skill flow: scope→plan→test-plan→build→review→retro). Wide scope → propose `/autocompact 400k` for this session (default ceiling 300k).";
 
 // Model/effort routing by task shape (029/US7 — closes the 027 deployment gap:
 // the advisor only fired at /flow-lifecycle boundaries, while 60+ manual /model+/effort
@@ -196,13 +200,13 @@ export const ROUTING_LINES: Record<"bulk" | "quick", string> = {
 export interface HintAnalysis {
   injection: string;
   skills: string[];
-  reasons: string[]; // same order/length as skills — honor-rate re-measurement
+  reasons: string[]; // same order/length as skills — the keyword that fired
   flowHint: boolean;
   routingHint: boolean;
 }
 
-// Full pure pipeline: raw stdin → injection + emitted-hint metadata (for the
-// honor-rate log). `/goal <task>` is processed (its arg is real work); other
+// Full pure pipeline: raw stdin → injection + emitted-hint metadata.
+// `/goal <task>` is processed (its arg is real work); other
 // slash commands are skipped (they self-route). SILENT unless a keyword or
 // shape matched (031). Accepts a lazy skills getter so the pre-gates
 // (empty/non-human/slash/malformed) never pay the skills-dir disk scan.
@@ -254,26 +258,6 @@ export function analyzePayload(
   };
 }
 
-// Emit-side log for honor-rate measurement (029/US13): one JSON line per
-// emitted hint under <cwd>/.claude/learned/skill-hints.log. The load side is
-// instructions-loaded.log — honor-rate = loads following emissions. `reasons`
-// (added post-audit 2026-08-07) records WHICH keyword fired, so precision can
-// be re-measured per keyword. Fail-silent by contract: a logging failure must
-// never block the prompt.
-export function appendHintLog(
-  baseDir: string,
-  entry: { ts: string; skills: string[]; reasons: string[]; flow: boolean },
-): boolean {
-  try {
-    const dir = join(baseDir, ".claude", "learned");
-    mkdirSync(dir, { recursive: true });
-    appendFileSync(join(dir, "skill-hints.log"), JSON.stringify(entry) + "\n");
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 if (import.meta.main) {
   try {
     const raw = await readHookStdin();
@@ -292,15 +276,7 @@ if (import.meta.main) {
     const analysis = analyzePayload(raw, () =>
       loadSkills([join(cwd, ".claude", "skills"), join(process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), ".claude"), "skills")], "claude", skillOverrides(cwd)),
     );
-    if (analysis.injection) {
-      process.stdout.write(analysis.injection + "\n");
-      appendHintLog(cwd, {
-        ts: new Date().toISOString(),
-        skills: analysis.skills,
-        reasons: analysis.reasons,
-        flow: analysis.flowHint,
-      });
-    }
+    if (analysis.injection) process.stdout.write(analysis.injection + "\n");
   } catch {
     // best-effort — never block the prompt
   }

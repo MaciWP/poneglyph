@@ -87,6 +87,7 @@ restores its working set from `_archive/` first.
 | `032-polish-pass` | 2026-09-03 | plan-mode | `plan.md` + `activation/*.json` (read by `docs/component-audit-2026-09-05/review-main-802d795.ts`) |
 | `033-headless-cheap-tier` | 2026-09-03 | plan-mode | `plan.md` |
 | `034-archify-integration` | 2026-09-08 | plan-mode | `plan.md` |
+| `039-design-system` | 2026-10-02 | APPROVED_WITH_WARNINGS (retro ratified) | `spec.md`, `retro.md` |
 
 Plan-mode artefacts (dev loop + drillme-clarify, not a `/flow-lifecycle` feature) share the
 numbering sequence so nothing collides. In-flight = `state.json` with

@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { check, frontmatter, privacyMatches, readSource, render, validate, withoutGitEnv, type Source } from "../check-config";
 
-const contract = "## Definition of Done\nReturn the requested finding with source evidence.\n\n## How You're Graded\nPrefer accurate findings over finding counts.\n";
+const contract = "## Definition of Done\nReturn the requested finding with source evidence.\n\n## Quality Bar\nPrefer accurate findings over finding counts.\n";
 const skill = (name = "sample", description = "A valid task-specific description.", extra = "", body = contract) => `---\nname: ${name}\ndescription: ${JSON.stringify(description)}\n${extra}---\n${body}\n`;
 const claudeAgent = (stem = "reviewer", description = "Reviews diffs.", extra = "", body = "Review the diff.") => `---\nname: ${stem}\ndescription: ${JSON.stringify(description)}\n${extra}---\n${body}\n`;
 const grokAgent = (stem = "reviewer", description = "Reviews diffs.", extra = "", body = "Review the diff.") => `---\nname: ${stem}\ndescription: ${JSON.stringify(description)}\n${extra}---\n${body}\n`;
@@ -61,15 +61,15 @@ describe("core skill completion contract", () => {
   });
 
   it("rejects empty sections and does not borrow content from the next section", () => {
-    expect(findings("## Definition of Done\n<!-- TODO -->\n## How You're Graded\n\n## Steps\nRun tests."))
+    expect(findings("## Definition of Done\n<!-- TODO -->\n## Quality Bar\n\n## Steps\nRun tests."))
       .toHaveLength(2);
-    expect(findings("## Definition of Done\n# Other document\nDetails.\n## How You're Graded\nPrefer evidence."))
+    expect(findings("## Definition of Done\n# Other document\nDetails.\n## Quality Bar\nPrefer evidence."))
       .toEqual([expect.objectContaining({ rule: "skill.contract.dod", severity: "error" })]);
   });
 
   // PR #39 review, finding H7: a horizontal rule or a bare bullet is not a criterion.
   it("rejects sections that hold only punctuation", () => {
-    expect(findings("## Definition of Done\n---\n## How You're Graded\n-\n")).toHaveLength(2);
+    expect(findings("## Definition of Done\n---\n## Quality Bar\n-\n")).toHaveLength(2);
   });
 
   // PR #39 review, finding H9: a comment opener inside a code example hid every later section.
@@ -80,7 +80,7 @@ describe("core skill completion contract", () => {
 
   it("accepts prose under subheadings, longer closing fences and CRLF", () => {
     const body = "```md\n## Definition of Done\nExample only.\n````\n" +
-      "## Definition of Done\n### Required output\n- Return evidence.\n## How You're Graded\nPrefer accuracy.\n";
+      "## Definition of Done\n### Required output\n- Return evidence.\n## Quality Bar\nPrefer accuracy.\n";
     expect(findings(body.replace(/\n/g, "\r\n"))).toEqual([]);
   });
 

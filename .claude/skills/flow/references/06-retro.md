@@ -23,7 +23,7 @@ recorded: `bun .claude/scripts/flow-state.ts retro-status "skipped â€” <reason â
 - Produce the evidence-backed retro and requested closure decisions, or record the justified no-learning skip under the existing protocol.
 - Close the feature only when the review, retro status and required human decisions allow it. Resume from existing records.
 
-## How You're Graded
+## Quality Bar
 
 - Favor reusable lessons and accurate scope closure. Zero lessons or promotions is valid; invented friction and forced entries do not earn credit.
 

@@ -35,26 +35,27 @@ describe("tomlPlan (plan 037 — one context policy for every host)", () => {
 
 describe("host plans", () => {
   it("codex: effort high, plan mode xhigh, compaction at the default ceiling; the model key is untouched", () => {
-    expect(codexDesired()).toEqual({ model_reasoning_effort: "high", plan_mode_reasoning_effort: "xhigh", model_auto_compact_token_limit: 200_000 });
+    expect(codexDesired()).toEqual({ model_reasoning_effort: "high", plan_mode_reasoning_effort: "xhigh", model_auto_compact_token_limit: 300_000 });
     const out = parse(codexConfigPlan('model = "gpt-6-astra"\nmodel_reasoning_effort = "xhigh"\nmodel_context_window = 872000\nmodel_auto_compact_token_limit = 800000\n').content) as any;
     expect(out.model).toBe("gpt-6-astra");
     expect(out.model_context_window).toBe(872000);
     expect(out.model_reasoning_effort).toBe("high");
-    expect(out.model_auto_compact_token_limit).toBe(200_000);
+    expect(out.model_auto_compact_token_limit).toBe(300_000);
   });
 
   it("grok: inherited hooks off, effort high, threshold = ceiling as a percent of the model window", () => {
     expect(percentOfWindow(200_000, 500_000)).toBe(40);
+    expect(percentOfWindow(300_000, 500_000)).toBe(60);
     expect(percentOfWindow(400_000, 500_000)).toBe(80);
     expect(percentOfWindow(1, 500_000)).toBe(1);
-    expect(grokDesired()).toEqual({ compat: { claude: { hooks: false } }, models: { default_reasoning_effort: "high" }, model: { "grok-4.6": { context_window: 500_000 } }, session: { auto_compact_threshold_percent: 40 } });
+    expect(grokDesired()).toEqual({ compat: { claude: { hooks: false } }, models: { default_reasoning_effort: "high" }, model: { "grok-4.6": { context_window: 500_000 } }, session: { auto_compact_threshold_percent: 60 } });
     const original = '[permissions]\nmode = "ask"\n[compat.claude]\nskills = true\nhooks = true\n[models]\ndefault = "grok-4.6"\ndefault_reasoning_effort = "xhigh"\n';
     const out = parse(grokConfigPlan(original).content) as any;
     expect(out.permissions.mode).toBe("ask");
     expect(out.compat.claude).toEqual({ skills: true, hooks: false });
     expect(out.models).toEqual({ default: "grok-4.6", default_reasoning_effort: "high" });
     expect(out.model["grok-4.6"].context_window).toBe(500_000); // percent anchored to a stated window
-    expect(out.session.auto_compact_threshold_percent).toBe(40);
+    expect(out.session.auto_compact_threshold_percent).toBe(60);
   });
 });
 

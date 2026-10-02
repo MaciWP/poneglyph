@@ -1,16 +1,20 @@
 ---
 name: troubleshooting
-description: |
-  Patrones de diagnóstico, reintento y recuperación para depurar y dar resiliencia.
-  Úsala cuando: incidente en producción, pico de errores, investigación de timeouts, fallo en cascada, tuning de circuit breaker, rollback, orquestación de saga, "depura", "por qué falla", "investiga el bug", "se cae en producción", "root cause", "stacktrace".
+description: >-
+  Diagnosis, retry and recovery patterns: stack-trace classification, 5 Whys,
+  backoff, circuit breakers, rollback and sagas, plus a Stuck protocol that
+  switches technique when the same error repeats. Use for "depura este error",
+  "por qué falla", "se cae en producción", "estoy atascado", "mismo error otra
+  vez", "no se soluciona". Not for a first lint or type error with an obvious
+  fix.
 metadata:
   keywords: >
-    Keywords - debug, diagnose, stacktrace, 5 whys, resilience, fallback, recovery, error,
-    investigate, trace, root cause, retry, timeout, backoff, circuit breaker, transient,
-    rollback, compensation, saga, undo, restore, checkpoint, dead letter queue
+    Keywords - troubleshooting, depura este error, por qué falla, investiga el bug, se cae
+    en producción, root cause, 5 whys, estoy atascado, mismo error, no se soluciona,
+    desatasca esto, same error again, circuit breaker, dead letter queue, retry with backoff
 disable-model-invocation: false
 when_to_use: |
-  "depura este error", "por qué falla", "investiga el bug", "se cae en producción", "debug this", "root cause", "stacktrace"
+  Debugging a failure, or stuck on the same error after repeated attempts.
 ---
 
 # Diagnostic Patterns
@@ -23,10 +27,10 @@ Patterns for debugging, error diagnosis, retry resilience, and failure recovery.
 - Return a supported root cause and verified recovery when repair is requested, or the bounded diagnosis when investigation alone is requested.
 - Stop at that result or follow the existing error-recovery escalation with remaining uncertainty. Do not repeat an unchanged failed hypothesis.
 
-## How You're Graded
+## Quality Bar
 
-- You are graded on falsifiable hypotheses, discriminating checks and root-cause corrections.
-- More retries, speculative changes and symptom suppression earn no credit.
+- Success means falsifiable hypotheses, discriminating checks and root-cause corrections.
+- More retries, speculative changes and symptom suppression add no value.
 
 ## When to Use
 
@@ -178,6 +182,27 @@ Covers: Error Analysis, Root Cause Analysis, Logging, Debugging Techniques, Post
 | Saga compensation must run in reverse order of original steps | Forward-order compensation can violate dependencies between steps | Maintain ordered compensation stack, not unordered cleanup |
 | Logging the error object directly may miss nested cause chains | Many runtimes don't serialize `.cause` or nested errors by default | Always log `error.message`, `error.cause`, and full stack separately |
 
+## Stuck
+
+The last step before handing back to the user. Use it when the same exact error
+repeats, after 2+ diagnoses without a working fix, when a `/goal` loop keeps returning
+the same "not met" reason, or when the user says "estoy atascado" / "desatasca esto".
+Never on a first failure: that is the ordinary diagnosis above.
+
+1. **Name what already failed**: the techniques and assumptions tried so far. The loop
+   persists because the same attack repeats.
+2. **Attack the class, not the instance.** Generalize from the failing case to the kind
+   of input or state that causes it, and fix that so the symptom cannot recur elsewhere.
+3. **Switch technique.** Use one you have not used yet: 5 Whys or stack-trace
+   classification from this skill, `Skill(drillme-clarify)` (inversion, first principles)
+   to surface a wrong assumption, `Skill(choose-skills)` when the missing lever is a skill
+   you have not reached for, or re-read the primary source instead of reasoning from memory.
+4. **One deep pass.** Think it through at full depth once, on the new attack, never on a
+   louder version of the old one.
+5. **Hand back.** Solved → report the root cause and the fix. Still unsolved → STOP →
+   `AskUserQuestion` with what was tried, why each attempt failed, and 2-3 viable next
+   options (`error-recovery.md` §Stuck Detection).
+
 ## Commandments cubiertos
 
 | # | Cómo |
@@ -189,7 +214,6 @@ Covers: Error Analysis, Root Cause Analysis, Logging, Debugging Techniques, Post
 
 ## Related
 
-- `task-unblock` — orchestrates this skill at xhigh when the same error repeats.
 - Verify the failing symbol/path exists before diagnosing (`changes-verify` → existence checks).
 - `.claude/rules/error-recovery.md` — retry budgets and stuck-detection thresholds.
 

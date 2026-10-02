@@ -178,7 +178,7 @@ export function validate(source: Source, options: { addon?: boolean; privacyTerm
     if (body.split(/\r?\n/).length >= 500) add(p, "skill.length", "Consider moving detail into references; 500 lines is guidance, not a quality score.", "warning");
     if (skill && !addon) {
       const sections = contractSections(body);
-      for (const [id, title] of [["dod", "Definition of Done"], ["graded", "How You're Graded"]]) {
+      for (const [id, title] of [["dod", "Definition of Done"], ["graded", "Quality Bar"]]) {
         if (!sections.has(title)) add(p, `skill.contract.${id}`, `Core skills require a non-empty ## ${title} section outside code examples (Poneglyph authoring convention).`);
       }
     }

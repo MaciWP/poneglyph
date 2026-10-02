@@ -25,7 +25,7 @@ How `html-report` embeds **diagrams** (flow, comparison) and **charts** (bars, s
 ## A11y + anti-slop (every visual)
 
 - `role="img"` + a descriptive `aria-label` on every `<svg>` (WCAG, not color-alone).
-- Colors via the dark tokens (`--accent`, `--good/mid/warn/bad`, `--ink-*`) — never raw hex, never purple gradients, never chartjunk (anti-slop.md).
+- Colors via the tokens (`--accent`, `--good/mid/warn/bad`, `--ink-*`) — never raw hex, never purple gradients, never chartjunk (anti-slop.md).
 - `font-variant-numeric: tabular-nums` on numeric labels.
 
 ## Patterns
@@ -35,7 +35,7 @@ How `html-report` embeds **diagrams** (flow, comparison) and **charts** (bars, s
 ```html
 <svg role="img" aria-label="Flujo: Scope → Plan → Build → Review" viewBox="0 0 600 64" width="100%" style="max-width:600px">
   <style>
-    .nx{fill:var(--panel);stroke:var(--line);rx:8} .nt{fill:var(--ink);font:500 13px var(--sans)}
+    .nx{fill:var(--surface);stroke:var(--line);rx:8} .nt{fill:var(--ink);font:500 13px var(--sans)}
     .ar{stroke:var(--ink-3);stroke-width:1.5;marker-end:url(#a)}
   </style>
   <defs><marker id="a" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto">
@@ -65,13 +65,13 @@ Reuse the existing CSS bar pattern (no SVG needed): a track `<div>` + a fill `<d
 
 ### 4 — Decision matrix (consumed by decision.template — US3)
 
-A weighted options×criteria grid: an HTML `<table>` whose score cells carry a small inline bar (CSS width = score/max) colored by threshold, plus a weighted total column. Pure HTML+CSS, no SVG library. US3's `decision.template.html` embeds this as its core component; this section is its single source — do NOT re-author it elsewhere (Cmd IX).
+A weighted options×criteria grid: an HTML `<table>` whose score cells carry a small inline bar (CSS width = score/max) colored by threshold, plus a weighted total column. Pure HTML+CSS, no SVG library; the `.dmatrix` CSS ships in `decision.template.html`, so this markup renders unstyled on its own. US3's `decision.template.html` embeds this as its core component; this section is its single source — do NOT re-author it elsewhere (Cmd IX).
 
 ```html
-<table class="dmatrix"><thead><tr><th>Opción</th><th>Precio (×3)</th><th>Panel (×2)</th><th>Total</th></tr></thead>
+<div class="dmatrix-wrap"><table class="dmatrix"><thead><tr><th>Opción</th><th>Precio ×3</th><th>Panel ×2</th><th class="tot">Total</th></tr></thead>
 <tbody>
-  <tr><td>Monitor A</td><td><span class="cell"><i style="width:80%;background:var(--good)"></i>8</span></td><td><span class="cell"><i style="width:60%;background:var(--mid)"></i>6</span></td><td class="tot good">7.2</td></tr>
-</tbody></table>
+  <tr class="win"><td class="opt">Monitor A</td><td><span class="cell"><i><b style="width:80%;background:var(--good)"></b></i>8</span></td><td><span class="cell"><i><b style="width:60%;background:var(--mid)"></b></i>6</span></td><td class="tot good">7.2</td></tr>
+</tbody></table></div>
 ```
 
 ## Verification (US2 oracle)

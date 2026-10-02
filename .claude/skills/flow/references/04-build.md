@@ -19,7 +19,7 @@ dependencies are complete. Draft tasks, a missing oracle or all HUs closed → S
 - Reuse the assigned HU's accepted DoD and oracle. Implement its scope and collect required checks on the final inputs.
 - Inline/coordinator closure requires the verification record. A worker returns evidence and stops writing; it does not close state.
 
-## How You're Graded
+## Quality Bar
 
 - Favor the smallest maintainable change that meets the HU and safety floor. Extra features and repeated checks on unchanged inputs do not earn credit.
 

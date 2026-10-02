@@ -38,10 +38,10 @@ when_to_use: |
 - Evidence: the pending review id with state `PENDING`, or the reason it was not written.
 - Stop after the requested delivery. Zero comments or zero praise is valid when nothing grounded merits them.
 
-## How You're Graded
+## Quality Bar
 
-- You are graded on accuracy, actionability and respectful, specific feedback.
-- Comment counts and mandatory praise earn no credit. Never invent a finding or compliment to satisfy a quota.
+- Success means accuracy, actionability and respectful, specific feedback.
+- Comment counts and mandatory praise add no value. Never invent a finding or compliment to satisfy a quota.
 
 ## Core principle: structured actionable feedback
 
@@ -53,85 +53,81 @@ when_to_use: |
 <discussion>
 ```
 
-| Component | Required | Description |
-|---|---|---|
-| `label` | Yes | Comment type (suggestion, issue, praise, …) |
-| `(decorator)` | Yes | `(blocking)` or `(non-blocking)` |
-| `subject` | Yes | Concise description |
-| `discussion` | No | Additional context in following lines |
+`label`, `(decorator)` and `subject` are required; `discussion` is optional.
 
 Multi-line example:
 
 ```
-suggestion (blocking): Considera usar bulk_create en lugar del loop.
-Esto reduciria las queries de N a 1 y mejoraria el rendimiento
-en listas grandes.
+suggestion (blocking): ¿Qué te parece si usamos `bulk_create` en vez del bucle?
+Así pasamos de N queries a 1.
 ```
 
 ## Labels
 
-| Label | Use | Decorator | Per review |
-|---|---|---|---|
-| `praise:` | A grounded positive observation | N/A | Only when warranted; zero is valid |
-| `suggestion:` | Concrete improvement proposal | `(blocking)`/`(non-blocking)` | As needed |
-| `issue:` | Specific problem — ALWAYS pair with suggestion | `(blocking)` | As needed |
-| `question:` | Doubt or clarification | `(non-blocking)` | As needed |
-| `thought:` | Non-blocking idea for the future | `(non-blocking)` | As needed |
-| `nitpick:` | Minor style preference | `(non-blocking)` | As needed |
-| `typo:` / `todo:` / `chore:` / `note:` | Trivial/administrative/info | N/A | As needed |
-| `polish:` | Non-functional quality improvement | `(non-blocking)` | As needed |
+| Label | Use | Decorator |
+|---|---|---|
+| `praise:` | A grounded positive observation; zero is valid | N/A |
+| `suggestion:` | Concrete improvement proposal | `(blocking)`/`(non-blocking)` |
+| `issue:` | Specific problem — ALWAYS pair with suggestion | `(blocking)` |
+| `question:` | Doubt or clarification | `(non-blocking)` |
+| `thought:` | Idea for the future | `(non-blocking)` |
+| `nitpick:` | Minor style preference | `(non-blocking)` |
+| `typo:` / `todo:` / `chore:` / `note:` | Trivial/administrative/info | N/A |
+| `polish:` | Non-functional quality improvement | `(non-blocking)` |
 
 Decorators: `(blocking)` = blocks approval (critical issues, bugs, security) ·
 `(non-blocking)` = doesn't block (style, ideas) · `(if-minor)` = only if the fix
-is 1-2 lines. Severity map: Critical → `issue (blocking)` · Major → `issue` or
-`suggestion (blocking)` · Minor → `suggestion`/`nitpick (non-blocking)`.
+is 1-2 lines. Severity map: Critical (grave bug, security) → `issue (blocking)` ·
+Major → `suggestion (blocking)` · Minor → `suggestion`/`nitpick (non-blocking)`.
+Between teammates `suggestion (blocking)` and `question` are the default label.
 
 ## Templates by label
 
 ```
-praise: Buen uso de {patron}. Esto mejora {beneficio}.
+praise: Buen {patrón} aquí; así {beneficio}.
 
-suggestion (blocking): Considera usar {alternativa} en lugar de {actual}.
-Esto evitaria {problema} y mejoraria {aspecto}.
+suggestion (blocking): ¿Qué te parece si usamos {alternativa}? Así {efecto}.
 
-issue (blocking): {descripcion del problema}.
-suggestion: {propuesta de solucion concreta}.
+issue (blocking): ¿Puede ser que {efecto visible}?
+suggestion: ¿Lo cambiamos por {propuesta}?
 
-question (non-blocking): Hay alguna razon para {decision}?
-Pregunto porque {contexto/alternativa}.
+question (non-blocking): ¿Hay algún motivo para {decisión}? Me da que {contexto}.
 
-thought (non-blocking): Para el futuro, podriamos {idea}.
+thought (non-blocking): Para más adelante, ¿y si {idea}?
 
-nitpick (non-blocking): Preferiria {alternativa} por consistencia con el resto del proyecto.
+nitpick (non-blocking): ¿Lo dejamos como {alternativa}, igual que en el resto?
 ```
 
-## Tone rules (Google Eng Practices · Graphite · Dr. McKayla)
+## Tone rules (Google Eng Practices · Graphite · Dr. McKayla · team review 2026-10-01)
 
 Spanish, informal "yo", professional:
 
 | Rule | Bad | Good |
 |---|---|---|
-| Code, not person | "No entiendes select_related" | "Este query podria beneficiarse de select_related" |
-| Formulate as questions | "Esto esta mal" | "Consideraste usar `get_or_create` aqui?" |
-| No condescension | "Simplemente usa X" | "Se podria usar X, que maneja {caso} automaticamente" |
-| Explain the why | "Usa bulk_create" | "Usa bulk_create para reducir queries de N a 1" |
-| Be brief | 5-line paragraph | Max 2-3 lines per comment |
+| Always a question, even when certain | "Esto está mal" | "¿Puede ser que aquí se pierda el 400?" |
+| Effect first: what the ticket expects vs what happens | "El `try` envuelve todo el método…" | "En el ticket pone X, pero ¿aquí no pasa Y?" |
+| 1-2 sentences, plain words | 5-line paragraph | Mechanism only if the fix needs it |
+| No evidence in the body | `file:line`, SHAs, test names, dumps | That stays in the chat |
+| Code, not person; nothing the author knows | "No entiendes select_related" | "¿Le ponemos `select_related`?" |
+
+Budget: only comments that change the merge. In a follow-up round the bar rises: new
+blockers only, no nitpicks.
 
 ## Team conventions
 
-Publication rules (single review vs per-comment, line-anchored vs PR body, approval
-policy, voice) belong to the team, not to the format. Read the installed company
-plugin's conventions reference before drafting (e.g. `<team-plugin>:<review-conventions>`
-→ `references/team-conventions.md`); with no plugin, ask once and follow the repo.
+Publication rules and voice (single review, line anchors, approval policy, accepted
+samples) belong to the team. Read the company plugin's `references/team-conventions.md`
+before drafting; with no plugin, ask once and follow the repo.
 
 ## Delivery: show + pending review
 
 Run these steps when the user asks for comments on a GitHub PR. When another skill
 loads this one only for the format (e.g. `pr-review` step 8), return the comments as
-text and skip steps 4-5.
+text and skip steps 4-6.
 
 1. **Draft** each comment in the format above, anchored to `path:line` or marked as general.
-2. **Natural pass.** Run `Skill(natural-writing)` in embedded mode on the comments' prose.
+2. **Natural pass.** Run `Skill(natural-writing)` in embedded mode on the comments' prose,
+   with the team's accepted samples as the voice sample.
    Labels, decorators, code, identifiers and paths stay untouched.
 3. **Show** every comment in chat, grouped by file: its `path:line`, then the body in a
    fenced `text` block ready to copy. Mark the ones that go to the review body.
@@ -152,6 +148,10 @@ text and skip steps 4-5.
 5. **Verify and hand over.** The response `state` must be `PENDING`. Report the review id,
    how many comments were anchored and how many went to the body, and the PR URL. The
    user edits them under *Files changed* and sends them with *Finish your review*.
+6. **Edit a pending review** (only when asked to reword it). REST `PATCH .../pulls/comments/{id}`
+   returns 404 while pending, and `line: null` there is normal. Body: `gh api -X PUT
+   .../reviews/{id} -f body=…` (to empty it, GraphQL `updatePullRequestReview`).
+   Comments: take each `node_id` from `GET .../reviews/{id}/comments`, then `gh api graphql` with `updatePullRequestReviewComment(input:{pullRequestReviewCommentId, body})`.
 
 No `gh` auth, no PR (local branch) or a failed POST → steps 1-3 only; quote the error and
 say why the draft was not written. Submitting (`event` = `APPROVE` / `COMMENT` /
@@ -165,11 +165,12 @@ say why the draft was not written. Submitting (`event` = `APPROVE` / `COMMENT` /
    the existing review id reported.
 3. `pr-review` loads this skill for its report → comments as text only, nothing written to GitHub.
 4. Local branch with no PR → comments shown; the reply says no draft was written and why.
+5. A certain, grave finding → still opens with a question, ≤2 sentences, no path or SHA in the body.
 
 ## Quality checklist (before delivering)
 
 Every comment has label + decorator · `praise:` only when grounded · every `issue:` paired with
-`suggestion:` · tone about code, never the person · why explained · natural-writing pass
+`suggestion:` · opens with a question, ≤2 sentences, no evidence dump · natural-writing pass
 done · shown in chat and written as one pending review (or the reason it was not).
 
 Worked examples per label live with the team conventions in the company plugin

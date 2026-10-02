@@ -42,7 +42,7 @@ T1 + B: Grok user-guide agents vs personas. Vendor schemas. **sin evidencia A/B*
 
 ## 6. Poneglyph grain
 
-This repo: es-ES description. Spawn still needs this-turn permission (CLAUDE.md). Keep templates portable.
+This repo: English description; quote the user's literal es-ES trigger phrases when it routes on them. Spawn still needs this-turn permission (CLAUDE.md). Keep templates portable.
 
 ## 7. Absences
 

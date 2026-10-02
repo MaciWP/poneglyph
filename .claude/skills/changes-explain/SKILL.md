@@ -19,9 +19,9 @@ Educational walkthrough of code changes. Reads the target, investigates the surr
 - Resolve the requested diff, revision or files and the questions the explanation must answer.
 - Deliver the explanation with source-backed reasons, observed validation and explicit unknowns. Stop when those questions are answered; do not expand into a new review or implementation.
 
-## How You're Graded
+## Quality Bar
 
-- You are graded on a clear causal explanation and accurate links between changes, intent and effects.
+- Success means a clear causal explanation and accurate links between changes, intent and effects.
 - Distinguish observed behavior from inference. More commentary or unrelated findings do not improve the result.
 
 ## Underlying Principle
@@ -45,7 +45,7 @@ Every claim is grounded — in the codebase via Read/Grep, or in canonical docum
 | Situation | Use instead |
 |---|---|
 | User already understands the change and asks "fix it" | `flow` skill (build phase) |
-| User wants quality assessment of the change | `code-quality` skill |
+| User wants quality assessment of the change | `pr-review` skill |
 | User wants to decide between approaches | `compare-and-decide` skill |
 | Pure debugging of a runtime error | `Skill('troubleshooting')` invoked by the Lead |
 | User wants to MODIFY the code | `flow` skill (build phase) — this skill is read-only |

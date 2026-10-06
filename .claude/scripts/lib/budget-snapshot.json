@@ -2,7 +2,7 @@
   "takenAt": "2026-10-02",
   "alwaysLoaded": {
     "CLAUDE.md": 14274,
-    "output-styles/poneglyph.md": 12940,
+    "output-styles/poneglyph.md": 13280,
     "rules/error-recovery.md": 2134,
     "rules/harness-runtime.md": 1910,
     "rules/skill-routing.md": 984,

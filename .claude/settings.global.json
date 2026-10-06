@@ -104,6 +104,18 @@
         ]
       }
     ],
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun \"$HOME/.claude/hooks/instructions-loaded.ts\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
     "InstructionsLoaded": [
       {
         "hooks": [

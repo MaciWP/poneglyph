@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 /**
- * Instructions Loaded Hook (InstructionsLoaded — observability)
+ * Instructions Loaded Hook (InstructionsLoaded / SessionStart)
  *
  * Logs every instruction file load (CLAUDE.md / .claude/rules/*.md) to
  * `.claude/learned/instructions-loaded.log` — one line per event:
@@ -9,7 +9,9 @@
  *
  * Closes the "verify load layer" lesson: grep the log to PROVE which
  * instruction layers actually loaded in a session instead of assuming.
- * Registered async (fire-and-forget): stdout/exit code are ignored.
+ * InstructionsLoaded is async (fire-and-forget): stdout/exit code are ignored.
+ * SessionStart(compact) adds a language reminder before Claude continues.
+ * https://code.claude.com/docs/en/hooks#sessionstart-decision-control
  * No rotation — the log is plain lines; truncate manually or at retro.
  */
 
@@ -47,6 +49,17 @@ if (import.meta.main) {
     const raw = await readHookStdin();
     if (raw.trim()) {
       const payload = JSON.parse(raw) as InstructionsLoadedPayload;
+      if (payload.hook_event_name === "SessionStart") {
+        if (payload.source === "compact") {
+          console.log(JSON.stringify({
+            hookSpecificOutput: {
+              hookEventName: "SessionStart",
+              additionalContext: "Follow the language rule in .claude/output-styles/poneglyph.md: every user-visible text must be in es-ES de España.",
+            },
+          }));
+        }
+        process.exit(0);
+      }
       const line = formatLogLine(payload);
       if (line) {
         const base = typeof payload.cwd === "string" ? payload.cwd : process.cwd();

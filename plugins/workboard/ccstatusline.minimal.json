@@ -3,61 +3,54 @@
   "lines": [
     [
       {
-        "id": "1",
+        "id": "3",
         "type": "model",
         "color": "cyan",
         "rawValue": true
       },
       {
-        "id": "2",
+        "id": "wb-sep-1",
         "type": "separator"
       },
       {
-        "id": "3",
+        "id": "5",
         "type": "thinking-effort",
         "color": "brightMagenta",
         "rawValue": true
       },
       {
-        "id": "4",
-        "type": "separator"
+        "id": "wb-sep-2",
+        "type": "flex-separator"
       },
       {
-        "id": "5",
+        "id": "15",
         "type": "context-percentage",
         "color": "brightRed"
+      }
+    ],
+    [
+      {
+        "id": "18",
+        "type": "weekly-usage",
+        "color": "brightCyan"
       },
       {
-        "id": "11",
-        "type": "custom-text",
-        "customText": " "
+        "id": "wb-sep-3",
+        "type": "flex-separator"
       },
       {
-        "id": "6",
-        "type": "context-bar",
-        "color": "brightRed",
-        "rawValue": true,
-        "metadata": {
-          "display": "slider-only"
-        }
-      },
-      {
-        "id": "7",
-        "type": "separator"
-      },
-      {
-        "id": "8",
+        "id": "20",
         "type": "session-usage",
         "color": "brightGreen"
       },
       {
-        "id": "9",
+        "id": "wb-sep-4",
         "type": "separator"
       },
       {
-        "id": "10",
-        "type": "weekly-usage",
-        "color": "brightCyan"
+        "id": "22",
+        "type": "reset-timer",
+        "color": "brightYellow"
       }
     ]
   ],

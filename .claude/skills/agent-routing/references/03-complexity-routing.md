@@ -138,9 +138,17 @@ Team mode is experimental and rarely used (4-gate + opt-in). The teammate prompt
 | Inline build/review (Lead session) — the default for ALL writes | any | session model (`effortLevel`) |
 | Workflow unit — read-only research/review lens | any | mid tier of the host (default) |
 | Workflow unit — write (explicit opt-in only) | > 50 | top tier of the host |
-| Read-only exploration (`Explore`) | any | inherits session model (built-in, capped at opus — CC 2.1.198) |
+| Read-only exploration (`Explore`) | any | always named on the call (rows below); unnamed it inherits the Lead's model (capped at opus — CC 2.1.198) |
+| Scout (`Explore`) | search, inventory, locate, classify | `haiku` (Haiku 5.5), `effort: "medium"` |
+| Scout that needs synthesis or the web | any | `sonnet` (Sonnet 5.5), `effort: "medium"` |
 | `subagent_type: "fork"` | any | parent's model — a model override is ignored (CC 2.1.232) |
-| Any spawn that omits `model` | any | `CLAUDE_CODE_SUBAGENT_MODEL` (cheap tier, `settings.global.json` env — CC 2.1.251 default semantics). Backstop only: the gate still requires an explicit model, and a verify/judge unit names the top tier |
+| Any spawn that omits `model` | any | `CLAUDE_CODE_SUBAGENT_MODEL` (cheap tier, `settings.global.json` env — CC 2.1.251 default semantics). Backstop only: CLAUDE.md still requires an explicit model, and a verify/judge unit names the top tier |
+
+> Built-in agents need no approval (CLAUDE.md §Agent spawn). Give each scout one narrow question (prompt shape in `06-context-arch-h.md` §Scout prompt) so the prompt stays under 100K tokens, where Haiku 5.5 bills 5x. The Lead verifies any agent fact that decides something.
+
+> How many scouts (adapted from Anthropic's multi-agent research system): one fact or one file → the Lead inline, a scout adds a hand-off and seconds for nothing; N independent areas → one scout per area, launched in the same message. Never a scout per file of one area.
+>
+> Never a Haiku scout for security work (a security review, auth, secrets, exploit analysis): Haiku 5.5 may stop with `stop_reason: "refusal"` (category `cyber`). Use `sonnet`, or keep it in the Lead.
 
 ## Effort Routing (Frontmatter — static)
 
@@ -148,11 +156,11 @@ Effort scale: `low < medium < high < xhigh`
 
 | Work | effort | Rationale |
 |-------|--------|-----------|
-| `Explore` (read-only) | `low` (built-in) | Only reads files. No deep reasoning required. |
+| Scout (`Explore` on Haiku 5.5) | `medium` (set on the call) | At `low` Haiku 5.5 stops early, skips searches and does not check its work. Eval 2026-10-08: `medium` 10/10 = `high` 10/10, 4.1 s vs 5.4 s. |
 | Inline build/review | session `effortLevel` | The Lead inherits the session effort. |
 | Workflow unit | per `agentType` frontmatter (or inherit) | Set on the custom agentType when one is defined. |
 
-> `effort` in frontmatter is static — no `effort` parameter in the Agent tool call (open issue anthropics/claude-code#25591).
+> The Agent tool takes `effort` per call (current Agent tool schema); frontmatter `effort` stays the static default for a custom agentType.
 
 ### xhigh
 

@@ -13,7 +13,7 @@
 // Everything else is silent (exit 0, no output). PreToolUse is best-effort (#6305): the
 // braces are `scripts/lib/headless.ts`, which gives every script a cheap default on its own.
 import { readHookStdin } from "./lib/hook-stdin";
-import { EXPENSIVE_MODEL_RE } from "./lib/headless-models";
+import { CHEAP_TIER, EXPENSIVE_MODEL_RE, MID_TIER } from "./lib/headless-models";
 
 export type Judgement = { allow: true } | { allow: false; reason: string };
 
@@ -57,11 +57,11 @@ export function judgeCommand(cmd: string): Judgement {
   if (!headless) return { allow: true }; // `claude doctor`, `claude plugin …`, interactive
   const model = flagValue(rest, "--model");
   if (!model) {
-    return { allow: false, reason: "Headless `claude -p` without --model inherits the host default (Opus/Fable — 82 sessions on 2026-09-03). Name a cheap tier: --model claude-haiku-4-5-20251001 (prose/smoke) or --model claude-sonnet-5 (skill triggers). Plan 033." };
+    return { allow: false, reason: `Headless \`claude -p\` without --model inherits the host default (Opus/Fable — 82 sessions on 2026-09-03). Name a cheap tier: --model ${CHEAP_TIER} (prose/smoke) or --model ${MID_TIER} (skill triggers). Plan 033.` };
   }
   const fallback = flagValue(rest, "--fallback-model") ?? "";
   if ((EXPENSIVE_MODEL_RE.test(model) || EXPENSIVE_MODEL_RE.test(fallback)) && !allowExpensive) {
-    return { allow: false, reason: `Headless \`claude -p\` on "${model}" costs several times the cheap tiers. Use claude-haiku-4-5-20251001 / claude-sonnet-5, or add --allow-expensive together with Oriol's this-turn permission (CLAUDE.md §Agent spawn).` };
+    return { allow: false, reason: `Headless \`claude -p\` on "${model}" costs several times the cheap tiers. Use ${CHEAP_TIER} / ${MID_TIER}, or add --allow-expensive together with Oriol's this-turn permission (CLAUDE.md §Agent spawn).` };
   }
   return { allow: true };
 }

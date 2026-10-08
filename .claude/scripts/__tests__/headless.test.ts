@@ -4,16 +4,16 @@ import { isExpensiveModel } from "../../hooks/lib/headless-models";
 
 describe("resolveHeadlessModel (plan 033 — never an expensive tier by default)", () => {
   it("defaults per kind: cheap for prose/smoke, mid for skill-trigger/probe", () => {
-    expect(resolveHeadlessModel([], "style").model).toBe("claude-haiku-4-5-20251001");
-    expect(resolveHeadlessModel([], "smoke").model).toBe("claude-haiku-4-5-20251001");
-    expect(resolveHeadlessModel([], "skill-trigger").model).toBe("claude-sonnet-5");
-    expect(resolveHeadlessModel([], "probe").model).toBe("claude-sonnet-5");
+    expect(resolveHeadlessModel([], "style").model).toBe("claude-haiku-5-5");
+    expect(resolveHeadlessModel([], "smoke").model).toBe("claude-haiku-5-5");
+    expect(resolveHeadlessModel([], "skill-trigger").model).toBe("claude-sonnet-5-5");
+    expect(resolveHeadlessModel([], "probe").model).toBe("claude-sonnet-5-5");
     expect(Object.values(DEFAULT_MODEL).some(isExpensiveModel)).toBe(false);
   });
 
   it("honours an explicit cheap --model", () => {
-    const r = resolveHeadlessModel(["--model", "claude-sonnet-5"], "style");
-    expect(r).toEqual({ model: "claude-sonnet-5", explicit: true, dryRun: false });
+    const r = resolveHeadlessModel(["--model", "claude-sonnet-5-5"], "style");
+    expect(r).toEqual({ model: "claude-sonnet-5-5", explicit: true, dryRun: false });
   });
 
   it("refuses Fable and Opus without --allow-expensive, by family not by dated id", () => {

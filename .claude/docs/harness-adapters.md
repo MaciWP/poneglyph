@@ -68,8 +68,8 @@ installation; use disposable homes and the existing adapter integration tests.
 
 ## Hook contracts and limits
 
-The four Claude registrations stay in `settings.global.json`. Native adapters
-reuse command judgement, skill matching and secret detection.
+The Claude registrations stay in `settings.global.json`. Native adapters
+reuse command judgement, skill matching, the design-file note and secret detection.
 
 | Shared operation | Claude Code | Codex | Grok Build |
 |---|---|---|---|
@@ -77,6 +77,7 @@ reuse command judgement, skill matching and secret detection.
 | Skill hints | UserPromptSubmit context | Native UserPromptSubmit context | Explicit shared routing; passive stdout is ignored |
 | Modified-file secret heuristic | Stop warning and explicit review command | Stop user warning and explicit review command | Explicit review command |
 | Instruction-load telemetry | InstructionsLoaded | No equivalent installed | No equivalent installed |
+| Design-file note | PreToolUse context on the first UI-file contact per session (edit tools, or a UI path in a Bash command); never blocks | Native PreToolUse context on `apply_patch` (paths from `*** Add File:` / `*** Update File:`); needs `/hooks` trust | No equivalent; passive stdout is ignored |
 | Git-intent transcript warning | Existing Claude parser | No guessed transcript parser; shared approval doctrine | No guessed transcript parser; shared approval doctrine |
 
 The headless guard covers its existing command patterns. It does not prove

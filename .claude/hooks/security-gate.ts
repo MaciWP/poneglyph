@@ -165,6 +165,28 @@ export function lineHasSecret(line: string): boolean {
   return true;
 }
 
+// In TS/JS a leaked credential can only be a string literal: an unquoted right-hand side
+// is an identifier, a call or a member access — dataflow, not a value. Measured FP class
+// (a local web app, 2026-10-05): 15 hits re-fired every turn, none real — `accessToken:
+// t.access_token`, `clientSecret = await getSecret(...)`, test decoys ("gho_FAKE_…",
+// "sk-ant-decoy-…"), short templates (`a${n}`) and key NAMES ("anthropic.api_key").
+// .env / .json / .yaml keep the plain line rule: there an unquoted value IS the value.
+// A word-joined literal is still reported ("synthetic-fixture-value" may be a password);
+// only one that names a credential is a key name. A decoy says so ("fake-…").
+// Tradeoff: a literal that calls itself a placeholder is not reported in code.
+const CODE_FILE = /\.(?:ts|js)$/i;
+const PLACEHOLDER = /fake|dummy|decoy|placeholder|example|redacted|changeme/i;
+const KEY_NAME = /^(?=.*(?:key|token|secret|passw))[a-z]+(?:[._-][a-z]+)+$/;
+
+export function codeLineHasSecret(line: string): boolean {
+  if (!lineHasSecret(line)) return false;
+  // The literal right after the key, up to its closing quote or the end of the line.
+  const literal = (extractSecretRhs(line) ?? "").trimStart().match(/^(['"`])((?:\\.|(?!\1).)*)/);
+  if (!literal) return false;
+  const value = literal[2].replace(/\$\{[^}]*\}/g, "");
+  return value.length >= 8 && !PLACEHOLDER.test(value) && !KEY_NAME.test(value);
+}
+
 export async function getModifiedFiles(cwd = process.cwd()): Promise<string[]> {
   // Separate staged and unstaged queries also work before the first commit.
   // NUL delimiters preserve spaces, non-ASCII names, and Git's quoted paths.
@@ -191,9 +213,10 @@ export async function scanFile(filePath: string): Promise<string[]> {
     if (!(await file.exists())) return hits;
     const content = await file.text();
     if (isApiSpecDocument(content)) return hits; // contract examples, not credentials
+    const check = CODE_FILE.test(filePath) ? codeLineHasSecret : lineHasSecret;
     const lines = content.split("\n");
     for (let i = 0; i < lines.length; i++) {
-      if (lineHasSecret(lines[i])) {
+      if (check(lines[i])) {
         hits.push(`${filePath}:${i + 1}`);
       }
     }

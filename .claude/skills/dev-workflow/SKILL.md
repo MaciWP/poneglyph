@@ -164,8 +164,8 @@ A trivial change, and a small task with one loop-back in full and compact render
 - Maximum quality is the default for every task — the user's care budget is not
   inferred from how small the diff looks.
 - Git/PR and agent-spawn hard gates: CLAUDE.md §Operating rules owns them — not
-  restated here. "Done" is never permission to commit; a spawn needs this-turn
-  permission + model.
+  restated here. "Done" is never permission to commit; custom agents need this-turn
+  permission.
 
 ## Anti-patterns
 

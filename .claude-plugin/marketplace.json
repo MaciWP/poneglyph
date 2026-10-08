@@ -1,0 +1,14 @@
+{
+  "name": "poneglyph",
+  "description": "Local marketplace for the mods that live in this repository.",
+  "owner": {
+    "name": "Oriol Macias"
+  },
+  "plugins": [
+    {
+      "name": "workboard",
+      "source": "./plugins/workboard",
+      "description": "Ticket, changes, evidence, agents and decisions inside Claude Code. Agentic OS is optional."
+    }
+  ]
+}

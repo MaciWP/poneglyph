@@ -39,6 +39,10 @@ E2: hook = guarantee. T1: Grok/Codex pages 2026-09-10. **sin evidencia A/B** for
 
 Impact before mutate (grep who depends on the event). After delete, name leftover overlay/session. H8: widening authority on delete/scope-change — say so.
 
+Claude input gotchas (plan 041 review):
+- Payload `cwd` follows the agent's `cd`. The project root is `CLAUDE_PROJECT_DIR`.
+- A hook that detects edits covers `Bash` too: headless agents edit with `sed -i` or a heredoc. Leaving it out needs a stated reason.
+
 ## 7. Absences
 
 | Cell | Status |

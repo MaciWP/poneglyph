@@ -123,7 +123,7 @@ before drafting; with no plugin, ask once and follow the repo.
 
 Run these steps when the user asks for comments on a GitHub PR. When another skill
 loads this one only for the format (e.g. `pr-review` step 8), return the comments as
-text and skip steps 4-6.
+text and skip steps 4-7.
 
 1. **Draft** each comment in the format above, anchored to `path:line` or marked as general.
 2. **Natural pass.** Run `Skill(natural-writing)` in embedded mode on the comments' prose,
@@ -152,6 +152,12 @@ text and skip steps 4-6.
    returns 404 while pending, and `line: null` there is normal. Body: `gh api -X PUT
    .../reviews/{id} -f body=…` (to empty it, GraphQL `updatePullRequestReview`).
    Comments: take each `node_id` from `GET .../reviews/{id}/comments`, then `gh api graphql` with `updatePullRequestReviewComment(input:{pullRequestReviewCommentId, body})`.
+7. **Reply to an existing thread without publishing** (only when asked). Create a pending
+   review with GraphQL `addPullRequestReview(input:{pullRequestId, commitOID})` (no `event`),
+   take the thread id (`PRRT_…`) from `pullRequest.reviewThreads`, then
+   `addPullRequestReviewThreadReply(input:{pullRequestReviewThreadId, pullRequestReviewId, body})`.
+   `pullRequestReviewId` is what ties the reply to the pending review: never omit it, and check
+   that the returned `comment.state` is `PENDING` (PR #356, 2026-10-01).
 
 No `gh` auth, no PR (local branch) or a failed POST → steps 1-3 only; quote the error and
 say why the draft was not written. Submitting (`event` = `APPROVE` / `COMMENT` /

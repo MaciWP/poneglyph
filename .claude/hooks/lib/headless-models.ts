@@ -5,8 +5,8 @@
 // caught without an edit.
 export const EXPENSIVE_MODEL_RE = /fable|opus/i;
 
-export const CHEAP_TIER = "claude-haiku-4-5-20251001"; // prose graders, smoke (`READY`)
-export const MID_TIER = "claude-sonnet-5"; // skill-trigger cases, activation probes
+export const CHEAP_TIER = "claude-haiku-5-5"; // prose graders, smoke (`READY`)
+export const MID_TIER = "claude-sonnet-5-5"; // skill-trigger cases, activation probes
 
 export function isExpensiveModel(model: string): boolean {
   return EXPENSIVE_MODEL_RE.test(model);

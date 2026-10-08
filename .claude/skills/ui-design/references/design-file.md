@@ -20,7 +20,7 @@ Several exist: read the first in this order and mention the others in the report
 ## When none exists
 
 - Do the task with the sibling-component method (Mode 1 steps 1-2).
-- Put the offer in the report's `Aviso:` line, for example: `Aviso: no hay fichero de diseño; puedo extraer docs/DESIGN_SYSTEM.md de styles.css si queréis.` The missing file is a fact the user needs, so the line is required even when the task is small.
+- Put the offer on its own bold line in the report, for example: `**Decide:** no hay fichero de diseño; ¿extraigo docs/DESIGN_SYSTEM.md de styles.css?` The missing file is a fact the user needs, so the line is required even when the task is small and when the report already carries other decisions.
 - Write nothing until the user says yes: no design file, no directory, no stub.
 - On no, do not offer again in the same task. On yes, write `docs/DESIGN_SYSTEM.md` in the format below.
 

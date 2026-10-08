@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import {
+  codeLineHasSecret,
   lineHasSecret,
   hasTextExtension,
   isOrchestrationPath,
@@ -155,6 +156,55 @@ describe("isApiSpecDocument — API contracts are examples by nature", () => {
   test("scope changed, detector did NOT: the placeholder line still reads as a secret", () => {
     // Guards the fix from degrading into "we weakened SECRET_PATTERN".
     expect(lineHasSecret("                  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")).toBe(true);
+  });
+});
+
+// The measured false positives of a TS web app (2026-10-05), one per class, and the code
+// leaks that must still be reported.
+describe("secrets in TS/JS code", () => {
+  test("dataflow is not a value: identifiers, member access, calls, signatures", () => {
+    for (const line of [
+      "else env.ANTHROPIC_API_KEY = auth.key;",
+      "    accessToken: t.access_token,",
+      '  const clientSecret = await getSecret("atlassian.client_secret");',
+      "        refresh_token: bundle.refreshToken,",
+      "export async function listResources(accessToken: string): Promise<Resource[]> {",
+      '  return JSON.stringify({ accessToken: access, refreshToken: refresh, expiresAt, scope: "" });',
+      '  put(join(claude, "auth.json"), \'{"secret": true}\');',
+      '    throw new Error("Missing anthropic.api_key: run `bun run secrets:set anthropic.api_key`");',
+    ])
+      expect([line, codeLineHasSecret(line)]).toEqual([line, false]);
+  });
+
+  test("decoys, key names and short templates are not credentials", () => {
+    for (const line of [
+      'process.env.ANTHROPIC_API_KEY = "sk-ant-decoy-must-not-be-used";',
+      'const TOKEN = "gho_FAKE_TOKEN_never_shown";',
+      '  process.env.ANTHROPIC_API_KEY = "fake-parent-key";',
+      '  const name = auth === "subscription" ? "claude.oauth_token" : "anthropic.api_key";',
+      "      access_token: `a${rotation}`,",
+    ])
+      expect([line, codeLineHasSecret(line)]).toEqual([line, false]);
+  });
+
+  test("a literal credential in code is still reported", () => {
+    const key = `sk-ant-api03-${"Ab3".repeat(10)}`;
+    for (const line of [
+      `const API_KEY = "${key}";`,
+      `  password: '${"Summer2026!x"}',`,
+      `headers.TOKEN = "ghp_${"Zq9".repeat(12)}";`,
+      `export const leaked = { API_KEY: "${LONG}" };`,
+      // Joined words are a password as much as a name, unless they name a credential.
+      'const password = "synthetic-fixture-value";',
+      '  process.env.ANTHROPIC_API_KEY = "parent-conflict";',
+      // An unterminated literal still counts: the value runs to the end of the line.
+      `const SECRET = \`${key}`,
+    ])
+      expect([line, codeLineHasSecret(line)]).toEqual([line, true]);
+  });
+
+  test("outside code the line rule is unchanged: an unquoted value is the value", () => {
+    expect(lineHasSecret("ANTHROPIC_API_KEY=parent-conflict")).toBe(true);
   });
 });
 

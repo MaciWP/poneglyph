@@ -1,8 +1,8 @@
 import { describe, expect, it } from "bun:test";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { handleNativeHook } from "../native-hook";
+import { handleNativeHook, patchPaths } from "../native-hook";
 import { analyzePayload } from "../skill-activation";
 
 describe("native hook contracts", () => {
@@ -127,5 +127,42 @@ describe("native hook host-neutral hints (H43)", () => {
     expect(hint).toContain("/model");
     expect(hint).toContain("Orca");
     expect(hint).not.toContain("not an in-session command");
+  });
+});
+
+// Plan 041 US5: the design-file note on a Codex apply_patch; Grok stays silent.
+describe("native hook design-file note (041)", () => {
+  const fresh = () => mkdtempSync(join(tmpdir(), "native-design-"));
+  const patch = (...lines: string[]) => ["*** Begin Patch", ...lines, "*** End Patch", ""].join("\n");
+  const logOf = (dir: string) => join(dir, ".claude", "learned", "design-file-hints.log");
+
+  it("T5.1 a Codex patch on a UI file returns the note without a decision", async () => {
+    const out = await handleNativeHook("codex", "PreToolUse", {
+      session_id: "c-1", cwd: fresh(), tool_name: "apply_patch",
+      tool_input: { command: patch("*** Update File: web/index.html", "@@", "-a", "+b") },
+    });
+    expect(out).not.toBeNull();
+    expect(out?.hookSpecificOutput?.hookEventName).toBe("PreToolUse");
+    expect(out?.hookSpecificOutput?.additionalContext).toContain("DESIGN_SYSTEM.md");
+    expect(out?.hookSpecificOutput).not.toHaveProperty("permissionDecision");
+  });
+
+  it("T5.2 parses Add/Update paths; non-UI patches and a noted session stay silent", async () => {
+    expect(patchPaths("*** Begin Patch\n*** Add File: a.ts\n*** Update File: b/C.vue\n*** End Patch\n")).toEqual(["a.ts", "b/C.vue"]);
+    const dir = fresh();
+    const call = (session: string, ...lines: string[]) => handleNativeHook("codex", "PreToolUse", {
+      session_id: session, cwd: dir, tool_name: "apply_patch", tool_input: { command: patch(...lines) },
+    });
+    expect(await call("c-2", "*** Add File: src/util.ts", "+x")).toBeNull();
+    expect(await call("c-3", "*** Add File: src/util.ts", "+x", "*** Add File: src/Button.vue", "+y")).not.toBeNull();
+    expect(await call("c-3", "*** Add File: src/Button.vue", "+y")).toBeNull();
+  });
+
+  it("T5.3 Grok gets nothing for the same payload", async () => {
+    const dir = fresh();
+    expect(await handleNativeHook("grok", "PreToolUse", {
+      sessionId: "g-1", cwd: dir, toolName: "apply_patch", toolInput: { command: "*** Update File: index.html\n" },
+    })).toBeNull();
+    expect(existsSync(logOf(dir))).toBe(false);
   });
 });

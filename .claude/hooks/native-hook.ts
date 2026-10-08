@@ -1,10 +1,11 @@
 #!/usr/bin/env bun
-// Event adapters only. Command policy, skill routing, and secret detection stay shared.
+// Event adapters only. Command policy, skill routing, the design-file note and secret detection stay shared.
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { judgeCommand } from "./headless-model-gate";
 import { FLOW_HINT_LINE, ROUTING_LINES, analyzePayload, loadSkills } from "./skill-activation";
 import { buildStopResponse, getModifiedFiles, scanFile, shouldSkipStopHook } from "./security-gate";
+import { noteOnce, noteOutput } from "./design-file-hint";
 import { readHookStdin } from "./lib/hook-stdin";
 
 export type NativeHost = "codex" | "grok";
@@ -39,6 +40,24 @@ export function translateHintForCodex(injection: string): string {
   return injection.split("\n").map(line => CODEX_HINT_LINES.get(line) ?? line).join("\n");
 }
 
+/** Paths a Codex patch adds or updates, in patch order. */
+export function patchPaths(patch: string): string[] {
+  return [...patch.matchAll(/^\*\*\* (?:Add|Update) File: (.+?)\r?$/gm)].map(m => m[1].trim());
+}
+
+// The note is best-effort: a malformed patch payload yields no note instead of a hook error.
+function codexDesignFileNote(payload: Payload): HookOutput | null {
+  const args = payload.tool_input;
+  const command = args && typeof args === "object" ? (args as Payload).command : undefined;
+  if (typeof command !== "string") return null;
+  const note = noteOnce({
+    cwd: typeof payload.cwd === "string" ? payload.cwd : process.cwd(),
+    session: typeof payload.session_id === "string" ? payload.session_id : "unknown",
+    paths: patchPaths(command),
+  });
+  return note ? noteOutput(note) : null;
+}
+
 function object(value: unknown): Payload {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Expected an event object.");
   return value as Payload;
@@ -56,6 +75,8 @@ export async function handleNativeHook(
   const payload = object(input);
   if (event === "PreToolUse") {
     const tool = host === "grok" ? payload.toolName : payload.tool_name;
+    // Codex edits files through apply_patch; Grok passive context is ignored, so it gets no note.
+    if (host === "codex" && tool === "apply_patch") return codexDesignFileNote(payload);
     if (!["Bash", "exec_command", "shell", "shell_command", "run_shell_command"].includes(String(tool))) return null;
     const args = object(host === "grok" ? payload.toolInput : payload.tool_input);
     const command = args.command ?? args.cmd;

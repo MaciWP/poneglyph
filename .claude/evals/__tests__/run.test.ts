@@ -51,7 +51,7 @@ describe("evals runner — the model guard reads both flag forms (H34)", () => {
   });
 
   it("honours a cheap model written with an equals sign", () => {
-    expect(resolveHeadlessModel(["--model=claude-haiku-4-5-20251001"], "style").model).toBe("claude-haiku-4-5-20251001");
+    expect(resolveHeadlessModel(["--model=claude-haiku-5-5"], "style").model).toBe("claude-haiku-5-5");
   });
 
   it("still refuses the space-separated expensive form", () => {

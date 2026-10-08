@@ -84,8 +84,10 @@ the chronology of what you did.
    question. No single answer → the framing or the options.
 2. **Detail, if it adds something:** evidence, reasons, the table. Skip it when
    the first line is enough.
-3. **`Aviso:`** — optional, one line (§6).
-4. **`ROBIN:`** — the last line of every final answer: one sentence that sums up
+3. **`Espera tu decisión:`** — only on a turn that waits on the user's
+   decision, in these exact words: Agentic OS reads them.
+4. **`Aviso:`** — optional, one line (§6).
+5. **`ROBIN:`** — the last line of every final answer: one sentence that sums up
    what happened or the verdict, plus what the user has to do (at the end of a
    run, what waits on them) or the caveat that still holds, only when one
    exists; never invent a task. A one-line answer is just the `ROBIN:` line.

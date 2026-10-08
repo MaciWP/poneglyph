@@ -18,12 +18,12 @@ description: Signal→agent selection matrix, multi-agent patterns, anti-pattern
 
 ## Exploration Decision Matrix (Volume × Complexity)
 
-Before any exploration, decide HOW to read the codebase. **The exploration primitive is `Explore`** (built-in; inherits the session model since CC 2.1.198; empirical score 83). The custom `scout` agent was **cut in feature 008** — deeper single-unit synthesis runs inline (Lead `Read`/Grep); ≥4 independent exploration sweeps fan out via `Workflow`.
+Before any exploration, decide HOW to read the codebase. **The exploration primitive is `Explore`** (built-in; empirical score 83) with an explicit `model`: unnamed, it inherits the Lead's Opus. The custom `scout` agent was **cut in feature 008**. Independent areas → one `Explore` per area in the same message; `Workflow` only on opt-in.
 
 | | LOW complexity (direct read) | HIGH complexity (relationships, architecture) |
 |---|---|---|
 | **LOW volume** (1-2 files) | Lead `Read` directly — no delegation | Lead `Read`/Grep inline, or `Explore` |
-| **HIGH volume** (≥3 files) | `Explore` — best fit | `Explore`; ≥4 independent sweeps → `Workflow` |
+| **HIGH volume** (≥3 files, long logs or outputs) | `Explore` on `haiku` — best fit | `Explore` on `haiku`, or `sonnet` when it must synthesise; one per area |
 
 Plus: design-doc audits, cross-file consistency checks, and full-file reads → `Explore` (≥4 independent units → `Workflow`). WebSearch/WebFetch is **not** a discriminator (both have those tools).
 
@@ -32,9 +32,10 @@ Plus: design-doc audits, cross-file consistency checks, and full-file reads → 
 | Rule | Reason |
 |-------|-------|
 | The Lead reads 1-2 files inline | For bulk read-only exploration, use `Explore` (not a work-spawn). |
-| LOW Volume + LOW Complexity = direct Read | Cost of delegation > cost of direct Read. |
-| Exploration primitive = `Explore` (inherits session model) | Empirical score 83; the custom `scout` was cut in feature 008. |
-| Deeper synthesis past Explore's window | Runs inline (Lead `Read`/Grep); ≥4 independent sweeps → `Workflow`. |
+| LOW Volume + LOW Complexity = direct Read | A scout adds a hand-off and seconds for nothing; money is not the reason (a Haiku scout costs about $0.003, eval 2026-10-08). |
+| Files the Lead will edit, the Lead reads | The KNOW step is never delegated: a scout's summary is not the code. |
+| Exploration primitive = `Explore` with an explicit model | Empirical score 83; the custom `scout` was cut in feature 008. |
+| Deeper synthesis past Explore's window | `Explore` on `sonnet`, or inline when the Lead needs the text itself. |
 | Parallel axis: "change difficulty" | If after exploring you must implement a difficult change, invoke `flow` skill (plan phase) (independent of the exploration axis). |
 
 ### Primitive by context need (CC ≥2.1.232)
@@ -43,9 +44,10 @@ Plus: design-doc audits, cross-file consistency checks, and full-file reads → 
 |------|-----------|-------|
 | Fresh context (critic reviewer, adversarial check) | `general-purpose` | explicit — top tier for a verify/judge (`CLAUDE_CODE_SUBAGENT_MODEL` would silently give it the cheap tier) |
 | Read-only sweep over the session's own thread | `subagent_type: "fork"` (inherits conversation + prompt cache) | parent's model, override ignored |
-| Read-only codebase exploration, thread not needed | `Explore` | inherits session model |
+| Read-only codebase exploration, thread not needed | `Explore` | explicit `haiku` (locate, inventory, summarise) or `sonnet` (synthesis, web) |
+| Quick read-only question | `Explore` | explicit `haiku` or `sonnet`, `effort: "medium"` (`03-complexity-routing.md` §Model Routing) |
 
-All three run in the background by default — the result arrives as a task notification; never predict it. All three sit behind the CLAUDE.md §Agent spawn gate.
+All three run in the background by default — the result arrives as a task notification; never predict it. All three are built-in agents: no approval needed (CLAUDE.md §Agent spawn).
 
 ### Parallel axis — Change difficulty
 

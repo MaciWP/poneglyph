@@ -107,6 +107,11 @@ describe("happy path", () => {
     expect(modelOf("build")).toBe("sonnet");
     expect(modelOf("gate")).toBe("haiku");
   });
+
+  test("every agent call names its model: none falls back to CLAUDE_CODE_SUBAGENT_MODEL", async () => {
+    const { calls } = await run({ task: "t" }, { "gate:build": GATE_RED });
+    expect(calls.filter((c) => !c.model).map((c) => c.label)).toEqual([]);
+  });
 });
 
 describe("the gate decides, not the agent", () => {

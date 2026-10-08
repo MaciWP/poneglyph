@@ -77,8 +77,8 @@ host's real search and question tools. Codex's generated `$flow-lifecycle` reads
 source. Claude metadata does not provide another host with Claude APIs.
 
 Build runs inline by default. This command's `allowed-tools` is a harness permission
-list, not a spawn approval: every agent launch, in any phase, still needs the per-task
-user gate in CLAUDE.md. For a user-authorized supervised Orca team, invoke
+list, not a spawn approval: built-in agents need none, while custom agents,
+Workflow/Team and Orca keep the per-task gate in CLAUDE.md. For a user-authorized supervised Orca team, invoke
 `orca-team`: one shared worktree, coordinator-owned reservations and explicit
 worker roles. CLAUDE.md's Agent spawn section owns team approval and its validity
 on resume. Task decomposition never grants permission.

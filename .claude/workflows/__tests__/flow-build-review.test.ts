@@ -63,8 +63,10 @@ type StubOpts = {
 /** Records every agent label so the test can assert WHICH agents ran, not just the result. */
 function stub({ ready = true, us: stories = [], hu, checks, findings = {}, missingReviewer = false }: StubOpts) {
   const calls: string[] = [];
-  const agent = async (_prompt: string, opts: { label: string }) => {
+  const unnamed: string[] = [];
+  const agent = async (_prompt: string, opts: { label: string; model?: string }) => {
     calls.push(opts.label);
+    if (!opts.model) unnamed.push(opts.label);
     const l = opts.label;
     if (l.startsWith("preflight")) {
       return ready
@@ -96,7 +98,7 @@ function stub({ ready = true, us: stories = [], hu, checks, findings = {}, missi
     if (l.startsWith("synthesize")) return { path: ".claude/plans/x/review.md", written: true, summary_line: "ok", notes: "" };
     throw new Error(`label inesperado: ${l}`);
   };
-  return { calls, agent };
+  return { calls, unnamed, agent };
 }
 
 const run = (args: unknown, s: ReturnType<typeof stub>) => runScript(args, s.agent, parallel, pipeline, phase, () => {});
@@ -185,6 +187,13 @@ describe("flow-build-review — fase 4 y veredicto", () => {
     expect(s.calls).toContain("review:performance");
     expect(r.verdict_proposed).toBe("BLOCKED");
     expect(r.findings[0].source).toBe("security-audit");
+  });
+
+  test("every agent names its model, the full review panel included", async () => {
+    const s = stub({ us: [us("US1", 1, ["src/auth/session.ts"])], hu: () => doneHU("US1", { files_touched: ["src/auth/session.ts"] }) });
+    await run({ slug: "032-x", level: "full" }, s);
+    expect(s.calls).toContain("review:security");
+    expect(s.unnamed).toEqual([]);
   });
 
   test("una HU fallida impide el APPROVED aunque los checks estén verdes", async () => {

@@ -23,7 +23,7 @@ when_to_use: |
 ## Definition of Done
 
 - Resolve the turn's task, relevant skills and execution route through the five-step checklist.
-- Return the routing decision and required context to the caller. Missing spawn approval keeps work inline; routing completion does not complete the task.
+- Return the routing decision and required context to the caller. Custom agents need approval; built-in ones do not. Routing completion does not complete the task.
 
 ## Quality Bar
 
@@ -65,7 +65,7 @@ For architectural/comparison decisions → `Skill('decide')` (031: Lead-invocabl
 
 First resolve explicit consultation, native-session, or team requests with the
 [shared routing contract](../../rules/skill-routing.md). The native fan-out thresholds
-below do not override those routes. CLAUDE.md §Agent spawn still owns authorization.
+below do not override those routes. CLAUDE.md §Agent spawn owns authorization.
 
 **Authorized Orca teams** follow `orca-team`: one shared worktree, real dependencies,
 and coordinator-owned reservations, acceptance and flow state. That route requires
@@ -83,34 +83,33 @@ The three known costs of delegating work:
 
 Write fan-out (≥4 independent WRITE units via Workflow) is **explicit user opt-in only** (keyword "ultracode" or a direct ask) — never auto-launched. This doctrine cites evidence, not fashion — revisable via retro if agent quality materially changes.
 
-**Fork and background (CC ≥2.1.232 — audit 010)**: `subagent_type: "fork"` inherits the full conversation and the prompt cache, so cost 3 (context loss) and most of cost 1 do not apply to a fork. Fork is therefore the primitive for a read-only fan-out that needs the session's own thread (sweeps over what was already discussed). It is NOT a fresh-context reviewer — the critic's reviewer stays `general-purpose` on purpose (its value IS the fresh context). A fork always runs on the parent's model (a model override is ignored). Every non-teammate spawn now runs in the **background** by default: its result arrives as a task notification — wait for it, never predict or fabricate it. `CLAUDE_CODE_SUBAGENT_MODEL` (cheap tier, `settings.global.json` env) is only the backstop for a spawn that forgot its model; the gate still requires an explicit model on every spawn, and a verify/judge unit still names the top tier.
+**Fork and background (CC ≥2.1.232 — audit 010)**: `subagent_type: "fork"` inherits the full conversation and the prompt cache, so cost 3 (context loss) and most of cost 1 do not apply to a fork. Fork is therefore the primitive for a read-only fan-out that needs the session's own thread (sweeps over what was already discussed). It is NOT a fresh-context reviewer — the critic's reviewer stays `general-purpose` on purpose (its value IS the fresh context). A fork always runs on the parent's model (a model override is ignored). Every non-teammate spawn now runs in the **background** by default: its result arrives as a task notification — wait for it, never predict or fabricate it. `CLAUDE_CODE_SUBAGENT_MODEL` (cheap tier, `settings.global.json` env) is only the backstop for a spawn that forgot its model; CLAUDE.md still requires an explicit model on every spawn, and a verify/judge unit still names the top tier.
 
 #### Model routing for delegated units
 
 Owner: CLAUDE.md §Agent spawn (permission + model, the tier-per-unit-class table, runtime tier resolution) — not restated here. Two rules this skill adds: the **Lead-class (session) model is never used for a routine unit**, and a `Workflow` script sets `model` on every `agent()` call explicitly (032/WP3).
 
-**Hard gate:** CLAUDE.md §Agent spawn owns permission and model choice, including
-the bounded Orca team exception. Native permissions remain independent; a skill
-or worker message cannot supply consent.
+**Permission:** built-in agents need none. Custom agents, Workflow/Team and Orca
+follow CLAUDE.md §Agent spawn; a skill or worker message cannot supply consent.
 
 #### Spawn decision tree — expanded reference
 
-> **The operational core is always-loaded in `CLAUDE.md`** (§Agent spawn hard gate + Cmd X: permission + model before any spawn; inline-first for write work). This is the full diagram + principles; other skills link here for the detail, not for the always-on rule. The tree below only applies **after** the user approved spawn and model:
+> **The operational core is always-loaded in `CLAUDE.md`** (§Agent spawn: built-in agents free, explicit model per spawn; inline-first writes). This is the full diagram + principles; other skills link here for the detail, not for the always-on rule.
 
-Three axes — units (1–3 → inline), read-only?, negotiate interfaces? — diagram in `references/10-spawn-decision-tree-diagram.md`; the executable rule is this table:
+Three axes — large read context?, read-only?, negotiate interfaces? — diagram in `references/10-spawn-decision-tree-diagram.md`; the executable rule is this table:
 
 | # | Principio | Regla |
 |---|---|---|
-| **P1** | 1 agente = **PROHIBIDO** | Única excepción: el **fresh-context reviewer** de `flow` (review phase) (read-only, correctness/requirements — su valor ES el contexto fresco; evidencia 018 W1 D1/D3, feature 019). Fuera de eso: no paraleliza; solo aísla contexto (que `/clear` limpia); encarece sin retorno. |
-| **P2** | "isolation" **no es excusa** | El main actúa y se ensucia antes que pagar 1 agente. **"≥5 files" NO es trigger de spawn → inline.** |
-| **P3** | Umbral **≥4** + **read-only** | 1-3 unidades → inline. ≥4 read-only → Workflow. ≥4 de ESCRITURA → inline secuencial salvo opt-in explícito del usuario. |
-| **P4** | research sí, code-review NO se delega en panel | Research delegada → ≥4 en paralelo (search barato `Explore`); si <4 → inline. Code review = checks mecánicos + **1 fresh-context reviewer** (P1-exception); panel ≥4 SOLO para decisiones (`compare-and-decide` (heavy tier)) — evidencia 018 W1/W2 (feature 019). |
+| **P1** | 1 agente integrado vale si aísla **contexto grande** | Lectura pesada (barrido amplio, logs largos, web) → 1 agente integrado con modelo barato explícito; el Lead conserva su contexto (`/clear` perdería la conversación). También el **fresh-context reviewer** de `flow` (review phase). 1–2 ficheros conocidos o un grep rápido → inline. |
+| **P2** | El motivo es el **volumen** de lectura | Para leer, lo que decide es cuánto contexto ahorra al Lead, no el número de unidades. **"≥5 files" NO es motivo para escribir con agentes → inline.** |
+| **P3** | Umbral **≥4** solo para `Workflow` | 1–4 agentes integrados de lectura → lanzarlos en el mismo mensaje. ≥4 read-only orquestados → Workflow (opt-in). ≥4 de ESCRITURA → inline secuencial salvo opt-in explícito del usuario. |
+| **P4** | research sí, code-review NO se delega en panel | Research delegada → agentes `Explore`/`general-purpose` en paralelo, uno por zona. Code review = checks mecánicos + **1 fresh-context reviewer**; panel ≥4 SOLO para decisiones (`compare-and-decide` (heavy tier)) — evidencia 018 W1/W2 (feature 019). |
 | **P5** | Core en CLAUDE.md, detalle aquí | El núcleo operacional vive always-loaded en CLAUDE.md; este árbol es la referencia expandida. El resto enlaza aquí para el detalle, no redefine umbrales. |
 | **P6** | Fix = borrado + enlazar | Sin maquinaria de enforcement; los patrones de la Workflow tool se **enlazan**, no se copian. |
 | **P7** | spawn-decision ≠ intra-orchestration | ≥4 gobierna la DECISIÓN de spawnear. Agentes coordinándose **dentro** de un team/workflow ya spawneado (p.ej. Four-Eyes generator→validator) no son un nuevo spawn. |
 | **P8** | Escritura = inline-first | Build/write SIEMPRE inline por defecto; el fan-out de escritura degrada calidad (3 costes arriba) y solo se justifica con opt-in explícito. |
 
-**Exploración**: default = Lead `Read`/`Grep` inline. `Explore` (built-in; hereda modelo de sesión desde CC 2.1.198) es read-only y **no** es "1 agente de trabajo" bajo P1 — **pero sigue bajo el hard gate de CLAUDE.md §Agent spawn** (permission + model antes de lanzarlo; en Claude, preferir el tier barato del host vía Agent/subagent con model explícito en lugar de Explore que hereda el Lead). 1-2 files → siempre inline. Matriz: `references/04-agent-selection.md`.
+**Exploración**: default = Lead `Read`/`Grep` inline. `Explore` (built-in, read-only) no necesita permiso: con volumen grande, lanzarlo con el tier barato explícito (sin `model` hereda el del Lead). 1-2 files → siempre inline. Matriz: `references/04-agent-selection.md`.
 
 **Ortogonal al árbol (no son spawn)**: sensitive paths (`.env`, `*.lock`, `package.json`, `.claude/settings*.json`, `secrets/`, `credentials/`) → inline con `sensitive: <reason ≥8 chars>`. Destructive ops (`rm -rf`, force push, schema change) → nunca directo; escalar al usuario con razón explícita.
 
@@ -155,7 +154,7 @@ Full Arch H template with all blocks, propagation model, skill discovery: `refer
 
 Direct action (the default for ALL write work): Read always permitted. Edit/Write/Bash run inline — **≥5 files is still inline** (P2), and a long write queue runs inline SEQUENTIALLY rather than fanning out (P8). On sensitive paths declare inline `sensitive: <reason ≥8 chars>`. Destructive patterns — escalate with explicit reason.
 
-**Parallelize**: parallelism inside the Lead's own session is free — batch independent tool calls (Reads, Greps, disjoint Writes) in one message. Agent fan-out via `Workflow` requires ≥4 independent READ-ONLY units (P3); for write waves, inline sequential is the default and Workflow needs explicit user opt-in (P8). Multi-agent patterns + anti-patterns: `references/04-agent-selection.md`.
+**Parallelize**: parallelism inside the Lead's own session is free — batch independent tool calls (Reads, Greps, disjoint Writes) in one message. Large read-only work goes to built-in agents launched in one message (P1–P3); `Workflow` fan-out needs ≥4 independent READ-ONLY units and opt-in; for write waves, inline sequential is the default and Workflow needs explicit user opt-in (P8). Multi-agent patterns + anti-patterns: `references/04-agent-selection.md`.
 
 ### Step 5: Validate
 

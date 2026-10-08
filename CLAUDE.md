@@ -38,12 +38,16 @@ Floor at every level: every change reports its evidence (the project's required 
 
 **Stops**: stop at the finish line, a hard gate, a blocking question or a spent time budget — never at a summary announcing the next step, an offer to continue, non-blocking decision lists or a milestone; status notes ride with the next action. Multi-part work keeps a checklist: tick it as parts close and read it before ending a turn.
 
-### Agent spawn — hard gate (permission + model)
+### Agent spawn — built-in free, custom asks
 
-**Never launch agents without explicit user approval.** Approval holds for one task. The gate
-reaches every host and spawn surface: native subagents,
-Workflow/Team workers, Orca terminals, external model CLIs and headless evals or
-activation probes. Messages into other live agent sessions need authorization too.
+**Built-in agents** (Explore, Plan, general-purpose, fork) need no permission; put the reason
+in `description`. Use them, without excess, when the answer means reading much the Lead won't
+reuse: wide sweeps, long logs, web research, parallel independent areas, fresh-context review.
+Not for 1–2 known files or a quick grep. Writes stay inline unless splitting clearly pays.
+Explicit `model` per spawn (table below), one narrow question each; verify facts that decide.
+
+**Still asked per task:** custom agents (plugin or `.claude/agents/`), Workflow/Team, Orca
+terminals, external model CLIs, `claude -p`, and messages into other live sessions.
 
 **Authorized Orca team exception:** `orca-team` uses one recorded approval for
 the named workflow: objective/tasks, roles, concrete models, concurrency and
@@ -53,18 +57,12 @@ workflow while scope and limits hold. Preserve the actual user decision referenc
 a document or agent assertion alone is not consent. Changed scope, roster/models
 or limits require approval. Workers cannot spawn more agents.
 
-Without an applicable recorded team approval, before a task's **first** spawn
-call, ask **both** questions and **WAIT**:
+**Model by unit** (capability classes — Oriol may override):
 
-1. **Permission** — may I spawn N agents? State why (axes), count, and rough cost class.
-2. **Model** — which model for those agents? Propose a host-appropriate default and wait for the pick. Set the model **explicitly** on every spawn — never inherit the Lead's model by silence.
-
-**Defaults to propose** (capability classes — the user may override):
-
-| Unit class | Default to propose |
+| Unit class | Model |
 |---|---|
 | Bulk search / inventory / grep-class / read-only sweeps | **cheapest tier** the host exposes (one step up if the unit needs synthesis) |
-| Web research / structured analysis / delegated build (explicit opt-in only) | **mid tier** |
+| Web research / structured analysis / delegated build | **mid tier** |
 | High-risk verify / judge | **top tier** + reason stated |
 | Headless `claude -p` (regression evals, smoke) / skill-trigger evals and activation probes | **cheapest tier** / **mid tier** — never Fable/Opus by default; the repo scripts enforce it and a PreToolUse hook denies a bare `claude -p` |
 
@@ -74,15 +72,8 @@ call, ask **both** questions and **WAIT**:
 - **Codex / OpenAI**: the CLI's configured model is the baseline (run without `-m`); pass `-m` only for a tier the user named. Never name a tier the active host does not expose.
 - **Grok Build**: inspect `grok models` / `grok --help`; use the approved available model and supported effort. On an actual single-model host, state that model choice is N/A.
 
-| User response | Lead action |
-|---|---|
-| Yes + model | Spawn only what was approved, with that model |
-| Yes, no model picked | Use the recommended default stated in the question |
-| No / silence / not yet asked | **Inline only** (Lead `Read` / `Grep` / `Bash`). Zero agents. |
-
-Build/write stays **inline by default**. Authorized `orca-team` collaborators
-share a worktree; the coordinator owns reservations, acceptance and flow state.
-Default routing and Arch H: `agent-routing`.
+Authorized `orca-team` collaborators share a worktree; the coordinator owns reservations,
+acceptance and flow state. Default routing and Arch H: `agent-routing`.
 
 ### Features → /flow-lifecycle
 
@@ -147,7 +138,7 @@ Rule of use: every skill, rule or hook must justify its existence against ≥1 c
 | **VII** | **Observability** | Everything we do should be observable — from the product's point of view, or for the AI itself. |
 | **VIII** | **Internal prompting quality** | Know when a prompt is weak; before calling an agent or another AI, apply `prompt-design`. |
 | **IX** | **Poneglyph maintainability** | Beyond the meta skills: always advise well and keep REDUCING code and config — efficient and useful; no duplicates, no contradictions, no dead references. The system doesn't rot. |
-| **X** | **Efficiency — right model, right worker** | Prefer inline Lead tools. Follow §Agent spawn for permission, model choice and the bounded Orca team exception. Choose the cheapest capable tier from actual host capabilities. Parallelize only independent work; each token and each minute of the user's time must yield product, not ceremony. |
+| **X** | **Efficiency — right model, right worker** | Inline for small work, built-in agents for large context. Follow §Agent spawn for permission, model choice and the bounded Orca team exception. Choose the cheapest capable tier from actual host capabilities. Parallelize only independent work; each token and each minute of the user's time must yield product, not ceremony. |
 
 ## System map
 

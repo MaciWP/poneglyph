@@ -141,6 +141,26 @@ When finished, include "### Memory Insights" with grounded reusable insights, or
 | Reply format | `[REPLY FORMAT]` is NECESSARY for Codex/Grok workers — they load the house style from their host config and would otherwise answer in Spanish with a `ROBIN:` line |
 | Memory reminder | Explicit `[MEMORY OUTPUT]` is NECESSARY — agents miss the system-prompt instruction without it |
 
+### Scout prompt (scouts on Haiku 5.5 / Sonnet 5.5)
+
+A scout answers one narrow read-only question. The
+full template above would push it past 100K tokens, where Haiku 5.5 bills 5x. Use this shape
+instead:
+
+```
+Today is {date}. Answer one question by reading the repository at {path}; do not edit anything.
+Question: {one narrow question}
+Where to look first: {paths or symbols, if known}
+Run independent searches and reads in parallel, in one step, instead of one after another.
+Keep working until the question is answered or you can say exactly what is missing.
+Before you answer, re-check each claim against the file you cite.
+Reply in plain English: the answer, then each supporting fact as `path:line — fact`, then what
+you could not find and where you looked.
+```
+
+Add "search the web before answering" when the unit needs it (Sonnet). The Lead verifies any
+fact that decides something before acting on it.
+
 ## Skill Discovery (Global + Project)
 
 When preparing a delegation:

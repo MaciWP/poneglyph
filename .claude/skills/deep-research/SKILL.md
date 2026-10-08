@@ -16,8 +16,8 @@ when_to_use: |
 
 # deep-research — session-first, escalate only with seeds
 
-Token-conscious research. **Agents are a last resort**, never the default. When they
-fire, they inherit everything the main session already proved so they extend, not redo.
+Token-conscious research. The Lead owns the pass; finder agents fire only for gaps, seeded
+with what the session proved so they extend, not redo.
 
 Rigor method (tiers, quote-anchors, refuters, counter-evidence): read on demand
 `.claude/docs/research-rigor.md`. This skill owns **routing and budget**; that doc owns
@@ -38,8 +38,8 @@ Rigor method (tiers, quote-anchors, refuters, counter-evidence): read on demand
 
 | Rule | Why |
 |------|-----|
-| **Phase 1 is always main-session** | Spawning before a cheap pass wastes agents and tokens |
-| **Hard cap: ≤10 agents total** per invocation (finders + refuters + any helpers) | User budget; never “throw Haikus at it” |
+| **Phase 1 is Lead-owned** | Finders before a real pass waste agents; volume reads inside it go to `haiku` scouts |
+| **Hard cap: ≤10 agents total** per invocation (finders + refuters + any helpers) | User budget; Phase 1 scouts excluded |
 | **Every agent prompt carries a SEED** | What the session already found + exclusion list — no cold starts |
 | **Empty seed → do not spawn** | If Phase 1 produced nothing usable, fix the session pass or ask the user — agents will thrash |
 | **Agent prompts go through `prompt-design`** | Commandment VIII: `Skill(prompt-design)` Context 3 (review delegation) before every `Agent()` / fan-out — no raw drafts |
@@ -62,7 +62,8 @@ that any research would miss, one `AskUserQuestion` round — then continue.
 
 ### 1. Session pass — main Lead only
 
-No `Agent` / Workflow. The Lead uses tools directly:
+No Workflow or finders. Volume reads (wide sweep, long page or log) go to `Explore` on
+`haiku`, one narrow question each; the rest the Lead reads:
 
 1. **Codebase first** (T1): Grep / Read / Glob when the question touches this repo.
 2. **Web when needed**: WebSearch → WebFetch primary sources (official docs, RFCs, release
@@ -110,8 +111,7 @@ Read `references/escalation.md` when this phase runs. Summary:
 4. **`Skill(prompt-design)` before every spawn (mandatory)** — Context 3: review the
    delegation prompt(s) (Arch H / rubric ≥80). Fix weak prompts; only then call `Agent()`
    or the fan-out panel — always with an explicit `model` (mid tier for finders, top tier
-   for a refuter; the `CLAUDE_CODE_SUBAGENT_MODEL` default is a cheap tier). Results
-   arrive as task notifications (background by default since CC 2.1.232). Batch-review is fine (one prompt-design pass over all drafts);
+   for a refuter). Results arrive as task notifications. Batch-review is fine (one prompt-design pass over all drafts);
    skipping the skill is not. Refuter prompts go through the same gate.
 5. **Refuter** (optional, from research-rigor rule 3): only for decision-changing claims;
    counts toward the 10. Instruct REFUTE against primary sources; fail closed.

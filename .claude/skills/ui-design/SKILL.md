@@ -38,12 +38,13 @@ floor, not the brief.
 **Before the first edit to any shared UI element:**
 
 0. **Design file**: read `docs/DESIGN_SYSTEM.md`, `DESIGN_SYSTEM.md`,
-   `DESIGN.md` before the first UI edit; name it in the report. None: offer
-   extraction in `Aviso:`, no file until yes (`references/design-file.md`).
+   `DESIGN.md` before UI edits; cite it. None: offer extraction on its own
+   `**Decide:**` line, even among others; no file until yes
+   (`references/design-file.md`).
 1. **Usage sweep**: enumerate every usage of the touched component/token
-   (Grep references) and NAME the affected screens — proactively, without
-   being asked. A shared symbol changed without its usages checked is the
-   measured failure mode (a badge restyle ticket: 3 rounds + 3 follow-up sessions).
+   (Grep references) and NAME the affected screens — proactively. A shared
+   symbol changed without its usages checked is the measured failure mode
+   (a badge restyle ticket: 3 rounds + 3 follow-up sessions).
 2. **Pattern extraction**: read 2-3 sibling components — hover/focus behavior,
    spacing scale, color tokens, state handling. The app's existing pattern IS
    the spec; deviations need the user's explicit ask.

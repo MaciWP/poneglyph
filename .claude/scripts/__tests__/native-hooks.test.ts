@@ -25,6 +25,14 @@ describe("host-owned configuration preservation", () => {
     expect(foreign.hooks.PreToolUse).toHaveLength(1);
   });
 
+  it("T5.4 gives Codex an apply_patch group, keeps Grok on Bash, and merges idempotently", () => {
+    const desired = nativeHookConfig("codex", "/source");
+    expect(desired.hooks.PreToolUse.map((g: any) => g.matcher)).toEqual(["Bash", "apply_patch"]);
+    const merged = mergeNativeHooks({}, desired);
+    expect(mergeNativeHooks(merged, desired)).toEqual(merged);
+    expect(nativeHookConfig("grok", "/source").hooks.PreToolUse.map((g: any) => g.matcher)).toEqual(["Bash"]);
+  });
+
   it("rejects malformed settings and a previous core's hook before overwriting", () => {
     const desired = nativeHookConfig("codex", "/new-core");
     expect(() => mergeNativeHooks({ hooks: { Stop: {} } }, desired)).toThrow();

@@ -3,8 +3,9 @@ id: 041-design-file-hook
 created: 2026-10-02
 mode: full
 phase: 1
-status: approved
+status: closed
 approved: 2026-10-02
+closed: 2026-10-02
 ---
 
 # Problema
@@ -20,7 +21,7 @@ With no design file in a repo, the agent never offers to extract one: 0 offers i
 
 # Success criteria (medibles, Given/When/Then)
 
-- **AC1**: Given a session in a project, when the agent makes its first edit to a UI file, then the agent receives, once per session and project, a factual note stating which design file exists (`docs/DESIGN_SYSTEM.md`, `DESIGN_SYSTEM.md`, `DESIGN.md`) or that none does. The edit is not blocked.
+- **AC1**: Given a session in a project, when the agent first touches a UI file (an edit tool, or a UI path in a Bash command), then the agent receives, once per session and project, a factual note stating which design file exists (`docs/DESIGN_SYSTEM.md`, `DESIGN_SYSTEM.md`, `DESIGN.md`) or that none does. The edit is not blocked. _v2 — delta from review 041-design-file-hook (Bash matcher: a UI path in a shell command counts as contact; user decision 2026-10-02 "Enmendar AC1")._
 - **AC2**: Given the same session, when the agent edits more UI files, or edits a non-UI file at any time, then no note is added.
 - **AC3**: Given a project with no design file, when the agent finishes a UI task, then the report contains an extraction question for the user on its own line, and the project shows no design file, directory or stub. Measured on the V7.6 prompt plus 3 held-out UI prompts written before the first run: ≥3 of 4 runs pass.
 - **AC4**: Given a project with a design file, when the agent finishes a UI task, then the report names that file (V7.6 "with" run).

@@ -88,6 +88,7 @@ restores its working set from `_archive/` first.
 | `033-headless-cheap-tier` | 2026-09-03 | plan-mode | `plan.md` |
 | `034-archify-integration` | 2026-09-08 | plan-mode | `plan.md` |
 | `039-design-system` | 2026-10-02 | APPROVED_WITH_WARNINGS (retro ratified) | `spec.md`, `retro.md` |
+| `041-design-file-hook` | 2026-10-02 | APPROVED_WITH_WARNINGS (retro ratified) | `spec.md`, `retro.md` |
 
 Plan-mode artefacts (dev loop + drillme-clarify, not a `/flow-lifecycle` feature) share the
 numbering sequence so nothing collides. In-flight = `state.json` with

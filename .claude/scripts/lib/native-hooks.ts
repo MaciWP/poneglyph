@@ -27,7 +27,7 @@ export function nativeHookConfig(host: NativeHost, coreRoot: string): RecordValu
     hooks: [{ type: "command", command: `bun "${script}" --host ${host} --event ${event}`, timeout: 10 }],
   });
   return { hooks: {
-    PreToolUse: [entry("PreToolUse", "Bash")],
+    PreToolUse: [entry("PreToolUse", "Bash"), ...(host === "codex" ? [entry("PreToolUse", "apply_patch")] : [])],
     ...(host === "codex" ? { UserPromptSubmit: [entry("UserPromptSubmit")], Stop: [entry("Stop")] } : {}),
   } };
 }

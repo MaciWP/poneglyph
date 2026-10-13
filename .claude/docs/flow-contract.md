@@ -27,7 +27,7 @@ at `4`, retro at `5` (`skills/flow/SKILL.md` §Phase selection maps them).
 
 ## Commands
 
-Resolve the helper from the installed shared root (`rules/harness-runtime.md`).
+Resolve the helper from the installed shared root (`docs/harness-runtime.md`).
 Use `bun "<shared-root>/scripts/flow-state.ts" <command> --plan "<plan-directory>"`.
 Without `--plan`, mutations require exactly one open plan in the current project.
 `status --plan <plans-root>` lists all open plans instead.
@@ -55,7 +55,7 @@ exit nonzero. Never treat reassuring stdout as success after a nonzero exit.
 
 Reuse results from the checks already executed on the final inputs. Supply a
 report file, then retain its content in `us_history`; another permanent copy is
-not required. `--tests-passed` alone no longer closes a HU.
+not required. `--tests-passed` alone does not close a HU.
 
 ```json
 {

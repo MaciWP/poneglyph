@@ -16,14 +16,14 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { frontmatter } from "./skill-metadata";
 
-// 0 since plan 037 (2026-09-09): every byte of always-loaded growth is a decision taken with
+// 0 since 2026-09-09: every byte of always-loaded growth is a decision taken with
 // `--update`, never a rounding allowance. 89 % of this machine's tokens went to meta-work on
 // the layer itself; the layer does not get to grow by accident.
-export const TOLERANCE = 0;
-export const SNAPSHOT_FILE = "budget-snapshot.json";
+const TOLERANCE = 0;
+const SNAPSHOT_FILE = "budget-snapshot.json";
 
 // Rules that never enter the global always-loaded layer (mirrors sync-claude's
-// PROJECT_ONLY set for rules; paths/ is path-scoped, loaded only on matching files).
+// PROJECT_ONLY set for rules; paths/ is project-only and path-scoped).
 const NON_GLOBAL_RULES = new Set(["test-policy.md"]);
 
 export interface Measurement {
@@ -31,7 +31,7 @@ export interface Measurement {
   skillBodies: Record<string, number>; // skill name → SKILL.md bytes
   // Measured and printed, never ratcheted: what the host loads from INSTALLED PLUGINS is a
   // property of this machine, not of this repository, so a laptop with more plugins must not
-  // turn the guard red where CI is green (H35, quality review 2026-09-11).
+  // turn the guard red where CI is green.
   informative?: Record<string, number>;
 }
 
@@ -57,7 +57,7 @@ function bytes(path: string): number {
 
 // One decoder for the whole layer. A private regex reader here duplicated
 // `lib/skill-metadata.frontmatter` and measured YAML punctuation instead of the value the
-// host actually loads (H35, quality review 2026-09-11). A SKILL.md can also come from an
+// host actually loads. A SKILL.md can also come from an
 // installed plugin, which `check:config` never validates, so a parse failure reads as an
 // absent field instead of aborting the whole measurement.
 function fieldsOf(skillMd: string): Record<string, unknown> {
@@ -71,10 +71,6 @@ function fieldsOf(skillMd: string): Record<string, unknown> {
 const stringField = (fields: Record<string, unknown>, key: string): string =>
   typeof fields[key] === "string" ? (fields[key] as string) : "";
 
-export function frontmatterField(skillMd: string, key: string): string {
-  return stringField(fieldsOf(skillMd), key);
-}
-
 // Estimate a Claude listing entry from source policy; native activation remains unverified.
 export function activationSurface(skillMd: string, visibility?: unknown): number {
   const fields = fieldsOf(skillMd);
@@ -83,11 +79,10 @@ export function activationSurface(skillMd: string, visibility?: unknown): number
   return utf8Len(stringField(fields, "description") + stringField(fields, "when_to_use"));
 }
 
-// Installed plugins load their skills' description + when_to_use on every turn too —
-// the review of plan 032 (F1) caught the budget reporting −3.7 % while the plugin
-// created by the same plan carried the moved surface. Counted from the host's own
+// Installed plugins load their skills' description + when_to_use on every turn too:
+// leaving them out had the budget report −3.7 % while the plugin carried the moved surface. Counted from the host's own
 // registry so the figure is what THIS machine experiences.
-export function measurePluginSurface(homeDir: string): number {
+function measurePluginSurface(homeDir: string): number {
   const registry = join(homeDir, ".claude", "plugins", "installed_plugins.json");
   if (!existsSync(registry)) return 0;
   let plugins: Record<string, Array<{ installPath?: string }>>;
@@ -182,7 +177,7 @@ export function compare(current: Measurement, snapshot: Measurement, tolerance =
   check(current.alwaysLoaded, snapshot.alwaysLoaded, "");
   check(current.skillBodies, snapshot.skillBodies, "skill ");
   // Only the rows the current measurement still ratchets. A retired key (the machine-
-  // dependent plugin surface, H35) is then neutral instead of a phantom shrink that would
+  // dependent plugin surface) is then neutral instead of a phantom shrink that would
   // buy that many bytes of unnoticed growth everywhere else.
   const totalBefore = ratchetedSnapshotTotal(current, snapshot);
   const totalNow = total(current.alwaysLoaded);
@@ -195,10 +190,12 @@ export function compare(current: Measurement, snapshot: Measurement, tolerance =
 // Pure: every tracked row now below its snapshot, i.e. a saving the snapshot does not lock yet.
 export function slack(current: Measurement, snapshot: Measurement): Violation[] {
   const out: Violation[] = [];
+  // A row the measurement no longer has (a removed skill) is slack down to 0, so `--tighten`
+  // drops it instead of keeping a stale allowance in the snapshot.
   const check = (group: Record<string, number>, base: Record<string, number>, prefix: string) => {
-    for (const [key, value] of Object.entries(group)) {
-      const before = base[key];
-      if (before !== undefined && value < before) out.push({ key: `${prefix}${key}`, snapshot: before, current: value });
+    for (const [key, before] of Object.entries(base)) {
+      const value = group[key] ?? 0;
+      if (value < before) out.push({ key: `${prefix}${key}`, snapshot: before, current: value });
     }
   };
   check(current.alwaysLoaded, snapshot.alwaysLoaded, "");

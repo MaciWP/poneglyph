@@ -1,4 +1,4 @@
-// Single owner of "which model tiers are expensive" for headless runs (plan 033).
+// Single owner of "which model tiers are expensive" for headless runs.
 // Imported by the PreToolUse hook (runs from ~/.claude/hooks, junction of this dir)
 // and by scripts/lib/headless.ts (runs from the repo). Names are host capabilities:
 // keep the regex on the FAMILY, not on dated IDs, so a new Fable/Opus build is still
@@ -7,7 +7,3 @@ export const EXPENSIVE_MODEL_RE = /fable|opus/i;
 
 export const CHEAP_TIER = "claude-haiku-5-5"; // prose graders, smoke (`READY`)
 export const MID_TIER = "claude-sonnet-5-5"; // skill-trigger cases, activation probes
-
-export function isExpensiveModel(model: string): boolean {
-  return EXPENSIVE_MODEL_RE.test(model);
-}

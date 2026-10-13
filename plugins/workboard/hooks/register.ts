@@ -1,22 +1,20 @@
 import type { EngineInterface, Register } from "claude-code";
 import {
   addLinks,
-  answer,
-  askFromChat,
   bridgeSession,
   collaboration,
-  extractAsk,
+  DIRECTS,
   extractNotice,
   extractRobin,
   initialState,
+  checkExit,
   parseEnvelope,
   publish,
   reconcileAgents,
   annotateAgent,
   recentAgents,
-  settle,
   viewStatus,
-  type Decision,
+  type Agent,
   type Link,
   type State,
   type Task,
@@ -25,8 +23,10 @@ import {
   diffView,
   paneView,
   type PaneAgents,
-  type PaneDecision,
+  type PaneCharge,
   type PaneFeature,
+  type PaneQuality,
+  type PaneRepo,
   type Tone,
 } from "./view.ts";
 
@@ -39,7 +39,7 @@ const clean = (v: unknown, max = 500) =>
 const percent = (v: unknown) =>
   typeof v === "number" && Number.isFinite(v) ? `${v.toFixed(1)}%` : "sin datos";
 const tail = (path: string) => path.split("/").filter(Boolean).slice(-2).join("/");
-// A provider error keeps its cause visible in the band, never an empty-looking "no data".
+// A provider error keeps its cause visible in the pane, never an empty-looking "no data".
 const github = (pr: Repo["pr"]) =>
   pr?.state === "loaded"
     ? `PR #${pr.number}: ${pr.approval}${pr.appliesToLocal ? "" : " (revisión publicada)"}`
@@ -66,6 +66,16 @@ const coverage = (c: Repo["coverage"]) => {
     ? `${percent(known)} de lo medido · ${c?.coverage?.missing.length ?? 0} sin medir · ${label}`
     : label;
 };
+// A local check's outcome. Older builds stored "reported" for any matching command that
+// ended without error, matches that were not checks included, so it claims no pass.
+const checkLabels: Record<string, string> = {
+  passed: "pasó",
+  reported: "terminado",
+  failed: "falló",
+  denied: "denegado",
+  background: "en segundo plano",
+  unknown: "sin veredicto",
+};
 const labels: Record<string, string> = {
   pending: "pendiente",
   running: "en curso",
@@ -76,9 +86,6 @@ const labels: Record<string, string> = {
   unknown: "sin señal",
   killed: "cancelado",
   needs_you: "te necesita",
-  queued: "respuesta pendiente de entrega",
-  delivered: "respuesta entregada",
-  cancelled: "cancelada",
   stale: "desactualizada",
   current: "vigente",
   missing: "sin datos",
@@ -142,21 +149,25 @@ type Snapshot = {
       cwd: string;
       harness: string;
     }[];
-    published: (State & { updatedAt: number; decisions: (Decision & { requestId?: string })[] })[];
+    published: (State & { updatedAt: number })[];
     // This terminal's Agentic OS messages and consultations, already filtered by its actor.
     links?: Link[];
     peersTalk?: boolean;
     // Native session name → its Agentic OS terminal, so one partner is one peer.
     aliases?: Record<string, { id: string; harness?: string; name?: string }>;
   };
+  // The prompt router's latest run for this session (scripts/workboard.mjs routerRun).
+  router?: RouterRun | null;
 };
+type RouterRun = { at: number; ms: number; outcome: string; skills: string[]; fixes: number };
 
 let state = initialState("pending", "");
 let active = false,
   paneHealthy = false,
   paneFaulted = false,
   history = false,
-  bandExpanded = false,
+  // The Cambios card lists each repo's files only when unfolded.
+  filesOpen = false,
   refreshing = false;
 let diff: { path: string; source: string; truncated: boolean } | null = null;
 let snapshot: Snapshot | null = null;
@@ -164,13 +175,9 @@ let error: string | null = null;
 let aos = "http://127.0.0.1:4317",
   actor: string | undefined;
 let peersTalk = false;
-// Whether this mod has the pane open: the band's button reads it as «Cerrar panel».
-let paneOpen = false;
 // Internal messages an agent sent to an address no agent holds, waiting for main's copy.
 let unplaced: { id: string; text: string; at: number }[] = [];
 let saved: Promise<unknown> = Promise.resolve();
-const drafts = new Map<string, string>();
-const delivering = new Set<string>();
 const launching = new Set<string>();
 const redraw = ($: EngineInterface) => $.ui.invalidate("ui.render");
 const save = ($: EngineInterface) => {
@@ -183,15 +190,20 @@ const fail = ($: EngineInterface, err: unknown) => {
   redraw($);
 };
 const api = async ($: EngineInterface, path: string, body: unknown) => {
-  const response = await $.http.fetch(`${aos}/api/workboard${path}`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      origin: aos,
-      ...(actor ? { "x-aos-agent-id": actor } : {}),
-    },
-    body: JSON.stringify(body),
-  });
+  // The host's fetch takes no AbortSignal, so the wait is raced against a timer (8 s, as
+  // workboard.mjs); refresh's `refreshing` flag is released by its finally either way.
+  const response = await Promise.race([
+    $.http.fetch(`${aos}/api/workboard${path}`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        origin: aos,
+        ...(actor ? { "x-aos-agent-id": actor } : {}),
+      },
+      body: JSON.stringify(body),
+    }),
+    $.clock.sleep(8000).then(() => Promise.reject(Error("Agentic OS: timeout"))),
+  ]);
   if (!response.ok) throw Error(`Agentic OS: ${response.status} ${clean(response.text, 200)}`);
 };
 const helper = async ($: EngineInterface, command: string, extra: string[] = []) => {
@@ -206,53 +218,6 @@ const persist = async ($: EngineInterface) => {
   await save($);
   redraw($);
 };
-const deliver = ($: EngineInterface, decision: Decision & { requestId?: string }) => {
-  const key = `${decision.id}:${decision.revision}`;
-  if (state.working || delivering.has(key) || !decision.response) return;
-  delivering.add(key);
-  const message = `Workboard decision ${decision.id} revision ${decision.revision}. The user answered in the panel.\nQuestion: ${decision.question}\nAnswer: ${decision.response}\nApply only to this decision; this is not blanket permission for tools, agents or Git operations.`;
-  // Do not await inside a running turn: prompt.submit waits for the session to be idle.
-  void $.prompt
-    .submit({ text: message })
-    .then(async (result) => {
-      const delivered = !("drop" in result && result.drop);
-      state = settle(
-        state,
-        decision.id,
-        decision.revision,
-        delivered,
-        delivered ? undefined : "El host rechazó la respuesta",
-      );
-      await persist($);
-      if (decision.requestId && actor)
-        await api($, "/ack", {
-          sessionId: state.sessionId,
-          decisionId: decision.id,
-          revision: decision.revision,
-          requestId: decision.requestId,
-          delivered,
-        });
-    })
-    .catch(async (err) => {
-      state = settle(state, decision.id, decision.revision, false, clean(err));
-      await persist($);
-      fail($, err);
-    })
-    .finally(() => delivering.delete(key));
-};
-// The panel answers only this session's decisions; other sessions answer in their own panel.
-const respond = async ($: EngineInterface, decision: Decision, response: string) => {
-  try {
-    state = answer(state, decision.id, decision.revision, response);
-    await persist($);
-    deliver(
-      $,
-      state.decisions.find((d) => d.id === decision.id)!,
-    );
-  } catch (err) {
-    fail($, err);
-  }
-};
 // True once the snapshot is in, false when it failed, undefined when another refresh runs.
 const refresh = async ($: EngineInterface): Promise<boolean | undefined> => {
   if (!active || refreshing) return undefined;
@@ -261,6 +226,8 @@ const refresh = async ($: EngineInterface): Promise<boolean | undefined> => {
     const next = (await helper($, "snapshot", [
       "--aos",
       aos,
+      "--session",
+      state.sessionId,
       ...(state.ticket ? ["--ticket", state.ticket] : []),
     ])) as Snapshot;
     if (
@@ -280,39 +247,6 @@ const refresh = async ($: EngineInterface): Promise<boolean | undefined> => {
     state.agents = reconcileAgents(state.agents, await $.agent.list());
     state.links = addLinks(state.links, next.bridge.links ?? []);
     peersTalk = next.bridge.peersTalk === true;
-    const remote = next.bridge.published.find((s) => s.sessionId === state.sessionId);
-    if (remote)
-      for (const d of remote.decisions) {
-        const own = state.decisions.find((x) => x.id === d.id);
-        if (
-          own?.revision === d.revision &&
-          own.state === "failed" &&
-          own.error?.startsWith("Entrega incierta") &&
-          d.state === "queued" &&
-          d.requestId &&
-          actor
-        )
-          await api($, "/ack", {
-            sessionId: state.sessionId,
-            decisionId: d.id,
-            revision: d.revision,
-            requestId: d.requestId,
-            delivered: false,
-            error: own.error,
-          });
-        if (
-          own?.revision === d.revision &&
-          d.state === "queued" &&
-          ["pending", "queued"].includes(own.state)
-        ) {
-          state = {
-            ...state,
-            decisions: state.decisions.map((x) => (x.id === d.id ? { ...d } : x)),
-          };
-          deliver($, d);
-        }
-      }
-    for (const d of state.decisions) if (d.state === "queued") deliver($, d);
     if (next.bridge.state === "connected" && actor) await api($, "/session", bridgeSession(state));
     await persist($);
     return true;
@@ -325,14 +259,14 @@ const refresh = async ($: EngineInterface): Promise<boolean | undefined> => {
   }
 };
 const openPane = async ($: EngineInterface) => {
-  await $.ui.open({ id: PANE, title: "Trabajo y agentes", columns: 48, rows: 12 });
-  paneOpen = true;
+  // Inline the frame fits the tree, so a tall request only grows it while there is content.
+  await $.ui.open({ id: PANE, title: "Trabajo y agentes", columns: 48, rows: 40 });
   redraw($);
 };
+// A pane that is shown but has no room to be placed reads as closed: one /workboard opens it.
 const togglePane = async ($: EngineInterface) => {
-  if ((await $.ui.panes()).some((p) => p.id === PANE && p.isShown)) {
+  if ((await $.ui.panes()).some((p) => p.id === PANE && p.isShown && p.isPlaced)) {
     paneHealthy = false;
-    paneOpen = false;
     await $.ui.close({ id: PANE });
     redraw($);
   } else await openPane($);
@@ -457,11 +391,46 @@ const shortModel = (m: string) =>
 const tokens = (n: number) => (n >= 1000 ? `${Math.round(n / 1000)}K tok` : `${n} tok`);
 const runTime = (ms: number) =>
   ms < 60000 ? `${Math.max(1, Math.round(ms / 1000))} s` : `${Math.round(ms / 60000)} min`;
-// Only sessions linked to this one: its agents, its consultations and whom it messages.
+// The router's run as a Subagentes row: what it proposed and whether a proposed skill loaded
+// after it started. Shown for 30 minutes, like a finished agent.
+const routerRow = (run: RouterRun | null | undefined, skills: State["skills"]): PaneCharge | null => {
+  if (!run || Date.now() - run.at > 30 * 60000) return null;
+  const short = (name: string) => name.split(":").pop();
+  const followed = (skills ?? []).some(
+    (k) => k.at >= run.at - run.ms && run.skills.some((x) => short(x) === short(k.name)),
+  );
+  const [state, label] =
+    run.outcome === "ok" && run.skills.length
+      ? followed
+        ? ["completed", "seguida"]
+        : ["blocked", "no seguida"]
+      : run.outcome === "ok" || run.outcome === "empty"
+        ? ["unknown", "sin propuesta"]
+        : run.outcome === "superseded"
+          ? ["unknown", "sustituida"]
+          : ["failed", "falló"];
+  return {
+    title: run.skills.length ? clean(run.skills.join(", "), 160) : "sin skills",
+    state,
+    label,
+    kind: "router",
+    depth: 0,
+    detail: [
+      run.fixes ? `${run.fixes} ${run.fixes === 1 ? "corrección" : "correcciones"}` : "",
+      runTime(run.ms),
+      ago(run.at),
+    ]
+      .filter(Boolean)
+      .join(" · "),
+  };
+};
+// Only sessions linked to this one, by rank: its own agents (and the hook-run router), its
+// peers, whoever directs it, and the teammates and consultations it directs.
 const agentsModel = (
   s: State,
   talk: boolean,
   aliases: NonNullable<Snapshot["bridge"]["aliases"]> = {},
+  router?: RouterRun | null,
 ): PaneAgents => {
   const agents = recentAgents(s.agents);
   // A native name that Agentic OS knows as a terminal becomes that terminal, and every link
@@ -474,7 +443,7 @@ const agentsModel = (
     const t = terminal.get(id);
     return t ? { ...l, peer: id, harness: t.harness ?? l.harness, name: t.name } : l;
   });
-  const { mode, peers } = collaboration(agents, links, talk);
+  const { mode, peers, leads } = collaboration(agents, links, talk);
   const depth = (a: { parentId?: string }, n = 0): number => {
     const parent = a.parentId && s.agents.find((x) => x.id === a.parentId);
     return parent && n < 3 ? depth(parent, n + 1) : n;
@@ -489,48 +458,77 @@ const agentsModel = (
     const a = s.agents.find((x) => x.id === id);
     return clean(a?.name || a?.type || a?.title || id.slice(0, 8), 40);
   };
-  const charge = [
-    ...[...agents]
-      .sort((a, b) => Number(finished(a.state)) - Number(finished(b.state)))
-      .map((a) => {
-        const mine = internal.filter((l) => l.from === a.id || l.to === a.id);
-        const last = mine.at(-1);
-        return {
-          title: clean(a.title),
-          state: a.state,
-          label: labels[a.state] ?? a.state,
-          kind: a.type ? clean(a.type, 40) : undefined,
-          depth: depth(a),
-          detail: [
-            a.model ? shortModel(a.model) : "",
-            a.effort ?? "",
-            a.tokens !== undefined ? tokens(a.tokens) : "",
-            a.durationMs !== undefined ? runTime(a.durationMs) : "",
-          ]
-            .filter(Boolean)
-            .join(" · "),
-          last: last?.text
-            ? `${last.from === a.id ? `→ ${agentName(last.to)}` : `← ${agentName(last.from)}`} «${last.text}»`
-            : undefined,
-          waiting: !finished(a.state) && last?.from === a.id && last.to === "main",
-        };
-      }),
-    ...[...consults.values()].map((l) => ({
-      title: clean(l.text ?? "consulta", 160),
-      state: l.status ?? "unknown",
-      label: labels[l.status ?? "unknown"] ?? clean(l.status, 40),
-      kind: `consulta · ${clean(l.name, 60)}`,
-      depth: 0,
-    })),
-  ];
+  const agentRow = (a: Agent): PaneCharge => {
+    const mine = internal.filter((l) => l.from === a.id || l.to === a.id);
+    const last = mine.at(-1);
+    return {
+      title: clean(a.title),
+      state: a.state,
+      label: labels[a.state] ?? a.state,
+      kind: a.type ? clean(a.type, 40) : undefined,
+      depth: depth(a),
+      detail: [
+        a.model ? shortModel(a.model) : "",
+        a.effort ?? "",
+        a.tokens !== undefined ? tokens(a.tokens) : "",
+        a.durationMs !== undefined ? runTime(a.durationMs) : "",
+      ]
+        .filter(Boolean)
+        .join(" · "),
+      last: last?.text
+        ? `${last.from === a.id ? `→ ${agentName(last.to)}` : `← ${agentName(last.from)}`} «${last.text}»`
+        : undefined,
+      waiting: !finished(a.state) && last?.from === a.id && last.to === "main",
+    };
+  };
+  const sorted = [...agents].sort((a, b) => Number(finished(a.state)) - Number(finished(b.state)));
+  const helper = routerRow(router, s.skills);
+  const peerRow = (p: (typeof peers)[number]) => ({
+    name: peerName({ peer: p.key, name: p.name, harness: p.harness }),
+    counts: [p.sent ? `→${p.sent}` : "", p.received ? `←${p.received}` : ""]
+      .filter(Boolean)
+      .join(" "),
+    ago: p.status === "failed" ? "falló" : p.status === "waiting" ? "sin respuesta" : ago(p.last),
+    tone: (p.status === "failed" ? "fail" : p.status === "waiting" ? "warn" : "ok") as Tone,
+  });
+  const sections: PaneAgents["sections"] = [
+    {
+      role: "subagents" as const,
+      charge: [
+        ...sorted.filter((a) => !a.teammateId).map(agentRow),
+        ...(helper ? [helper] : []),
+      ],
+      peers: [],
+    },
+    { role: "coworkers" as const, charge: [], peers: peers.map(peerRow) },
+    { role: "orchestrator" as const, charge: [], peers: leads.map(peerRow) },
+    {
+      role: "subordinates" as const,
+      charge: [
+        ...sorted.filter((a) => a.teammateId).map(agentRow),
+        ...[...consults.values()].map((l) => ({
+          title: clean(l.text ?? "consulta", 160),
+          state: l.status ?? "unknown",
+          label: labels[l.status ?? "unknown"] ?? clean(l.status, 40),
+          kind: `consulta · ${clean(l.name, 60)}`,
+          depth: 0,
+        })),
+      ],
+      peers: [],
+    },
+  ].filter((x) => x.charge.length || x.peers.length);
   const label =
-    mode.kind === "solo"
-      ? "Trabaja sola"
-      : mode.kind === "lead"
-        ? `Dirige ${mode.count}`
-        : mode.kind === "pair"
-          ? `De tú a tú · ${peerName({ peer: mode.peer.key, name: mode.peer.name, harness: mode.peer.harness })}`
-          : `En grupo · ${mode.sessions} sesiones`;
+    mode.kind === "worker"
+      ? `A las órdenes de ${peerName({ peer: mode.lead.key, name: mode.lead.name, harness: mode.lead.harness })}`
+      : mode.kind === "solo"
+        ? helper
+          ? "Sin otras sesiones · router"
+          : "Trabaja sola"
+        : mode.kind === "lead"
+          ? `Dirige ${mode.count}`
+          : mode.kind === "pair"
+            ? `De tú a tú · ${peerName({ peer: mode.peer.key, name: mode.peer.name, harness: mode.peer.harness })}`
+            : `En grupo · ${mode.sessions} sesiones`;
   const events = [...links]
     .sort((a, b) => b.at - a.at)
     .slice(0, 4)
@@ -561,20 +559,7 @@ const agentsModel = (
         tone: linkTone(l.status),
       };
     });
-  return {
-    mode: mode.kind,
-    label,
-    charge,
-    peers: peers.map((p) => ({
-      name: peerName({ peer: p.key, name: p.name, harness: p.harness }),
-      counts: [p.sent ? `→${p.sent}` : "", p.received ? `←${p.received}` : ""]
-        .filter(Boolean)
-        .join(" "),
-      ago: p.status === "failed" ? "falló" : p.status === "waiting" ? "sin respuesta" : ago(p.last),
-      tone: p.status === "failed" ? "fail" : p.status === "waiting" ? "warn" : "ok",
-    })),
-    events,
-  };
+  return { mode: mode.kind, label, sections, events };
 };
 
 export const register: Register = (on) => {
@@ -583,16 +568,13 @@ export const register: Register = (on) => {
     if (!e.isInteractive || e.surface !== "terminal") return result;
     active = true;
     paneHealthy = false;
-    paneOpen = false;
     unplaced = [];
     history = false;
-    bandExpanded = false;
+    filesOpen = false;
     diff = null;
     snapshot = null;
     error = null;
     aos = "http://127.0.0.1:4317";
-    drafts.clear();
-    delivering.clear();
     launching.clear();
     peersTalk = false;
     state = initialState(await $.session.id(), e.cwd);
@@ -603,37 +585,39 @@ export const register: Register = (on) => {
       (stored as State).version === 1 &&
       (stored as State).sessionId === state.sessionId &&
       (stored as State).cwd === e.cwd &&
-      Array.isArray((stored as State).tasks) &&
-      Array.isArray((stored as State).decisions)
+      Array.isArray((stored as State).tasks)
     ) {
-      // State saved before a field existed gets its default; an explicit value stays.
-      state = { ...state, ...(stored as State) };
-      // A reload loses the pending host promise: retry only after a human inspects it.
-      state.decisions = state.decisions.map((d) =>
-        d.state === "queued"
-          ? {
-              ...d,
-              state: "failed",
-              error: "Entrega incierta tras reanudar; comprueba el chat antes de reintentar",
-            }
-          : d,
-      );
+      // State saved before a field existed gets its default; an explicit value stays. The
+      // removed decisions of an older build are dropped.
+      const { decisions: _legacy, ...kept } = stored as State & { decisions?: unknown };
+      state = { ...state, ...kept };
     }
     actor = (await $.env.get("AOS_AGENT_ID")) || undefined;
     const configured = await $.env.get("AOS_URL");
+    // A malformed or non-loopback AOS_URL leaves the default origin instead of aborting the
+    // start, as hud and dock leave Agentic OS out: the tool and the board still come up.
     if (configured) {
-      const u = new URL(configured);
-      if (
-        u.protocol !== "http:" ||
-        !["127.0.0.1", "localhost", "agentic-os.localhost"].includes(u.hostname) ||
-        u.username ||
-        u.password ||
-        u.pathname !== "/" ||
-        u.search ||
-        u.hash
-      )
-        throw Error("AOS_URL must be a loopback HTTP origin");
-      aos = u.origin;
+      try {
+        const u = new URL(configured);
+        if (
+          u.protocol !== "http:" ||
+          ![
+            "127.0.0.1",
+            "localhost",
+            "agentic-os.localhost",
+            "[::1]",
+          ].includes(u.hostname) ||
+          u.username ||
+          u.password ||
+          u.pathname !== "/" ||
+          u.search ||
+          u.hash
+        )
+          throw Error("AOS_URL must be a loopback HTTP origin");
+        aos = u.origin;
+      } catch {
+        $.ui.toast("AOS_URL no es un origen HTTP local; se usa el predeterminado");
+      }
     }
     await $.command.register({
       name: "workboard",
@@ -649,7 +633,7 @@ export const register: Register = (on) => {
     await $.tool.register({
       name: "progress",
       description:
-        "Publish the explicit work plan and decision requests to the user's workboard. Shape the plan as 2-6 features (tasks without parent), each with 2-6 subtasks (parent: the feature id) that end in something checkable. Publish it before the first other tool call when the task will edit files or needs more than two tool calls; update when a feature closes or something blocks or fails, and close everything at the end. Tasks merge by id: send only the ones that change, as {id, state}; replace: true starts a new plan. Tasks are declarations, never proof of passing tests. A blocking decision must stop dependent work; nonblocking questions permit independent work. Do not manufacture approvals. A decision may add context (why it matters), options as {label, detail} and recommended (the index of the option you advise). Responses arrive in later Workboard messages. Keep the final ROBIN line in your answer; the mod relocates only its drawing.",
+        "Publish the explicit work plan to the user's workboard. Shape the plan as 2-6 features (tasks without parent), each with 2-6 subtasks (parent: the feature id) that end in something checkable. Publish it once you know the steps of work that edits files in several steps; questions, reads, reviews and one-file edits need none. Update it when a feature closes or something blocks or fails, and close everything at the end. Tasks merge by id: send only the ones that change, as {id, state}; replace: true starts a new plan. Tasks are declarations, never proof of passing tests. Keep the final ROBIN line in your answer; the mod relocates only its drawing.",
       inputSchema: {
         type: "object",
         properties: {
@@ -668,34 +652,6 @@ export const register: Register = (on) => {
                     state: { enum: ["pending", "running", "blocked", "completed", "failed"] },
                     dependsOn: { type: "array", items: { type: "string" } },
                     parent: { type: "string" },
-                  },
-                  required: ["id"],
-                },
-              },
-              decisions: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    id: { type: "string" },
-                    question: { type: "string" },
-                    context: { type: "string" },
-                    options: {
-                      type: "array",
-                      items: {
-                        anyOf: [
-                          { type: "string" },
-                          {
-                            type: "object",
-                            properties: { label: { type: "string" }, detail: { type: "string" } },
-                            required: ["label"],
-                          },
-                        ],
-                      },
-                    },
-                    recommended: { type: "integer" },
-                    blocking: { type: "boolean" },
-                    cancel: { type: "boolean" },
                   },
                   required: ["id"],
                 },
@@ -735,10 +691,7 @@ export const register: Register = (on) => {
       await persist($);
       void refresh($);
       // A mod tool answers with text or content blocks; core rejects a plain object.
-      const open = state.decisions
-        .filter((d) => ["pending", "queued", "failed"].includes(d.state))
-        .map(({ id, state, revision }) => ({ id, state, revision }));
-      return { result: JSON.stringify({ accepted: true, open }) };
+      return { result: JSON.stringify({ accepted: true }) };
     } catch (err) {
       return { result: clean(err), isError: true };
     }
@@ -752,11 +705,32 @@ export const register: Register = (on) => {
   }));
   on("prompt.submit", async ($, e, next) => {
     if (!active) return next(e);
+    // A coordinating session's hand-off arrives as a prompt: it directs this session. Its
+    // session.receive copy, which comes first (before the delivery is queued), already named
+    // the sender.
+    if (
+      DIRECTS.includes(e.origin.kind) &&
+      !state.links.some((l) => DIRECTS.includes(l.via ?? "") && Date.now() - l.at < 60000)
+    ) {
+      state.links = addLinks(state.links, [
+        {
+          id: `submit:${crypto.randomUUID()}`,
+          at: Date.now(),
+          kind: "received",
+          peer: "coordinator",
+          name: "sesión coordinadora",
+          via: e.origin.kind,
+          text: clean(parseEnvelope(e.text).body, 160),
+          source: "native",
+        },
+      ]);
+      void persist($);
+    }
     return next({
       ...e,
       context: [
         ...(e.context ?? []),
-        "Workboard is visible. When the task will edit files or needs more than two tool calls, publish its plan with mcp__workboard__progress (loaded, no ToolSearch) before any other tool call.",
+        "Workboard: for multi-step file edits, publish the plan with mcp__workboard__progress (loaded, no ToolSearch) once the steps are known; not for questions, reads, reviews or one-file edits.",
       ],
     });
   });
@@ -795,8 +769,6 @@ export const register: Register = (on) => {
     if (!e.isAborted) {
       const notice = extractNotice(e.answer);
       state.notice = notice ? clean(notice) : null;
-      const ask = extractAsk(e.answer);
-      state = askFromChat(state, ask ? clean(ask, 1500).trim() || null : null);
     }
     if (e.reason === "error" || e.reason === "refusal")
       state.failure = {
@@ -804,7 +776,6 @@ export const register: Register = (on) => {
         at: Date.now(),
       };
     await persist($);
-    for (const d of state.decisions) if (d.state === "queued") deliver($, d);
     void refresh($);
     return r;
   });
@@ -817,11 +788,15 @@ export const register: Register = (on) => {
       description?: string;
       subagent_type?: string;
       effort?: string;
+      skill?: string;
     };
     const ok = !r.deny && !r.isError;
     // Subagents' calls count too: their work is part of this turn.
     if (state.turn && ok && ["Edit", "Write", "NotebookEdit"].includes(e.tool)) state.turn.edits++;
     if (state.turn && ok && e.tool === "Bash") state.turn.commands++;
+    // A loaded skill: the Agents card tells whether the prompt router's proposal was followed.
+    if (ok && e.tool === "Skill" && typeof input.skill === "string")
+      state.skills = [...(state.skills ?? []), { name: clean(input.skill, 120), at: Date.now() }].slice(-20);
     // The launch moment; the agent itself comes from $.agent.list().
     if (ok && ["Agent", "Task"].includes(e.tool))
       state.links = addLinks(state.links, [
@@ -858,16 +833,27 @@ export const register: Register = (on) => {
     if (
       e.tool === "Bash" &&
       typeof input.command === "string" &&
-      /\b(test|pytest|vitest|jest|tsc|lint|check|coverage)\b/.test(input.command)
+      checkExit(input.command)
     )
       state.checks = [
         ...state.checks,
         {
           id: e.tool_use_id,
           title: clean(input.description || input.command, 200),
-          state: r.deny ? "denied" : r.isError ? "failed" : "reported",
+          // A command sent to the background has not finished: no verdict yet.
+          // The shell has no pipefail: `bun test | tail` exits with tail's status, not the
+          // tests', so such a command gets no verdict.
+          state: r.deny
+            ? "denied"
+            : (r.result as { backgroundTaskId?: string } | undefined)?.backgroundTaskId
+              ? "background"
+              : checkExit(input.command) === "hidden"
+                ? "unknown"
+                : r.isError
+                  ? "failed"
+                  : "passed",
           at: Date.now(),
-          source: "tool.call (sin revisión verificada)",
+          source: "tool.call",
         },
       ].slice(-30);
     await persist($);
@@ -944,6 +930,7 @@ export const register: Register = (on) => {
             kind: "received",
             peer: from ?? "?",
             ...(from ? { name: from } : {}),
+            via: origin.kind,
             text: clean(envelope.body, 160),
             source: "native",
           },
@@ -957,7 +944,6 @@ export const register: Register = (on) => {
     const r = await next(e);
     if (e.id === PANE) {
       paneHealthy = false;
-      paneOpen = false;
       redraw($);
     }
     return r;
@@ -969,138 +955,6 @@ export const register: Register = (on) => {
     const visible = (await $.ui.panes()).some((p) => p.id === PANE && p.isShown && p.isPlaced);
     return visible ? next({ ...e, props: { ...e.props, text: robin.body } }) : next(e);
   });
-  on("ui.render", { component: "AbovePrompt" }, async ($, e, next) => {
-    const theirs = await next(e);
-    if (!active || e.surface !== "terminal" || e.props.hasSurvey) return theirs;
-    const { Box, Text, Button, Link } = $.ui.resolve(e);
-    const repos = snapshot?.repos ?? [];
-    const count = repos.reduce((n, r) => n + r.files.length, 0);
-    const pending = state.decisions.filter((d) => d.state === "pending").length;
-    const nodes = [
-      Box({
-        flexDirection: "row",
-        columnGap: 1,
-        children: [
-          Button({
-            key: "workboard-details",
-            label: `${state.ticket ?? repos[0]?.branch ?? "Trabajo"} · ${repos.length || 1} repo · ${count} ficheros`,
-            plain: true,
-            onPress: () => {
-              bandExpanded = !bandExpanded;
-              redraw($);
-            },
-          }),
-          Button({
-            key: "workboard-open",
-            label: `${paneOpen ? "Cerrar panel" : "Panel"}${pending ? ` (${pending})` : ""}`,
-            hotkey: "p",
-            onPress: () => {
-              void togglePane($);
-            },
-          }),
-          Button({
-            key: "workboard-refresh",
-            label: refreshing ? "Actualizando" : "Actualizar",
-            hotkey: "a",
-            onPress: () => {
-              void refresh($).then((ok) =>
-                $.ui.toast(
-                  ok === undefined
-                    ? "Ya se está actualizando"
-                    : ok
-                      ? "Actualizado"
-                      : `No se ha podido actualizar: ${error ?? "error desconocido"}`,
-                ),
-              );
-            },
-          }),
-        ],
-      }),
-    ];
-    for (const repo of bandExpanded ? repos : repos.slice(0, 2)) {
-      const pr = repo.pr;
-      const checks = pr?.checks ?? [];
-      const failures = checks.filter((c) =>
-        ["FAILURE", "ERROR", "TIMED_OUT", "CANCELLED", "ACTION_REQUIRED"].includes(c.state),
-      ).length;
-      const ci = failures
-        ? `CI: ${failures} fallos`
-        : checks.length
-          ? `CI: ${checks.filter((c) => ["SUCCESS", "NEUTRAL", "SKIPPED"].includes(c.state)).length}/${checks.length}`
-          : "CI sin datos";
-      nodes.push(
-        Text({
-          children: clean(
-            `${tail(repo.cwd)} · ${repo.branch ?? "sin rama"} · ${repo.files.length} cambios · ${github(pr)} · ${ci} · cobertura ${coverage(repo.coverage)}`,
-          ),
-          wrap: "truncate",
-        }),
-      );
-      if (bandExpanded) {
-        if (repo.baseError)
-          nodes.push(
-            Text({ color: "yellow", children: "Base no disponible; se muestran cambios locales" }),
-          );
-        if (repo.error) nodes.push(Text({ color: "red", children: clean(repo.error) }));
-        if (pr?.error) nodes.push(Text({ color: "yellow", children: clean(pr.error) }));
-        if (pr?.url)
-          nodes.push(Link({ href: pr.url, label: `PR #${pr.number} · ${pr.head?.slice(0, 8)}` }));
-        for (const check of pr?.checks ?? [])
-          nodes.push(Text({ children: clean(`CI: ${check.name} · ${check.state}`) }));
-        for (const file of repo.files.slice(0, 100)) {
-          const cov = repo.coverage?.coverage?.files.find((x) => x.path === file.path);
-          const before = repo.coverage?.baseline?.find((x) => x.path === file.path);
-          const observed = state.observed.some(
-            (p) => p === file.path || p === `${repo.cwd}/${file.path}`,
-          );
-          nodes.push(
-            Text({
-              children: clean(
-                `${file.path} · ${file.kind}${observed ? " · edición observada" : state.initial.includes(file.path) && repo.cwd === state.cwd ? " · preexistente" : " · atribución desconocida"}${cov ? ` · líneas Δ ${percent(cov.percent)} · fichero ${before ? percent(before.percent) : "sin referencia"} → ${percent(cov.filePercent)}` : ""}`,
-              ),
-              wrap: "truncate",
-            }),
-          );
-          nodes.push(
-            Button({
-              key: `file-${repo.cwd}-${file.path}`,
-              label: "Ver cambio",
-              plain: true,
-              onPress: () => inspectFile($, repo, file.path),
-            }),
-          );
-        }
-        if (repo.files.length > 100)
-          nodes.push(
-            Text({
-              children: `${repo.files.length - 100} ficheros más; consulta Git para el detalle completo`,
-            }),
-          );
-        nodes.push(
-          Button({
-            key: `coverage-${repo.cwd}`,
-            label: repo.canRecalculate
-              ? launching.has(repo.cwd) || repo.coverage?.state === "running"
-                ? "Cobertura en curso"
-                : "Recalcular cobertura"
-              : "Configurar cobertura: /workboard-config",
-            onPress: () => {
-              if (repo.canRecalculate) void recalculate($, repo);
-              else
-                $.ui.toast(
-                  'Ejemplo: /workboard-config {"coverage":{"report":"coverage/lcov.info","format":"lcov","command":["bun","test","--coverage"]}}',
-                );
-            },
-          }),
-        );
-      }
-    }
-    if (!bandExpanded && repos.length > 2)
-      nodes.push(Text({ children: `${repos.length - 2} repos más · desplegar para verlos` }));
-    if (error) nodes.push(Text({ color: "red", children: error }));
-    nodes.push(theirs as (typeof nodes)[number]);
-    return Box({ flexDirection: "column", children: nodes });
-  });
   on("ui.render", { component: "Pane", requestId: PANE }, async ($, e, next) => {
     if (e.surface !== "terminal" || !active) return next(e);
     paneHealthy = false;
@@ -1111,85 +965,119 @@ export const register: Register = (on) => {
         diff = null;
         redraw($);
       });
-    const decisions: PaneDecision[] = state.decisions
-      .filter((d) => !["delivered", "cancelled"].includes(d.state))
-      .map((d) => {
-        const key = `${state.sessionId}-${d.id}-${d.revision}`;
+    // Only signals with data take a row; a repo without any takes none.
+    const quality = (snapshot?.repos ?? [])
+      .slice(0, 2)
+      .map((repo, _, all) => {
+        const pr = repo.pr;
+        const checks = pr?.checks ?? [];
+        const failures = checks.filter((c) =>
+          ["FAILURE", "ERROR", "TIMED_OUT", "CANCELLED", "ACTION_REQUIRED"].includes(c.state),
+        ).length;
+        const passed = checks.filter((c) =>
+          ["SUCCESS", "NEUTRAL", "SKIPPED"].includes(c.state),
+        ).length;
+        const value = repo.coverage?.coverage?.percent;
+        const rows: PaneQuality[] = [];
+        // No PR or no remote is not a quality signal; the Cambios card already says so.
+        const prError = pr?.state === "error" && !/no git remotes/i.test(pr.error ?? "");
+        if (pr?.state === "loaded" || prError)
+          rows.push({
+            label: "GitHub",
+            value: clean(github(pr).replace(/^GitHub:? /, "")),
+            tone: prError ? "fail" : "info",
+          });
+        if (checks.length)
+          rows.push({
+            label: "CI",
+            value: failures ? `${failures} fallos` : `${passed}/${checks.length}`,
+            tone: failures ? "fail" : "ok",
+            ratio: passed / checks.length,
+          });
+        if (repo.coverage && repo.coverage.state !== "missing")
+          rows.push({
+            label: "Cobertura",
+            value: coverage(repo.coverage),
+            tone: repo.coverage.state === "failed" ? "fail" : typeof value === "number" ? "info" : "muted",
+            ratio: typeof value === "number" && Number.isFinite(value) ? value / 100 : null,
+          });
         return {
-          key,
-          question: clean(d.question, 2000).trim(),
-          blocking: d.blocking,
-          // Open buttons already say "pending"; only a later state needs words.
-          status: d.state === "pending" ? "" : (labels[d.state] ?? d.state),
-          error: d.error ? clean(d.error) : undefined,
-          context: d.context ? clean(d.context, 400) : undefined,
-          options: d.options.map((o, i) => ({
-            label: clean(o, 200),
-            ...(d.details?.[i] ? { detail: clean(d.details[i], 300) } : {}),
-          })),
-          recommended: d.recommended,
-          chat: d.source === "chat",
-          open: ["pending", "failed"].includes(d.state),
-          draft: drafts.get(key) ?? "",
-          onAnswer: (value) => respond($, d, value),
-          onDraft: (value) => {
-            drafts.set(key, value);
-          },
+          heading:
+            all.length > 1
+              ? clean(
+                  `${tail(repo.cwd)} · ${repo.branch ?? "sin rama"} · ${repo.files.length} cambios`,
+                )
+              : null,
+          rows,
         };
-      });
-    const quality = (snapshot?.repos ?? []).slice(0, 2).map((repo, _, all) => {
-      const checks = repo.pr?.checks ?? [];
+      })
+      .filter((group) => group.rows.length);
+    const local = state.checks.slice(-3).map(
+      (check): PaneQuality => ({
+        label: "Local",
+        value: clean(`${check.title} · ${checkLabels[check.state] ?? labels[check.state] ?? check.state}`),
+        tone: check.state === "failed" ? "fail" : check.state === "passed" ? "ok" : "muted",
+      }),
+    );
+    if (local.length) quality.push({ heading: null, rows: local });
+    const changes = (snapshot?.repos ?? []).map((repo): PaneRepo => {
+      const pr = repo.pr;
+      const checks = pr?.checks ?? [];
       const failures = checks.filter((c) =>
         ["FAILURE", "ERROR", "TIMED_OUT", "CANCELLED", "ACTION_REQUIRED"].includes(c.state),
       ).length;
-      const passed = checks.filter((c) =>
-        ["SUCCESS", "NEUTRAL", "SKIPPED"].includes(c.state),
-      ).length;
-      const value = repo.coverage?.coverage?.percent;
+      const ci = failures
+        ? `CI: ${failures} fallos`
+        : checks.length
+          ? `CI: ${checks.filter((c) => ["SUCCESS", "NEUTRAL", "SKIPPED"].includes(c.state)).length}/${checks.length}`
+          : "CI sin datos";
       return {
-        heading:
-          all.length > 1
-            ? clean(
-                `${tail(repo.cwd)} · ${repo.branch ?? "sin rama"} · ${repo.files.length} cambios`,
-              )
+        heading: clean(`${tail(repo.cwd)} · ${repo.branch ?? "sin rama"} · ${repo.files.length} cambios`),
+        status: clean(`${github(pr)} · ${ci} · cobertura ${coverage(repo.coverage)}`),
+        notes: [
+          repo.baseError
+            ? { text: "Base no disponible; se muestran cambios locales", tone: "warn" as const }
             : null,
-        rows: [
-          {
-            label: "GitHub",
-            value: clean(github(repo.pr).replace(/^GitHub:? /, "")),
-            tone: (repo.pr?.state === "error" && !/no git remotes/i.test(repo.pr.error ?? "")
-              ? "fail"
-              : repo.pr?.state === "loaded"
-                ? "info"
-                : "muted") as Tone,
+          repo.error ? { text: clean(repo.error), tone: "fail" as const } : null,
+          // "sin remoto" in the status already says it.
+          pr?.error && !/no git remotes/i.test(pr.error) ? { text: clean(pr.error), tone: "warn" as const } : null,
+        ].filter((n) => n !== null),
+        pr: pr?.url ? { href: pr.url, label: `PR #${pr.number} · ${pr.head?.slice(0, 8)}` } : null,
+        checks: checks.map((check) => clean(`CI: ${check.name} · ${check.state}`)),
+        files: repo.files.slice(0, 100).map((file) => {
+          const cov = repo.coverage?.coverage?.files.find((x) => x.path === file.path);
+          const before = repo.coverage?.baseline?.find((x) => x.path === file.path);
+          const observed = state.observed.some(
+            (p) => p === file.path || p === `${repo.cwd}/${file.path}`,
+          );
+          return {
+            key: `file-${repo.cwd}-${file.path}`,
+            path: clean(file.path),
+            detail: clean(
+              `${file.kind}${observed ? " · edición observada" : state.initial.includes(file.path) && repo.cwd === state.cwd ? " · preexistente" : " · atribución desconocida"}${cov ? ` · líneas Δ ${percent(cov.percent)} · fichero ${before ? percent(before.percent) : "sin referencia"} → ${percent(cov.filePercent)}` : ""}`,
+            ),
+            onView: () => void inspectFile($, repo, file.path),
+          };
+        }),
+        more: Math.max(0, repo.files.length - 100),
+        coverage: {
+          key: `coverage-${repo.cwd}`,
+          label: repo.canRecalculate
+            ? launching.has(repo.cwd) || repo.coverage?.state === "running"
+              ? "Cobertura en curso"
+              : "Recalcular cobertura"
+            : "Configurar cobertura: /workboard-config",
+          onPress: () => {
+            if (repo.canRecalculate) void recalculate($, repo);
+            else
+              $.ui.toast(
+                'Ejemplo: /workboard-config {"coverage":{"report":"coverage/lcov.info","format":"lcov","command":["bun","test","--coverage"]}}',
+              );
           },
-          {
-            label: "CI",
-            value: failures
-              ? `${failures} fallos`
-              : checks.length
-                ? `${passed}/${checks.length}`
-                : "sin datos",
-            tone: (failures ? "fail" : checks.length ? "ok" : "muted") as Tone,
-            ratio: checks.length ? passed / checks.length : null,
-          },
-          {
-            label: "Cobertura",
-            value: coverage(repo.coverage),
-            tone: (typeof value === "number" ? "info" : "muted") as Tone,
-            ratio: typeof value === "number" && Number.isFinite(value) ? value / 100 : null,
-          },
-        ],
+        },
       };
     });
-    const local = state.checks.slice(-3).map((check) => ({
-      label: "Local",
-      value: clean(
-        `${check.title} · ${check.state === "reported" ? "comando terminado; revisión no verificada" : (labels[check.state] ?? check.state)}`,
-      ),
-      tone: (check.state === "failed" ? "fail" : "muted") as Tone,
-    }));
-    if (local.length) quality.push({ heading: null, rows: local });
+    const dock = e.props.placement === "dock" ? e.props.scroll.bodyRows : null;
     const tree = paneView(ui, {
       title: clean(state.ticket ?? snapshot?.repos[0]?.branch ?? tail(state.cwd), 80),
       working: state.working,
@@ -1202,10 +1090,31 @@ export const register: Register = (on) => {
       },
       failure: state.failure ? clean(state.failure.text) : null,
       error,
-      decisions,
       plan: planModel(state.tasks),
       quality,
-      agents: agentsModel(state, peersTalk, snapshot?.bridge.aliases),
+      changes: {
+        repos: changes,
+        open: filesOpen,
+        onToggle: () => {
+          filesOpen = !filesOpen;
+          redraw($);
+        },
+      },
+      refresh: {
+        busy: refreshing,
+        onPress: () => {
+          void refresh($).then((ok) =>
+            $.ui.toast(
+              ok === undefined
+                ? "Ya se está actualizando"
+                : ok
+                  ? "Actualizado"
+                  : `No se ha podido actualizar: ${error ?? "error desconocido"}`,
+            ),
+          );
+        },
+      },
+      agents: agentsModel(state, peersTalk, snapshot?.bridge.aliases, snapshot?.router),
       history: {
         open: history,
         // Features fold in the plan; finished tasks and agents that left the Agents card land here.
@@ -1218,6 +1127,7 @@ export const register: Register = (on) => {
           redraw($);
         },
       },
+      dock,
       bridge: {
         connected: snapshot?.bridge.state === "connected",
         age: snapshot ? Math.max(0, Math.round((Date.now() - snapshot.at) / 1000)) : null,

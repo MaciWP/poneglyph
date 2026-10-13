@@ -83,6 +83,11 @@ describe("labelPresence (T3.7)", () => {
     expect(r.pass).toBe(true);
   });
 
+  test("label with a colon payload passes (current style form)", () => {
+    const r = labelPresence("El endpoint devuelve 200 `[Probable: basado en el handler; se rompe si el middleware lo reescribe]`.", { expected: "payload-required" });
+    expect(r.pass).toBe(true);
+  });
+
   test("bare label fails when payload required", () => {
     const r = labelPresence("El endpoint devuelve 200 [Probable].", { expected: "payload-required" });
     expect(r.pass).toBe(false);
@@ -219,7 +224,7 @@ describe("devLoopStages (029 US-dev)", () => {
   });
 });
 
-// Quality review 2026-09-11 — H56: the behavioural replacement for two mandatory routing
+// The behavioural replacement for two mandatory routing
 // rows that no invocation counter can audit.
 describe("evidenceBeforeDone", () => {
   test("recognises a formal completion marker without proving execution", () => {
@@ -240,9 +245,8 @@ describe("evidenceBeforeDone", () => {
   });
 });
 
-// Style-adherence graders added 2026-09-11 (review of the `i-have-adhd` skill).
 
-describe("cardSeparators (H16 — §2 separators, previously ungraded)", () => {
+describe("cardSeparators (§2 separators)", () => {
   test("fails on labeled cards split by a box-drawing rule", () => {
     const r = cardSeparators(`Hallazgo H1 — media
 El bucket S3 queda huérfano
@@ -280,7 +284,7 @@ Y sigue el cuerpo.`);
     expect(r.pass).toBe(false);
   });
 
-  test("the same frontmatter inside a fence passes — §2 wants quoted config fenced", () => {
+  test("the same frontmatter inside a fence passes: §2 wants quoted config fenced", () => {
     const r = cardSeparators(`El fichero empieza así:
 
 \`\`\`yaml
@@ -329,7 +333,7 @@ describe("proseLength (§4 ceiling on running prose)", () => {
   });
 });
 
-describe("stepState (§2 — multi-step work without the dev-loop scan line)", () => {
+describe("stepState (§2, multi-step work without the dev-loop scan line)", () => {
   test("passes when the turn names the current step and the next one", () => {
     const r = stepState("Paso 3 de 5: esquema actualizado. Siguiente: backfill de la columna nueva.", { expected: "step-state" });
     expect(r.pass).toBe(true);
@@ -359,11 +363,11 @@ describe("registry", () => {
   });
 });
 
-// Quality review 2026-09-11 — H69. The grader passed on two PLAN-stage words while
-// CLAUDE.md §The dev loop demands the five stages visible in the answer. It measured
+// The grader passed on two PLAN-stage words while
+// CLAUDE.md §How to work demands the five stages visible on high-blast-radius work. It measured
 // less than the rule it guards, so a reply that skipped BUILD, REVIEW and LEARN scored
 // as compliant.
-describe("devLoopStages grades the five stages the doctrine names (H69)", () => {
+describe("devLoopStages grades the five stages the doctrine names", () => {
   test("a PLAN-only reply is not a visible dev loop", () => {
     const r = devLoopStages(
       "Objetivo: añadir paginación. Plan: tocar report.ts y sus tests.",

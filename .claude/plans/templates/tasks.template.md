@@ -1,27 +1,27 @@
 ---
 us: US{N}
-title: <título descriptivo ≤80 chars>
+title: "<título descriptivo ≤80 chars>"
 wave: W{N}
-depends_on: [US{ids}]
+depends_on: ["US{ids}"]
 tdd_mode: forced|optional|skip
 estimate: S|M|L
 status: draft
-approved: <ISO-date cuando el hard gate 2→3 se cierra; omitir mientras draft>
-absorbs_decision: <nombre>   # opcional — solo si la HU absorbe una decisión cross-cutting
+approved: "<ISO-date cuando el hard gate 2→3 se cierra; omitir mientras draft>"
+absorbs_decision: "<nombre>"   # opcional, solo si la HU absorbe una decisión cross-cutting
 ---
 
-# US{N} — <título>
+# US{N}: <título>
 
 ## Execution prompt (Phase 3 input)
 
-> The US is consumed by `flow` (build phase) (the Lead executes it inline). Write this block as a self-contained, high-quality prompt — Commandment VIII applies to the plan itself.
+> The US is consumed by `flow` in the build phase, where the Lead executes it inline. Write this block as a self-contained, high-quality prompt: Commandment VIII applies to the plan itself.
 
-**Task**: <one imperative sentence — the exact change>
-**Context**: <files, prior state, evidence the executor needs — paths verified>
+**Task**: <one imperative sentence, the exact change>
+**Context**: <files, prior state, evidence the executor needs, paths verified>
 **Constraints**: <locked decisions, what NOT to touch, language/style rules>
 **Deliverable**: <exact artifacts/edits expected>
 **Verify**: <mechanical checks that prove done>
-**Ask first**: <AskUserQuestion moments, or "nothing — decisions locked">
+**Ask first**: <AskUserQuestion moments, or "nothing, decisions locked">
 
 ## ⚡ Quick reference
 
@@ -31,11 +31,11 @@ absorbs_decision: <nombre>   # opcional — solo si la HU absorbe una decisión 
 | **Wave** | W{N} |
 | **Depends on** | [US{ids}] o `none` |
 | **Blocks** | [US{ids}] (qué HUs me están esperando) |
-| **Files touched** | <resumen 1 línea — paths exactos> |
+| **Files touched** | <resumen 1 línea: paths exactos> |
 | **TDD-mode** | forced \| optional \| skip:<reason> |
 | **Estimate** | S \| M \| L |
 | **Cómo arrancar** | <1-2 líneas literales del paso 1 del workflow> |
-| **Decisión absorbida** | <si aplica, ej. "decide CUT planner-protocol"> o `—` |
+| **Decisión absorbida** | <si aplica, ej. "decide CUT planner-protocol"> o `none` |
 
 ## User story
 
@@ -68,10 +68,10 @@ absorbs_decision: <nombre>   # opcional — solo si la HU absorbe una decisión 
 
 | Categoría | Propósito |
 |---|---|
-| `[location]` | Challenge location — ¿es el sitio correcto para esto? |
-| `[approach]` | Challenge approach — ¿por qué este patrón y no otro? |
-| `[context]` | Introduce context — ¿cómo interactúa con X? ¿qué dependencias tiene? |
-| `[failure]` | Probe failure modes — ¿qué pasa si <edge case>? |
+| `[location]` | Challenge location: ¿es el sitio correcto para esto? |
+| `[approach]` | Challenge approach: ¿por qué este patrón y no otro? |
+| `[context]` | Introduce context: ¿cómo interactúa con X? ¿qué dependencias tiene? |
+| `[failure]` | Probe failure modes: ¿qué pasa si <edge case>? |
 
 1. `[location]` <pregunta sobre dónde / en qué archivo o componente>
 2. `[approach]` <pregunta sobre por qué este patrón y no la alternativa>
@@ -94,7 +94,7 @@ absorbs_decision: <nombre>   # opcional — solo si la HU absorbe una decisión 
 
 > Solo si hay skills/agents/scripts existentes reutilizados. Omitir en caso contrario.
 
-- `<skill-name>` — <para qué>
+- `<skill-name>`: <para qué>
 
 ## Adaptación intra-fase
 
@@ -121,4 +121,4 @@ absorbs_decision: <nombre>   # opcional — solo si la HU absorbe una decisión 
 
 ## Open questions (a resolver en implementación)
 
-- <gap o duda — puede estar vacío>
+- <gap o duda: puede estar vacío>

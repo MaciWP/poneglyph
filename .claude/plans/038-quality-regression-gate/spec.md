@@ -1,4 +1,4 @@
-# 038 — Quality regression gate
+# 038: Quality regression gate
 
 **Status: NOT STARTED.** Phase 1 stub, parked deliberately on 2026-09-12. Nothing
 depends on it; the repo is consistent without it.
@@ -21,7 +21,7 @@ suite proves they are obeyed, not that they help.
 
 Reviewing [ayghri/i-have-adhd](https://github.com/ayghri/i-have-adhd) (2026-09-11/12).
 Its `evals/` measures a candidate style against a baseline with a blind judge, and that
-measurement caught a regression its own authors did not expect — `partial-success`, −0.63,
+measurement caught a regression its own authors did not expect: `partial-success`, −0.63,
 traced to their rule 8. Read `evals/RESULTS.md` there before designing this.
 
 Worth borrowing:

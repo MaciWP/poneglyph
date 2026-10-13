@@ -9,7 +9,7 @@ const asst = (ctx: number, out = 100, model = "claude-fable-5-1", content: unkno
 const toolUse = (id: string, name: string, input: Record<string, unknown>) => ({ type: "tool_use", id, name, input });
 const result = (id: string, text: string) => JSON.stringify({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: id, content: text }] } });
 
-describe("usage-profile — parseTranscript", () => {
+describe("usage-profile, parseTranscript", () => {
   it("reads assistant usage and attributes tool_result chars to the tool and Bash family that produced them", () => {
     const t = parseTranscript([
       asst(50_000, 20, "claude-opus-5", [toolUse("a", "Bash", { command: 'cd "/x" && cat plan.md' }), toolUse("b", "Read", { file_path: "f" })]),
@@ -22,9 +22,22 @@ describe("usage-profile — parseTranscript", () => {
     expect(t.messages).toEqual([{ model: "claude-opus-5", ctx: 50_000, out: 20 }, { model: "claude-fable-5-1", ctx: 60_000, out: 100 }]);
     expect(t.tools).toEqual([{ tool: "Bash", family: "cat", chars: 300 }, { tool: "Read", family: "", chars: 50 }]);
   });
+
+  it("counts one API response once although the transcript writes one line per content block", () => {
+    const block = (content: unknown[]) => asst(80_000, 30, "claude-opus-5", content).replace('"message":{', '"message":{"id":"msg_1",');
+    const t = parseTranscript([block([{ type: "thinking" }]), block([toolUse("a", "Read", {})]), result("a", "z".repeat(40))]);
+    expect(t.messages).toEqual([{ model: "claude-opus-5", ctx: 80_000, out: 30 }]);
+    expect(t.tools).toEqual([{ tool: "Read", family: "", chars: 40 }]);
+  });
+
+  it("does not count base64 image data as tool output chars", () => {
+    const img = JSON.stringify({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: "a", content: [{ type: "image", source: { type: "base64", data: "A".repeat(90_000) } }, { type: "text", text: "caption" }] }] } });
+    const t = parseTranscript([asst(1000, 1, "m", [toolUse("a", "Read", {})]), img]);
+    expect(t.tools[0].chars).toBeLessThan(200);
+  });
 });
 
-describe("usage-profile — bashFamily", () => {
+describe("usage-profile, bashFamily", () => {
   it("strips a leading cd, keeps git/gh/bun subcommands and names echo-composites by their first word", () => {
     expect(bashFamily('cd "D:/x" && git status --short')).toBe("git status");
     expect(bashFamily("cat .claude/plan.md")).toBe("cat");
@@ -36,7 +49,7 @@ describe("usage-profile — bashFamily", () => {
   });
 });
 
-describe("usage-profile — summaries", () => {
+describe("usage-profile, summaries", () => {
   it("percentile is nearest-rank on a sorted list", () => {
     expect(percentile([1, 2, 3, 4], 0.5)).toBe(2);
     expect(percentile([1, 2, 3, 4], 0.9)).toBe(3);
@@ -56,6 +69,20 @@ describe("usage-profile — summaries", () => {
     expect(s.topSessionShare).toBeGreaterThan(0.8);
   });
 
+  it("classifies mid-session cache rewrites by compaction, pause beyond the cache TTL, or neither", () => {
+    const at = (min: number, cc: number, cr: number, id: string) => JSON.stringify({ type: "assistant", timestamp: new Date(min * 60_000).toISOString(), message: { id, model: "m", usage: { input_tokens: 1, cache_creation_input_tokens: cc, cache_read_input_tokens: cr, output_tokens: 1, cache_creation: { ephemeral_1h_input_tokens: cc } } } });
+    const t = parseTranscript([
+      at(0, 60_000, 0, "a"), // first turn: building the cache is not a rewrite
+      at(1, 1_000, 60_000, "b"),
+      JSON.stringify({ type: "system", subtype: "compact_boundary" }),
+      at(2, 40_000, 20_000, "c"),
+      at(90, 70_000, 20_000, "d"),
+      at(91, 80_000, 20_000, "e"),
+    ]);
+    expect(t.rewrites).toEqual([{ cause: "compact", tokens: 40_000 }, { cause: "pause", tokens: 70_000 }, { cause: "other", tokens: 80_000 }]);
+    expect(summarizeContext([t]).rewriteTokens).toEqual({ compact: 40_000, pause: 70_000, other: 80_000 });
+  });
+
   it("summarizeTools orders by chars, Bash families only for Bash", () => {
     const t = parseTranscript([asst(1000, 1, "m", [toolUse("a", "Bash", { command: "cat f" }), toolUse("b", "Bash", { command: "git status" }), toolUse("c", "Read", {})]), result("a", "x".repeat(30)), result("b", "y".repeat(10)), result("c", "z".repeat(20))]);
     const { byTool, byFamily } = summarizeTools([t]);
@@ -64,11 +91,12 @@ describe("usage-profile — summaries", () => {
   });
 
   it("contextRow reproduces the 2026-09-09 baseline as a warning and a healthy week as green", () => {
-    const baseline = { sessions: 122, messages: 3785, totalTokens: 1e9, p50: 193_735, p90: 584_988, overCap: 1854, overCapShare: 0.487, overCapTokenShare: 0.807, topSessionShare: 0.519, floorP50: 50_804 };
+    const baseline = { sessions: 122, messages: 3785, totalTokens: 1e9, p50: 193_735, p90: 584_988, overCap: 1854, overCapShare: 0.487, overCapTokenShare: 0.807, topSessionShare: 0.519, floorP50: 50_804, rewriteTokens: { pause: 18_000_000, compact: 25_000_000, other: 0 } };
     const warn = contextRow(baseline, 200_000); // the baseline was measured against the 200k ceiling
     expect(warn.status).toBe("🟡");
     expect(warn.detail).toContain("49 % of msgs above 200k carry 81 % of context");
-    expect(warn.detail).toContain("plan 037");
+    expect(warn.detail).toContain("long sessions are the spend");
+    expect(warn.detail).toContain("cache rewrites: pause 18000k");
     const healthy = contextRow({ ...baseline, overCapShare: 0.05, overCapTokenShare: 0.1, topSessionShare: 0.2 });
     expect(healthy.status).toBe("🟢");
     expect(contextRow({ ...baseline, messages: 0 }).detail).toBe("no transcripts in the window");
@@ -76,7 +104,7 @@ describe("usage-profile — summaries", () => {
   });
 });
 
-describe("usage-profile — collectTranscripts", () => {
+describe("usage-profile, collectTranscripts", () => {
   it("returns only .jsonl files modified inside the window, recursively", () => {
     const root = mkdtempSync(join(tmpdir(), "usage-"));
     mkdirSync(join(root, "proj"), { recursive: true });

@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 // bun .claude/scripts/budget.ts [--bodies] [--update | --tighten]
 // Prints the always-loaded budget table (and per-skill bodies with --bodies); --update
-// rewrites the ratchet snapshot after a deliberate size decision (plan 032/WP4); --tighten
+// rewrites the ratchet snapshot after a deliberate size decision; --tighten
 // only lowers it, locking every saving the measurement shows.
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -31,7 +31,7 @@ if (args.has("--update")) {
 
 if (args.has("--tighten")) {
   if (!snapshot) {
-    console.log("\n🔴 No snapshot to tighten — run with --update to set the ratchet");
+    console.log("\n🔴 No snapshot to tighten, run with --update to set the ratchet");
     process.exit(1);
   }
   const locked = slack(current, snapshot);
@@ -47,7 +47,7 @@ if (args.has("--tighten")) {
 if (snapshot) {
   const violations = compare(current, snapshot);
   if (violations.length > 0) {
-    console.log("\n🔴 Over budget (snapshot, 0 % growth allowed — plan 037):");
+    console.log("\n🔴 Over budget (snapshot, 0 % growth allowed):");
     for (const v of violations) console.log(`   - ${v.key}: ${v.snapshot} → ${v.current}`);
     console.log("   Reduce, or ratify the growth with `bun .claude/scripts/budget.ts --update`.");
     process.exit(1);
@@ -61,5 +61,5 @@ if (snapshot) {
   }
   console.log("\n🟢 Within budget");
 } else {
-  console.log("\n🟡 No snapshot yet — run with --update to set the ratchet");
+  console.log("\n🟡 No snapshot yet, run with --update to set the ratchet");
 }

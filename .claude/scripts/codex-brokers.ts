@@ -6,7 +6,7 @@
 // Why this exists: the codex plugin spawns one broker per distinct `--cwd`
 // (`scripts/lib/broker-lifecycle.mjs`, `spawn(..., { cwd, detached: true })` then `unref()`).
 // On Windows a process holding a directory as its working directory locks that directory
-// against deletion, even when it is empty — so a worktree used as `--cwd` cannot be removed
+// against deletion, even when it is empty, so a worktree used as `--cwd` cannot be removed
 // until the broker dies, and the plugin only shuts brokers down from its session-end hook.
 // The failing command is `git worktree remove` or `rm -rf`, which points at the wrong culprit.
 //
@@ -14,9 +14,10 @@
 // `consult` skill. This is the repair for when it already happened.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createConnection } from "node:net";
-import { homedir, tmpdir } from "node:os";
+import { tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, join } from "node:path";
 import { pathToFileURL } from "node:url";
+import { claudeConfigDir } from "../hooks/lib/paths";
 
 export function stateRoot(env: NodeJS.ProcessEnv = process.env): string {
   return env.CLAUDE_PLUGIN_DATA ? join(env.CLAUDE_PLUGIN_DATA, "state") : join(tmpdir(), "codex-companion");
@@ -31,7 +32,7 @@ export interface Broker {
 }
 
 /** Use the installed plugin's Git-root, canonical-path and data-directory contract. */
-export async function resolveBrokerDirectory(workspaceRoot: string): Promise<string> {
+async function resolveBrokerDirectory(workspaceRoot: string): Promise<string> {
   const lib = lifecycleModule();
   if (!lib) throw new Error("Codex plugin is unavailable; broker lookup is unverified.");
   const { resolveStateDir } = await import(pathToFileURL(join(dirname(lib), "state.mjs")).href);
@@ -76,11 +77,6 @@ export function readBrokers(root = stateRoot()): Broker[] {
     }
   }
   return brokers.sort((a, b) => Number(b.alive) - Number(a.alive) || a.slug.localeCompare(b.slug));
-}
-
-/** Where Claude Code keeps its configuration. `CLAUDE_CONFIG_DIR` moves it. */
-export function claudeConfigDir(env: NodeJS.ProcessEnv = process.env): string {
-  return env.CLAUDE_CONFIG_DIR ?? join(homedir(), ".claude");
 }
 
 /**

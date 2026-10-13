@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { buildDenial, judgeCommand } from "../headless-model-gate";
 
-describe("headless-model-gate — judgeCommand (plan 033)", () => {
+describe("headless-model-gate: judgeCommand", () => {
   const allowed = [
     "git status",
     "claude doctor",
@@ -14,7 +14,7 @@ describe("headless-model-gate — judgeCommand (plan 033)", () => {
     "bun .claude/evals/run.ts --model claude-sonnet-5-5",
     'claude -p --model claude-fable-5-1 --allow-expensive "x"',
     "bun .claude/evals/probe-activation.ts after --model claude-fable-5-1 --allow-expensive",
-    'echo "claude -p is documented here" > notes.md', // mentions claude but does not run it headless… wait: it contains -p? no — echo is the command',
+    'echo "claude -p is documented here" > notes.md', // mentions claude but does not run it headless… wait: it contains -p? no, echo is the command',
   ];
   for (const cmd of allowed) {
     it(`allows: ${cmd}`, () => {

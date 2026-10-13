@@ -1,16 +1,16 @@
 ---
 parent: html-report
 name: visuals-svg-first
-description: SVG-first diagram & chart patterns for self-contained reports + the decision rule for when to fall back to JS (mermaid.js). Feature 007.
+description: SVG-first diagram & chart patterns for self-contained reports + the decision rule for when to fall back to JS (mermaid.js).
 ---
 
-# Visuals — SVG-first (diagrams + charts)
+# Visuals: SVG-first (diagrams + charts)
 
-How `html-report` embeds **diagrams** (flow, comparison) and **charts** (bars, score, decision matrix) while staying **self-contained**. The generator composes inline SVG by hand — same pattern already proven in the templates (gauge, severity-bar). No charting library, no JS by default.
+How `html-report` embeds **diagrams** (flow, comparison) and **charts** (bars, score, decision matrix) while staying **self-contained**. The generator composes inline SVG by hand; same pattern already proven in the templates (gauge, severity-bar). No charting library, no JS by default.
 
-> **Environment fact (re-verified 2026-06-08 via `command -v`)**: `node` / `npx` / `bunx` / `bun` / `python3` / `pandoc` ARE present (`/opt/homebrew/bin`); `typst` / `weasyprint` / `chromium` are absent. (This corrects the prior "2026-06-03: node/npx absent" claim, which was stale.) Consequences: a **generation-time** step (e.g. running Observable Plot or `mmdc` via `npx` to emit SVG, then inlining it) IS now possible. **SVG-by-hand remains the default** — not because runtime is missing, but because it guarantees the artefact is **self-contained with zero generation-time dependencies** (Cmd V). Generation-time tooling is an opt-in that must degrade to the hand path if the package/network is unavailable.
+> **Environment fact (re-verified 2026-06-08 via `command -v`)**: `node` / `npx` / `bunx` / `bun` / `python3` / `pandoc` ARE present (`/opt/homebrew/bin`); `typst` / `weasyprint` / `chromium` are absent. Consequences: a **generation-time** step (e.g. running Observable Plot or `mmdc` via `npx` to emit SVG, then inlining it) IS possible. **SVG-by-hand remains the default**, not because runtime is missing, but because it guarantees the artefact is **self-contained with zero generation-time dependencies** (Cmd V). Generation-time tooling is an opt-in that must degrade to the hand path if the package/network is unavailable.
 
-## Decision rule — SVG-by-hand vs JS opt-in
+## Decision rule: SVG-by-hand vs JS opt-in
 
 | Situation | Path | Why |
 |---|---|---|
@@ -18,19 +18,19 @@ How `html-report` embeds **diagrams** (flow, comparison) and **charts** (bars, s
 | Comparison / bars / score / decision matrix | **SVG + CSS by hand** | Data geometry is trivial; reuse gauge/sevbar pattern |
 | Dense graph (>~10 nodes, crossing edges, auto-layout needed) | **JS opt-in** (`mermaid.js`) | Hand layout not reasonable; declare the dependency |
 
-**JS opt-in is a declared exception, not a default.** When taken: inline `mermaid.js` OR a CDN `<script>` — note in the document header that it is no longer pure-offline (CDN = network dependency; inline bundle = +hundreds of KB). Prefer SVG-by-hand whenever the diagram is simple enough (Cmd V, spec AC2/AC4).
+**JS opt-in is a declared exception, not a default.** When taken: inline `mermaid.js` OR a CDN `<script>`, note in the document header that it is no longer pure-offline (CDN = network dependency; inline bundle = +hundreds of KB). Prefer SVG-by-hand whenever the diagram is simple enough (Cmd V, spec AC2/AC4).
 
 > Open question (calibrate in use): the exact node/edge count where hand-SVG stops being reasonable. Start conservative (~8 nodes) and revise.
 
 ## A11y + anti-slop (every visual)
 
 - `role="img"` + a descriptive `aria-label` on every `<svg>` (WCAG, not color-alone).
-- Colors via the tokens (`--accent`, `--good/mid/warn/bad`, `--ink-*`) — never raw hex, never purple gradients, never chartjunk (anti-slop.md).
+- Colors via the tokens (`--accent`, `--good/mid/warn/bad`, `--ink-*`), never raw hex, never purple gradients, never chartjunk (anti-slop.md).
 - `font-variant-numeric: tabular-nums` on numeric labels.
 
 ## Patterns
 
-### 1 — Flow (steps)
+### 1: Flow (steps)
 
 ```html
 <svg role="img" aria-label="Flujo: Scope → Plan → Build → Review" viewBox="0 0 600 64" width="100%" style="max-width:600px">
@@ -48,7 +48,7 @@ How `html-report` embeds **diagrams** (flow, comparison) and **charts** (bars, s
 </svg>
 ```
 
-### 2 — Comparison bars (A vs B vs …)
+### 2: Comparison bars (A vs B vs …)
 
 ```html
 <svg role="img" aria-label="Comparativa: A 8, B 6, C 4 sobre 10" viewBox="0 0 320 96" width="100%" style="max-width:320px">
@@ -59,13 +59,13 @@ How `html-report` embeds **diagrams** (flow, comparison) and **charts** (bars, s
 </svg>
 ```
 
-### 3 — Score / progress (single value)
+### 3: Score / progress (single value)
 
 Reuse the existing CSS bar pattern (no SVG needed): a track `<div>` + a fill `<div style="width:N%">` colored by threshold (`--good/mid/warn/bad`). See the gauge/sevbar in `templates/components.html` for the canonical version.
 
-### 4 — Decision matrix (consumed by decision.template — US3)
+### 4: Decision matrix (consumed by decision.template)
 
-A weighted options×criteria grid: an HTML `<table>` whose score cells carry a small inline bar (CSS width = score/max) colored by threshold, plus a weighted total column. Pure HTML+CSS, no SVG library; the `.dmatrix` CSS ships in `decision.template.html`, so this markup renders unstyled on its own. US3's `decision.template.html` embeds this as its core component; this section is its single source — do NOT re-author it elsewhere (Cmd IX).
+A weighted options×criteria grid: an HTML `<table>` whose score cells carry a small inline bar (CSS width = score/max) colored by threshold, plus a weighted total column. Pure HTML+CSS, no SVG library; the `.dmatrix` CSS ships in `decision.template.html`, so this markup renders unstyled on its own. US3's `decision.template.html` embeds this as its core component; this section is its single source; do NOT re-author it elsewhere (Cmd IX).
 
 ```html
 <div class="dmatrix-wrap"><table class="dmatrix"><thead><tr><th>Opción</th><th>Precio ×3</th><th>Panel ×2</th><th class="tot">Total</th></tr></thead>
@@ -74,7 +74,7 @@ A weighted options×criteria grid: an HTML `<table>` whose score cells carry a s
 </tbody></table></div>
 ```
 
-## Verification (US2 oracle)
+## Verification
 
 - Every example renders with the network disabled (no external asset).
 - `Grep '<script'` over a generated doc using only these patterns → 0.

@@ -2,7 +2,8 @@ import { describe, expect, it } from "bun:test";
 import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
-import { claudeConfigDir, newestVersion, readBrokers, stateRoot } from "../codex-brokers";
+import { newestVersion, readBrokers, stateRoot } from "../codex-brokers";
+import { claudeConfigDir } from "../../hooks/lib/paths";
 
 describe("plugin data root", () => {
   it("honours the plugin data override and its fallback", () => {
@@ -14,7 +15,7 @@ describe("plugin data root", () => {
 describe("finding the plugin, on any machine", () => {
   it("orders versions numerically, not as text", () => {
     // `sort()` alone ranks 1.0.10 below 1.0.9 and would load an older plugin than the one
-    // installed — the module whose shape this script depends on.
+    // installed, the module whose shape this script depends on.
     expect(newestVersion(["1.0.6", "1.0.10", "1.0.9"])).toBe("1.0.10");
     expect(newestVersion(["2.0.0", "10.0.0"])).toBe("10.0.0");
     expect(newestVersion(["1.2", "1.2.1"])).toBe("1.2.1");

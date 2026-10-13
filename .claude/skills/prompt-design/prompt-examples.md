@@ -4,10 +4,10 @@ Examples transforming vague prompts into actionable ones.
 
 ## Example 1: API
 
-### Before (Score: 30)
+### Before (fails)
 > "Hacer login"
 
-### After (Score: 85)
+### After (passes)
 > "Crear endpoint POST /api/auth/login que:
 > - Reciba { email: string, password: string }
 > - Valide email formato válido, password min 8 chars
@@ -16,10 +16,10 @@ Examples transforming vague prompts into actionable ones.
 
 ## Example 2: Database
 
-### Before (Score: 25)
+### Before (fails)
 > "Agregar campo al usuario"
 
-### After (Score: 80)
+### After (passes)
 > "Añadir campo `lastLoginAt: timestamp | null` a tabla users:
 > - Migration up: ALTER TABLE ADD COLUMN
 > - Migration down: ALTER TABLE DROP COLUMN  
@@ -28,10 +28,10 @@ Examples transforming vague prompts into actionable ones.
 
 ## Example 3: Refactoring
 
-### Before (Score: 20)
+### Before (fails)
 > "Limpiar el código"
 
-### After (Score: 85)
+### After (passes)
 > "Refactorizar `processOrder()` en src/services/order.ts:
 > - Extraer validación a `validateOrder()`
 > - Extraer cálculo a `calculateTotal()`
@@ -40,10 +40,10 @@ Examples transforming vague prompts into actionable ones.
 
 ## Example 4: Testing
 
-### Before (Score: 35)
+### Before (fails)
 > "Agregar tests"
 
-### After (Score: 80)
+### After (passes)
 > "Añadir tests para `UserService.create()`:
 > - Unit: email duplicado retorna error
 > - Unit: password se hashea correctamente
@@ -52,10 +52,10 @@ Examples transforming vague prompts into actionable ones.
 
 ## Example 5: WebSocket
 
-### Before (Score: 30)
+### Before (fails)
 > "Hacer chat en tiempo real"
 
-### After (Score: 85)
+### After (passes)
 > "Implementar WebSocket /ws/chat que:
 > - Auth: JWT en query param `?token=`
 > - Mensaje entrada: { type: 'message', content: string, roomId: string }

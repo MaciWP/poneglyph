@@ -4,7 +4,7 @@
  * Instructions Loaded Hook (InstructionsLoaded / SessionStart)
  *
  * Logs every instruction file load (CLAUDE.md / .claude/rules/*.md) to
- * `.claude/learned/instructions-loaded.log` — one line per event:
+ * `.claude/learned/instructions-loaded.log`, one line per event:
  *   <ISO ts> <session_id> <memory_type> <load_reason> <file_path>
  *
  * Closes the "verify load layer" lesson: grep the log to PROVE which
@@ -12,12 +12,13 @@
  * InstructionsLoaded is async (fire-and-forget): stdout/exit code are ignored.
  * SessionStart(compact) adds a language reminder before Claude continues.
  * https://code.claude.com/docs/en/hooks#sessionstart-decision-control
- * No rotation — the log is plain lines; truncate manually or at retro.
+ * No rotation, the log is plain lines; truncate manually or at retro.
  */
 
 import { appendFileSync, mkdirSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname } from "node:path";
 import { readHookStdin } from "./lib/hook-stdin";
+import { learnedLog } from "./lib/paths";
 
 export interface InstructionsLoadedPayload {
   session_id?: string;
@@ -62,12 +63,11 @@ if (import.meta.main) {
       }
       const line = formatLogLine(payload);
       if (line) {
-        const base = typeof payload.cwd === "string" ? payload.cwd : process.cwd();
-        appendLog(line, join(base, ".claude", "learned", "instructions-loaded.log"));
+        appendLog(line, learnedLog(payload.cwd, "instructions-loaded.log"));
       }
     }
   } catch {
-    // best-effort — never block
+    // best-effort, never block
   }
   process.exit(0);
 }

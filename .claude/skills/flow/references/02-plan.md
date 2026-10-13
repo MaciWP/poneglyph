@@ -1,10 +1,10 @@
 ---
 parent: flow
 name: plan
-description: Phase 2 — turn an approved spec.md into atomic HUs with a real dependency DAG, research-backed, ready for the joint gate 2→3.
+description: Phase 2, turn an approved spec.md into atomic HUs with a real dependency DAG, research-backed, ready for the joint gate 2→3.
 ---
 
-# Phase 2 — Plan
+# Phase 2: Plan
 
 Translate an approved `spec.md` into a Validated Execution Graph: atomic HUs, a DAG of real
 dependencies, decisions backed by research. Deliverable: `tasks/index.md` + one
@@ -30,7 +30,7 @@ STOP and escalate. Open questions in the spec are resolved with the user before 
 3. Read `tasks.template.md` and `tasks-index.template.md` (project templates, then global).
 4. An existing `tasks/` for this slug → ask "continue or restart?" before overwriting.
 
-## Step 1 — Level triage (first line of the output)
+## Step 1: Level triage (first line of the output)
 
 Declare `Level: Quick|Standard|Full — <reason>` as the first line of the `tasks/index.md`
 summary.
@@ -43,7 +43,7 @@ summary.
 
 Start at Quick and escalate on uncertainty; never splice levels. Restart at the higher one.
 
-## Step 2 — TDD applicability
+## Step 2: TDD applicability
 
 Read `rules/test-policy.md`. Declare on the second line:
 `TDD-mode: <forced|adaptive|optional> — <reason from test-policy.md>`. That rule owns the
@@ -51,43 +51,43 @@ project default and the escalation inside a lifecycle (§Override in plan); reso
 node and record the reason. A node may carry `tdd-skip: <reason ≥10 chars>`; a skip
 without a concrete reason is rejected.
 
-## Step 3 — Discovery (anti-duplicate)
+## Step 3: Discovery (anti-duplicate)
 
 Full protocol: `plan/01-discovery.md`. Before any "create X": `Glob('**/X.ts')`,
 `Glob('**/X/**')`, `Grep('class X', 'src/')`. **If it exists, modify; do not create.**
 
-## Step 4 — Research (anti-obsolescence, Standard+)
+## Step 4: Research (anti-obsolescence, Standard+)
 
 Context7 for every external API the spec names (version + breaking changes); WebFetch of
 1-2 reputable projects when the domain is unfamiliar; Grep/Glob for 5-10 project examples of
 the pattern to preserve style. Record sources under `## Research` in `tasks/index.md`.
 Checklist: `plan/02-research.md`.
 
-## Step 5 — Gap analysis (Standard+)
+## Step 5: Gap analysis (Standard+)
 
 Verify ground truth per planned change with `plan/03-gap-analysis.md`. A plan that names a
 function, library version or test file without a Grep/Context7/Glob check STOPs until the
 check runs.
 
-## Step 6 — Closure questionnaire (3-5 questions, skip those the spec answers)
+## Step 6: Closure questionnaire (3-5 questions, skip those the spec answers)
 
 Project conventions to preserve (linter, formatter, naming) · external APIs and versions ·
 performance/security constraints not in the spec · a project pattern you would improve
 (ask before acting).
 
-## Step 7 — Drillme, phase 2
+## Step 7: Drillme, phase 2
 
 Sweep the Phase 2 bank of `../../drillme-clarify/references/03-phase-questions.md` plus the
 canonical categories; the bank is the single source and is not restated here. Any "I don't
 know" or evasive answer iterates the plan. If `drillme-clarify` does not fire, invoke
 `/drillme-clarify "Phase 2 plan closing for <NNN-slug>"` before requesting the gate.
 
-## Step 8 — Stress-test alternatives (Full only)
+## Step 8: Stress-test alternatives (Full only)
 
 Two or more technically reasonable alternatives → `compare-and-decide` (heavy tier) before
 closing the plan.
 
-## Step 9 — Construct the DAG
+## Step 9: Construct the DAG
 
 | Symbol | Type | Execution |
 |---|---|---|
@@ -100,7 +100,7 @@ sequential DAG is valid; split by behavior and coupling, never by a parallelism 
 Cycles and waves of >10 HUs are smells: refactor the boundaries. Rules:
 `plan/04-classification-waves.md`.
 
-## Step 10 — Produce the artifacts
+## Step 10: Produce the artifacts
 
 1. `tasks/index.md` from its template: frontmatter (`spec`, `phase: 2`, `total_us`,
    `dag_complete`), executive summary, effort per wave + critical path, time budget in
@@ -117,24 +117,24 @@ allowed when the plan justifies it in the plan itself (need, rejected alternativ
 verified version); reopen scope only when the library contradicts a constraint `spec.md`
 records.
 
-## Step 11 — Cross-validation (Full, complexity >60)
+## Step 11: Cross-validation (Full, high complexity)
 
 Optional four-eyes audit of the DAG before closing: `plan/05-team-mode.md`.
 
-## Step 12 — Quality gate
+## Step 12: Quality gate
 
 Run `plan/06-quality-gates.md`. Key checks: every HU has role/action/benefit, ACs,
-`depends_on`, files and `tdd_mode`; every Execution prompt scores ≥70 against
-`../../prompt-design/scoring-criteria.md` (refine below that; the score is a doubt signal,
+`depends_on`, files and `tdd_mode`; every Execution prompt passes
+`../../prompt-design/scoring-criteria.md` (refine a failing one; a fail is a doubt signal,
 not a hard stop); no cycles; every claim about existing code verified; test policy honored.
 
-## Step 13 — Hand over to phase 2.5
+## Step 13: Hand over to phase 2.5
 
 Record `complete-phase 2`. Then run `references/03-test-plan.md` on the draft tasks and
 confirm `tests.md`/`validations.md` exists before returning control; re-run it yourself if
 the chain did not fire. An existing oracle may be reused after checking its coverage.
 
-## Step 14 — Report
+## Step 14: Report
 
 ```text
 Phase 2 closed for {NNN}-{slug}:
@@ -156,7 +156,7 @@ decision with `approve-gate 2-3 --approval <decision-ref>`; never infer it from 
 - `spec.md` first; `draft` → STOP.
 - Anti-duplicate before "create X"; anti-obsolescence before naming an external API; every
   path, function and import verified before it is written down.
-- Honest reduction: "Quick — N HUs, no deep research" beats padding.
+- Honest reduction: "Quick: N HUs, no deep research" beats padding.
 - A pattern you would improve → mention and ask; never act unasked.
 
 ## Anti-patterns
@@ -174,8 +174,8 @@ decision with `approve-gate 2-3 --approval <decision-ref>`; never infer it from 
 
 | Topic | File |
 |---|---|
-| Discovery — sources and pre-create checks | `plan/01-discovery.md` |
-| Research — Context7 and WebFetch anti-obsolescence | `plan/02-research.md` |
+| Discovery: sources and pre-create checks | `plan/01-discovery.md` |
+| Research: Context7 and WebFetch anti-obsolescence | `plan/02-research.md` |
 | Gap analysis per change type | `plan/03-gap-analysis.md` |
 | HU classification and dependency waves | `plan/04-classification-waves.md` |
 | Cross-validation for Full level | `plan/05-team-mode.md` |

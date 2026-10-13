@@ -1,24 +1,24 @@
 // Logic of the remote-git-gate hook (entrypoint: ../remote-git-gate.ts, which loads this module
 // lazily so that a failed import still fails closed).
 //
-// 2026-09-26: permissions.ask rules prompted on every local revert (`git checkout -- f`) even in
+// Why: permissions.ask rules prompted on every local revert (`git checkout -- f`) even in
 // bypass sessions, and an ask rule can never be silenced by an explicit request: "a matching ask
 // rule still prompts even when the hook returned allow" (code.claude.com/docs/en/permissions).
 // Oriol's contract: local git runs freely; `git push`, `gh pr create` and `gh pr merge` need his
-// this-turn ask (CLAUDE.md §Git / PR) and then run without a prompt. A force push or a remote
+// this-turn ask (CLAUDE.md §Hard rules) and then run without a prompt. A force push or a remote
 // branch delete needs him to say so in words; a plain "haz push" does not cover it.
 //
 // Both error directions are tuned to land on DENY: a false deny costs Oriol one reply, a false
-// allow publishes. So detection over-matches (`echo git push` is denied) and authorization
-// under-matches (only order forms count, never a mention, a quote or a question).
+// allow publishes. So detection over-matches (`echo git push` is denied). Authorization takes an
+// order in the prompt, a reply that opens with assent to an offer of the action, or an
+// AskUserQuestion answer that names it; never a bare mention, a quote or a question.
 //
 // Known holes: git aliases (`git p`), commands built at runtime or run from a script file,
 // `gh api -X POST`, `gh pr close/comment`, `gh release`, `npm publish`, sessions with hooks
 // disabled (`--bare`), and any agent that types into a Claude terminal: its prompt is recorded
-// as human. Orca dispatch prompts are recognised by their preamble and never authorize.
-// ponytail: this module and security-gate.ts keep separate git vocabularies (the Stop warn vs
-// this gate); merge them when a third hook needs remote-git detection.
-import { readTranscriptTail, userPromptOf } from "../security-gate";
+// as human.
+import { foldText } from "./language";
+import { isHumanOrigin, readTranscriptTail, userPromptOf } from "./transcript";
 
 export type RemoteAction = "push" | "push-force" | "pr-create" | "pr-merge";
 
@@ -32,8 +32,8 @@ const INTERPRETERS = new Set(["bash", "sh", "zsh", "dash", "ksh", "pwsh", "power
 const EVALUATORS = new Set(["eval", "iex", "invoke-expression"]);
 const REMOTE_HINT = /\bpush\b|\bgh(?:\.exe)?\b[\s\S]*\bpr\b/i;
 
-// Left-to-right and quote-aware, unlike stripShellData, whose quote stripping loses a command
-// after an apostrophe (`-m "don't" && git push … 'x'`). Returns the statements as word lists,
+// Left-to-right and quote-aware: stripping quoted spans with a regex loses a command after an
+// apostrophe (`-m "don't" && git push … 'x'`). Returns the statements as word lists,
 // plus text that a shell will execute later: `$(…)` or backticks inside double quotes,
 // backtick spans, and heredoc bodies.
 function tokenize(command: string): { statements: Word[][]; nested: string[] } {
@@ -136,7 +136,7 @@ function statementActions(words: Word[], found: Set<RemoteAction>): void {
           j++;
         }
       }
-      let sub = words[j]?.text;
+      let sub: string | undefined = words[j]?.text;
       if (sub === "subtree") sub = words.slice(j + 1).find((w) => !w.text.startsWith("-"))?.text;
       if (sub !== "push") continue;
       if (force || words.slice(j + 1).some((w) => FORCE_WORD.test(w.text) || FORCE_CONFIG.test(w.text))) found.add("push-force");
@@ -176,27 +176,37 @@ export function remoteActions(command: string, depth = 0): RemoteAction[] {
   return [...found];
 }
 
-// An order, not a mention: "arregla el push al array" or "Explícame gh pr merge." must not
-// authorize anything. Quoted and code spans are removed before matching.
+// An order, not a mention: "arregla el push al array", "voy a mergear" or "Explícame gh pr merge."
+// must not authorize anything. Both texts are folded first (no accents, lower case), so «mérgeala»
+// and «súbelo» need no accented variants. Quoted, code and pasted spans leave the prompt before
+// matching. The verbs cover dictation and conjugation the user really sends: «hacer pus»,
+// «abrir la PR» after another order, «mergearla», «commit y el push», «comnit push merge».
+const ORDER = String.raw`(?:haz|hacer|hazme|haga|ejecuta|lanza|do|run|vamos\s+a\s+\w+)`;
+const PUSH_WORD = String.raw`(?:push|pus|puch)`;
 const INTENT: Record<RemoteAction, RegExp> = {
   push: new RegExp(
     [
-      String.raw`\b(?:haz|hacer|hazme|haga|ejecuta|lanza|do|run)\s+(?:(?:el|un|the|a)\s+)?(?:git\s+)?push\b`,
-      String.raw`\bpush(?:ea|eas|eame|ealo|eala|ealos|ealas|ear|éalo|éala|éalos|éalas)\b`,
+      String.raw`\b${ORDER}\s+(?:(?:el|un|the|a)\s+)?(?:git\s+)?${PUSH_WORD}\b`,
+      String.raw`\bpush(?:ea|eas|eame|ealo|eala|ealos|ealas|ear)\b`,
       String.raw`\bpush\s+(?:it|this|that|now|ya)\b`,
-      String.raw`\bcommit\w*\s*(?:,\s*|\s+(?:y|e|and|then|luego)\s+|\s+)push\b`,
-      String.raw`\b(?:y|e|and|then|luego)\s+push\b`,
-      String.raw`\bs[uú]be\w*\s+(?:(?:la|las|los|el)\s+)?(?:rama|cambios|commits?)\b`,
-      String.raw`\bs[uú]be\w*\s+(?:a|al)\s+(?:origin|remoto|github)\b`,
+      String.raw`\b(?:y|e|and|then|luego)\s+(?:el\s+)?push\b`,
+      String.raw`\bsube\w*\s+(?:(?:la|las|los|el)\s+)?(?:rama|cambios|commits?)\b`,
+      String.raw`\bsube\w*\s+(?:a|al)\s+(?:origin|remoto|github)\b`,
     ].join("|"),
     "giu",
   ),
   "push-force": /\b(?:force[- ]push|push\s+(?:--)?force\w*|push\s+forzad[oa]|forza\w*\s+(?:el\s+)?push|fuerza\s+(?:el\s+)?push)\b|--force(?:-with-lease)?\b|\bborra\w*\s+(?:la\s+)?rama\s+remota\b|\bdelete\s+(?:the\s+)?remote\s+branch\b/giu,
-  "pr-create": /\b(?:crea|abre|haz|monta|create|open|make)\w*\s+(?:(?:la|una|el|the|a)\s+)?(?:pr|pull request)\b/giu,
+  "pr-create": new RegExp(
+    [
+      String.raw`\b(?:crea|abre|haz|monta|create|open|make)\w*\s+(?:(?:la|una|el|the|a)\s+)?(?:pr|pull request)\b`,
+      String.raw`(?:,\s*|\b(?:y|e|and|luego)\s+|\bvamos\s+a\s+)(?:abrir|crear|montar)\w*\s+(?:(?:la|una|el)\s+)?(?:pr|pull request)\b`,
+    ].join("|"),
+    "giu",
+  ),
   "pr-merge": new RegExp(
     [
       String.raw`\b(?:mergea|fusiona|merge)\w*\s+(?:(?:la|el|esta|the|this)\s+)?(?:pr|pull request)\b`,
-      String.raw`\bmerg(?:e|é)a(?:la|lo)?\b`,
+      String.raw`\bmergea(?:la|lo)?\b|\bmergear(?:la|lo)\b`,
       String.raw`\b(?:haz|hacer|hazme|do)\s+(?:(?:el|un|the|a)\s+)?merge\b`,
       String.raw`\bmerge\s+it\b`,
       String.raw`\b(?:y|e|and|then|luego)\s+merge\b`,
@@ -204,48 +214,86 @@ const INTENT: Record<RemoteAction, RegExp> = {
     "giu",
   ),
 };
-// A question Claude asked, in first person, that a bare "sí" answers: "¿Hago push?", "¿Abro la PR?".
-const PUSH_QUESTION = String.raw`\b(?:hago|hacemos|lanzo)\s+(?:(?:el|un)\s+)?push\b|\bpush(?:eo|eamos)\b|\bs[uú]bo\s+(?:(?:la|las|los|el)\s+)?(?:rama|cambios|commits?)\b|\bs[uú]bo\s+(?:a|al)\s+(?:origin|remoto|github)\b|\b(?:shall|should|can) I push\b`;
-const QUESTION_ORDER: Record<RemoteAction, (q: string) => boolean> = {
-  push: (q) => new RegExp(PUSH_QUESTION, "iu").test(q),
-  "push-force": (q) => (new RegExp(PUSH_QUESTION, "iu").test(q) && /force|forz/i.test(q)) || /\bborro\s+(?:la\s+)?rama\s+remota\b/i.test(q),
-  "pr-create": (q) => /\b(?:abro|creo|monto|abrimos|creamos|hago)\s+(?:(?:la|una|el)\s+)?(?:pr|pull request)\b|\b(?:shall|should|can) I (?:open|create) (?:a|the) (?:pr|pull request)\b/iu.test(q),
-  "pr-merge": (q) => /\b(?:mergeo|mergeamos|fusiono)\b|\bhago\s+(?:el\s+)?merge\b|\b(?:shall|should|can) I merge\b/iu.test(q),
+// A list of orders headed by a commit or a push order: «haz commit, push y merge», «comnit push
+// merge», «haz el push y pr». Each item counts. A list with no such head («la protección de
+// push, merge») is a mention.
+const LIST = new RegExp(String.raw`(?:\bcomm?n?it\w*|\b${ORDER}\s+(?:(?:el|un|the|a)\s+)?(?:git\s+)?${PUSH_WORD})(?:(?:\s*,\s*|\s+(?:y|e|and|then|luego)\s+|\s+)(?:(?:el|la|una|un)\s+)?(?:${PUSH_WORD}|pr|pull request|merge\w*)\b)+`, "giu");
+const LIST_ITEM: Record<Exclude<RemoteAction, "push-force">, RegExp> = {
+  push: new RegExp(String.raw`\b${PUSH_WORD}\b`, "iu"),
+  "pr-create": /\b(?:pr|pull request)\b/iu,
+  "pr-merge": /\bmerge/iu,
 };
-const NEGATION_BEFORE = /\b(?:no|sin|nunca|ni|don'?t|do not|never|without)\b(?:\s+\S+){0,3}\s*$/i;
+// What Claude offers in first person, as a question or not: «¿Hago push?», «la subo y abro la PR».
+const OFFER: Record<Exclude<RemoteAction, "push-force">, RegExp> = {
+  push: /\b(?:hago|hacemos|lanzo)\s+(?:(?:el|un)\s+)?push\b|\bpush(?:eo|eamos)\b|\bsubo\s+(?:(?:la|las|los|el)\s+)?(?:rama|cambios|commits?)\b|\bsubo\s+(?:a|al)\s+(?:origin|remoto|github)\b|\b(?:shall|should|can) i push\b/giu,
+  "pr-create": /\b(?:abro|creo|monto|abrimos|creamos|hago)\s+(?:(?:la|una|el)\s+)?(?:pr|pull request)\b|\b(?:shall|should|can) i (?:open|create) (?:a|the) (?:pr|pull request)\b/giu,
+  "pr-merge": /\b(?:mergeo|mergeamos|fusiono)\b|\bhago\s+(?:el\s+)?merge\b|\b(?:shall|should|can) i merge\b/giu,
+};
+// Words that name the action at all. A negated one in the prompt vetoes assent («sí, pero sin push»).
+const NAMES: Record<Exclude<RemoteAction, "push-force">, RegExp> = {
+  push: /\b(?:push\w*|pus|sub(?:e|ir|elo|ela|elos|elas|irlo|irla|irlos|irlas|o|amos|imos))\b/giu,
+  "pr-create": /\b(?:pr|pull request)\b/giu,
+  "pr-merge": /\b(?:merg\w*|fusion\w*)\b/giu,
+};
+// An AskUserQuestion answer made only of action words («Push y PR», «Mergear») names its choice.
+const ANSWER_WORD = /^(?:push\w*|pus|sub\w*|abr\w*|cre\w*|pr|pull|request|merg\w*|fusion\w*|haz|hacer|y|e|and|then|luego|la|el|una|un|the|a|si|yes|ok|rama|cambios|ya|now)$/u;
+const NEGATION_BEFORE = /\b(?:no|sin|nunca|ni|don'?t|do not|never|without|antes\s+de|todavia\s+no|aun\s+no|before|not\s+yet)\b(?:\s+\S+){0,3}\s*$/i;
 const CLAUSE_START = /[\s\S]*(?:[,;.!\n]|\bpero\b|\bbut\b)/i;
+const SENTENCE_START = /[\s\S]*(?:[;.!\n]|\bpero\b|\bbut\b)/i;
+// «Do not comment on, approve, or merge the PR»: the negation reaches every item of an or-list.
+const OR_ITEM = /(?:,\s*|\s)(?:or|nor|ni|o)\s+$/i;
+const NEGATED_SENTENCE = /\b(?:no|not|don'?t|never|nunca|sin|without)\b/i;
 // A question is not an order: "¿por qué hiciste push?" must not authorize one.
 const QUESTIONS = /¿[^?]*\?|[^.!?\n]*\?/g;
-const QUOTED = /```[\s\S]*?```|`[^`\n]*`|"[^"\n]*"|“[^”\n]*”|«[^»\n]*»/g;
-const AFFIRMATIVE = String.raw`(?:s[ií]|yes|dale|adelante|venga|vale|ok|okay|hazlo|go ahead|do it|claro|porfa|por favor|please)`;
-// The whole reply is assent and nothing else: "sí", "sí, adelante", "dale!". Not "sí, pero no hagas push".
-const ONLY_AFFIRMATIVE = new RegExp(String.raw`^[\s¡!]*${AFFIRMATIVE}(?:[\s,!.]+${AFFIRMATIVE})*[\s,!.]*$`, "iu");
-const ORCA_DISPATCH = /You are a dispatched worker|--dispatch-capability/;
+const QUOTED = /```[\s\S]*?```|`[^`\n]*`|"[^"\n]*"|“[^”\n]*”|«[^»\n]*»|<pasted_content\b[\s\S]*?<\/pasted_content\b[^>]*>/g;
+const AFFIRMATIVE = String.raw`(?:si|yes|dale|adelante|venga|vale|ok|okay|hazlo|go ahead|do it|claro|porfa|por favor|please)`;
+// The reply's first clause is assent and nothing else: "sí", "sí, adelante. …", "adelante hazlo
+// pero …". Not «si me refiero a…» (a conditional) nor «Sí, yo entiendo que…» (agreement).
+const ASSENT = new RegExp(String.raw`^[\s¡!]*${AFFIRMATIVE}(?:[\s,!]+${AFFIRMATIVE})*[\s,!]*(?:$|[.;\n]|\b(?:pero|but)\b)`, "iu");
+// «pero antes revisa…» defers everything; «pero antes de mergear» only negates the merge.
+const DEFERS = /\b(?:pero|but)\s+(?:antes|primero|first)\b(?!\s+de\b)/i;
 
 function negated(text: string, index: number): boolean {
-  const before = text.slice(Math.max(0, index - 40), index).replace(CLAUSE_START, "");
-  return NEGATION_BEFORE.test(before);
+  const before = text.slice(Math.max(0, index - 80), index);
+  if (NEGATION_BEFORE.test(before.slice(-40).replace(CLAUSE_START, ""))) return true;
+  return OR_ITEM.test(before) && NEGATED_SENTENCE.test(before.replace(SENTENCE_START, ""));
 }
 
-function asksFor(text: string, action: RemoteAction): boolean {
-  const orders = text.replace(QUOTED, " ").replace(QUESTIONS, " ");
-  for (const m of orders.matchAll(INTENT[action])) if (!negated(orders, m.index)) return true;
+function matches(text: string, re: RegExp): boolean {
+  for (const m of text.matchAll(re)) if (!negated(text, m.index)) return true;
   return false;
 }
 
-function questionOrders(text: string, action: RemoteAction): boolean {
-  const spans = text.replace(QUOTED, " ").match(QUESTIONS) ?? [];
-  return spans.some((q) => QUESTION_ORDER[action](q) && !/\b(?:no|sin|without|not)\b/i.test(q));
+// A list that starts a comma item inherits the sentence's negation: «Do not edit code, commit,
+// push». «no pasa nada, haz commit y push» stays an order, because its item opens with a verb.
+function listed(text: string, action: Exclude<RemoteAction, "push-force">): boolean {
+  for (const m of text.matchAll(LIST)) {
+    const before = text.slice(Math.max(0, m.index - 80), m.index);
+    const item = /,\s*$/.test(before) && NEGATED_SENTENCE.test(before.replace(SENTENCE_START, ""));
+    if (!item && !negated(text, m.index) && LIST_ITEM[action].test(m[0])) return true;
+  }
+  return false;
 }
+
+// An order for the action, from a single phrase or as an item of an order list.
+function orders(text: string, action: RemoteAction): boolean {
+  return matches(text, INTENT[action]) || (action !== "push-force" && listed(text, action));
+}
+
+const ordersIn = (prompt: string) => foldText(prompt).replace(QUOTED, " ").replace(QUESTIONS, " ");
 
 export interface Turn {
   prompt: string;
-  // The assistant's last text before the prompt: a "¿Hago push?" that a short "sí" answers.
+  // The assistant's last text before the prompt: the offer a short "sí" answers.
   previousAssistantText: string;
+  // AskUserQuestion answers given during this turn.
+  answers?: string[];
 }
 
-// The prompt whose promptId is `promptId`, if a human typed it in the main thread, and the
-// assistant text right before it. Null when that prompt is not (yet) in the transcript.
+// The prompt whose promptId is `promptId` in the main thread, the assistant text right before it,
+// and the AskUserQuestion answers given since. A turn started by a task notification or an agent
+// keeps its answers (a human gave them) but its prompt is "": that text never counts as an order.
+// Null when that prompt is not (yet) in the transcript.
 export function extractTurn(jsonl: string, promptId: string): Turn | null {
   const events: unknown[] = [];
   for (const line of jsonl.split("\n")) {
@@ -256,37 +304,95 @@ export function extractTurn(jsonl: string, promptId: string): Turn | null {
     }
   }
   for (let i = events.length - 1; i >= 0; i--) {
-    const e = events[i] as { promptId?: string; isSidechain?: boolean; origin?: { kind?: string } };
-    if (e?.promptId !== promptId || e.isSidechain || (e.origin && e.origin.kind !== "human")) continue;
-    const prompt = userPromptOf(events[i]);
-    if (prompt === null) continue;
-    for (let j = i - 1; j >= 0; j--) {
+    const e = events[i] as { promptId?: string; isSidechain?: boolean };
+    if (e?.promptId !== promptId || e.isSidechain) continue;
+    const typed = userPromptOf(events[i]);
+    if (typed === null) continue;
+    const prompt = isHumanOrigin(events[i]) ? typed : "";
+    let previousAssistantText = "";
+    for (let j = i - 1; j >= 0 && !previousAssistantText; j--) {
       const a = events[j] as { type?: string; isSidechain?: boolean; message?: { content?: unknown } };
       if (a?.type !== "assistant" || a.isSidechain || !Array.isArray(a.message?.content)) continue;
       const texts = (a.message.content as Array<{ type?: string; text?: unknown }>).filter((b) => b?.type === "text" && typeof b.text === "string");
-      if (texts.length) return { prompt, previousAssistantText: texts[texts.length - 1].text as string };
+      if (texts.length) previousAssistantText = texts[texts.length - 1].text as string;
     }
-    return { prompt, previousAssistantText: "" };
+    // The tool's input accepts `answers` too: a call that carried its own never reached the user.
+    const answers: string[] = [];
+    const prefilled = new Set<string>();
+    for (const later of events.slice(i + 1)) {
+      const r = later as { type?: string; promptId?: string; isSidechain?: boolean; message?: { content?: unknown }; toolUseResult?: { answers?: unknown } };
+      if (r?.isSidechain || !Array.isArray(r?.message?.content)) continue;
+      const blocks = r.message.content as Array<{ type?: string; id?: string; name?: string; tool_use_id?: string; input?: { answers?: unknown } }>;
+      if (r.type === "assistant") {
+        for (const b of blocks) if (b?.type === "tool_use" && b.name === "AskUserQuestion" && b.input?.answers && Object.keys(b.input.answers).length) prefilled.add(b.id ?? "");
+        continue;
+      }
+      const given = r.promptId === promptId ? r.toolUseResult?.answers : undefined;
+      const call = blocks.find((b) => b?.type === "tool_result")?.tool_use_id ?? "";
+      if (given && typeof given === "object" && !prefilled.has(call)) answers.push(...Object.values(given).filter((v): v is string => typeof v === "string"));
+    }
+    return answers.length ? { prompt, previousAssistantText, answers } : { prompt, previousAssistantText };
   }
   return null;
 }
 
-// Pure. Did this turn authorize the action?
+// The question the reply answers: the last sentence that ends in «?», else the last sentence. An
+// offer earlier in the message («Hago push cuando me lo pidas. ¿Sigo con el refactor?») is not
+// what a short «sí» says yes to. The style's closing `ROBIN:` line carries the verdict and the
+// user's next step, so when there is one it is the whole message for this purpose.
+function lastQuestion(text: string): string {
+  const closing = text.match(/^\s*ROBIN:(.*)$/gm)?.at(-1) ?? text;
+  const sentences = closing.split(/(?<=[.!?])\s+|\n+/).map((x) => x.trim()).filter(Boolean);
+  return sentences.findLast((x) => /\?["'»”)*_\]]*$/.test(x)) ?? sentences.at(-1) ?? "";
+}
+
+function assents(turn: Turn, action: Exclude<RemoteAction, "push-force">): boolean {
+  const prompt = foldText(turn.prompt);
+  if (!ASSENT.test(prompt) || DEFERS.test(prompt)) return false;
+  for (const m of prompt.matchAll(NAMES[action])) if (negated(prompt, m.index)) return false;
+  // The offer often sits in quotes («responde "abre la PR"»), so quotes stay here.
+  const offer = foldText(lastQuestion(turn.previousAssistantText));
+  return orders(offer, action) || matches(offer, OFFER[action]);
+}
+
+function answered(answer: string, action: RemoteAction): boolean {
+  const text = ordersIn(answer.replace(/\([^)]*\)/g, " "));
+  if (orders(text, action)) return true;
+  if (action === "push-force") return false;
+  const words = text.split(/[\s,+&/.!]+/).filter(Boolean);
+  return words.length > 0 && words.every((w) => ANSWER_WORD.test(w)) && matches(text, NAMES[action]);
+}
+
+function asks(turn: Turn, action: RemoteAction): boolean {
+  if (orders(ordersIn(turn.prompt), action)) return true;
+  if ((turn.answers ?? []).some((a) => answered(a, action))) return true;
+  return action !== "push-force" && assents(turn, action);
+}
+
+// A merge covers its PR only when the ask has PR shape: «mergea la PR», or merge as an item of
+// «haz commit, push y merge». «mergea dev en mi rama» is a local merge and publishes nothing.
+function mergesItsPr(turn: Turn): boolean {
+  const text = ordersIn(turn.prompt);
+  return asks(turn, "pr-merge") && (matches(text, NAMES["pr-create"]) || listed(text, "pr-merge"));
+}
+
+// Pure. Did this turn authorize the action? A PR needs its branch on the remote and a merge
+// needs its PR, so a bigger ask covers the smaller step. A force push is never implied.
 export function authorized(turn: Turn, action: RemoteAction): boolean {
-  // An Orca coordinator typed this into a worker terminal; workers never publish.
-  if (ORCA_DISPATCH.test(turn.prompt)) return false;
-  if (asksFor(turn.prompt, action)) return true;
-  return ONLY_AFFIRMATIVE.test(turn.prompt) && questionOrders(turn.previousAssistantText, action);
+  if (asks(turn, action)) return true;
+  if (action === "push") return authorized(turn, "pr-create");
+  if (action === "pr-create") return mergesItsPr(turn);
+  return false;
 }
 
 const LABEL: Record<RemoteAction, string> = { push: "git push", "push-force": "a force push or remote branch delete", "pr-create": "gh pr create", "pr-merge": "gh pr merge" };
 
-export function denialReason(missing: RemoteAction[]): string {
+function denialReason(missing: RemoteAction[]): string {
   const names = missing.map((a) => LABEL[a]).join(", ");
-  return `${names} publishes to the remote and Oriol did not ask for it in this turn's message (CLAUDE.md §Git / PR). Do not retry it in another form. Stop and ask him in a plain chat message (an AskUserQuestion answer does not count); it runs once he replies asking for it ("haz push", "abre la PR", "mergea la PR", "haz push --force") or answers your question with a plain "sí".`;
+  return `${names} publishes to the remote and the user did not ask for it in this turn's message (CLAUDE.md §Hard rules). Do not retry it in another form. Stop and ask the user, in chat or with AskUserQuestion; it runs once he asks for it in any wording that names the action ("haz push", "abre la PR", "mergea la PR"), says "sí" to your offer, or picks an answer that names it. A force push always needs the words ("haz push --force").`;
 }
 
-export const SUBAGENT_REASON = "Remote git (push, PR create/merge) never runs inside a subagent: its prompt comes from the Lead, not from Oriol. Report back and let the Lead run it after Oriol asks.";
+const SUBAGENT_REASON = "Remote git (push, PR create/merge) never runs inside a subagent: its prompt comes from the Lead, not from the user. Report back and let the Lead run it after the user asks.";
 
 // Pure. The hook's verdict for one command, given a way to read the turn.
 export async function judge(command: string, readTurn: () => Promise<Turn | null>): Promise<string | null> {

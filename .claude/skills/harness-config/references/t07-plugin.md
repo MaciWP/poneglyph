@@ -1,10 +1,10 @@
 ---
 parent: harness-config
 name: t07-plugin
-description: T7 plugin pack — install/enable/disable. Marketplace publish is out of scope.
+description: T7 plugin pack, install/enable/disable. Marketplace publish is out of scope.
 ---
 
-# T7 — Plugin
+# T7: Plugin
 
 Shared: [lookup.md](lookup.md) · [lifecycle.md](lifecycle.md).
 

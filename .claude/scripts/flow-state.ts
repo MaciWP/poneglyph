@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
-// flow-state — typed mutations for .claude/plans/{NNN}-{slug}/state.json
+// flow-state, typed mutations for .claude/plans/{NNN}-{slug}/state.json
 // (canonical schema: commands/flow-lifecycle.md Step 4) + the matching tasks/US{n}.md
 // frontmatter flip. Replaces the hand-rolled python/sed one-liners that every
-// /flow-lifecycle run re-invented (provenance: 2026-06-11 polish plan; 019 ran 6 of them).
+// /flow-lifecycle run re-invented (one plan ran 6 of them).
 //
 // Usage:
 //   bun .claude/scripts/flow-state.ts close-us US3 --verification <report.json> [--files "a.md,b.ts"] [--note "..."] [--tests-passed true|false] [--plan <dir>]
@@ -18,7 +18,7 @@
 // Without --plan, auto-detects the single open plan (feature_closed: false) under .claude/plans/.
 // `status` instead scans the whole plans root and lists every incomplete lifecycle.
 
-import { readdirSync, existsSync, readFileSync, writeFileSync, renameSync, unlinkSync, mkdirSync, rmSync, lstatSync } from "node:fs";
+import { readdirSync, existsSync, type Dirent, readFileSync, writeFileSync, renameSync, unlinkSync, mkdirSync, rmSync, lstatSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { classifyReview, validateVerification, type VerificationRecord, type ReviewAssessment } from "./lib/flow-contract";
 import { join } from "node:path";
@@ -27,7 +27,7 @@ import { frontmatter } from "./lib/skill-metadata";
 export interface UsHistoryEntry {
   us: string;
   completed_at: string;
-  /** true/false = MEASURED. null = nobody measured it — never assume green. */
+  /** true/false = MEASURED. null = nobody measured it, never assume green. */
   tests_passed: boolean | null;
   verification?: VerificationRecord;
   files_touched?: string[];
@@ -138,14 +138,14 @@ export function closeUs(
   };
 }
 
-// Marks a phase as completed mid-flight (028/US6-D6 — closes the resumability
+// Marks a phase as completed mid-flight (closes the resumability
 // gap when a session dies in 2.5: nothing else records phases between gates).
 const PHASES = [1, 2, 2.5, 3, 4, 5];
 
 export function completePhase(state: FlowState, phase: number): FlowState {
   requireOpen(state);
   if (!PHASES.includes(phase)) {
-    throw new Error(`invalid phase "${phase}" — one of ${PHASES.join(" | ")} (e.g. 2.5)`);
+    throw new Error(`invalid phase "${phase}", one of ${PHASES.join(" | ")} (e.g. 2.5)`);
   }
   if (state.phases_completed.includes(phase)) return state;
   if (phase === 2 && (!state.gates_approved["1->2"] || !state.phases_completed.includes(1))) throw new Error("phase 2 requires approved scope");
@@ -165,7 +165,7 @@ export function completePhase(state: FlowState, phase: number): FlowState {
 
 export function approveGate(state: FlowState, gate: "1->2" | "2->3", approval: { date: string; reference: string }): FlowState {
   requireOpen(state);
-  if (gate !== "1->2" && gate !== "2->3") throw new Error(`unknown gate "${gate}" — use 1->2 or 2->3`);
+  if (gate !== "1->2" && gate !== "2->3") throw new Error(`unknown gate "${gate}", use 1->2 or 2->3`);
   if (!approval?.reference?.trim()) throw new Error("gate approval requires a reference to the user's actual decision");
   if (!state.phases_completed.includes(1)) throw new Error("approve-gate requires completed scope");
   if (gate === "2->3" && (!state.gates_approved["1->2"] || ![2, 2.5].every(p => state.phases_completed.includes(p)))) {
@@ -211,7 +211,7 @@ export function reopenUs(state: FlowState, us: string, note: string, date: strin
   };
 }
 
-// retro_status contract (029/US12, user decision 2026-08-05: no modes — always
+// retro_status contract (no modes, always
 // full; a phase that doesn't apply is SKIPPED by the Lead WITH justification and
 // prior notice): "approved" | "pending" | "skipped — <justification ≥10 chars>".
 const RETRO_SKIP_RE = /^skipped — (.{10,})$/;
@@ -221,15 +221,15 @@ export function setRetroStatus(state: FlowState, value: string): FlowState {
   const valid = value === "approved" || value === "pending" || RETRO_SKIP_RE.test(value);
   if (!valid) {
     throw new Error(
-      `invalid retro_status ${JSON.stringify(value)} — "approved" | "pending" | ` +
+      `invalid retro_status ${JSON.stringify(value)}, "approved" | "pending" | ` +
         `"skipped — <justificación ≥10 chars>" (skip without justification is the anti-pattern this guards against)`,
     );
   }
   return { ...state, retro_status: value };
 }
 
-// Boundary checklist entry (029/US17): each phase boundary ticks its ≤5 items
-// into state — compliance becomes measurable instead of aspirational.
+// Boundary checklist entry: each phase boundary ticks its ≤5 items
+// into state, compliance becomes measurable instead of aspirational.
 const BOUNDARY_PHASES = ["1", "2", "2.5", "3", "4", "5"];
 
 export function addBoundaryCheck(
@@ -240,7 +240,7 @@ export function addBoundaryCheck(
 ): FlowState {
   requireOpen(state);
   if (!BOUNDARY_PHASES.includes(phase)) {
-    throw new Error(`invalid phase "${phase}" — one of ${BOUNDARY_PHASES.join("|")}`);
+    throw new Error(`invalid phase "${phase}", one of ${BOUNDARY_PHASES.join("|")}`);
   }
   if (!item.trim()) throw new Error("boundary-check item must be non-empty");
   return {
@@ -256,15 +256,15 @@ export function closeFeature(state: FlowState, opts: { date: string }): FlowStat
   }
   if (state.review_verdict !== "APPROVED" && state.review_verdict !== "APPROVED_WITH_WARNINGS") {
     throw new Error(
-      `cannot close feature with review_verdict ${JSON.stringify(state.review_verdict)} — Phase 4 must end APPROVED or APPROVED_WITH_WARNINGS first (Cmd IV)`,
+      `cannot close feature with review_verdict ${JSON.stringify(state.review_verdict)}, Phase 4 must end APPROVED or APPROVED_WITH_WARNINGS first (Cmd IV)`,
     );
   }
-  // 029/US12: never stamp a retro that didn't happen — retro must be approved
+  // Never stamp a retro that didn't happen, retro must be approved
   // or explicitly skipped-with-justification BEFORE closing.
   if (state.retro_status !== "approved" && !RETRO_SKIP_RE.test(state.retro_status ?? "")) {
     throw new Error(
-      `cannot close feature with retro_status ${JSON.stringify(state.retro_status)} — run retro (retro-status approved) ` +
-        `or record a justified skip (retro-status "skipped — <justificación>") first (029/US12)`,
+      `cannot close feature with retro_status ${JSON.stringify(state.retro_status)}, run retro (retro-status approved) ` +
+        `or record a justified skip (retro-status "skipped — <justificación>") first`,
     );
   }
   requireVerifiedCompletion(state);
@@ -281,9 +281,9 @@ export function closeFeature(state: FlowState, opts: { date: string }): FlowStat
   };
 }
 
-// --- status report (US1, plan 025) ---
+// --- status report ---
 // Surfaces incomplete lifecycles so the back-half (build->critic->retro) doesn't
-// get silently abandoned (audit 2026-06-30; flow.md smell signal line ~281).
+// get silently abandoned (see the flow.md smell signals).
 
 export interface PlanScan {
   dir: string;
@@ -295,7 +295,7 @@ export interface PlanScan {
 // any plan whose state.json is present-but-malformed (surfaced as illegible).
 // Best-effort: a missing root or a dir without state.json never throws.
 export function findOpenPlans(plansRoot: string): PlanScan[] {
-  let entries: ReturnType<typeof readdirSync>;
+  let entries: Dirent[];
   try {
     entries = readdirSync(plansRoot, { withFileTypes: true });
   } catch {
@@ -311,7 +311,7 @@ export function findOpenPlans(plansRoot: string): PlanScan[] {
       const st = assertState(JSON.parse(readFileSync(sp, "utf8")));
       if (st.feature_closed === false) out.push({ dir, slug: d.name, state: st });
     } catch {
-      out.push({ dir, slug: d.name, state: null }); // illegible — surfaced, not dropped
+      out.push({ dir, slug: d.name, state: null }); // illegible, surfaced, not dropped
     }
   }
   return out;
@@ -323,7 +323,7 @@ export function summarizeState(state: FlowState): string {
   const gates = `1→2:${g["1->2"] ? "✓" : "·"} 2→3:${g["2->3"] ? "✓" : "·"}`;
   const done = state.us_completed.length ? state.us_completed.join(",") : "—";
   const pend = state.us_pending.length ? state.us_pending.join(",") : "—";
-  return `${state.spec_slug} — phase ${state.current_phase} | gates ${gates} | done(${state.us_completed.length}): ${done} | pending(${state.us_pending.length}): ${pend}`;
+  return `${state.spec_slug}, phase ${state.current_phase} | gates ${gates} | done(${state.us_completed.length}): ${done} | pending(${state.us_pending.length}): ${pend}`;
 }
 
 function setStatus(content: string, status: "approved" | "closed", date: string): string {
@@ -340,13 +340,6 @@ function setStatus(content: string, status: "approved" | "closed", date: string)
   const line = new RegExp(`^${field}:[^\\n]*$`, "m");
   header = line.test(header) ? header.replace(line, `${field}: ${date}`) : `${header.trimEnd()}\n${field}: ${date}`;
   return content.replace(match[0], `---${nl}${header.replace(/\n/g, nl)}${nl}---`);
-}
-
-export function flipUsFrontmatter(content: string, date: string): string {
-  const status = frontmatter(content).fields.status;
-  if (status === "closed") return content;
-  if (status === "draft") throw new Error("US frontmatter must be approved before closure");
-  return setStatus(content, "closed", date);
 }
 
 function readArtifact(planDir: string, path: string): string {
@@ -482,11 +475,11 @@ export async function runCommand(
 }
 
 function detectPlanDir(plansRoot: string): string {
-  let dirEntries: ReturnType<typeof readdirSync>;
+  let dirEntries: Dirent[];
   try {
     dirEntries = readdirSync(plansRoot, { withFileTypes: true });
   } catch {
-    throw new Error(`plans root not found at ${plansRoot} — run from the repo root or pass --plan <dir>`);
+    throw new Error(`plans root not found at ${plansRoot}, run from the repo root or pass --plan <dir>`);
   }
   const open = dirEntries
     .filter((d) => d.isDirectory() && /^\d{3}-/.test(d.name))
@@ -500,12 +493,12 @@ function detectPlanDir(plansRoot: string): string {
       }
     });
   if (open.length !== 1) {
-    throw new Error(`expected exactly 1 open plan, found ${open.length} — pass --plan <dir>`);
+    throw new Error(`expected exactly 1 open plan, found ${open.length}, pass --plan <dir>`);
   }
   return open[0];
 }
 
-export function parseTestsPassed(value: string | undefined): boolean | undefined {
+function parseTestsPassed(value: string | undefined): boolean | undefined {
   if (value === undefined) return undefined;
   if (value !== "true" && value !== "false") throw new Error("--tests-passed must be true or false");
   return value === "true";
@@ -520,13 +513,13 @@ if (import.meta.main) {
   const positional = argv.filter((a, i) => !a.startsWith("--") && !argv[i - 1]?.startsWith("--"));
   const [command, ...args] = positional;
 
-  // `status` scans the plans ROOT (all plans) — handled before detectPlanDir,
+  // `status` scans the plans ROOT (all plans), handled before detectPlanDir,
   // which requires exactly one open plan and would throw here.
   if (command === "status") {
     const root = flag("plan") ?? ".claude/plans";
     if (!existsSync(root)) {
-      // Distinguish "wrong path" from "all closed" — a missing root must not read as success.
-      console.error(`flow-state: plans root not found at ${root} — run from the repo root or pass --plan <plans-root>`);
+      // Distinguish "wrong path" from "all closed", a missing root must not read as success.
+      console.error(`flow-state: plans root not found at ${root}, run from the repo root or pass --plan <plans-root>`);
       process.exit(1);
     }
     const open = findOpenPlans(root);
@@ -535,7 +528,7 @@ if (import.meta.main) {
     } else {
       console.log(`flow: ${open.length} open plan(s) under ${root}:`);
       for (const p of open) {
-        console.log(p.state ? `  ${summarizeState(p.state)}` : `  ${p.slug} — ⚠️ unreadable state.json`);
+        console.log(p.state ? `  ${summarizeState(p.state)}` : `  ${p.slug}, ⚠️ unreadable state.json`);
       }
     }
     process.exit(0);
@@ -553,7 +546,7 @@ if (import.meta.main) {
       assessment: flag("review") ? await Bun.file(flag("review")!).json() : undefined,
       approval: flag("approval"),
     });
-    console.log(`ok — ${command} applied to ${planDir}`);
+    console.log(`ok, ${command} applied to ${planDir}`);
   } catch (e) {
     console.error(`flow-state: ${(e as Error).message}`);
     process.exit(1);

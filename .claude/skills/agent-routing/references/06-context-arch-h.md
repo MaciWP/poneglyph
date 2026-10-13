@@ -16,7 +16,7 @@ description: Architecture levels, rules vs skills, skill loading limits, precede
 - [Arch H Delegation Template](#arch-h-delegation-template)
 - [Skill Discovery (Global + Project)](#skill-discovery-global-project)
 - [Content Map Pattern (canonical for skills with subdirectories)](#content-map-pattern-canonical-for-skills-with-subdirectories)
-- [Anti-Claims (False — Never Repeat)](#anti-claims-false-never-repeat)
+- [Anti-Claims (False: Never Repeat)](#anti-claims-false-never-repeat)
 - [Orchestration Consequences](#orchestration-consequences)
 
 ## Architecture Levels
@@ -41,24 +41,21 @@ graph TD
 
 ## Skill Loading Limits
 
-For an approved Orca team, use `orca-team`'s worker contract with the Arch H
-blocks below. Resolve installed skill paths explicitly. Workers apply `dev-workflow` and
-the supervised `flow` (build phase) branch; the coordinator retains state and acceptance.
-The historical inline-only/native-worker table describes the default route.
+Resolve installed skill paths explicitly.
 
-> The custom `builder`/`reviewer`/`scout` agents and their per-role baselines were **cut in feature 008** — work runs inline (delegation doctrine: SKILL.md §P8). Limits below govern the surfaces that still exist:
+> There are no custom `builder`/`reviewer`/`scout` agents or per-role baselines: work runs inline (delegation doctrine: SKILL.md §P8). The limits below govern the surfaces that exist:
 
 | Surface | Preload (free) | Max via Arch H Read | Notes |
 |-------|--------------------|----------------|-----------|
-| Lead session | everything always-loaded | n/a — `Skill()` on demand | The default executor for all write work |
-| Workflow `agentType` (read-only fan-out) | `skills:` frontmatter (1-2) | 3 | Preload does not count against the Arch H max |
-| Built-in `Explore` | — | 0-1 | Minimal context by design (skips CLAUDE.md/git status — restate constraints in the prompt) |
+| Lead session | everything always-loaded | n/a: `Skill()` on demand | The default executor for all write work |
+| Team `agentType` | `skills:` frontmatter (1-2) | 3 | Preload does not count against the Arch H max |
+| Built-in `Explore` | none | 0-1 | Minimal context by design (skips CLAUDE.md/git status, restate constraints in the prompt) |
 
-> Planning and error diagnosis are handled by the Lead invoking `Skill(flow, "plan")` / `Skill('troubleshooting')` directly — no dedicated subagent.
+> Planning and error diagnosis are handled by the Lead invoking `Skill(flow, "plan")` / `Skill('troubleshooting')` directly, no dedicated subagent.
 
 ## Precedence Rules
 
-1. **Domain-specific skills > generic skills** — always prioritize specific ones
+1. **Domain-specific skills > generic skills**: always prioritize specific ones
 2. **Base skills do not count** against the agent's max limit
 3. **If keyword matches > agent max**: prioritize by keyword frequency in the prompt
 4. **If tied**: prefer skills from the task's primary domain
@@ -76,7 +73,7 @@ Ground-truth rules for what reaches subagents. Verified via direct testing on 20
 | Frontmatter `skills:` in agent definition | **YES** | Full `SKILL.md` bodies pre-injected at spawn, unconditionally (all-or-nothing) |
 | Baseline skills pre-declared per agent role | **YES** | Arrive at spawn regardless of task |
 | Content pasted verbatim by Lead into delegation prompt (including `MEMORY.md`) | **YES** | Behaves like any other prompt content |
-| Subagent `Read`s `.claude/skills/<name>/SKILL.md` when instructed by Lead in delegation prompt (**Arch H**) | **YES** | **Validated via Test 7 on 2026-04-10** — the recommended task-specific loading mechanism |
+| Subagent `Read`s `.claude/skills/<name>/SKILL.md` when instructed by Lead in delegation prompt (**Arch H**) | **YES** | **Validated via Test 7 on 2026-04-10**: the recommended task-specific loading mechanism |
 | Project skills Read via Arch H (`./.claude/skills/<name>/SKILL.md`) | **YES** | Same mechanism as global skills |
 
 ### What does NOT reach a subagent
@@ -84,7 +81,7 @@ Ground-truth rules for what reaches subagents. Verified via direct testing on 20
 | Mechanism | Why not |
 |---|---|
 | Lead invokes `Skill()` before delegating | Loaded content stays in the Lead's context. Subagents spawn fresh. (Still true.) |
-| Subagent calls `Skill()` **without** `Skill` in its `tools:` | If the agent's `tools:` omits `Skill` (or `disallowedTools` includes it), the tool is unavailable. Per-agent config choice, NOT a harness limit. Historical note (2026-05-30): the then-existing `builder`/`reviewer`/`scout` listed `Skill` and could invoke it — those agents were cut in feature 008. The mechanism stands for any Workflow `agentType` whose `tools:` include `Skill` (CC ≥2.1.133 — verified in `.claude/plans/_research-skill-activation-2026-06-09.md`). |
+| Subagent calls `Skill()` **without** `Skill` in its `tools:` | If the agent's `tools:` omits `Skill` (or `disallowedTools` includes it), the tool is unavailable. Per-agent config choice, NOT a harness limit. The mechanism stands for any Team `agentType` whose `tools:` include `Skill` (CC ≥2.1.133). |
 
 ## Arch H Delegation Template
 
@@ -135,16 +132,16 @@ When finished, include "### Memory Insights" with grounded reusable insights, or
 |------|--------|
 | Max skills | 3 per delegation (avoid token bloat) |
 | Source of truth | manual keyword match (`05-skill-matching.md` + paths rules) > omit |
-| `Skill()` by the Lead | Loads context into Lead's OWN session only — does NOT propagate to subagents |
+| `Skill()` by the Lead | Loads context into Lead's OWN session only, does NOT propagate to subagents |
 | Empty blocks | Omit the header entirely rather than leaving an empty section |
 | Resume | Carry the same DoD and quality priorities, checked inputs/results, completed work, blockers and next pending action in the existing handoff. Reuse valid evidence; do not restart completed work. |
-| Reply format | `[REPLY FORMAT]` is NECESSARY for Codex/Grok workers — they load the house style from their host config and would otherwise answer in Spanish with a `ROBIN:` line |
-| Memory reminder | Explicit `[MEMORY OUTPUT]` is NECESSARY — agents miss the system-prompt instruction without it |
+| Reply format | `[REPLY FORMAT]` is NECESSARY for Codex/Grok workers, they load the house style from their host config and would otherwise answer in Spanish with a `ROBIN:` line |
+| Memory reminder | Explicit `[MEMORY OUTPUT]` is NECESSARY: agents miss the system-prompt instruction without it |
 
-### Scout prompt (scouts on Haiku 5.5 / Sonnet 5.5)
+### Scout prompt (scouts on the cheapest tier)
 
 A scout answers one narrow read-only question. The
-full template above would push it past 100K tokens, where Haiku 5.5 bills 5x. Use this shape
+full template above would push it past 100K tokens, where the cheapest tier bills 5x. Use this shape
 instead:
 
 ```
@@ -158,14 +155,14 @@ Reply in plain English: the answer, then each supporting fact as `path:line — 
 you could not find and where you looked.
 ```
 
-Add "search the web before answering" when the unit needs it (Sonnet). The Lead verifies any
+Add "search the web before answering" when the unit needs it. The Lead verifies any
 fact that decides something before acting on it.
 
 ## Skill Discovery (Global + Project)
 
 When preparing a delegation:
 
-1. Match task keywords against `05-skill-matching.md` + the project's path rules (e.g., `.claude/rules/paths/`) — these map domain keywords → `.claude/skills/<name>/SKILL.md` paths (global + project)
+1. Match task keywords against `05-skill-matching.md` + the project's path rules (e.g., `.claude/rules/paths/`), these map domain keywords → `.claude/skills/<name>/SKILL.md` paths (global + project)
 2. Put the chosen `Read` instructions into the delegation prompt's `[RELEVANT SKILLS FOR THIS TASK]` block. Max 3 skills total (1-2 global + 1-2 project is a good balance)
 3. For skills the agent ALWAYS needs, use the native `skills:` frontmatter field instead (preloads at startup)
 4. Check if there is a specialized agent (e.g., `django-refactor-agent`, `django-security-auditor`) before routing to a generic one
@@ -174,7 +171,7 @@ When preparing a delegation:
 
 Any skill that has a `references/` subdirectory **MUST** include a canonical Content Map table in its main `SKILL.md`.
 
-**Canonical format — 3 columns**:
+**Canonical format: 3 columns**:
 
 | Topic | File | Contents |
 |---|---|---|
@@ -182,25 +179,25 @@ Any skill that has a `references/` subdirectory **MUST** include a canonical Con
 
 **Rules**:
 
-1. **Use `${CLAUDE_SKILL_DIR}/` prefix** for all file paths — the Anthropic-official variable that resolves to the skill's own directory
-2. **Contents column is load-bearing** — the subagent decides whether to Read each supporting file based on the semantic description here
-3. **3 columns, not 4** — keyword triggers fold into the Contents prose naturally
-4. **Reference file frontmatter is minimal** (`parent`, `name`, `description`) — not loaded as standalone skills
+1. **Use `${CLAUDE_SKILL_DIR}/` prefix** for all file paths, the Anthropic-official variable that resolves to the skill's own directory
+2. **Contents column is load-bearing**: the subagent decides whether to Read each supporting file based on the semantic description here
+3. **3 columns, not 4**: keyword triggers fold into the Contents prose naturally
+4. **Reference file frontmatter is minimal** (`parent`, `name`, `description`), not loaded as standalone skills
 5. **Main SKILL.md stays ≤ 500 lines** per Anthropic official guidance
-6. **Critical gotchas stay inline** in the main SKILL.md — footguns with silent-failure semantics must be surfaced in the entry file
+6. **Critical gotchas stay inline** in the main SKILL.md, footguns with silent-failure semantics must be surfaced in the entry file
 
-**Subagent behavior**: when you Read a main SKILL.md that has a Content Map, consult the Contents column to judge which supporting files apply to your current task. Read the relevant ones. Do NOT read all blindly. Do NOT skip them when the Contents description matches your task even if task phrasing didn't explicitly mention the domain — semantic match is a valid trigger.
+**Subagent behavior**: when you Read a main SKILL.md that has a Content Map, consult the Contents column to judge which supporting files apply to your current task. Read the relevant ones. Do NOT read all blindly. Do NOT skip them when the Contents description matches your task even if task phrasing didn't explicitly mention the domain, semantic match is a valid trigger.
 
-## Anti-Claims (False — Never Repeat)
+## Anti-Claims (False: Never Repeat)
 
-1. *"Skill loaded by the Lead is automatically available to subagents."* — **False**. Lead-side `Skill()` context does not transit (unchanged).
-2. ~~*"Subagents can never invoke `Skill()` dynamically."*~~ — **This claim was itself wrong; corrected 2026-05-30.** Subagents CAN invoke `Skill()` when `Skill` is in their `tools:` (CC ≥2.1.133 — verified in `.claude/plans/_research-skill-activation-2026-06-09.md`).
-3. *"A prompt telling the subagent to `invoke Skill('X')` always works."* — **Conditional**: works only if the subagent has `Skill` in `tools:`. Otherwise use `Read .claude/skills/<name>/SKILL.md` (Arch H fallback).
+1. *"Skill loaded by the Lead is automatically available to subagents."*, **False**. Lead-side `Skill()` context does not transit (unchanged).
+2. ~~*"Subagents can never invoke `Skill()` dynamically."*~~, **This claim is false.** Subagents CAN invoke `Skill()` when `Skill` is in their `tools:` (CC ≥2.1.133).
+3. *"A prompt telling the subagent to `invoke Skill('X')` always works."*, **Conditional**: works only if the subagent has `Skill` in `tools:`. Otherwise use `Read .claude/skills/<name>/SKILL.md` (Arch H fallback).
 
 ## Orchestration Consequences
 
 - **Rules + CLAUDE.md are the real context carriers.** Invest in them. A well-written project rule reaches every subagent automatically.
-- **Three skill-loading mechanisms (corrected 2026-05-30; agents cut in 008)**: (1) `skills:` frontmatter preload on a custom Workflow `agentType` — for skills EVERY unit of that type needs; (2) `Skill` tool self-invoke — any agentType whose `tools:` include `Skill` loads task-specific skills mid-task; (3) Arch H Lead-directed `Read` — fallback to force exact content. `Read` is always in the allowlist so Arch H always works.
-- **Project skills are a valid on-demand knowledge layer.** They work identically to global skills via Arch H Read — the subagent doesn't distinguish between global and project skills at Read time.
+- **Three skill-loading mechanisms **: (1) `skills:` frontmatter preload on a custom Team `agentType`, for skills EVERY unit of that type needs; (2) `Skill` tool self-invoke, any agentType whose `tools:` include `Skill` loads task-specific skills mid-task; (3) Arch H Lead-directed `Read`, fallback to force exact content. `Read` is always in the allowlist so Arch H always works.
+- **Project skills are a valid on-demand knowledge layer.** They work identically to global skills via Arch H Read, the subagent doesn't distinguish between global and project skills at Read time.
 - **Rule of thumb at project level: constraint = rule, knowledge = skill.**
 - **Path-scoped loader quirk**: in `.claude/rules/paths/*.md`, globs starting with `**` require at least one leading path segment. A raw `apps/...` pattern will NOT match `apps/foo.py`; use `**/apps/...` explicitly.

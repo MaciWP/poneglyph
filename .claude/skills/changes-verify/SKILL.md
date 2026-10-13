@@ -1,25 +1,18 @@
 ---
 name: changes-verify
 description: >-
-  Pre-done gate: before reporting "hecho" on code that runs (hook, CLI, API,
-  UI), runs the project's checks, sweeps what else uses what you touched,
-  drives the real flow end to end and reports residual risk. Use for "¿estás
-  seguro?", "¿no hemos roto nada?", "haz una prueba manual", "verifica el
-  cambio". Not for docs-only diffs or reviewing someone else's PR.
-metadata:
-  keywords: >
-    Keywords - verifica el cambio, estás seguro, estas seguro, no hemos roto, prueba manual,
-    funciona de verdad, riesgo residual, antes de commitear, pre-done, barrido de impacto,
-    impact sweep, end-to-end manual, smoke manual
+  Control antes de dar por hecho un cambio en código que se ejecuta: checks del proyecto,
+  barrido de lo que usa el código tocado, el flujo real de punta a punta y el riesgo
+  residual. Úsala para "¿estás 100% seguro?", "¿no hemos roto nada?", "pega un repaso
+  antes de mergear", "haz una prueba en local", "verifica el cambio". No es para revisar
+  la PR de otra persona (pr-review).
 disable-model-invocation: false
-when_to_use: |
-  About to report done, or commit, on a change with runtime surface.
 ---
 
-# verify — the pre-done gate
+# verify: the pre-done gate
 
 Makes "done" mean verified. It executes the dev loop's REVIEW
-stage (CLAUDE.md §The dev loop); `flow` (review phase) invokes it for the happy-path E2E row.
+stage (CLAUDE.md §How to work); `flow` (review phase) invokes it for the happy-path E2E row.
 
 For authorized publication, read [the publication protocol](references/publication.md)
 in KNOW. It coordinates local checks, candidate CI, and verified integration.
@@ -47,25 +40,25 @@ The gain is on runtime surface (product code, hooks, CLIs, UI).
 
 ### 1. Project checks
 
-Run the project's check command — from the project CLAUDE.md §Commands/Verification
+Run the project's check command, from the project CLAUDE.md §Commands/Verification
 (this repo: `bun test ./.claude/`; a Vite/React repo: `tsc && vitest`; a Django
 repo: `pytest`). Types and lint included when the stack has them.
 Failure → diagnose, distinguish baseline/infrastructure defects, and rerun. None
 counts as a passing check. NEVER manipulate a
 check to make it pass (Cmd IV). Run the checks over the **whole** changed set, not
 only the files you remember touching, and never trust a delegated agent's "clean"
-report (`Skill(lessons-learned)` G2/G6 — a merge gate red is never a nit).
+report (`Skill(lessons-learned)` G2/G6: a merge gate red is never a nit).
 
 ### 2. Impact sweep
 
-For every touched symbol/component, enumerate what ELSE uses it — Grep
-the symbol, then Read the hits — and name the affected files/screens/flows. This is the
+For every touched symbol/component, enumerate what ELSE uses it, Grep
+the symbol, then Read the hits, and name the affected files/screens/flows. This is the
 "¿dónde más se usan estos badges?" question, asked proactively instead of by the
 user. A shared symbol changed without its usages checked is not verified.
 
 ### 3. Drive the real flow (runtime surface only)
 
-Execute the affected flow end-to-end and OBSERVE the output — run, don't predict;
+Execute the affected flow end-to-end and OBSERVE the output, run, don't predict;
 a green suite is a hypothesis about the flow, not the flow:
 
 | Surface | How to drive it |
@@ -73,11 +66,11 @@ a green suite is a hypothesis about the flow, not the flow:
 | CLI/script | Run the real command with a realistic input |
 | Hook | Feed it a real stdin payload; check stdout/exit code |
 | API endpoint | Real request (curl/httpie) against the dev server |
-| UI | The affected screen — user screenshots when the browser connector is unavailable |
+| UI | The affected screen: user screenshots when the browser connector is unavailable |
 
 ### 4. Residual risk report
 
-Close with per-claim status — never a bare "hecho":
+Close with per-claim status: never a bare "hecho":
 
 ```
 Verify: <check command + result> · impact: <symbols → usages checked> ·
@@ -85,13 +78,13 @@ flow: <driven + observed | n/a (no runtime surface)> · residual: <what was
 deliberately NOT tested and why | none known>
 ```
 
-Claims are labeled: verified (observed first-hand) / probable (inferred — say
+Claims are labeled: verified (observed first-hand) / probable (inferred, say
 from what) / not verified (say why). For flow, record final-input results using
 the [verification contract](../../docs/flow-contract.md) before HU closure.
 
 ## SIEMPRE rules
 
-- Never report "completed" with a failing check — no exceptions (Cmd IV).
+- Never report "completed" with a failing check, no exceptions (Cmd IV).
 - Run, don't predict: an executable claim gets executed, not reasoned about (Cmd II).
 - Cost scales with blast radius: trivial diff → step 1 only; shared-symbol or
   runtime change → all four steps.

@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{{PAGE_TITLE}}</title>
 <!-- ============================================================
-     html-report GLANCE template (v2, dark-first) — feature 007.
+     html-report GLANCE template (dark-first).
      Scan-at-a-glance report: masthead + immediate-action callout +
      KPI row (color = information) + distribution bar + CSS-only
      filterable / expandable finding cards + drawer + next-steps.
      SELF-CONTAINED: one <style>, ONE Google-Fonts <link>, ZERO JS
      (filter = radio-hack, expand = <details>). Dark-first + print-light.
-     Generator fills {{PLACEHOLDERS}} — see contract below.
+     Generator fills {{PLACEHOLDERS}}; see contract below.
 
      PLACEHOLDER CONTRACT
        {{LANG}}            html lang (e.g. "es")
@@ -52,7 +52,7 @@
 <style>
   /* tokens:begin */
 /* ============================================================
-   Poneglyph DESIGN TOKENS — single source of truth
+   Poneglyph DESIGN TOKENS: single source of truth
    ------------------------------------------------------------
    This file is the single source of the Poneglyph HTML design
    system: the report family, the dashboard family and the dynamic
@@ -332,7 +332,7 @@ html[data-theme="dark"] {
     <input class="fin" type="radio" name="filt" id="fa">
     <input class="fin" type="radio" name="filt" id="fb">
     <div class="fbar">{{FILTERS}}</div>
-    <!-- UNIT: CARD (expandable) — class b-a|b-b drives the filter; --c sets the severity color:
+    <!-- UNIT: CARD (expandable): class b-a|b-b drives the filter; --c sets the severity color:
          <details class="card b-a" style="--c:var(--blocker)">
            <summary><div class="crow"><span class="chip sev">TAG</span><span class="chip">META</span><span class="exp"></span></div>
              <div class="ttl">TITLE</div></summary>

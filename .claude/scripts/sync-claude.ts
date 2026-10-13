@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-// .claude/scripts/sync-claude.ts — Claude-layer engine; /sync-poneglyph orchestrates it with sync-codex and sync-grok
+// .claude/scripts/sync-claude.ts, Claude-layer engine; /sync-poneglyph orchestrates it with sync-codex and sync-grok
 // Syncs .claude/ from poneglyph to ~/.claude/ via symlinks
 // Supports: Windows (junction/symlink), macOS, Linux
 
@@ -8,6 +8,7 @@ import * as path from "path";
 import * as os from "os";
 import { parseArgs } from "util";
 import { $ } from "bun";
+import { stripLongPathPrefix } from "./lib/long-path";
 
 // === CONFIGURATION ===
 
@@ -15,13 +16,12 @@ export const LINK_FOLDERS = [
   "skills",
   "commands",
   "hooks",
-  "workflows",
   "output-styles",
-  // scripts: synced since 027/US2 — synced components (flow.md, retro) instruct
+  // scripts: synced components (flow.md, retro) instruct
   // `bun .claude/scripts/flow-state.ts`, which only resolved with
-  // cwd=poneglyph (sync-trap class RI-1, audit 2026-07-02). evals/ stays NOT synced.
+  // cwd=poneglyph (sync-trap class RI-1). evals/ stays NOT synced.
   "scripts",
-  // plans/templates ONLY (2026-09-09): the flow phases fall back
+  // plans/templates ONLY: the flow phases fall back
   // to ~/.claude/plans/templates/ outside poneglyph. The rest of plans/ stays project-local
   // and ~/.claude/plans itself (Claude Code's plan-mode store) is never replaced.
   "plans/templates",
@@ -33,16 +33,18 @@ export const LINK_FOLDERS = [
 const RULES_FOLDER = "rules";
 const DOCS_FOLDER = "docs";
 
-// Rules specific to the poneglyph PROJECT — they must NOT propagate to the global
+// Rules specific to the poneglyph PROJECT, they must NOT propagate to the global
 // ~/.claude/rules (user layer), or they would wrongly apply to every repo on the machine.
 // They stay in the repo's project layer (./.claude/rules/), where the skills Read them by
 // their canonical path per-project, and where poneglyph itself loads them as a project rule
-// when cwd = poneglyph. `test-policy.md` declares "this repo = auxiliary" — true for poneglyph,
-// false as a global default. (021 — companion to the globs→paths fix in the rule files.)
-const PROJECT_ONLY_RULES = new Set(["test-policy.md"]);
+// when cwd = poneglyph. `test-policy.md` declares "this repo = auxiliary", true for poneglyph,
+// false as a global default. (companion to the globs→paths fix in the rule files.)
+// `paths/` holds `hooks.md`, the inventory of Poneglyph's own hooks: its `.claude/hooks/**` glob
+// would also match every other repo that keeps its own hooks there.
+export const PROJECT_ONLY_RULES = new Set(["test-policy.md", "paths"]);
 
 // docs/local-model/ is a dated snapshot of ONE Windows machine (RTX 5090, D:\llama.cpp
-// paths, pi setup) — real and worth keeping in git, but not applicable to every machine
+// paths, pi setup), real and worth keeping in git, but not applicable to every machine
 // this repo syncs to. Same shape as PROJECT_ONLY_RULES: stays committed and reachable at
 // its repo path, never reaches ~/.claude/docs/ on any machine via the global symlink.
 const PROJECT_ONLY_DOCS = new Set(["local-model"]);
@@ -59,10 +61,10 @@ const LINK_FILES = [
 // settings.json is NOT symlinked: it is GENERATED per-machine as a real file by
 // deep-merging the committed base with an optional gitignored machine overlay.
 // Why: the user-scope (~/.claude) settings.json applies to every project on every
-// OS, but a few keys are irreducibly machine-specific — env.PATH cannot be a single
+// OS, but a few keys are irreducibly machine-specific, env.PATH cannot be a single
 // cross-OS string, and the macOS GUI app launches with a minimal PATH that needs it.
 // Symlinking the cross-OS committed file therefore broke statusLine + hooks on macOS
-// outside poneglyph (2026-06-08). The base stays the single source of truth for
+// outside poneglyph. The base stays the single source of truth for
 // shared keys (regenerated each sync → no drift); the overlay carries machine
 // paths and optional private addon activation. Replaces the previous symlink.
 const MERGED_SETTINGS = {
@@ -80,7 +82,7 @@ const MERGED_SETTINGS = {
 // The body-only twin .claude/system-prompts/poneglyph-sp.md is GENERATED here by
 // stripping the frontmatter, for the hosts that inject raw system-prompt text:
 // the ~/.grok/rules symlink, sync-codex's AGENTS.md concat, and compare.ts.
-// No provenance marker inside the twin — its body must stay 100% clean for those
+// No provenance marker inside the twin, its body must stay 100% clean for those
 // hosts; provenance is documented in docs/system-inventory.md.
 const SP_TWIN = {
   source: path.join(".claude", "output-styles", "poneglyph.md"),
@@ -90,14 +92,14 @@ const SP_TWIN = {
 export function stripFrontmatter(content: string): string {
   // CRLF-tolerant: with core.autocrlf=true the SSOT on disk has CRLF
   // endings, and an LF-only pattern let the whole frontmatter survive
-  // into the twin (audit 2026-08-23). Output is LF-normalized: the twin
+  // into the twin. Output is LF-normalized: the twin
   // is injected as a raw system prompt by hosts on every OS.
   const m = content.match(/^---(?:\r?\n)[\s\S]*?(?:\r?\n)---(?:\r?\n)+/);
   const body = m ? content.slice(m[0].length) : content;
   return body.replace(/\r\n/g, "\n").trimEnd() + "\n";
 }
 
-/** Read-only check of ~/.grok/rules/poneglyph-sp.md — never installs. */
+/** Read-only check of ~/.grok/rules/poneglyph-sp.md, never installs. */
 export type GrokTwinKind =
   | "ok"
   | "ok-copy"
@@ -137,7 +139,7 @@ export function formatGrokTwinLine(kind: GrokTwinKind, detail?: string): string 
     case "ok-copy":
       return "🟢 grok twin: ✓ content-equal copy of the generated twin (Windows install; check, not install)";
     case "stale-copy":
-      return "🟡 grok twin: copy diverges from the generated twin — recopy .claude/system-prompts/poneglyph-sp.md over it (check, not install)";
+      return "🟡 grok twin: copy diverges from the generated twin, recopy .claude/system-prompts/poneglyph-sp.md over it (check, not install)";
     case "missing":
       return "⚪ grok twin: missing ~/.grok/rules/poneglyph-sp.md (ln -sfn <repo>/.claude/system-prompts/poneglyph-sp.md ~/.grok/rules/poneglyph-sp.md)";
     case "not-symlink":
@@ -155,7 +157,7 @@ export function formatSpTwinStatusLine(status: SpTwinStatus, message: string): s
     case "up-to-date":
       return "🟢 sp twin: system-prompts/poneglyph-sp.md matches the style SSOT";
     case "preview":
-      return "🟡 sp twin: STALE — the style SSOT changed; run --execute to regenerate";
+      return "🟡 sp twin: STALE, the style SSOT changed; run --execute to regenerate";
     case "written":
       return "🎨 sp twin: regenerated from the style SSOT";
     case "error":
@@ -187,13 +189,61 @@ export function generateSpTwin(
   return { status: "written", message: "regenerated system-prompts/poneglyph-sp.md from the style SSOT" };
 }
 
-// External links: src is relative to projectRoot/.claude/, dest is an absolute path outside ~/.claude/
-const LINK_EXTERNAL_DIRS = [
-  {
-    src: "ccstatusline",
-    dest: path.join(os.homedir(), ".config", "ccstatusline"),
-  },
-];
+// The prompt-router subagent is GENERATED as a real file in ~/.claude/agents/: its source
+// (hooks/router/prompt-router.md) plus the user-level glossary and catalog, so the catalog
+// sits in the cached system prompt. Skills added later reach it through agent-hooks.ts;
+// a changed description waits for the next --execute.
+export const ROUTER_AGENT = { source: path.join(".claude", "hooks", "router", "prompt-router.md"), dest: path.join("agents", "prompt-router.md") };
+
+function formatRouterAgentStatusLine(status: SpTwinStatus, message: string): string {
+  switch (status) {
+    case "up-to-date":
+      return "🟢 router agent: agents/prompt-router.md matches the source and the catalog";
+    case "preview":
+      return "🟡 router agent: STALE, the source or the catalog changed; run --execute to regenerate";
+    case "written":
+      return "🎨 router agent: regenerated agents/prompt-router.md with the catalog";
+    case "error":
+      return `🔴 router agent: ${message}`;
+  }
+}
+
+// Only a file carrying this mark is ours to overwrite; a hand-made agent needs --backup.
+const ROUTER_AGENT_MARK = "<!-- generated by sync-claude";
+
+export async function generateRouterAgent(projectRoot: string, homeDir: string, execute: boolean, backup = false): Promise<{ status: SpTwinStatus; message: string }> {
+  const config = path.join(homeDir, ".claude");
+  const dir = path.join(config, "agents");
+  const dest = path.join(config, ROUTER_AGENT.dest);
+  try {
+    // Loaded here, not at the top: a failure in the router hook must not break --status or --unlink.
+    const { enabledPluginRoots, glossaryFiles, loadCatalog, loadGlossary, routerAgentFile } = await import("../hooks/prompt-router");
+    const plugins = enabledPluginRoots(homeDir, config);
+    const body = routerAgentFile(path.join(projectRoot, ROUTER_AGENT.source), loadCatalog(homeDir, config, plugins), loadGlossary(glossaryFiles(homeDir, config, plugins)));
+    const content = `${body}\n${ROUTER_AGENT_MARK} from hooks/router/prompt-router.md; edit the source, then re-sync -->\n`;
+    // An agents/ link into this repo is an earlier install's; anything else is the user's.
+    const oldLink = isSymlink(dir) && normalizePath(path.resolve(config, getSymlinkTarget(dir) ?? "")) === normalizePath(path.join(projectRoot, ".claude", "agents"));
+    if (isSymlink(dir) && !oldLink) return { status: "error", message: `${dir} is a symlink elsewhere; not writing through it` };
+    if (!oldLink && isSymlink(dest)) return { status: "error", message: `${dest} is a symlink; not writing through it` };
+    const current = !oldLink && fs.existsSync(dest) ? fs.readFileSync(dest, "utf-8") : null;
+    if (current === content) return { status: "up-to-date", message: "router agent already matches" };
+    const handMade = current !== null && !current.includes(ROUTER_AGENT_MARK);
+    if (handMade && !backup) return { status: "error", message: `${dest} is not generated by sync-claude; rerun with --backup to replace it` };
+    if (!execute) return { status: "preview", message: "would regenerate agents/prompt-router.md" };
+    if (handMade) {
+      const backupDir = path.join(homeDir, ".claude.backup", new Date().toISOString().split("T")[0]);
+      fs.mkdirSync(backupDir, { recursive: true });
+      fs.copyFileSync(dest, path.join(backupDir, path.basename(dest)));
+      console.log(`💾 Backup: ${dest} → ${backupDir}`);
+    }
+    if (oldLink) fs.unlinkSync(dir);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(dest, content);
+    return { status: "written", message: "regenerated agents/prompt-router.md" };
+  } catch (e) {
+    return { status: "error", message: e instanceof Error ? e.message : String(e) };
+  }
+}
 
 // === TYPES ===
 
@@ -212,7 +262,7 @@ interface Config {
   force: boolean;
   check: boolean;
   validateHooks: boolean;
-  // Run `claude doctor` on the generated settings.json after writing it (032/WP1).
+  // Run `claude doctor` on the generated settings.json after writing it.
   // Off only with --no-validate (offline machine, CI without the CLI).
   validate: boolean;
   method: "auto" | "symlink" | "junction" | "copy";
@@ -443,7 +493,7 @@ function isSymlink(p: string): boolean {
 
 function getSymlinkTarget(p: string): string | null {
   try {
-    return fs.readlinkSync(p);
+    return stripLongPathPrefix(fs.readlinkSync(p));
   } catch {
     return null;
   }
@@ -457,7 +507,7 @@ function normalizePath(p: string): string {
   return p.replace(/\\/g, "/").toLowerCase();
 }
 
-// === MERGED SETTINGS (machine-specific, generated — not symlinked) ===
+// === MERGED SETTINGS (machine-specific, generated, not symlinked) ===
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -465,7 +515,7 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
 
 // Recursive deep-merge: nested plain objects merge per-key (so `env` keeps base
 // keys + overlay PATH); arrays and scalars are replaced by the overlay. The one
-// exception is `hooks` — generateSettings routes it through mergeHookEvents.
+// exception is `hooks`, generateSettings routes it through mergeHookEvents.
 function deepMerge(
   base: Record<string, unknown>,
   overlay: Record<string, unknown>,
@@ -486,10 +536,10 @@ type HookGroup = {
   hooks: Array<{ command: string } & Record<string, unknown>>;
 };
 
-// Plan 038 — `hooks.<event>` UNIONS instead of replacing: base groups first, then the
+// `hooks.<event>` UNIONS instead of replacing: base groups first, then the
 // overlay's; a handler whose `command` already appeared in that event is dropped (the
 // base wins) and a group left empty disappears. Before this, an event the machine
-// overlay also defined masked every base handler (bash-output-shaper, 2026-09-09).
+// overlay also defined masked every base handler (bash-output-shaper).
 // Anything that is not two plain objects keeps deepMerge's rule (overlay wins).
 export function mergeHookEvents(base: unknown, overlay: unknown): unknown {
   if (!isPlainObject(base) || !isPlainObject(overlay)) return overlay ?? base;
@@ -499,7 +549,7 @@ export function mergeHookEvents(base: unknown, overlay: unknown): unknown {
     const all = [...((base[event] as HookGroup[] | undefined) ?? []), ...(groups as HookGroup[])];
     // The identity of a registration is matcher + command: the same script deliberately
     // registered under `Bash` and under `Write` is two hooks, and de-duplicating on the
-    // command alone silently dropped the second one (H32, quality review 2026-09-11).
+    // command alone silently dropped the second one.
     out[event] = all.flatMap((group) => {
       const matcher = typeof group.matcher === "string" ? group.matcher : "";
       const hooks = group.hooks.filter((h) => {
@@ -517,7 +567,7 @@ interface SettingsResult {
   overlayApplied: boolean;
   message: string;
   // Real-file copy of the previous settings.json (only with --backup and only when
-  // the previous one was a real file) — what the validation step restores on reject.
+  // the previous one was a real file), what the validation step restores on reject.
   backupPath?: string;
 }
 
@@ -622,13 +672,13 @@ export function generateSettings(
   };
 }
 
-// === GENERATED SETTINGS VALIDATION (032/WP1) ===
+// === GENERATED SETTINGS VALIDATION ===
 //
-// Evidence (2026-09-03): `claude -p` with a broken settings file answers normally
-// (exit 0, empty stderr) — headless mode never surfaces "Settings Error". The
+// Evidence: `claude -p` with a broken settings file answers normally
+// (exit 0, empty stderr), headless mode never surfaces "Settings Error". The
 // channel that does, without a session or an API call, is `claude doctor`: it
 // prints an "Invalid settings" section listing `<path> › <key>: <reason>` for
-// every rejected file, user-level included, and exits 0 regardless — so the
+// every rejected file, user-level included, and exits 0 regardless, so the
 // OUTPUT is parsed, never the exit code.
 
 // Pure: the lines under the "Invalid settings" heading (up to the next blank
@@ -645,7 +695,7 @@ export function parseDoctorInvalidSettings(output: string): string[] {
   return problems;
 }
 
-// Pure: the problems that name `filePath` — case-insensitive and separator-
+// Pure: the problems that name `filePath`, case-insensitive and separator-
 // agnostic, because doctor prints native Windows paths. Problems in OTHER
 // settings files (a project's .claude/settings.json) are not this script's.
 export function problemsForFile(problems: string[], filePath: string): string[] {
@@ -660,7 +710,7 @@ export interface SettingsValidation {
   skipped?: string; // why the check could not run, as a human sentence
   // Machine-readable form of the same fact. A timeout and a missing CLI both leave the
   // layer UNVERIFIED, but only one of them means the validation is worth retrying, and no
-  // caller could tell them apart from free text (H36, quality review 2026-09-11).
+  // caller could tell them apart from free text.
   reason?: "cli-unavailable" | "timeout";
 }
 
@@ -674,8 +724,8 @@ export function cliUnavailableValidation(detail: string): SettingsValidation {
 }
 
 // `--status` printed the rejection and returned 0, so every caller that reads exit codes
-// instead of parsing icons — /sync-poneglyph, CI, an agent — saw a broken layer as success
-// (H63, quality review 2026-09-11). A skipped validation is not a failure: it is unknown,
+// instead of parsing icons, /sync-poneglyph, CI, an agent, saw a broken layer as success
+//. A skipped validation is not a failure: it is unknown,
 // and exit 2 preserves that uncertainty for callers.
 export function statusExitCode(v: SettingsValidation): number {
   return v.skipped ? 2 : v.ok ? 0 : 1;
@@ -689,10 +739,10 @@ export function classifySettingsValidation(output: string, code: number, destPat
 }
 
 export function formatSettingsValidationLine(v: SettingsValidation): string {
-  if (v.skipped) return `🟡 settings.json: not validated — ${v.skipped}`;
+  if (v.skipped) return `🟡 settings.json: not validated, ${v.skipped}`;
   if (v.ok) return "🟢 settings.json: accepted by claude doctor";
   return [
-    "🔴 settings.json: REJECTED by claude doctor — Claude Code would skip this file entirely",
+    "🔴 settings.json: REJECTED by claude doctor, Claude Code would skip this file entirely",
     ...v.problems.map((p) => `   - ${p}`),
   ].join("\n");
 }
@@ -733,9 +783,8 @@ async function validateGeneratedSettings(
 
 // Pure: given the top-level entries of a source dir (rules or docs), compute which
 // per-entry links should exist under `dest`. Files and directories alike are skipped when
-// named in `projectOnly` (a directory used to bypass this check — bug found 2026-08-24
-// wiring docs/local-model through this same function; PROJECT_ONLY_RULES only ever held a
-// file, so it went unnoticed). Status is filled in by the caller. Kept pure (entries passed
+// named in `projectOnly` (PROJECT_ONLY_RULES only ever held a file, so a directory once
+// bypassed this check unnoticed). Status is filled in by the caller. Kept pure (entries passed
 // in, no fs) so it is unit-testable.
 export function expandFolderLinks(
   source: string,
@@ -755,6 +804,44 @@ export function expandFolderLinks(
     });
   }
   return out;
+}
+
+// Global rule entries Poneglyph once linked and no longer installs: a link into the repo rules
+// folder whose source is gone or is now project-only. Left in place they keep loading in every
+// repo (a retired skill-routing.md did for weeks). A plain file is only reported: a Windows copy
+// cannot be told apart from the user's own rule.
+export function staleGlobalRules(
+  rulesSource: string,
+  rulesDest: string,
+  projectOnly: Set<string>,
+): { remove: string[]; report: string[] } {
+  const out = { remove: [] as string[], report: [] as string[] };
+  if (!fs.existsSync(rulesDest) || isSymlink(rulesDest)) return out;
+  const sourceRoot = normalizePath(rulesSource).replace(/\/$/, "") + "/";
+  for (const name of fs.readdirSync(rulesDest)) {
+    if (name.startsWith(".")) continue;
+    if (fs.existsSync(path.join(rulesSource, name)) && !projectOnly.has(name)) continue;
+    const dest = path.join(rulesDest, name);
+    if (!isSymlink(dest)) {
+      out.report.push(dest);
+      continue;
+    }
+    const target = getSymlinkTarget(dest) ?? "";
+    if (normalizePath(path.resolve(path.dirname(dest), target)).startsWith(sourceRoot)) out.remove.push(dest);
+  }
+  return out;
+}
+
+// Folders Poneglyph once linked whole and no longer installs (workflows retired): a link into
+// the repo folder is stale, whether or not the source still exists.
+const RETIRED_FOLDERS = ["workflows"];
+
+export function staleRetiredFolders(srcBase: string, destBase: string, retired: string[]): string[] {
+  return retired.map((name) => path.join(destBase, name)).filter((dest, i) => {
+    if (!isSymlink(dest)) return false;
+    const target = path.resolve(path.dirname(dest), getSymlinkTarget(dest) ?? "");
+    return normalizePath(target) === normalizePath(path.join(srcBase, retired[i]));
+  });
 }
 
 function computeLinkStatus(source: string, dest: string): LinkInfo["status"] {
@@ -840,37 +927,6 @@ function detectLinks(projectRoot: string, homeDir: string): LinkInfo[] {
     }
 
     links.push({ source, dest, type: "file", status });
-  }
-
-  for (const ext of LINK_EXTERNAL_DIRS) {
-    const source = path.join(srcBase, ext.src);
-    const dest = ext.dest;
-
-    if (!fs.existsSync(source)) continue;
-
-    let status: LinkInfo["status"] = "new";
-
-    if (fs.existsSync(dest)) {
-      if (isSymlink(dest)) {
-        const target = getSymlinkTarget(dest);
-        const resolvedTarget = target
-          ? path.resolve(path.dirname(dest), target)
-          : null;
-
-        if (
-          normalizePath(target || "") === normalizePath(source) ||
-          normalizePath(resolvedTarget || "") === normalizePath(source)
-        ) {
-          status = "already-linked";
-        } else {
-          status = "conflict";
-        }
-      } else {
-        status = "exists";
-      }
-    }
-
-    links.push({ source, dest, type: "directory", status });
   }
 
   // `rules` expanded per-entry so PROJECT_ONLY_RULES never reach the global ~/.claude/rules.
@@ -1006,7 +1062,7 @@ async function createSymlinks(
 
   console.log(`\n🔗 Link method: ${method}\n`);
 
-  // BLINDAJE (021): pre-021 the whole `rules` folder was one dir-symlink. In the per-entry model
+  // BLINDAJE: the whole `rules` folder was one dir-symlink. In the per-entry model
   // ~/.claude/rules must be a REAL directory, or `mkdirSync(dirname(dest))` below would resolve
   // through the leftover symlink and create per-file links INSIDE the repo source (corruption).
   // Replace any leftover dir-symlink with a real directory before creating rule links.
@@ -1020,7 +1076,7 @@ async function createSymlinks(
   }
 
   // Same BLINDAJE for `docs`: it was a whole-folder dir-symlink until PROJECT_ONLY_DOCS
-  // (2026-08-24) moved it to the per-entry model to keep docs/local-model/ out of the
+  // moved it to the per-entry model to keep docs/local-model/ out of the
   // global layer. A leftover dir-symlink here would corrupt per-entry docs links exactly
   // like the rules case above.
   const docsDest = path.join(destBase, DOCS_FOLDER);
@@ -1070,7 +1126,7 @@ async function createSymlinks(
       }
     }
 
-    // Ensure parent directory exists (required for external links outside ~/.claude/)
+    // Ensure the parent directory exists (per-entry links nest inside folders)
     fs.mkdirSync(path.dirname(link.dest), { recursive: true });
 
     // Create link according to method
@@ -1166,7 +1222,7 @@ function unlinkAll(links: LinkInfo[]): void {
 
 // === STATUS ===
 
-function printStatus(links: LinkInfo[]): void {
+async function printStatus(links: LinkInfo[]): Promise<void> {
   console.log("\n📊 Current state of ~/.claude:\n");
 
   const homeDir = getHomeDir();
@@ -1202,24 +1258,26 @@ function printStatus(links: LinkInfo[]): void {
     }
   }
 
-  // settings.json is a generated real file (not a symlink) — report it explicitly.
+  // settings.json is a generated real file (not a symlink), report it explicitly.
   const settingsDest = path.join(destBase, "settings.json");
   const overlayPath = path.join(getProjectRoot(), MERGED_SETTINGS.overlay);
   if (!fs.existsSync(settingsDest) && !isSymlink(settingsDest)) {
     console.log(`⚪ settings.json: does not exist (run --execute)`);
   } else if (isSymlink(settingsDest)) {
     console.log(
-      `🟡 settings.json: STALE symlink — should be a generated real file, run --execute`,
+      `🟡 settings.json: STALE symlink, should be a generated real file, run --execute`,
     );
   } else {
     console.log(
-      `🟢 settings.json: generated real file ${fs.existsSync(overlayPath) ? "(base + machine overlay)" : "(base only — no machine overlay)"}`,
+      `🟢 settings.json: generated real file ${fs.existsSync(overlayPath) ? "(base + machine overlay)" : "(base only, no machine overlay)"}`,
     );
   }
 
   const twin = generateSpTwin(getProjectRoot(), false);
   console.log(formatSpTwinStatusLine(twin.status, twin.message));
   console.log(inspectGrokTwinLine(getProjectRoot(), homeDir));
+  const agent = await generateRouterAgent(getProjectRoot(), homeDir, false, false);
+  console.log(formatRouterAgentStatusLine(agent.status, agent.message));
 }
 
 function inspectGrokTwinLine(projectRoot: string, homeDir: string): string {
@@ -1328,7 +1386,7 @@ function collectHookEntries(settings: Record<string, unknown>): HookEntry[] {
 }
 
 function validateHooks(): void {
-  const settingsPath = path.join(os.homedir(), ".claude", "settings.json");
+  const settingsPath = path.join(getHomeDir(), ".claude", "settings.json"); // config-dir: install target, the sync destination
   console.log(
     `\n[validate-hooks] Checking hooks in ~/.claude/settings.json...\n`,
   );
@@ -1496,7 +1554,7 @@ Requirements per OS:
     !process.stdin.isTTY
   ) {
     console.error(
-      "\n❌ No interactive terminal and --force not set — this would hang on the\n" +
+      "\n❌ No interactive terminal and --force not set, this would hang on the\n" +
         "   confirmation prompt. Re-run non-interactively with --force:\n" +
         "     bun .claude/commands/sync-poneglyph.ts --execute --backup --force\n",
     );
@@ -1534,17 +1592,38 @@ Requirements per OS:
   }
 
   const links = detectLinks(projectRoot, homeDir);
+  const staleRules = staleGlobalRules(
+    path.join(projectRoot, ".claude", RULES_FOLDER),
+    path.join(homeDir, ".claude", RULES_FOLDER),
+    PROJECT_ONLY_RULES,
+  );
+  const staleDocs = staleGlobalRules(
+    path.join(projectRoot, ".claude", DOCS_FOLDER),
+    path.join(homeDir, ".claude", DOCS_FOLDER),
+    PROJECT_ONLY_DOCS,
+  );
+  const staleFolders = staleRetiredFolders(path.join(projectRoot, ".claude"), path.join(homeDir, ".claude"), RETIRED_FOLDERS);
+  const staleLinks = [
+    ...staleRules.remove.map((p) => ({ p, kind: "rule" })),
+    ...staleDocs.remove.map((p) => ({ p, kind: "doc" })),
+    ...staleFolders.map((p) => ({ p, kind: "folder" })),
+  ];
+  const staleReport = () => {
+    for (const p of [...staleRules.report, ...staleDocs.report]) console.log(`🟡 ${p}: not installed by this sync (a retired copy?); delete it if Poneglyph put it there`);
+  };
 
   if (config.status) {
-    printStatus(links);
-    // Status tells the truth about acceptance too, not just file presence (032/WP1).
+    await printStatus(links);
+    for (const { p, kind } of staleLinks) console.log(`🟡 ${p}: stale ${kind} link; the next --execute removes it`);
+    staleReport();
+    // Status tells the truth about acceptance too, not just file presence.
     if (config.validate) {
       const destPath = path.join(homeDir, ".claude", MERGED_SETTINGS.dest);
       if (fs.existsSync(destPath) && !isSymlink(destPath)) {
         const validation = await validateGeneratedSettings(destPath);
         console.log(formatSettingsValidationLine(validation));
         // The exit code carries the verdict too: /sync-poneglyph --status and CI read it
-        // instead of parsing the icons (H63).
+        // instead of parsing the icons.
         process.exitCode = statusExitCode(validation);
       } else {
         console.log(formatSettingsValidationLine({ ok: true, problems: [], skipped: "generated settings file unavailable" }));
@@ -1584,7 +1663,7 @@ Requirements per OS:
   const method = determineLinkMethod(systemInfo, config);
   printPreview(links, method);
 
-  // settings.json is generated (merged), not linked — preview it alongside.
+  // settings.json is generated (merged), not linked, preview it alongside.
   const settingsPreview = generateSettings(projectRoot, homeDir, {
     ...config,
     execute: false,
@@ -1596,6 +1675,9 @@ Requirements per OS:
   const twinPreview = generateSpTwin(projectRoot, false);
   console.log(formatSpTwinStatusLine(twinPreview.status, twinPreview.message));
   console.log(inspectGrokTwinLine(projectRoot, homeDir));
+  for (const { p, kind } of staleLinks) console.log(`🟡 ${p}: stale ${kind} link; --execute removes it`);
+  const agentPreview = await generateRouterAgent(projectRoot, homeDir, false, config.backup);
+  console.log(formatRouterAgentStatusLine(agentPreview.status, agentPreview.message));
 
   if (!config.execute) {
     console.log("\n💡 Use --execute to create the symlinks");
@@ -1623,12 +1705,17 @@ Requirements per OS:
 
   const failedLinks = toModify.length > 0 ? await createSymlinks(links, config, systemInfo) : 0;
   if (toModify.length === 0) console.log("\n✅ All symlinks already linked correctly");
+  for (const { p, kind } of staleLinks) {
+    fs.unlinkSync(p);
+    console.log(`🧹 Removed stale ${kind} link ${p}`);
+  }
+  staleReport();
 
   // Regenerate the body-only twin from the style SSOT (grok/codex/compare consume it).
   const twinResult = generateSpTwin(projectRoot, true);
   console.log(formatSpTwinStatusLine(twinResult.status, twinResult.message));
 
-  // Always (re)generate the merged settings.json — per-machine, never symlinked.
+  // Always (re)generate the merged settings.json, per-machine, never symlinked.
   const settingsResult = generateSettings(projectRoot, homeDir, config);
   const sIcon =
     settingsResult.status === "written"
@@ -1638,11 +1725,19 @@ Requirements per OS:
         : "📄";
   console.log(`${sIcon} settings.json: ${settingsResult.message}`);
   if (settingsResult.status === "error") {
-    console.error("❌ settings.json was not regenerated — the Claude layer is incomplete (exit 1).");
+    console.error("❌ settings.json was not regenerated, the Claude layer is incomplete (exit 1).");
     process.exit(1);
   }
 
-  // Acceptance check, not a file check (audit 010 regression: a boolean where the
+  // After settings.json: the catalog reads the user-level enabledPlugins from it.
+  const agentResult = await generateRouterAgent(projectRoot, homeDir, true, config.backup);
+  console.log(formatRouterAgentStatusLine(agentResult.status, agentResult.message));
+  if (agentResult.status === "error") {
+    console.error("❌ The router agent was not regenerated, the Claude layer is incomplete (exit 1).");
+    process.exit(1);
+  }
+
+  // Acceptance check, not a file check (a boolean where the
   // schema wants a string made Claude Code drop the WHOLE user profile while this
   // script reported success). `claude doctor` validates every settings file
   // without a session or an API call; any problem naming the generated file
@@ -1658,7 +1753,7 @@ Requirements per OS:
         console.log(`↩️  Restored previous settings.json from ${settingsResult.backupPath}`);
       } else {
         console.log(
-          "⚠️  No backup to restore — the invalid file stays in place. Fix .claude/settings.global.json and re-run with --backup.",
+          "⚠️  No backup to restore, the invalid file stays in place. Fix .claude/settings.global.json and re-run with --backup.",
         );
       }
       process.exit(1);
@@ -1669,7 +1764,7 @@ Requirements per OS:
   }
 
   if (failedLinks > 0) {
-    console.error(`\n❌ ${failedLinks} link(s) failed — see the errors above (exit 1).`);
+    console.error(`\n❌ ${failedLinks} link(s) failed, see the errors above (exit 1).`);
     process.exit(1);
   }
 

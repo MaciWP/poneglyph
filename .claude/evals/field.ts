@@ -5,20 +5,20 @@
 // real interactive turn in this machine's transcripts (~/.claude/projects/**/*.jsonl). It
 // answers whether a grader that passes on synthetic cases tracks what the sessions actually
 // show, and how often long tool runs stay silent (no text before the last tool call).
-// Privacy floor (field data on the work machine): the output is counts and percentages only —
+// Privacy floor (field data on the work machine): the output is counts and percentages only:
 // never a grader `detail`, a line of text or a project name.
 import { readFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
 import { collectTranscripts, percentile } from "../scripts/usage-profile";
 import { bannedOpeners, blufPosition, calqueDetect, cardSeparators, esEsDetect, proseLength, type Grader } from "./graders";
+import { claudeConfigDir } from "../hooks/lib/paths";
 
 export interface FieldTurn { at: string; model: string; tools: number; interim: number; final: string }
 
 // ponytail: fixed threshold, recalibrate when the median tools per turn moves.
 export const LONG_TURN_TOOLS = 8;
 
-export const FIELD_GRADERS: [string, Grader][] = [
+const FIELD_GRADERS: [string, Grader][] = [
   ["openers", bannedOpeners],
   ["calques", calqueDetect],
   ["es-ES", esEsDetect],
@@ -104,7 +104,7 @@ export function renderField(rows: FieldRow[], days: number): string {
   const pct = (x: number) => `${Math.round(x * 100)} %`;
   const names = FIELD_GRADERS.map(([n]) => n);
   return [
-    `## Field read — interactive turns in transcripts touched in the last ${days} days`,
+    `## Field read: interactive turns in transcripts touched in the last ${days} days`,
     "",
     `Graders: share of turns with final text that pass. Long turn: ≥${LONG_TURN_TOOLS} tool calls; silent: no text before the last one.`,
     "",
@@ -120,7 +120,7 @@ if (import.meta.main) {
   const days = Number(arg("--days")) || 14;
   const split = arg("--split");
   const since = new Date(Date.now() - days * 86_400_000).toISOString();
-  const turns = collectTranscripts(join(homedir(), ".claude", "projects"), days)
+  const turns = collectTranscripts(join(claudeConfigDir(), "projects"), days)
     .flatMap((f) => { try { return extractTurns(readFileSync(f, "utf8").split("\n")); } catch { return []; } })
     .filter((t) => t.at >= since);
   const groupOf = (t: FieldTurn) => (split ? `${t.model} · ${t.at < split ? "before" : "after"} ${split}` : t.model);

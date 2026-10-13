@@ -1,7 +1,7 @@
 ---
-spec: {NNN}-{slug}
+spec: "{NNN}-{slug}"
 tasks: tasks/
-created: {ISO-date}
+created: "{ISO-date}"
 phase: 2.5
 status: draft
 validation_mode: validation
@@ -12,7 +12,7 @@ test_policy: business-critical|mixed|auxiliary
 
 ## ¿Por qué validation-mode y no TDD?
 
-<2-3 líneas: sin código ejecutable nuevo, sin oracle binario natural. La HU produce markdown/skills/docs/configs — aplicar TDD sería ceremonia sin valor real. Las validaciones declarativas son verificables vía Grep/Read/manual LLM review.>
+<2-3 líneas: sin código ejecutable nuevo, sin oracle binario natural. La HU produce markdown/skills/docs/configs; aplicar TDD sería ceremonia sin valor real. Las validaciones declarativas son verificables vía Grep/Read/manual LLM review.>
 
 ## Categorías de validación
 
@@ -24,7 +24,7 @@ test_policy: business-critical|mixed|auxiliary
 | **Smoke checks** | Verificaciones funcionales (skill se auto-activa, command no falla) |
 | **Cross-validations** | Refs entre archivos coherentes; nada huérfano |
 
-## US{N} — <título>
+## US{N}: <título>
 
 ### Pre
 
@@ -41,7 +41,7 @@ test_policy: business-critical|mixed|auxiliary
 
 ### Smoke
 
-- <Verificación funcional ejecutable — Glob, Grep, Read, manual invocation>
+- <Verificación funcional ejecutable: Glob, Grep, Read, manual invocation>
 
 ### Cross-validations
 

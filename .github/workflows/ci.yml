@@ -38,6 +38,9 @@ jobs:
       - name: Check configuration source
         run: bun run check:config
 
+      - name: Typecheck
+        run: bun run typecheck
+
       - name: Run the full suite
         run: bun test ./.claude/
 

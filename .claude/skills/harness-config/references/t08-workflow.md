@@ -1,10 +1,10 @@
 ---
 parent: harness-config
 name: t08-workflow
-description: T8 workflow pack — Grok .rhai and Claude dynamic workflows. Codex file type ausente.
+description: T8 workflow pack, Grok .rhai and Claude dynamic workflows. Codex file type ausente.
 ---
 
-# T8 — Workflow
+# T8: Workflow
 
 Shared: [lookup.md](lookup.md) · [lifecycle.md](lifecycle.md) · [native-creators.md](native-creators.md).
 Not a `/harness-config` entrypoint (D7).
@@ -22,7 +22,7 @@ Grok bundled `create-workflow` skill + `[workflows]` in `05-configuration.md`. C
 | | Claude Code | Codex | Grok Build |
 |---|---|---|---|
 | File type | Dynamic workflows (host feature; `disableWorkflows` / `enableWorkflows`) | **ausente** as a file type. Plugins (T7) are not a substitute workflow engine | `.grok/workflows/*.rhai` (project) / `~/.grok/workflows/` |
-| Native creator | workflow-authoring (when enabled) drafts | — | `/create-workflow` drafts only (AC26) |
+| Native creator | workflow-authoring (when enabled) drafts | none | `/create-workflow` drafts only (AC26) |
 | Disable | `disableWorkflows` | n/a | `[workflows] enabled = false` or `GROK_WORKFLOWS=0` |
 | Reload | feature flag / session | n/a | disk; `workflow` tool |
 
@@ -42,5 +42,5 @@ AC26: creator success is not the gate. Do not spawn workers without this-turn pe
 
 | Cell | Status |
 |---|---|
-| Codex `.rhai` / workflow files | **ausente** — do not clone Grok/Claude here; a plugin is T7 |
+| Codex `.rhai` / workflow files | **ausente**; do not clone Grok/Claude here; a plugin is T7 |
 | `/harness-config` workflow | **ausente** (D7) |

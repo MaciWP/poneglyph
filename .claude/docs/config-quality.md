@@ -1,6 +1,6 @@
 # Configuration source quality
 
-Status: implemented source gate. Metadata contract checked 2026-09-08.
+Status: implemented source gate.
 This gate checks repository source, not agent performance or a running installation.
 
 ## Run and ownership
@@ -18,7 +18,7 @@ One implementation: [check-config.ts](../scripts/check-config.ts).
 [CI](../../.github/workflows/ci.yml) use that implementation. The private addon
 invokes it from a reviewed core checkout, without a copied package or test suite.
 
-The validator, activation hook, and choose-skills share
+The validator and the prompt router share
 [YAML decoding](../scripts/lib/skill-metadata.ts). `frontmatter` remains exported
 from the validator for existing callers, including the Codex adapter.
 
@@ -71,28 +71,6 @@ Descriptions are decoded before measurement, including folded/literal YAML and
 CRLF. The original scalar length is measured without trimming away padding.
 Commands follow the same description bound as a **project convention**, not a
 universal command limit.
-
-### Runtime keyword contract
-
-`metadata.keywords` is an optional string. Both runtime readers prefer it over
-legacy keywords in `description`. Comma-separated values can use literal or
-folded YAML and may start with `Keywords -`; the marker is optional in metadata.
-Line breaks join with spaces before comma splitting, so a wrapped phrase remains
-one keyword. Keywords retain the hook's normalization: lowercase, trimmed values,
-removed quotes, inline `keyword - "example phrase"` splitting, and a three-character
-minimum. UTF-8 accents remain intact. Only frontmatter supplies keywords.
-
-If `metadata.keywords` is absent, readers accept the legacy `Keywords -` block
-inside the decoded description. An explicit empty value disables that fallback.
-A non-string value also yields no runtime keywords and fails source validation.
-Malformed YAML or non-mapping frontmatter is skipped by runtime readers and rejected
-by the validator. Readers parse the complete frontmatter, with no character cutoff.
-
-A skill without keywords remains valid. Skill-advisor can rank its full description;
-the keyword hook omits it. Directory order and directory-based names remain unchanged:
-choose-skills keeps the first readable entry, including entries without keywords;
-the hook keeps the first entry with usable keywords. Missing or unreadable entries
-allow a later directory to supply the skill. Ranking and matching rules are unchanged.
 
 A body of at least 500 lines is a **warning**, not a failure. It is progressive
 disclosure guidance, not evidence of poor reasoning. Description length stays

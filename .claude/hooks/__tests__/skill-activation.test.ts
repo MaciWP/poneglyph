@@ -1,306 +1,26 @@
 import { describe, test, expect } from "bun:test";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  loadSkills,
-  matchWithReasons,
-  buildShortlistInjection,
-  isNonHumanPayload,
-  detectFeatureShape,
-  analyzePayload,
-  foldText,
-} from "../skill-activation";
+import { isNonHumanPayload, detectFeatureShape, analyzePayload, foldText, clearHint, CLEAR_HINT_TOKENS } from "../skill-activation";
 import { formatLogLine } from "../instructions-loaded";
 
-// Fixture: a minimal skills dir with one drillme-like skill (keywords on disk,
-// no hardcoded list — mirrors the production loader contract).
-const fixtures = mkdtempSync(join(tmpdir(), "skills-fixture-"));
-mkdirSync(join(fixtures, "drillme-clarify"), { recursive: true });
-writeFileSync(
-  join(fixtures, "drillme-clarify", "SKILL.md"),
-  [
-    "---",
-    "name: drillme-clarify",
-    "description: |",
-    "  Socratic check for plans and decisions.",
-    "  Keywords - drill, drillme-clarify, socratic, valida, cuestiona, challenge, gap, gaps, pregúntame todo",
-    "---",
-    "",
-    "# drillme-clarify",
-  ].join("\n"),
-);
-for (const [name, kw] of [
-  ["pr-review", "refactor, solid, performance, slow, endpoint, principios solid"],
-  ["flow-test-plan", "tests, tdd, oracle, test-design, test plan"],
-  ["flow", "flow, spec, plan de la feature"],
-  ["choose-skills", "choose-skills, skills, shortlist, propón skills, which skills"],
-  ["flow-review", "critic, revisa, audita, valida, verdict, revisa el codigo"],
-] as const) {
-  mkdirSync(join(fixtures, name), { recursive: true });
-  writeFileSync(
-    join(fixtures, name, "SKILL.md"),
-    ["---", `name: ${name}`, "description: |", `  ${name} fixture.`, `  Keywords - ${kw}`, "---", "", `# ${name}`].join("\n"),
-  );
-}
-// Multi-line Keywords block (SK-01): continuation lines indented inside
-// `description: |`, terminated by the next top-level frontmatter key.
-mkdirSync(join(fixtures, "wrapped-kw"), { recursive: true });
-writeFileSync(
-  join(fixtures, "wrapped-kw", "SKILL.md"),
-  [
-    "---",
-    "name: wrapped-kw",
-    "description: |",
-    "  Fixture with wrapped keywords.",
-    "  Keywords - primero, segundo,",
-    "  continuación, tercera-línea, wrapped-match,",
-    '  último - "frase de ejemplo entre comillas"',
-    "disable-model-invocation: false",
-    "---",
-    "",
-    "# wrapped-kw",
-  ].join("\n"),
-);
-// Multi-word keyword wrapping WITHOUT a trailing comma (the real bug behind
-// "review"→pr-comments, audit 2026-08-07): "review\ncomment" is
-// ONE keyword "review comment", not two single-words.
-mkdirSync(join(fixtures, "wrapped-multiword"), { recursive: true });
-writeFileSync(
-  join(fixtures, "wrapped-multiword", "SKILL.md"),
-  [
-    "---",
-    "name: wrapped-multiword",
-    "description: |",
-    "  Fixture replicating pr-comments' wrapped keyword.",
-    "  Keywords - conventional comments, review",
-    "  comment, blocking",
-    "---",
-    "",
-    "# wrapped-multiword",
-  ].join("\n"),
-);
+const hint = (prompt: string) => analyzePayload(JSON.stringify({ prompt }));
 
-const skills = loadSkills([fixtures]);
-
-// Provider names previously matched consult-model even for session or team requests.
-// Exercise the real catalog and emitted hints; a hint is not launch authorization.
-for (const host of ["claude", "codex", "grok"] as const) {
-  describe(`consultation vs session vs team — ${host} catalog`, () => {
-    const catalog = loadSkills([join(import.meta.dir, "../../skills")], host);
-
-    test.each([
-      "pregúntale a Codex si este diseño tiene errores",
-      "consulta a Grok sobre este plan",
-      "consulta a Claude sobre este diff",
-      "pide una segunda opinión sobre este diseño",
-      "ask Codex to refute this plan",
-      "ask Grok for a second opinion",
-    ])("consultation: %s", (prompt) => {
-      const result = analyzePayload(JSON.stringify({ prompt }), catalog);
-      expect(result.skills).toContain("consult-model");
-      expect(result.injection).toContain("Skill(consult-model)");
-      expect(result.skills).not.toContain("orca-team");
-    });
-
-    test.each([
-      "coordina Codex y Claude para implementar estas tareas",
-      "coordina un equipo con Codex y Grok",
-      "supervisa un equipo para completar estas tareas",
-      "resume team with the approved tasks",
-      "coordinate a team with Codex and Grok",
-    ])("supervised team: %s", (prompt) => {
-      const result = analyzePayload(JSON.stringify({ prompt }), catalog);
-      expect(result.skills).toContain("orca-team");
-      expect(result.injection).toContain("Skill(orca-team)");
-      expect(result.skills).not.toContain("consult-model");
-      expect(result.skills).not.toContain("orca-swarm");
-    });
-
-    test.each([
-      "monta una colmena de agentes para migrar el módulo de pagos",
-      "lanza un enjambre de agentes con Codex y Claude",
-      "orca swarm para este objetivo con un presupuesto de 40 minutos",
-      "run an agent swarm with a leaderboard",
-      "reanuda la colmena del run anterior",
-    ])("hive: %s", (prompt) => {
-      const result = analyzePayload(JSON.stringify({ prompt }), catalog);
-      expect(result.skills).toContain("orca-swarm");
-      expect(result.injection).toContain("Skill(orca-swarm)");
-      expect(result.skills).not.toContain("orca-team");
-      expect(result.skills).not.toContain("consult-model");
-    });
-
-    // Product copy, negations and consultations that mention a hive are not a run.
-    test.each([
-      "añade un leaderboard de agentes a la landing del producto",
-      "no quiero una colmena, solo arregla el test",
-      "pregúntale a Codex si montamos una colmena",
-      "el logo es una colmena amarilla",
-      "compara agent swarm frameworks para un post",
-    ])("not a hive: %s", (prompt) => {
-      const result = analyzePayload(JSON.stringify({ prompt }), catalog);
-      expect(result.skills).not.toContain("orca-swarm");
-    });
-
-    // orca-cli is Orca-owned. Its native description handles session selection;
-    // this catalog must not hijack that request with consult-model or orca-team.
-    test.each([
-      "explica las diferencias entre Codex y Grok",
-      "busca documentación del codex plugin y grok plugin",
-      "abre un Codex",
-      "estamos en Codex, abre otro Codex",
-      "estamos en Claude, abre una sesión de Codex",
-      "abre otra sesión de Codex o Grok",
-      "abre un Claude",
-      "abre otra sesión",
-      "abre Codex y Grok en paralelo",
-      "reanuda la sesión de Grok",
-      "pasa el trabajo a esa sesión de Codex",
-      "open a Codex session and a Grok session",
-    ])("no consultation or team hint: %s", (prompt) => {
-      const result = analyzePayload(JSON.stringify({ prompt }), catalog);
-      expect(result.skills).not.toContain("consult-model");
-      expect(result.skills).not.toContain("orca-team");
-      expect(result.injection).not.toContain("Skill(consult-model)");
-      expect(result.injection).not.toContain("Skill(orca-team)");
-    });
-  });
-}
-
-test("the shared Archify entry is discoverable by the native hook loader", () => {
-  const catalog = loadSkills([join(import.meta.dir, "../../skills")]);
-  const archify = catalog.find((entry) => entry.name === "diagrams-interactive");
-  expect(archify).toBeDefined();
-  expect(archify!.keywords).toContain("diagrama interactivo");
-});
-
-describe("loadSkills — multi-line Keywords block (SK-01)", () => {
-  const wrapped = skills.find((s) => s.name === "wrapped-kw");
-  test("continuation-line keywords are parsed, next YAML key is not swallowed", () => {
-    expect(wrapped).toBeDefined();
-    expect(wrapped!.keywords).toContain("continuación");
-    expect(wrapped!.keywords).toContain("wrapped-match");
-    expect(wrapped!.keywords).toContain("frase de ejemplo entre comillas");
-    expect(wrapped!.keywords.some((k) => k.includes("disable-model-invocation"))).toBe(false);
-  });
-  test("a continuation-line multi-word keyword matches a prompt", () => {
-    const names = matchWithReasons("dame la frase de ejemplo entre comillas aquí", skills).map((m) => m.name);
-    expect(names).toContain("wrapped-kw");
+// Skill discovery belongs to the prompt router. The keyword hint measured hit 0.07
+// and still fired false positives; this locks its removal so it does not creep back.
+describe("no skill hints: the prompt router names skills", () => {
+  test.each([
+    "revisa la pr antes de aprobarla",
+    "pregúntame todo sobre este plan de migración",
+    "refactoriza el módulo de pagos aplicando principios SOLID",
+    "Implement the plan",
+  ])("%p emits no Skill() line", (prompt) => {
+    expect(hint(prompt).injection).not.toContain("Skill(");
   });
 });
 
-describe("loadSkills — multi-word keyword wrapping without comma (audit 2026-08-07)", () => {
-  const skill = skills.find((s) => s.name === "wrapped-multiword");
-  test("'review\\ncomment' joins into ONE keyword 'review comment'", () => {
-    expect(skill).toBeDefined();
-    expect(skill!.keywords).toContain("review comment");
-    expect(skill!.keywords).not.toContain("review");
-    expect(skill!.keywords).not.toContain("comment");
-  });
-  test("bare 'review' in a prompt no longer matches (the measured FP)", () => {
-    const names = matchWithReasons("haz un review de esto", skills).map((m) => m.name);
-    expect(names).not.toContain("wrapped-multiword");
-  });
-  test("the full phrase 'review comment' does match", () => {
-    const names = matchWithReasons("deja un review comment en la pr", skills).map((m) => m.name);
-    expect(names).toContain("wrapped-multiword");
-  });
-});
-
-describe("matchWithReasons + buildShortlistInjection — prompt with match (T12.1)", () => {
-  test("a multi-word keyword injects Skill(drillme-clarify) in ≤5 lines, worded as optional", () => {
-    const injection = buildShortlistInjection(matchWithReasons("pregúntame todo sobre este plan", skills));
-    expect(injection).toContain("Skill(drillme-clarify)");
-    expect(injection).toContain("load it only if it applies");
-    expect(injection.split("\n").length).toBeLessThanOrEqual(5);
-  });
-});
-
-describe("matchWithReasons — prompt without match (T12.2)", () => {
-  test("greeting matches nothing", () => {
-    expect(matchWithReasons("hola buenos días", skills)).toEqual([]);
-  });
-
-  test("a single single-word hit no longer qualifies (precision rule)", () => {
-    expect(matchWithReasons("valida este plan", skills)).toEqual([]);
-  });
-
-  test("buildShortlistInjection of empty list is empty string", () => {
-    expect(buildShortlistInjection([])).toBe("");
-  });
-});
-
-describe("keyword precision rule (auditoría 2026-08-07)", () => {
-  test("fixture obligatorio: 'revisa los tests que ya existen' → silencio total", () => {
-    const raw = JSON.stringify({ prompt: "en este caso, antes de continuar, revisa los tests que ya existen" });
-    expect(analyzePayload(raw, skills).injection).toBe("");
-  });
-
-  // 2026-09-14 → 10-02: single words fired 124 hints and 3 were followed. Two of
-  // them no longer qualify either; only a multi-word phrase does.
-  test("two single-word hits stay silent: 'revisa y valida este resultado'", () => {
-    expect(matchWithReasons("revisa y valida este resultado, dame el verdict", skills)).toEqual([]);
-    expect(matchWithReasons("valida y cuestiona este plan", skills)).toEqual([]);
-  });
-
-  test("multi-word keyword alone qualifies: 'revisa el codigo'", () => {
-    const matched = matchWithReasons("por favor revisa el codigo antes de aprobar", skills);
-    expect(matched.map((m) => m.name)).toContain("flow-review");
-    const critic = matched.find((m) => m.name === "flow-review")!;
-    expect(critic.reason).toBe("revisa el codigo");
-  });
-
-  test("a single word never qualifies: 'gaps'", () => {
-    expect(matchWithReasons("hay varios gaps que resolver", skills).map((m) => m.name)).not.toContain("drillme-clarify");
-  });
-
-  test("tradeoff documentado: el nombre corto solo ('drillme-clarify' ⊃ 'drill') ya no basta", () => {
-    expect(matchWithReasons("necesito un drillme-clarify de esto", skills).map((m) => m.name)).not.toContain("drillme-clarify");
-  });
-});
-
-describe("whole-word, accent-insensitive matching", () => {
-  test("a keyword inside a longer word does not match", () => {
-    expect(matchWithReasons("respecto al plan de la featurex", skills)).toEqual([]);
-    expect(matchWithReasons("revisa el codigofuente", skills)).toEqual([]);
-  });
-
-  test("a hyphenated identifier does not match its parts", () => {
-    expect(matchWithReasons("mira el test plan-v2.md", skills)).toEqual([]);
-  });
-
-  test("a prompt typed without accents matches an accented keyword", () => {
-    expect(matchWithReasons("preguntame todo antes de seguir", skills).map((m) => m.name)).toContain("drillme-clarify");
-  });
-
-  test("an accented prompt matches an unaccented keyword", () => {
-    expect(matchWithReasons("revisa el código de este módulo", skills).map((m) => m.name)).toContain("flow-review");
-  });
-
-  test("foldText strips case and accents", () => {
-    expect(foldText("Pregúntame TODO")).toBe("preguntame todo");
-  });
-});
-
-describe("a skill the prompt already names gets no hint", () => {
-  test("'/drillme-clarify' in mid-prompt suppresses its own hint", () => {
-    const names = matchWithReasons("hazlo y si tienes dudas usa /drillme-clarify, pregúntame todo", skills).map((m) => m.name);
-    expect(names).not.toContain("drillme-clarify");
-  });
-
-  test("another skill in the same prompt still gets its hint", () => {
-    const names = matchWithReasons("usa /drillme-clarify y revisa el codigo", skills).map((m) => m.name);
-    expect(names).toEqual(["flow-review"]);
-  });
-
-  test("a longer skill name is not mistaken for '/flow'", () => {
-    const names = matchWithReasons("lanza /flow-lifecycle con el plan de la feature", skills).map((m) => m.name);
-    expect(names).toContain("flow");
-  });
-});
-
-describe("pre-gate — payloads no humanos (auditoría 2026-08-07)", () => {
+describe("pre-gate: payloads no humanos", () => {
   test("isNonHumanPayload reconoce los 4 prefijos", () => {
     expect(isNonHumanPayload("[SYSTEM NOTIFICATION - NOT USER INPUT] lo que sea")).toBe(true);
     expect(isNonHumanPayload("<task-notification>resultado</task-notification>")).toBe(true);
@@ -313,112 +33,43 @@ describe("pre-gate — payloads no humanos (auditoría 2026-08-07)", () => {
     expect(isNonHumanPayload("el fichero contiene <system-reminder> como texto")).toBe(false);
   });
 
-  test("analyzePayload calla ante un task-notification aunque su texto matchee keywords", () => {
-    const raw = JSON.stringify({
-      prompt: "[SYSTEM NOTIFICATION - NOT USER INPUT] revisa y valida el resultado, cuestiona el plan",
-    });
-    expect(analyzePayload(raw, skills).injection).toBe("");
-  });
-
-  test("el pre-gate no toca disco (getter no invocado)", () => {
-    let calls = 0;
-    const getter = () => {
-      calls++;
-      return skills;
-    };
-    analyzePayload(JSON.stringify({ prompt: "<system-reminder>revisa y valida</system-reminder>" }), getter);
-    expect(calls).toBe(0);
+  test("analyzePayload calla ante un task-notification aunque su texto tenga forma de feature", () => {
+    expect(hint("[SYSTEM NOTIFICATION - NOT USER INPUT] desarrolla una nueva funcionalidad").injection).toBe("");
   });
 });
 
-describe("analyzePayload — malformed payload is silent (T12.3)", () => {
+describe("analyzePayload: malformed payload is silent (T12.3)", () => {
   test("invalid JSON produces empty output without throwing", () => {
-    expect(analyzePayload("{not json", skills).injection).toBe("");
+    expect(analyzePayload("{not json").injection).toBe("");
   });
 
   test("empty input produces empty output", () => {
-    expect(analyzePayload("", skills).injection).toBe("");
+    expect(analyzePayload("").injection).toBe("");
   });
 
   test("payload without prompt produces empty output", () => {
-    expect(analyzePayload(JSON.stringify({ session_id: "x" }), skills).injection).toBe("");
+    expect(analyzePayload(JSON.stringify({ session_id: "x" })).injection).toBe("");
   });
 
-  test("slash-command prompt is skipped (user already chose)", () => {
-    expect(analyzePayload(JSON.stringify({ prompt: "/drillme-clarify algo" }), skills).injection).toBe("");
+  test("slash commands are skipped, '/goal <task>' is processed", () => {
+    expect(hint("/flow-lifecycle desarrolla una nueva funcionalidad").injection).toBe("");
+    expect(hint("/expert-role security").injection).toBe("");
+    expect(hint("/goal desarrolla una nueva funcionalidad de informes").flowHint).toBe(true);
   });
 
-  test("/flow-lifecycle is skipped — it self-routes its phase skills", () => {
-    expect(analyzePayload(JSON.stringify({ prompt: "/flow-lifecycle valida este plan" }), skills).injection).toBe("");
-  });
-});
-
-describe("analyzePayload — silencioso por defecto (031)", () => {
-  test("T2.1 match real → shortlist con motivo, SIN línea advisor incondicional", () => {
-    const out = analyzePayload(
-      JSON.stringify({ prompt: "refactoriza el módulo de pagos aplicando principios SOLID" }),
-      skills,
-    ).injection;
-    expect(out).toContain("Skill(pr-review)");
-    expect(out).toContain("matched");
-    expect(out).not.toContain("Skill(choose-skills)");
-  });
-
-  test("T2.2 prompt no-trivial SIN match ni shape → silencio total", () => {
-    const out = analyzePayload(
-      JSON.stringify({ prompt: "explícame cómo funciona la autenticación del proyecto por dentro" }),
-      skills,
-    ).injection;
-    expect(out).toBe("");
-  });
-
-  test("T2.2b '/goal' se procesa: con match emite hint, sin match calla", () => {
-    const conMatch = analyzePayload(
-      JSON.stringify({ prompt: "/goal pregúntame todo sobre este plan de migración" }),
-      skills,
-    ).injection;
-    expect(conMatch).toContain("Skill(drillme-clarify)");
-    const sinMatch = analyzePayload(
-      JSON.stringify({ prompt: "/goal añade un botón al formulario de login" }),
-      skills,
-    ).injection;
-    expect(sinMatch).toBe("");
-  });
-
-  test("T2.3 '/flow-lifecycle' y '/expert-role' siguen saltándose", () => {
-    expect(analyzePayload(JSON.stringify({ prompt: "/flow-lifecycle valida este plan" }), skills).injection).toBe("");
-    expect(analyzePayload(JSON.stringify({ prompt: "/expert-role security" }), skills).injection).toBe("");
-  });
-
-  test("T2.4 prompt trivial → vacío (sin ruido)", () => {
-    expect(analyzePayload(JSON.stringify({ prompt: "gracias" }), skills).injection).toBe("");
-  });
-
-  test("T2.5 presupuesto de líneas respetado (≤5, ya sin línea advisor)", () => {
-    const out = analyzePayload(
-      JSON.stringify({ prompt: "refactor solid performance slow endpoint tests tdd" }),
-      skills,
-    ).injection;
-    expect(out.split("\n").length).toBeLessThanOrEqual(5);
-    expect(out).not.toContain("Skill(choose-skills)");
-  });
-
-  test("T2.6 carga perezosa: los pre-gates no tocan disco (getter no invocado)", () => {
-    let calls = 0;
-    const getter = () => {
-      calls++;
-      return skills;
-    };
-    expect(analyzePayload(JSON.stringify({ prompt: "/flow-lifecycle valida" }), getter).injection).toBe("");
-    expect(analyzePayload("", getter).injection).toBe("");
-    expect(analyzePayload("{not json", getter).injection).toBe("");
-    expect(calls).toBe(0);
-    analyzePayload(JSON.stringify({ prompt: "valida este plan" }), getter);
-    expect(calls).toBe(1);
+  test("a plain prompt with no shape stays silent", () => {
+    expect(hint("explícame cómo funciona la autenticación del proyecto por dentro").injection).toBe("");
+    expect(hint("gracias").injection).toBe("");
   });
 });
 
-describe("instructions-loaded — formatLogLine", () => {
+describe("foldText", () => {
+  test("strips case and accents", () => {
+    expect(foldText("Revisión TÉCNICA")).toBe("revision tecnica");
+  });
+});
+
+describe("instructions-loaded: formatLogLine", () => {
   test("well-formed payload produces a line with type, reason and path", () => {
     const line = formatLogLine({
       session_id: "s1",
@@ -436,7 +87,7 @@ describe("instructions-loaded — formatLogLine", () => {
   });
 });
 
-describe("feature-shape flow hint (029/US13)", () => {
+describe("feature-shape flow hint", () => {
   test("detects feature-shaped prompts", () => {
     expect(detectFeatureShape("quiero desarrollar una nueva funcionalidad de notificaciones")).toBe(true);
     expect(detectFeatureShape("nueva feature de informes de proceso")).toBe(true);
@@ -448,79 +99,69 @@ describe("feature-shape flow hint (029/US13)", () => {
     expect(detectFeatureShape("revisa este ticket y dime qué pide")).toBe(false);
   });
 
-  test("analyzePayload adds the /flow-lifecycle line on feature shape, alongside matched skills", () => {
-    const raw = JSON.stringify({ prompt: "valida el plan de esta nueva funcionalidad de informes" });
-    const r = analyzePayload(raw, skills);
+  test("feature shape injects the /flow-lifecycle line, with the tiered ceiling", () => {
+    const r = hint("desarrolla una nueva funcionalidad de exportación a excel");
     expect(r.flowHint).toBe(true);
-    expect(r.injection).toContain("/flow-lifecycle");
-    expect(r.injection).toContain("skill-activation-hint");
-  });
-
-  test("feature shape alone (no skill keyword match) still injects the /flow-lifecycle line, with the tiered ceiling (plan 037)", () => {
-    const raw = JSON.stringify({ prompt: "desarrolla una nueva funcionalidad de exportación a excel" });
-    const r = analyzePayload(raw, skills);
-    expect(r.flowHint).toBe(true);
+    expect(r.injection).toContain("<skill-activation-hint>");
     expect(r.injection).toContain("/flow-lifecycle");
     expect(r.injection).toContain("/autocompact 400k");
   });
 
-  test("no feature shape → no /flow-lifecycle line (unchanged behavior)", () => {
-    const raw = JSON.stringify({ prompt: "valida este plan antes de cerrarlo" });
-    const r = analyzePayload(raw, skills);
+  test("no feature shape → no /flow-lifecycle line", () => {
+    const r = hint("valida este plan antes de cerrarlo");
     expect(r.flowHint).toBe(false);
     expect(r.injection).not.toContain("/flow-lifecycle");
   });
 });
 
-describe("emitted-hint metadata", () => {
-  test("analyzePayload devuelve reasons alineadas con skills", () => {
-    const r = analyzePayload(JSON.stringify({ prompt: "por favor revisa el codigo antes de aprobar" }), skills);
-    expect(r.skills).toEqual(["flow-review"]);
-    expect(r.reasons).toEqual(["revisa el codigo"]);
-  });
-});
-
-describe("model/effort routing hint (029/US7 — shape-only, playbook §4)", () => {
+describe("model/effort routing hint (shape-only, playbook §4)", () => {
   test("bulk/mechanical shape gets the routing line, marked shape-only", () => {
-    const raw = JSON.stringify({ prompt: "barre todos los ficheros del repo y renombra el import en masa" });
-    const r = analyzePayload(raw, skills);
+    const r = hint("barre todos los ficheros del repo y renombra el import en masa");
     expect(r.routingHint).toBe(true);
     expect(r.injection).toContain("/model");
     expect(r.injection.toLowerCase()).toContain("shape-only");
   });
 
   test("quick-lookup shape also routes cheap", () => {
-    const raw = JSON.stringify({ prompt: "pregunta rapida: que hace este flag de git?" });
-    const r = analyzePayload(raw, skills);
-    expect(r.routingHint).toBe(true);
+    expect(hint("pregunta rapida: que hace este flag de git?").routingHint).toBe(true);
   });
 
-  test("normal prompts get zero routing mentions (anti-ceremonia, hereda AC4 de 027)", () => {
-    const raw = JSON.stringify({ prompt: "valida este plan antes de cerrarlo" });
-    const r = analyzePayload(raw, skills);
+  test("normal prompts get zero routing mentions (anti-ceremonia)", () => {
+    const r = hint("valida este plan antes de cerrarlo");
     expect(r.routingHint).toBe(false);
     expect(r.injection).not.toContain("/model");
   });
+
+  test("feature and routing shapes share one block", () => {
+    const r = hint("barre todos los ficheros para esta nueva funcionalidad");
+    expect(r.injection.match(/<skill-activation-hint>/g)).toHaveLength(1);
+    expect(r.injection).toContain("/flow-lifecycle");
+    expect(r.injection).toContain("/model");
+  });
 });
 
-// Quality review 2026-09-11, finding H43 — REFUTED for the `dev` sub-claim. "Implement the
-// plan" is the most common shape of a coding prompt, and the dev loop is always-loaded law
-// (CLAUDE.md §The dev loop), not something a hint must recover. A keyword broad enough to
-// fire here is exactly the tier the 2026-08-07 audit removed (honor-rate 2/54). This test
-// locks the silence so a later "helpful" keyword cannot reintroduce the noise.
-describe("no dev hint for a bare implementation ask (H43, refuted)", () => {
-  const repoSkills = loadSkills([join(import.meta.dir, "..", "..", "skills")]);
+describe("/clear proposal once the session context passes CLEAR_HINT_TOKENS", () => {
+  const transcript = (context: number) => {
+    const file = join(mkdtempSync(join(tmpdir(), "clear-hint-")), "lead.jsonl");
+    const usage = { input_tokens: 2, cache_read_input_tokens: context - 2, cache_creation_input_tokens: 0 };
+    writeFileSync(file, [
+      JSON.stringify({ type: "assistant", message: { model: "claude-opus-5-5", usage } }),
+      JSON.stringify({ type: "assistant", message: { model: "<synthetic>", usage: { input_tokens: 0 } } }),
+    ].join("\n") + "\n");
+    return file;
+  };
+  const hint = (prompt: string, context: number) => clearHint(JSON.stringify({ prompt, transcript_path: transcript(context) }));
 
-  test("the repo skills load, so the silence is a decision and not an empty catalog", () => {
-    expect(repoSkills.length).toBeGreaterThan(10);
+  test("fires at the threshold with the rounded size, and stays silent below it", () => {
+    expect(hint("ahora revisa el módulo de facturas", CLEAR_HINT_TOKENS)?.line).toContain("~100k tokens");
+    expect(hint("ahora revisa el módulo de facturas", 182_400)?.line).toContain("/clear");
+    expect(hint("ahora revisa el módulo de facturas", CLEAR_HINT_TOKENS - 1)).toBeNull();
   });
 
-  test.each(["Implement the plan", "implementa el plan", "escribe el codigo de esta tarea"])(
-    "%p emits no hint",
-    (prompt) => {
-      const r = analyzePayload(JSON.stringify({ prompt }), repoSkills);
-      expect(r.skills).not.toContain("dev-workflow");
-      expect(r.injection).toBe("");
-    },
-  );
+  test("skips slash commands, system payloads and payloads without a readable transcript", () => {
+    expect(hint("/compact keep the plan", 200_000)).toBeNull();
+    expect(hint("<task-notification>done</task-notification>", 200_000)).toBeNull();
+    expect(clearHint(JSON.stringify({ prompt: "revisa esto", transcript_path: "/nonexistent/lead.jsonl" }))).toBeNull();
+    expect(clearHint("not json")).toBeNull();
+  });
 });

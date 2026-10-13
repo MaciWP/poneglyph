@@ -1,7 +1,7 @@
 ---
 parent: pr-review
 name: lens-performance
-description: Performance lens — bottlenecks, memory leaks, N+1, async patterns, metrics, profiling.
+description: Performance lens, bottlenecks, memory leaks, N+1, async patterns, metrics, profiling.
 ---
 
 # Performance Lens
@@ -15,8 +15,6 @@ description: Performance lens — bottlenecks, memory leaks, N+1, async patterns
 - [Performance Metrics](#performance-metrics)
 - [Runtime-Specific Optimizations](#runtime-specific-optimizations)
 - [Output Format](#output-format)
-- [Performance Review: [Component]](#performance-review-component)
-- [Reference Files](#reference-files)
 - [Gotchas](#gotchas)
 
 Performance audit checklist. Language-agnostic patterns applicable to any stack.
@@ -113,10 +111,6 @@ Performance audit checklist. Language-agnostic patterns applicable to any stack.
 | Missing Connection Pool | Connection exhaustion | Pool with max connections |
 | Event Listener Leak | Memory leak | Remove on cleanup |
 
-For N+1, sync blocking, unbatched, and sequential await patterns with before/after examples, see `${CLAUDE_SKILL_DIR}/references/performance/n-plus-one-patterns.md`.
-
-For memory leak, event listener, and serialization patterns, see `${CLAUDE_SKILL_DIR}/references/performance/memory-leak-patterns.md`.
-
 ## Performance Metrics
 
 | Metric | Target | Warning | Critical |
@@ -178,13 +172,6 @@ For memory leak, event listener, and serialization patterns, see `${CLAUDE_SKILL
 - [x] No synchronous I/O
 - [x] Indexes on foreign keys
 ```
-
-## Reference Files
-
-| Topic | File | Contents |
-|-------|------|----------|
-| N+1 and sequential-op patterns | `${CLAUDE_SKILL_DIR}/references/performance/n-plus-one-patterns.md` | Detailed N+1 query problem (Problem/Impact/Detection/BEFORE-slow/AFTER-fast with JOIN and batch-loading variants), plus synchronous blocking, unbatched operations, and sequential-await-in-loop anti-patterns. Read when a query-in-loop or sequential-await pattern is suspected. |
-| Memory leak and serialization patterns | `${CLAUDE_SKILL_DIR}/references/performance/memory-leak-patterns.md` | Detection and fix patterns for unbounded cache growth, event listener leaks, closure-captured references, and large-object serialization CPU spikes. Read when memory grows over time, OOM crashes are reported, or GC pauses degrade p99 latency. |
 
 ## Gotchas
 

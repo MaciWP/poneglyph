@@ -12,7 +12,7 @@ instructions instead of copying a second checklist. Keep detailed mode criteria
 in the mode's existing reference and name that reference from the entrypoint.
 
 - **Stable procedure:** specify its output, required evidence and local return condition directly.
-- **Variable task:** require the agent to reuse the caller's agreed criteria; missing outcomes and evidence are proposed with a default and waited on before execution (CLAUDE.md §The dev loop).
+- **Variable task:** require the agent to reuse the caller's agreed criteria; missing outcomes and evidence are proposed with a default and waited on before execution (CLAUDE.md §How to work).
 - **Mixed skill:** keep stable requirements and bind only the variable criteria for the selected mode.
 
 Do not add a frontmatter field to classify these cases. A skill can have several

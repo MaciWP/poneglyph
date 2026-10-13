@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-// Quality review 2026-09-11, finding H42: the consult skill drifted away from the bridges it
+// the consult skill drifted away from the bridges it
 // documents. Re-verified against the installed plugin caches on 2026-09-11:
 //   - codex-companion.mjs:644 and grok-bridge.mjs:592 both accept `--prompt-file`
 //   - scripts/lib/args.mjs treats `-` as a POSITIONAL, so `… | node bridge -` sends the
@@ -17,7 +17,7 @@ const md = entrypoint + "\n" + readFileSync(join(skillDir, "references", "adapte
 // Markdown escapes the pipe inside table cells; compare against the unescaped text.
 const flat = md.split("\\|").join("|");
 
-describe("consult — documented adapters match the installed bridges (H42)", () => {
+describe("consult, documented adapters match the installed bridges", () => {
   it("makes the adapter safeguards reachable from the skill", () => {
     expect(entrypoint).toContain("[adapters](references/adapters.md)");
   });

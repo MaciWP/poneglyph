@@ -4,7 +4,7 @@ name: quality-gates
 description: Poka-Yoke tool usage + TDD-enforcement anti-patterns + final quality gate checklist.
 ---
 
-# Poka-Yoke + TDD + Final Quality Gate — references/08
+# Poka-Yoke + TDD + Final Quality Gate: references/08
 
 ## Poka-Yoke Tools
 

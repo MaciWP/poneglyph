@@ -1,15 +1,15 @@
 ---
 parent: harness-config
 name: t02-command
-description: T2 command pack — slash/dollar commands as an artifact type, not a second harness-config entrypoint.
+description: T2 command pack, slash/dollar commands as an artifact type, not a second harness-config entrypoint.
 ---
 
-# T2 — Command
+# T2: Command
 
 Shared: [lookup.md](lookup.md) · [lifecycle.md](lifecycle.md) · [t01-skill.md](t01-skill.md).
 Template: [markdown.md](../templates/command/markdown.md).
 
-No `/harness-config` command (D7). Commands are a type. Skills with `user-invocable: true` already appear as `/name` — prefer T1 unless you need a flat file with no supporting directory.
+No `/harness-config` command (D7). Commands are a type. Skills with `user-invocable: true` already appear as `/name`; prefer T1 unless you need a flat file with no supporting directory.
 
 ## 1. What / when
 
@@ -45,6 +45,6 @@ This repo: English description; quote the user's literal es-ES trigger phrases w
 
 | Cell | Status |
 |---|---|
-| Codex `.claude/commands` clone | **ausente** — shared markdown + `$name` |
-| Codex `~/.codex/prompts` as the default | **ausente** as the portable recipe — deprecated; migrate to T1 |
+| Codex `.claude/commands` clone | **ausente**, shared markdown + `$name` |
+| Codex `~/.codex/prompts` as the default | **ausente** as the portable recipe, deprecated; migrate to T1 |
 | Companion `/harness-config` | **ausente** (D7) |

@@ -25,12 +25,15 @@ describe("host-owned configuration preservation", () => {
     expect(foreign.hooks.PreToolUse).toHaveLength(1);
   });
 
-  it("T5.4 gives Codex an apply_patch group, keeps Grok on Bash, and merges idempotently", () => {
+  it("T5.4 hooks every tool call and the prompt on both hosts, and merges idempotently", () => {
     const desired = nativeHookConfig("codex", "/source");
-    expect(desired.hooks.PreToolUse.map((g: any) => g.matcher)).toEqual(["Bash", "apply_patch"]);
+    expect(desired.hooks.PreToolUse.map((g: any) => g.matcher)).toEqual([undefined]);
+    expect(Object.keys(desired.hooks)).toEqual(["PreToolUse", "UserPromptSubmit", "Stop"]);
     const merged = mergeNativeHooks({}, desired);
     expect(mergeNativeHooks(merged, desired)).toEqual(merged);
-    expect(nativeHookConfig("grok", "/source").hooks.PreToolUse.map((g: any) => g.matcher)).toEqual(["Bash"]);
+    const grok = nativeHookConfig("grok", "/source");
+    expect(grok.hooks.PreToolUse.map((g: any) => g.matcher)).toEqual([undefined]);
+    expect(Object.keys(grok.hooks)).toEqual(["PreToolUse", "UserPromptSubmit"]);
   });
 
   it("rejects malformed settings and a previous core's hook before overwriting", () => {
@@ -47,7 +50,7 @@ describe("host-owned configuration preservation", () => {
     expect(hookFilePlan(file, desired).status).toBe("missing");
     installHookFile(file, desired);
     const before = readFileSync(file, "utf8");
-    expect(Object.keys(JSON.parse(before).hooks)).toEqual(["PreToolUse"]);
+    expect(Object.keys(JSON.parse(before).hooks)).toEqual(["PreToolUse", "UserPromptSubmit"]);
     expect(hookFilePlan(file, desired).status).toBe("linked");
     installHookFile(file, desired);
     expect(readFileSync(file, "utf8")).toBe(before);
@@ -56,7 +59,7 @@ describe("host-owned configuration preservation", () => {
     expect(readFileSync(file, "utf8")).toBe("{broken");
   });
 
-  it("owns Grok's inherited-hook flag and the context policy, preserves the rest, and becomes byte-stable", () => {
+  it("owns Grok's inherited-hook flag, the context policy and the router agent toggle, preserves the rest, and becomes byte-stable", () => {
     const original = '[permissions]\nmode = "ask"\n[compat.claude]\nskills = true\nhooks = true\n[plugins]\npaths = ["custom"]\n';
     const result = grokConfigPlan(original);
     expect(result.changed).toBe(true);
@@ -65,6 +68,7 @@ describe("host-owned configuration preservation", () => {
     before.models = { default_reasoning_effort: "high" };
     before.model = { "grok-4.6": { context_window: 500000 } };
     before.session = { auto_compact_threshold_percent: 60 };
+    before.subagents = { toggle: { "prompt-router": false } };
     expect(parse(result.content)).toEqual(before);
     expect(grokConfigPlan(result.content)).toEqual({ changed: false, content: result.content });
   });

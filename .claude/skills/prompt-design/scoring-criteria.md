@@ -1,46 +1,39 @@
-# Scoring Criteria
+# Review Criteria
 
-5-criteria evaluation system for prompts.
+Five pass/fail checks for a prompt. Each fail names what is missing.
 
 ## The 5 Criteria
 
-| Criterion | 20 pts | 10 pts | 0 pts |
-|----------|--------|--------|-------|
-| **Clarity** | Action verb + specific target | Generic verb | Vague/ambiguous |
-| **Context** | Paths + tech + versions | Tech mentioned | No context |
-| **Structure** | Organized, bullets/headers | Clear paragraphs | Wall of text |
-| **Success** | Observable outcome + verification (behavior, artifact or relevant metric) | "better", "faster", or a result without a way to check it | No criteria |
-| **Actionable** | No open questions | 1-2 clarifications | Very vague |
+| Criterion | Pass | Fail |
+|----------|------|------|
+| **Clarity** | Action verb + specific target | Generic verb, or no target |
+| **Context** | The paths, technology and versions the task depends on | Technology implied, or none given |
+| **Structure** | Sections or bullets the recipient can follow | Wall of text for a multi-part task |
+| **Success** | Observable outcome + how to verify it (behavior, artifact or relevant metric) | "better", "faster", or a result without a way to check it |
+| **Actionable** | The recipient can start without asking | Open questions the recipient cannot answer |
 
-## Thresholds
+## Decision
 
-A non-numeric DoD can earn full Success credit. For variable tasks, require the
-recipient to resolve missing acceptance and quality priorities before execution.
-Existing task criteria remain authoritative; do not invent metrics or scope to
-raise the score. Stop at the selected context's threshold with a usable prompt.
+A non-numeric DoD passes Success. For variable tasks, require the recipient to resolve
+missing acceptance and quality priorities before execution. Existing task criteria remain
+authoritative; do not invent metrics or scope to make a check pass.
 
-| Score | Action |
+| Result | Action |
 |-------|--------|
-| 80-100 | Proceed directly |
-| 70-79 | Proceed with caution |
-| < 70 | Improve before continuing |
+| All five pass | Proceed |
+| Only Structure fails, and the prompt is short | Proceed |
+| Any other fail | Fix the failing criteria (`corrections.md`), then check again |
 
-## Scoring Examples
+## Examples
 
-### High Score (85)
+### Passes
 > "Añadir endpoint POST /api/users que valide email único, hashee password con bcrypt, y retorne 201"
 
-- Clarity: 20 (verb + specific target)
-- Context: 15 (implicit tech)
-- Structure: 20 (organized)
-- Success: 15 (status code defined)
-- Actionable: 15 (clear)
+- Clarity, Structure, Success (status code), Actionable: pass.
+- Context: pass; the stack is implied by the repo the prompt runs in.
 
-### Low Score (25)
+### Fails
 > "Mejorar el sistema de usuarios"
 
-- Clarity: 5 (vague)
-- Context: 0 (no details)
-- Structure: 10 (simple)
-- Success: 5 (no criteria)
-- Actionable: 5 (ambiguous)
+- Clarity: fail (no target). Context: fail. Success: fail (no criterion).
+- Actionable: fail ("mejorar" in what sense?).

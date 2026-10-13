@@ -1,10 +1,10 @@
 ---
 parent: flow
 name: research
-description: Deep Research Protocol + Anti-Obsolescence Detection — consult external docs, reject deprecated APIs.
+description: Deep Research Protocol + Anti-Obsolescence Detection, consult external docs, reject deprecated APIs.
 ---
 
-# Deep Research + Anti-Obsolescence — references/02
+# Deep Research + Anti-Obsolescence: references/02
 
 ## Deep Research Protocol
 

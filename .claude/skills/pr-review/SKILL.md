@@ -1,28 +1,22 @@
 ---
 name: pr-review
 description: >-
-  Reviews a PR, a branch or a module: traces the ticket's acceptance criteria
-  against the diff, runs the project's checks, applies core criteria plus
-  maintainability and performance lenses, and gives a verdict. Use for "revisa
-  la pr", "revisa mi rama", "huele mal este código", "refactoriza esto", "está
-  lento", N+1 or memory leaks. Not for checking your own work before done.
-metadata:
-  keywords: >
-    Keywords - pr-review, revisa la pr, revisa esta pr, review this pr, revisa mi rama, code
-    review de la pr, review de la rama, revisa el diff, pull request review, revisa la pull
-    request, code smell, huele mal, principios solid, refactoriza esto, endpoint lento, está
-    lento, fuga de memoria, memory leak, queries n+1, cuello de botella
+  Revisa una PR, una rama o un módulo y da un veredicto: contrasta los criterios de
+  aceptación del ticket con el diff, ejecuta los checks y mira mantenibilidad y
+  rendimiento. Aplica también para valorar los comentarios de review que dejó otra
+  persona y ante código que huele mal o va lento. Úsala para "revisa la PR", "revisa mi
+  rama antes de subirla", "mira este diff", "¿tiene razón el revisor?", "este endpoint
+  va lento". No es para dejar comentarios en borrador en GitHub (pr-comments) ni para
+  verificar tu propio cambio antes de darlo por hecho (changes-verify).
 disable-model-invocation: false
 argument-hint: "[PR number | PR URL | branch | file-or-module] (empty = local mode: current branch vs base)"
 effort: xhigh
-when_to_use: |
-  Reviewing a PR, a branch or a module for quality or performance.
 ---
 
-# pr-review — generalist PR/branch review (any repo)
+# pr-review: generalist PR/branch review (any repo)
 
 Diff-level, ticket-anchored review at any point in time. NOT `flow` (review phase) (feature-level,
-spec.md-anchored, /flow-lifecycle Phase 4 after all HUs close) — the two never shadow each other.
+spec.md-anchored, /flow-lifecycle Phase 4 after all HUs close), the two never shadow each other.
 
 ## Definition of Done
 
@@ -35,14 +29,14 @@ spec.md-anchored, /flow-lifecycle Phase 4 after all HUs close) — the two never
 - Success means accurate requirement coverage, consequential findings and a verdict supported by real checks.
 - Use the existing review rubric. Finding counts, praise quotas and repeated reviews of unchanged evidence add no value.
 
-## Steps (all executed or explicitly skipped with a reason — see step 9)
+## Steps (all executed or explicitly skipped with a reason, see step 9)
 
 ### 0. Coexistence check
 If the current repo has its own PR-review command/skill (`.claude/commands/review-pr.md`
-or similar), **defer to it and say so** — project-specific criteria beat the generic core.
+or similar), **defer to it and say so**: project-specific criteria beat the generic core.
 This skill is the repo-agnostic default, not an absorption layer.
 
-### 1. Target resolution (do not skip — misparse class, 029)
+### 1. Target resolution
 `$ARGUMENTS` is a target ONLY if it looks like one: PR number, PR URL, or a branch that
 verifies via `git rev-parse --verify <arg>`. An existing file or folder, or a request about
 code rather than a change ("huele mal este módulo", "está lento") → **module mode**: run only
@@ -63,18 +57,18 @@ Never invent ticket content (protocol: `references/02-ticket-trace.md`).
 `<target>` is what step 1 resolved, not the local checkout: PR → `gh pr diff <n>` or its
 fetched head ref; branch → that branch; local mode → the current branch. Run
 `git log --oneline <base>..<target>` + `git diff --stat <base>...<target>` + full diff, state
-the range, then Read every changed file whole — findings need context, not hunks.
+the range, then Read every changed file whole; findings need context, not hunks.
 
-### 4. Discover and RUN the project checks (requisito 9.1)
+### 4. Discover and run the project checks
 Find the check command per `references/03-check-discovery.md` (project CLAUDE.md
 §Commands/Verification → test-policy.md → conventional fallbacks → ask). Run it.
-**A failing check is a Critical, blocking finding** — surfaced first, never a buried row.
+**A failing check is a Critical, blocking finding**; surfaced first, never a buried row.
 
 ### 5. Criteria pass (core + project extension)
 Apply `references/01-criteria-core.md` (Correctness / Tests / Security / Style /
 Scope-discipline / Maintainability / Performance) plus any project-specific criteria found in the repo's rules. It owns the
-weights, the score and the verdict — consequence floor included: a required AC at `✗` or a red
-gate forbids APPROVE. Read it there. Before scoring, run the **lessons pass**: `Skill(lessons-learned)` — cross-repo
+weights, the score and the verdict: consequence floor included: a required AC at `✗` or a red
+gate forbids APPROVE. Read it there. Before scoring, run the **lessons pass**: `Skill(lessons-learned)`: cross-repo
 guards (G6 forbids APPROVE while a merge gate is red) plus the `references/<stack>` file
 matching the diff (Django, React, …). A lesson violated in the diff is a finding like any
 other, quoted with its rule.
@@ -90,23 +84,23 @@ Lens severities map onto the core scale: High → Major, Medium and Low → Mino
 stays Critical. A requested refactor follows the lens's safety classification: risky
 changes need the user's confirmation, and the tests pass after each step.
 
-### 6. AC-trace (requisito 9.2 — the net-new piece)
+### 6. AC-trace
 For EACH acceptance criterion from step 2: `✓` implemented (evidence: `file:line`) /
 `✗` missing (state what's absent) / `⚠` partial-or-doubtful (state what to verify).
 An AC without evidence is `✗`, never assumed. Table protocol: `references/02-ticket-trace.md`.
 
 ### 7. Scope discipline
 Findings OUTSIDE the diff (pre-existing issues merely touched/revealed) go to a separate
-final section **"Fuera del diff (opcional)"** — never mixed with the PR's findings, never
+final section **"Fuera del diff (opcional)"**; never mixed with the PR's findings, never
 counted in the score.
 
 ### 8. Report
 - Comments in Conventional Comments format via `Skill(pr-comments)`
   (label (decorator): subject; grounded praise when warranted; issue paired with suggestion; single review).
 - Score + per-criterion table + verdict + AC-trace table inline.
-- HTML report ONLY on explicit request, via `Skill(html-report)` — never hand-rolled CSS.
+- HTML report ONLY on explicit request, via `Skill(html-report)`; never hand-rolled CSS.
 
-### 9. Minimum-steps self-check (requisito 9.3)
+### 9. Minimum-steps self-check
 Close by restating steps 0-8 as **executed / skipped-with-reason** (e.g. "paso 2 saltado:
 no hay ticket en la rama y el usuario no aportó ACs"). A silent skip is a review defect.
 
@@ -115,10 +109,10 @@ no hay ticket en la rama y el usuario no aportó ACs"). A silent skip is a revie
 - Failing project checks = Critical blocking finding, reported first (Cmd IV).
 - Every finding cites `file:line`; every AC verdict cites evidence or names the absence (Cmd II).
 - Read changed files fully before judging (Cmd I).
-- Outside-the-diff observations stay in their own unscored section (Cmd V — scope).
+- Outside-the-diff observations stay in their own unscored section (Cmd V, scope).
 - Defer to the project's own review command when it exists (reuse over reinvention).
 
-## Verificación (eval-first scenarios — authoring rubric)
+## Verificación (eval-first scenarios: authoring rubric)
 
 1. Repo de trabajo, rama `feature/<TICKET>-...`, ticket con ACs parcialmente implementados →
    digest jira + AC-trace con al menos un `✗` evidenciado + checks ejecutados.
@@ -140,7 +134,7 @@ no hay ticket en la rama y el usuario no aportó ACs"). A silent skip is a revie
 
 ## Related
 
-- `flow` skill (review phase) — feature-level review (spec.md, /flow-lifecycle fase 4); pr-review es diff-level y ticket-anchored.
-- `pr-comments` — formato de comentarios (reusada, no duplicada).
-- La skill de tickets del plugin de empresa — digest del ticket con ACs (reusada cuando aplica).
-- `changes-verify` — gate pre-done del propio trabajo; pr-review revisa trabajo AJENO/de rama.
+- `flow` skill (review phase): feature-level review (spec.md, /flow-lifecycle fase 4); pr-review es diff-level y ticket-anchored.
+- `pr-comments`: formato de comentarios (reusada, no duplicada).
+- La skill de tickets del plugin de empresa: digest del ticket con ACs (reusada cuando aplica).
+- `changes-verify`: gate pre-done del propio trabajo; pr-review revisa trabajo AJENO/de rama.

@@ -46,7 +46,7 @@ If > 3 matches: prioritize keyword frequency → main domain → discard generic
 
 ## Synergy Rules
 
-Some skills reinforce each other — both receive +1 when paired:
+Some skills reinforce each other, both receive +1 when paired:
 
 | Pair | Synergy |
 |------|---------|
@@ -63,8 +63,8 @@ If two skills compete for the same slot and one is more specific, discard the ge
 
 ## Skills Without Keywords (Preload via agentType frontmatter)
 
-> Historical: the custom `builder`/`reviewer`/`scout` agents carried always-loaded skill baselines — they were **cut in feature 008** (work runs inline; see the delegation doctrine in SKILL.md).
+> There are no custom `builder`/`reviewer`/`scout` agents with skill baselines: work runs inline (delegation doctrine in SKILL.md).
 
-Today the only preload surface is a custom Workflow `agentType` with `skills:` frontmatter — declare there the 1-2 skills EVERY unit of that type needs (e.g. `changes-verify` for any unit asserting facts about code). Preloaded skills do NOT count against the 3-skill Arch H limit.
+Today the only preload surface is a custom Team `agentType` with `skills:` frontmatter, declare there the 1-2 skills EVERY unit of that type needs (e.g. `changes-verify` for any unit asserting facts about code). Preloaded skills do NOT count against the 3-skill Arch H limit.
 
-> The Lead loads `troubleshooting` itself when diagnosing failures, and `flow` (plan phase) when planning — no dedicated agents.
+> The Lead loads `troubleshooting` itself when diagnosing failures, and `flow` (plan phase) when planning, no dedicated agents.

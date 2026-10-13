@@ -1,16 +1,16 @@
 #!/usr/bin/env bun
 
-// PreToolUse (Bash) — keeps whole-file dumps and unbounded listings out of the context (plan 037, WP3).
+// PreToolUse (Bash), keeps whole-file dumps and unbounded listings out of the context.
 //
 // Measured 2026-09-09 over 14 days of this machine's transcripts: tool results were 56 % of the
 // conversation context, and after echo-composites the heaviest Bash families were `cat` (365k
-// chars — the same 28 KB plan read four times in one session) and `sed -n` (273k). Official
+// chars, the same 28 KB plan read four times in one session) and `sed -n` (273k). Official
 // pattern (code.claude.com/docs/en/costs, "Offload processing to hooks and skills"): a PreToolUse
 // hook rewrites or refuses a command before its output ever reaches the model.
 //
 //   deny     `cat` / `sed -n` on a file above BIG_FILE_BYTES with no pipe → Read (offset/limit) or Grep
-//            (a `sed -n` printing only numeric ranges totalling ≤ SED_MAX_LINES passes — audit 012)
-//   rewrite  unquoted `grep --include=*.py`-style globs → quoted (zsh nomatch, audit 012)
+//            (a `sed -n` printing only numeric ranges totalling ≤ SED_MAX_LINES passes)
+//   rewrite  unquoted `grep --include=*.py`-style globs → quoted (zsh nomatch)
 //   rewrite  `git log` without a bound → `--oneline -n 30` · `ls -R` / `find` / `tree` with no pipe → `| head -n 200`
 //   never    tests, `git diff`, anything piped, redirections/heredocs (writes), or a command ending in `# raw`
 //
@@ -21,7 +21,7 @@ import { readHookStdin } from "./lib/hook-stdin";
 
 export const BIG_FILE_BYTES = 12 * 1024;
 // A `sed -n` whose script prints only numeric ranges costs what Read with offset/limit costs.
-// Audit 012 (H2): all ~32 real denials were such ranges, the largest ~140 lines.
+// All ~32 real denials were such ranges, the largest ~140 lines.
 export const SED_MAX_LINES = 200;
 export type Shape = { action: "allow" } | { action: "deny"; reason: string } | { action: "rewrite"; command: string };
 export type FileSize = (absolutePath: string) => number | null;
@@ -50,7 +50,7 @@ function tokens(segment: string): string[] {
   return segment.match(/"[^"]*"|'[^']*'|\S+/g) ?? [];
 }
 
-export function realFileSize(absolutePath: string): number | null {
+function realFileSize(absolutePath: string): number | null {
   try {
     if (!existsSync(absolutePath)) return null;
     const st = statSync(absolutePath);
@@ -61,7 +61,7 @@ export function realFileSize(absolutePath: string): number | null {
 }
 
 // bun resolves paths with whichever separator the host shell uses, so a Windows cwd (backslashes,
-// drive letter) joined to a forward-slash relative path must be tried both ways — the hook runs on
+// drive letter) joined to a forward-slash relative path must be tried both ways, the hook runs on
 // every OS and the Bash tool's cwd is native.
 function isAbs(p: string): boolean {
   return win32.isAbsolute(p) || posix.isAbsolute(p) || /^[A-Za-z]:[\\/]/.test(p);
@@ -96,7 +96,7 @@ function isBoundedSed(toks: string[]): boolean {
   return span !== null && span <= SED_MAX_LINES;
 }
 
-// zsh `nomatch` aborts a line whose unquoted glob matches no file (audit 012, H3: ~80 hits, most
+// zsh `nomatch` aborts a line whose unquoted glob matches no file (~80 hits, most
 // `grep --include=*.py`). Quoting the option value changes nothing for grep. A value inside a
 // double-quoted string (`bash -c "…"`) is never globbed, so it is left alone.
 const GREP_GLOB_OPT_RE = /(\s--(?:include|exclude|exclude-dir)=)([^\s'"]*[*?[{][^\s'"]*)/g;
@@ -115,9 +115,9 @@ function denial(cmd: string, file: string, size: number): string {
 // Pure. One Bash command line (plus the session cwd) in, a verdict out.
 // A heredoc body is DATA the shell feeds to a command, not a list of commands. The line
 // splitter below runs before any per-segment check, so a body line reading `cat plan.md`
-// used to be shaped as if the user had typed it (H22, quality review 2026-09-11). The whole
+// used to be shaped as if the user had typed it. The whole
 // command line is left alone whenever a heredoc opens it: a heredoc is a write.
-export function hasHeredoc(command: string): boolean {
+function hasHeredoc(command: string): boolean {
   return /<<-?\s*['"]?\w+/.test(command);
 }
 
@@ -142,7 +142,7 @@ export function shapeCommand(command: string, cwd: string, fileSize: FileSize = 
       dir = joinPath(dir, unquote(toks[1]));
       continue;
     }
-    // Heredoc or a STDOUT redirect (`> f`, `>> f`, `1> f`) is a write, not a dump — skip it.
+    // Heredoc or a STDOUT redirect (`> f`, `>> f`, `1> f`) is a write, not a dump, skip it.
     // `2>/dev/null` / `2>&1` only move stderr: the file still lands in the context, so keep checking.
     if (/<<|(^|[^0-9&])>|(^|\s)1>/.test(segment)) continue;
     const piped = segment.includes("|");
@@ -190,7 +190,7 @@ if (import.meta.main) {
       if (out) process.stdout.write(out + "\n");
     }
   } catch {
-    // best-effort — a broken payload never blocks a command
+    // best-effort, a broken payload never blocks a command
   }
   process.exit(0);
 }

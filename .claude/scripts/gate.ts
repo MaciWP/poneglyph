@@ -1,12 +1,12 @@
 #!/usr/bin/env bun
-// gate — deterministic validation of what an agent CLAIMS it did.
+// gate, deterministic validation of what an agent CLAIMS it did.
 //
 // Provenance: ported from disler's super-simple-software-factory (adws/adw_modules/gates.py),
 // with three changes that its version does not have:
 //   1. diff_matches_claims compares a DELTA against a baseline snapshot, not absolute
-//      state. task-pipeline only does Path.exists(), so a pre-existing file passes even when the
+//      state. the upstream gate only does Path.exists(), so a pre-existing file passes even when the
 //      agent never touched it, and files touched but NOT declared are invisible to it.
-//      This repo carries ~119 modified + ~24 untracked files at rest — absolute state
+//      This repo carries ~119 modified + ~24 untracked files at rest, absolute state
 //      would be permanently red, and a permanently red gate gets ignored.
 //   2. protected_files is DERIVED from the effective user/project settings
 //      (permissions.deny + autoMode.soft_deny) instead of being a fourth
@@ -26,8 +26,8 @@
 // decides from the exit code and never has to interpret prose.
 
 import { existsSync, statSync } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
+import { claudeConfigDir } from "../hooks/lib/paths";
 
 export interface Check {
   name: string;
@@ -68,15 +68,13 @@ export type Snapshot = Record<string, string>;
 /** Files this repo's own machinery must survive; a build touching them is a red flag. */
 export const SELF_PATHS = [
   ".claude/scripts/gate.ts",
-  ".claude/workflows/task-pipeline.js",
   // The tests belong here too: an agent that guts the assertions turns the suite green
-  // without touching the graders themselves — the same failure this check exists to stop.
+  // without touching the graders themselves, the same failure this check exists to stop.
   ".claude/scripts/__tests__/gate.test.ts",
-  ".claude/workflows/__tests__/task-pipeline.test.ts",
 ];
 
 /**
- * Write allowlist per phase — the genuinely new contribution over task-pipeline's roster-wide
+ * Write allowlist per phase, the genuinely new contribution over a roster-wide
  * `writes:`. null means unrestricted (still subject to protected_files).
  * An empty array means read-only: a reviewer that cannot fix cannot quietly fix.
  */
@@ -88,7 +86,7 @@ export const PHASE_WRITES: Record<string, string[] | null> = {
 };
 
 // ---------------------------------------------------------------------------
-// Pure functions — the testable core. No I/O beyond fs stat where stated.
+// Pure functions, the testable core. No I/O beyond fs stat where stated.
 // ---------------------------------------------------------------------------
 
 /**
@@ -96,7 +94,7 @@ export const PHASE_WRITES: Record<string, string[] | null> = {
  * Nothing here judges the code: it checks the envelope against itself, which the
  * harness can refute without reading a line of the diff.
  *
- * Extended past task-pipeline: an `approved` that ships a red suite, and a `done` that
+ * Extended past the upstream gate: an `approved` that ships a red suite, and a `done` that
  * touched nothing, are the same class of self-contradiction and cost nothing to catch.
  */
 export function verdictConsistent(env: Envelope): Check[] {
@@ -107,7 +105,7 @@ export function verdictConsistent(env: Envelope): Check[] {
 
   // Verdict checks apply only to envelopes that CARRY a verdict. A build envelope has
   // no `approved` field, and reading its absence as "rejected" would fail every build
-  // on "rejection names a problem" — caught by the first smoke run against the repo.
+  // on "rejection names a problem", caught by the first smoke run against the repo.
   if (env.approved !== undefined) {
     checks.push({
       name: "approved vs blocking",
@@ -129,7 +127,7 @@ export function verdictConsistent(env: Envelope): Check[] {
       checks.push({
         name: "approved vs suite",
         passed: !approved,
-        note: approved ? "approved=true while the suite is red" : "not approved, suite red — consistent",
+        note: approved ? "approved=true while the suite is red" : "not approved, suite red, consistent",
       });
     }
   }
@@ -144,7 +142,7 @@ export function verdictConsistent(env: Envelope): Check[] {
   return checks;
 }
 
-/** Paths whose git status changed between two snapshots — i.e. what actually moved. */
+/** Paths whose git status changed between two snapshots, i.e. what actually moved. */
 export function diffDelta(before: Snapshot, after: Snapshot): string[] {
   const changed: string[] = [];
   for (const [path, code] of Object.entries(after)) {
@@ -160,7 +158,7 @@ export function diffDelta(before: Snapshot, after: Snapshot): string[] {
 /**
  * Cross the agent's claims against the measured delta. Both directions matter:
  * `missing` catches a file claimed but never touched; `undeclared` catches work the
- * agent did not report — the blind spot task-pipeline's gate has entirely.
+ * agent did not report, a blind spot the upstream gate has entirely.
  */
 export function claimsVsDelta(
   claimed: string[],
@@ -226,7 +224,7 @@ export function outsideAllowlist(paths: string[], allow: string[] | null): strin
 }
 
 /**
- * Read a suite result. The exit code is the primary signal — bun/jest output formats
+ * Read a suite result. The exit code is the primary signal, bun/jest output formats
  * are not pinned and parsing counts as the source of truth couples us to a format
  * that changes between versions. Counts are advisory. A suite that ran ZERO tests is
  * RED: a suite that did not run is not a green suite.
@@ -236,14 +234,14 @@ export function parseSuite(exitCode: number, output: string): { ok: boolean; pas
   const fail = Number(/(\d+)\s+fail/.exec(output)?.[1] ?? 0);
   const ran = pass + fail;
   if (ran === 0) {
-    return { ok: false, pass, fail, ran, note: "the suite reported 0 tests — a suite that did not run is not a green suite" };
+    return { ok: false, pass, fail, ran, note: "the suite reported 0 tests, a suite that did not run is not a green suite" };
   }
   if (exitCode !== 0) {
     return { ok: false, pass, fail, ran, note: `exit ${exitCode} (${pass} pass / ${fail} fail)` };
   }
   // Exit 0 with parsed failures means the two signals disagree; trust neither.
   if (fail > 0) {
-    return { ok: false, pass, fail, ran, note: `exit 0 but output reports ${fail} failure(s) — contradictory signals` };
+    return { ok: false, pass, fail, ran, note: `exit 0 but output reports ${fail} failure(s), contradictory signals` };
   }
   return { ok: true, pass, fail, ran, note: `exit 0, ${pass} pass` };
 }
@@ -255,7 +253,7 @@ export function report(phase: string, checks: Check[]): GateReport {
 }
 
 // ---------------------------------------------------------------------------
-// I/O — kept thin so the logic above stays testable.
+// I/O, kept thin so the logic above stays testable.
 // ---------------------------------------------------------------------------
 
 /** Content fingerprint of one path. Absent/unreadable are distinct states, not errors. */
@@ -289,7 +287,7 @@ export async function snapshot(): Promise<Snapshot> {
   return snap;
 }
 
-export async function runSuite(command: string): Promise<{ exitCode: number; output: string }> {
+async function runSuite(command: string): Promise<{ exitCode: number; output: string }> {
   const proc = Bun.spawn(["sh", "-c", command], { stdout: "pipe", stderr: "pipe" });
   const [stdout, stderr] = await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text()]);
   const exitCode = await proc.exited;
@@ -397,7 +395,7 @@ if (import.meta.main) {
       const settingsPaths = explicitSettings
         ? [explicitSettings]
         : [
-            join(homedir(), ".claude", "settings.json"),
+            join(claudeConfigDir(), "settings.json"),
             ".claude/settings.global.json",
             ".claude/settings.json",
           ];
@@ -419,7 +417,7 @@ if (import.meta.main) {
       process.exit(result.passed ? 0 : 1);
     }
 
-    throw new Error(`unknown command "${command ?? ""}" — baseline | check`);
+    throw new Error(`unknown command "${command ?? ""}", baseline | check`);
   } catch (e) {
     console.log(JSON.stringify({ phase: flag("phase") ?? "?", passed: false, checks: [], violations: [`gate error: ${(e as Error).message}`] }));
     process.exit(1);

@@ -1,8 +1,8 @@
 /**
- * Data contract for the html-report DYNAMIC mode (feature 010).
+ * Data contract for the html-report DYNAMIC mode.
  * Claude (or any caller) produces a `ReportData` JSON; `render.ts` turns it
  * into ONE self-contained interactive HTML file. Emitting a report = filling
- * this shape — the design/CSS/JS lives once in the generator, not per report.
+ * this shape; the design/CSS/JS lives once in the generator, not per report.
  *
  * All fields beyond `meta` are optional: omit a block and the generator skips it.
  */
@@ -28,7 +28,7 @@ export interface Callout {
 }
 
 export interface Comment {
-  md: string;               // Markdown source — interpreted by comments.ts (mdToHtml); fenced code is copy-pasteable
+  md: string;               // Markdown source, interpreted by comments.ts (mdToHtml); fenced code is copy-pasteable
   title?: string;           // optional header (e.g. a location like "process.py:131")
   copy?: boolean;           // add a button that copies the RAW md (e.g. paste a review comment into GitHub)
 }
@@ -73,7 +73,7 @@ export interface Sidenote {
 }
 
 export interface Section {
-  id: string;               // anchor id — must be unique (used by nav/scrollspy)
+  id: string;               // anchor id; must be unique (used by nav/scrollspy)
   num?: string;             // "01", "02"… optional ordinal chip
   title: string;
   /** ordered content blocks; rendered in array order */

@@ -1,14 +1,14 @@
 import { test, expect } from "bun:test";
 import { scale, bar } from "./charts.ts";
 
-test("T5.1 — scale maps domain→range", () => {
+test("T5.1: scale maps domain→range", () => {
   const s = scale([0, 10], [0, 200]);
   expect(s(0)).toBe(0);
   expect(s(10)).toBe(200);
   expect(s(5)).toBe(100);
 });
 
-test("T5.2 — bar: N rects, width proportional to value", () => {
+test("T5.2: bar: N rects, width proportional to value", () => {
   const svg = bar([{ label: "a", value: 2 }, { label: "b", value: 8 }]);
   const bars = svg.match(/class="bar"[^>]*width="([\d.]+)"/g) || [];
   expect(bars.length).toBe(2);
@@ -18,7 +18,7 @@ test("T5.2 — bar: N rects, width proportional to value", () => {
   expect(svg.includes('role="img"')).toBe(true);
 });
 
-test("T5.3 — edge: empty and single-point", () => {
+test("T5.3: edge: empty and single-point", () => {
   expect(() => bar([])).not.toThrow();
   const empty = bar([]);
   expect((empty.match(/class="bar"/g) || []).length).toBe(0);
@@ -26,7 +26,7 @@ test("T5.3 — edge: empty and single-point", () => {
   expect((one.match(/class="bar"/g) || []).length).toBe(1);
 });
 
-test("T5.4 — property: scale is monotonic ascending", () => {
+test("T5.4: property: scale is monotonic ascending", () => {
   for (let i = 0; i < 50; i++) {
     const d1 = Math.random() * 100;
     const d0 = d1 - Math.random() * 50 - 0.01;

@@ -244,7 +244,7 @@ export function validate(source: Source, options: { addon?: boolean; privacyTerm
   }
 
   for (const [p, text] of files) {
-    const config = /^(?:action\.ya?ml|\.claude\/(?:settings(?:\.global)?\.json|ccstatusline\/settings\.json)|\.mcp\.json|\.(?:claude|codex)-plugin\/[^/]+\.json|(?:\.codex|\.grok)\/config\.toml|\.github\/workflows\/[^/]+\.ya?ml)$/.test(p);
+    const config = /^(?:action\.ya?ml|\.claude\/(?:settings(?:\.global)?\.json)|\.mcp\.json|\.(?:claude|codex)-plugin\/[^/]+\.json|(?:\.codex|\.grok)\/config\.toml|\.github\/workflows\/[^/]+\.ya?ml)$/.test(p);
     if (!config) continue;
     let data: unknown;
     // Bun 1.3.14 accepts an unterminated TOML table header. Keep this parser strict.

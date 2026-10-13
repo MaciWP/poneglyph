@@ -4,7 +4,7 @@ name: classification-waves
 description: Task classification, justified dependencies and optional parallel execution.
 ---
 
-# Task Classification + Parallelization — references/04
+# Task Classification + Parallelization: references/04
 
 ## Contents
 
@@ -69,7 +69,7 @@ the current session's permission and model choice.
 
 ## Seed Wave Patterns
 
-> **Post-feature-008 mapping** — the named agents below (`builder`/`scout`/`reviewer`/`planner`) were **cut**. Read them as their current equivalents: `builder` → `flow` (build phase, inline) or a Workflow impl unit; `scout` → `Explore` (built-in, read-only); `reviewer` → `flow` (review phase) / review panel; `planner` → `flow` (plan phase). **Spawn rule**: 1-3 independent units run **inline** (never spawn); these patterns illustrate **≥4-unit** fan-outs → `Workflow`. The patterns themselves remain valid; only the names changed.
+> **Agent names below**: `builder`/`scout`/`reviewer`/`planner` are roles, not agents. Read them as their current equivalents: `builder` → `flow` (build phase, inline) or a Workflow impl unit; `scout` → `Explore` (built-in, read-only); `reviewer` → `flow` (review phase) / review panel; `planner` → `flow` (plan phase). **Spawn rule**: 1-3 independent units run **inline** (never spawn); these patterns illustrate **≥4-unit** fan-outs → `Workflow`. The patterns themselves remain valid; only the names changed.
 
 Starting templates for the first wave of common task shapes. Adapt the agent/skill mix to the specific task. Use only patterns that fit real dependencies.
 
@@ -77,7 +77,7 @@ Starting templates for the first wave of common task shapes. Adapt the agent/ski
 
 **When**: task is "add feature X" with an obvious type/contract surface that downstream impl will consume.
 
-**Wave 1 (PARALLEL)** — all three in one message:
+**Wave 1 (PARALLEL)**: all three in one message:
 - `builder` → generate types/interfaces for the feature (no logic).
 - `builder` → generate test stubs / fixtures using the type names (will fail until impl lands).
 - `scout` → locate existing patterns of similar features in the codebase (returns file list + conventions).
@@ -90,7 +90,7 @@ Starting templates for the first wave of common task shapes. Adapt the agent/ski
 
 **When**: task requires meaningful exploration across multiple subsystems before any code can be written (cross-cutting refactor, bug spanning multiple layers, integration work).
 
-**Wave 1 (PARALLEL)** — 2-3 scouts in one message, each scoped to a different area:
+**Wave 1 (PARALLEL)**: 2-3 scouts in one message, each scoped to a different area:
 - `scout` → area A (e.g., `auth/`): map symbols, callers, gotchas.
 - `scout` → area B (e.g., `db/`): same.
 - `scout` → area C (e.g., `api/`): same.
@@ -103,7 +103,7 @@ Starting templates for the first wave of common task shapes. Adapt the agent/ski
 
 **When**: task is "refactor N independent modules" (rename, extract, modernize) where modules do not import each other.
 
-**Wave 1 (PARALLEL)** — one `builder` per module in one message:
+**Wave 1 (PARALLEL)**: one `builder` per module in one message:
 - `builder` → module A: apply refactor to files in A.
 - `builder` → module B: apply refactor to files in B.
 - `builder` → module C: apply refactor to files in C.

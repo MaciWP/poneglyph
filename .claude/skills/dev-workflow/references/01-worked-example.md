@@ -1,7 +1,7 @@
 ---
 parent: dev-workflow
 name: worked-example
-description: The dev loop by level — a trivial change with one line of evidence, and a normal task with one loop-back in full and compact rendering.
+description: The dev loop by level, a trivial change with one line of evidence, and a normal task with one loop-back in full and compact rendering.
 ---
 
 # Worked examples
@@ -28,22 +28,22 @@ Task: "add a `--json` flag to the report CLI".
 A new flag is new logic, so this is normal work. The stages carry real content
 here, so the response shows them.
 
-1. **KNOW** — read the CLI entry; Grep flags: an `--output` pattern exists in
+1. **KNOW**: read the CLI entry; Grep flags: an `--output` pattern exists in
    `export.ts` → reuse its parser. External research: not needed (internal pattern).
-2. **PLAN** — Goal: `--json` prints the same report as JSON; pretty output stays
+2. **PLAN**: Goal: `--json` prints the same report as JSON; pretty output stays
    default. The ask stated no DoD, so KNOW's research gives the proposal: "Hecho
    significa: `--json` output parses and matches the pretty report, suite green ·
    Cuándo paro: after REVIEW" → the user answers "Adelante". Questions: only the DoD proposal.
    Assumptions: (1) report data is plain-serializable. Risks: scripts may parse
    current stdout → mitigation: flag is opt-in, default untouched. Price: S, one
    file. Low blast radius → proceed.
-3. **BUILD** — ladder rung 3: `JSON.stringify` (stdlib), no new dep; ~6 lines in
+3. **BUILD**: ladder rung 3: `JSON.stringify` (stdlib), no new dep; ~6 lines in
    `export.ts` style.
-4. **REVIEW** — suite green, BUT impact sweep shows `report.ts` also feeds the HTML
+4. **REVIEW**: suite green, BUT impact sweep shows `report.ts` also feeds the HTML
    exporter and its `Date` fields break assumption (1). **Loop-back → PLAN**: re-plan
    with ISO date conversion; tell the user. Rebuild; suite + manual run green.
    Residual risk: none known.
-5. **LEARN** — persist: "report data is NOT plain-serializable — `Date` fields need
+5. **LEARN**, persist: "report data is NOT plain-serializable, `Date` fields need
    ISO conversion (`report.ts`)".
 
 ## Compact rendering of the same loop

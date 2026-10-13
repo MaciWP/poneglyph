@@ -1,22 +1,18 @@
 import { afterAll, describe, test, expect } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, utimesSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import {
   codeLineHasSecret,
   lineHasSecret,
   hasTextExtension,
   isOrchestrationPath,
   isApiSpecDocument,
-  extractTurnFromTranscript,
-  buildGitDisciplineWarning,
   shouldSkipStopHook,
-  readTranscriptTail,
-  GIT_MUTATION_RE,
-  splitStatements,
-  resolveInlineVars,
-  resolveMutationLocation,
+  readTurnFacts,
+  filesChangedSince,
 } from "../security-gate";
+import { readTranscriptTail } from "../lib/transcript";
 
 // Fake values built at runtime so no literal secret lives in this file.
 const LONG = "x".repeat(20);
@@ -27,7 +23,7 @@ describe("hasTextExtension", () => {
       expect(hasTextExtension(f)).toBe(true);
     }
   });
-  test("does NOT scan .md — docs/examples/reports carry illustrative secrets, not real ones", () => {
+  test("does NOT scan .md, docs/examples/reports carry illustrative secrets, not real ones", () => {
     expect(hasTextExtension("README.md")).toBe(false);
     expect(hasTextExtension(".claude/skills/django-architecture/references/service-patterns.md")).toBe(false);
     expect(hasTextExtension("reports/review-pr-body.md")).toBe(false);
@@ -48,7 +44,7 @@ describe("hasTextExtension", () => {
   });
 });
 
-describe("SECRET_PATTERN — uppercase KEY=value", () => {
+describe("SECRET_PATTERN: uppercase KEY=value", () => {
   test("flags API_KEY with a 16+ char value", () => {
     expect(lineHasSecret(`API_KEY = "${LONG}"`)).toBe(true);
   });
@@ -60,7 +56,7 @@ describe("SECRET_PATTERN — uppercase KEY=value", () => {
   });
 });
 
-describe("SECRET_PATTERN_CI — lowercase credentials", () => {
+describe("SECRET_PATTERN_CI: lowercase credentials", () => {
   test("flags password with an 8+ char value", () => {
     expect(lineHasSecret(`password=${"y".repeat(12)}`)).toBe(true);
   });
@@ -74,7 +70,7 @@ describe("SECRET_PATTERN_CI — lowercase credentials", () => {
 
 // Measured FP class (a frontend repo's generated types.gen.ts, 2026-08 and prior): SECRET_PATTERN_CI's
 // `.{8,}` treats `password: string;` as a credential because ` string;` is ≥8 chars.
-// Same shape appears in hand-written interfaces, Zod schemas, and Django field defs —
+// Same shape appears in hand-written interfaces, Zod schemas, and Django field defs,
 // not only generated clients. Fix filters type/schema RHS; values stay flagged.
 describe("type/schema annotations are NOT secrets (types.gen.ts FP class)", () => {
   test("TS property: password: string;", () => {
@@ -103,7 +99,7 @@ describe("type/schema annotations are NOT secrets (types.gen.ts FP class)", () =
   });
 });
 
-describe("isOrchestrationPath — exclude the .claude/ orchestration tree", () => {
+describe("isOrchestrationPath: exclude the .claude/ orchestration tree", () => {
   test("excludes hooks (the self-matching false-positive case)", () => {
     expect(isOrchestrationPath(".claude/hooks/security-gate.ts")).toBe(true);
     expect(isOrchestrationPath(".claude/hooks/__tests__/security-gate.test.ts")).toBe(true);
@@ -113,10 +109,10 @@ describe("isOrchestrationPath — exclude the .claude/ orchestration tree", () =
     expect(isOrchestrationPath(".claude/skills/multi-tenant-guardian/examples/auth_token_mixin_pattern.md")).toBe(true);
     expect(isOrchestrationPath(".claude/skills/foo/templates/config.yaml")).toBe(true);
   });
-  test("excludes settings (documented tradeoff — tool config, not business code)", () => {
+  test("excludes settings (documented tradeoff, tool config, not business code)", () => {
     expect(isOrchestrationPath(".claude/settings.json")).toBe(true);
   });
-  test("does NOT exclude business code — detection there is untouched", () => {
+  test("does NOT exclude business code, detection there is untouched", () => {
     expect(isOrchestrationPath("src/auth/middleware.ts")).toBe(false);
     expect(isOrchestrationPath("acme/settings.py")).toBe(false);
     expect(isOrchestrationPath(".env")).toBe(false);
@@ -128,7 +124,7 @@ describe("isOrchestrationPath — exclude the .claude/ orchestration tree", () =
   });
 });
 
-describe("isApiSpecDocument — API contracts are examples by nature", () => {
+describe("isApiSpecDocument: API contracts are examples by nature", () => {
   test("recognises an OpenAPI document (unquoted key and version)", () => {
     expect(isApiSpecDocument("openapi: 3.0.3\ninfo:\n  title: Acme API\n")).toBe(true);
   });
@@ -139,7 +135,7 @@ describe("isApiSpecDocument — API contracts are examples by nature", () => {
     expect(isApiSpecDocument('"openapi": "3.0.3"\n')).toBe(true);
   });
 
-  test("does NOT recognise docker-compose — where a real secret lives", () => {
+  test("does NOT recognise docker-compose, where a real secret lives", () => {
     const compose = "services:\n  db:\n    environment:\n      POSTGRES_PASSWORD: hunter2verylongvalue\n";
     expect(isApiSpecDocument(compose)).toBe(false);
   });
@@ -149,7 +145,7 @@ describe("isApiSpecDocument — API contracts are examples by nature", () => {
   test("does NOT recognise a tooling config pointing AT a spec (path, not version)", () => {
     expect(isApiSpecDocument("openapi: ./contract/spec.yaml\n")).toBe(false);
   });
-  test("does NOT recognise an indented key — the spec version is a root key", () => {
+  test("does NOT recognise an indented key, the spec version is a root key", () => {
     expect(isApiSpecDocument("apis:\n  main:\n    openapi: 3.0.3\n")).toBe(false);
   });
 
@@ -215,113 +211,86 @@ describe("clean code", () => {
   test("stateful /g regex resets between calls", () => {
     const line = `SECRET = "${LONG}"`;
     expect(lineHasSecret(line)).toBe(true);
-    // Would be false on the 2nd call if lastIndex were not reset — guards the gotcha.
+    // Would be false on the 2nd call if lastIndex were not reset, guards the gotcha.
     expect(lineHasSecret(line)).toBe(true);
   });
 });
 
-describe("git discipline warn (029/US4)", () => {
-  const turn = (prompt: string, commands: string[]) => {
-    const lines = [
-      JSON.stringify({ type: "user", message: { content: prompt } }),
-      ...commands.map((c) =>
-        JSON.stringify({
-          type: "assistant",
-          message: { content: [{ type: "tool_use", name: "Bash", input: { command: c } }] },
-        }),
-      ),
-    ];
-    return lines.join("\n");
-  };
+describe("readTurnFacts: when the turn started and whether it ends waiting", () => {
+  const user = (content: string, timestamp = "2026-10-09T10:00:00.000Z") => JSON.stringify({ type: "user", timestamp, message: { content } });
+  const call = (name: string, input: object = {}) => JSON.stringify({ type: "assistant", message: { content: [{ type: "tool_use", name, input }] } });
 
-  test("warns when git commit ran and the user prompt did not ask for it", () => {
-    const t = extractTurnFromTranscript(turn("arregla el bug del parser", ["git add -A && git commit -m 'fix'"]));
-    const w = buildGitDisciplineWarning(t.userPrompt, t.bashCommands);
-    expect(w).not.toBeNull();
-    expect(w!.systemMessage).toContain("git");
+  test("takes the timestamp of the turn's prompt, not an earlier one", () => {
+    const jsonl = [user("old", "2026-10-09T09:00:00.000Z"), call("Agent"), user("new"), call("Bash", { command: "ls" })].join("\n");
+    expect(readTurnFacts(jsonl)).toEqual({ startedAt: Date.parse("2026-10-09T10:00:00.000Z"), waiting: false });
   });
 
-  test("stays silent when the user asked for the commit", () => {
-    const t = extractTurnFromTranscript(turn("haz commit de estos cambios", ["git commit -m 'ABC-1 fix'"]));
-    expect(buildGitDisciplineWarning(t.userPrompt, t.bashCommands)).toBeNull();
-  });
-
-  test("stays silent when no git mutation ran", () => {
-    const t = extractTurnFromTranscript(turn("arregla el bug", ["bun test ./x", "git status"]));
-    expect(buildGitDisciplineWarning(t.userPrompt, t.bashCommands)).toBeNull();
-  });
-
-  test("push without ask also warns", () => {
-    const t = extractTurnFromTranscript(turn("refactoriza el helper", ["git push origin dev"]));
-    expect(buildGitDisciplineWarning(t.userPrompt, t.bashCommands)).not.toBeNull();
-  });
-
-  test("malformed transcript lines are tolerated (best-effort)", () => {
-    const raw = "{not json\n" + turn("sube esto a la rama", ["git push origin feature/x"]);
-    expect(() => extractTurnFromTranscript(raw)).not.toThrow();
-    const t = extractTurnFromTranscript(raw);
-    expect(buildGitDisciplineWarning(t.userPrompt, t.bashCommands)).toBeNull(); // "sube" = intent
-  });
-});
-
-describe("git discipline — shell data is not a command (false-positive class, run-don't-predict corollary)", () => {
-  test("heredoc body containing 'git commit' literals does not warn (the gate's own fixtures tripped it in production)", () => {
-    const cmd = [
-      "cat >> some.test.ts << 'EOF'",
-      'const c = "git add -A && git commit -m \'fix\'";',
-      'const d = "git push origin dev";',
-      "EOF",
-    ].join("\n");
-    expect(buildGitDisciplineWarning("arregla el bug", [cmd])).toBeNull();
-  });
-
-  test("quoted git text in echo/printf does not warn", () => {
-    expect(buildGitDisciplineWarning("documenta esto", ['echo "usa git push con cuidado"'])).toBeNull();
-  });
-
-  test("ESCAPED quotes inside a double-quoted JSON payload do not break span parity (live FP 2026-08-07)", () => {
-    // The gate's own smoke test tripped it: printf writing a JSONL fixture whose
-    // escaped-quote content mentions git commit. Data, not an invocation.
-    const cmd =
-      'printf \'%s\\n\' "{\\"type\\":\\"assistant\\",\\"input\\":{\\"command\\":\\"cd $SCRATCH/fake-repo; git commit -qm init\\"}}" > /tmp/fixture.jsonl';
-    expect(buildGitDisciplineWarning("revisa los tests", [cmd], "/Users/oriol/proyectos/mi-repo")).toBeNull();
-    expect(buildGitDisciplineWarning("revisa los tests", [cmd])).toBeNull(); // legacy path too
-  });
-
-  test("a real mutation with escaped quotes in its message still warns", () => {
-    expect(
-      buildGitDisciplineWarning("arregla el bug", ['git commit -m "fix \\"quoted\\" thing"']),
-    ).not.toBeNull();
-  });
-
-  test("a real git commit still warns after stripping", () => {
-    expect(buildGitDisciplineWarning("arregla el bug", ["git commit -m 'fix parser'"])).not.toBeNull();
-  });
-
-  test("a real chained mutation still warns", () => {
-    expect(buildGitDisciplineWarning("refactoriza", ["bun test && git push origin dev"])).not.toBeNull();
-  });
-});
-
-describe("git discipline — full mutating class (critic MAJOR 3, 029)", () => {
-  test("reset --hard, branch -D, merge and gh pr create warn when unasked", () => {
-    for (const cmd of ["git reset --hard HEAD~1", "git branch -D feature/x", "git merge dev", "gh pr create --fill"]) {
-      expect(buildGitDisciplineWarning("arregla el parser", [cmd])).not.toBeNull();
+  test("a turn that launched an agent or a background command ends waiting", () => {
+    for (const c of [call("Agent"), call("Bash", { command: "bun test", run_in_background: true })]) {
+      expect(readTurnFacts([user("revisa"), c].join("\n")).waiting).toBe(true);
     }
   });
 
-  test("asked-for merge/rebase/pr stay silent", () => {
-    expect(buildGitDisciplineWarning("mergea dev en mi rama", ["git merge dev"])).toBeNull();
-    expect(buildGitDisciplineWarning("crea la pr de este ticket", ["gh pr create --fill"])).toBeNull();
-    expect(buildGitDisciplineWarning("rebasea sobre dev", ["git rebase dev"])).toBeNull();
+  test("a task-notification turn ends waiting; tool results and subagent events do not start a turn", () => {
+    const toolResult = JSON.stringify({ type: "user", message: { content: [{ type: "tool_result", content: "x" }] } });
+    const sidechain = JSON.stringify({ type: "user", isSidechain: true, message: { content: "sub prompt" } });
+    expect(readTurnFacts([user("<task-notification>\n<status>completed</status>"), toolResult, sidechain].join("\n")).waiting).toBe(true);
   });
 
-  test("read-only git stays silent", () => {
-    expect(buildGitDisciplineWarning("investiga", ["git log --oneline", "git branch --list", "git diff"])).toBeNull();
+  test("startedAt is the latest human prompt: a task-notification prompt does not move it", () => {
+    const human = (timestamp: string) => JSON.stringify({ type: "user", origin: { kind: "human" }, timestamp, message: { content: "revisa" } });
+    const notice = (timestamp: string) => JSON.stringify({ type: "user", origin: { kind: "task-notification" }, timestamp, message: { content: "<task-notification>\n<status>completed</status>" } });
+    const jsonl = [human("2026-10-09T10:00:00.000Z"), call("Agent"), notice("2026-10-09T10:05:00.000Z")].join("\n");
+    expect(readTurnFacts(jsonl)).toEqual({ startedAt: Date.parse("2026-10-09T10:00:00.000Z"), waiting: true });
+  });
+
+  test("a file a background agent wrote between the human prompt and its notification is scanned", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "poneglyph-bg-test-"));
+    try {
+      const t0 = 1_700_000_000_000;
+      const file = join(dir, "bg.ts");
+      await Bun.write(file, "x");
+      utimesSync(file, (t0 + 60_000) / 1000, (t0 + 60_000) / 1000); // t1
+      const at = (ms: number) => new Date(ms).toISOString();
+      const jsonl = [
+        JSON.stringify({ type: "user", origin: { kind: "human" }, timestamp: at(t0), message: { content: "lanza el agente" } }),
+        JSON.stringify({ type: "user", origin: { kind: "task-notification" }, timestamp: at(t0 + 120_000), message: { content: "<task-notification>done" } }),
+      ].join("\n");
+      expect(await filesChangedSince([file], readTurnFacts(jsonl).startedAt)).toEqual([file]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("a prompt outside the tail gives an unknown start", () => {
+    expect(readTurnFacts(["{cut line", call("Bash", { command: "ls" })].join("\n"))).toEqual({ startedAt: null, waiting: false });
   });
 });
 
-describe("stop_hook_active re-entry guard (030)", () => {
+describe("filesChangedSince: the secret scan covers this turn's writes only", () => {
+  const dir = mkdtempSync(join(tmpdir(), "poneglyph-since-test-"));
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+  test("keeps files written after the turn start, drops older, missing and >1 MB files", async () => {
+    const [old, fresh, big] = ["old.ts", "fresh.ts", "big.json"].map((f) => join(dir, f));
+    await Bun.write(old, "x");
+    const start = Date.now() + 2000;
+    await Bun.write(fresh, "x");
+    await Bun.write(big, "x".repeat(1024 * 1024 + 1));
+    const { utimesSync } = await import("node:fs");
+    utimesSync(fresh, new Date(start + 1000), new Date(start + 1000));
+    utimesSync(big, new Date(start + 1000), new Date(start + 1000));
+    expect(await filesChangedSince([old, fresh, big, join(dir, "gone.ts")], start)).toEqual([fresh]);
+  });
+
+  test("an unknown turn start keeps every dirty file under the size cap", async () => {
+    const f = join(dir, "any.ts");
+    await Bun.write(f, "x");
+    expect(await filesChangedSince([f], null)).toEqual([f]);
+  });
+});
+
+describe("stop_hook_active re-entry guard", () => {
   test("active stop-hook continuation is skipped", () => {
     expect(shouldSkipStopHook({ stop_hook_active: true })).toBe(true);
   });
@@ -334,7 +303,7 @@ describe("stop_hook_active re-entry guard (030)", () => {
   });
 });
 
-describe("readTranscriptTail — bounded read, never the whole file (030)", () => {
+describe("readTranscriptTail: bounded read, never the whole file", () => {
   const dir = mkdtempSync(join(tmpdir(), "poneglyph-transcript-test-"));
   afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
@@ -355,153 +324,26 @@ describe("readTranscriptTail — bounded read, never the whole file (030)", () =
   });
 });
 
-// --- Cross-repo exclusion (audit 2026-08-07) ----------------------------------
-
-const SESSION_CWD = "/Users/oriol/proyectos/mi-repo";
-
-describe("splitStatements", () => {
-  test("splits on &&, ||, ;, | and newlines", () => {
-    expect(splitStatements("a && b || c; d | e\nf")).toEqual(["a", "b", "c", "d", "e", "f"]);
-  });
-  test("trims and drops empty segments", () => {
-    expect(splitStatements("  a  ;;  b  ")).toEqual(["a", "b"]);
-  });
-});
-
-describe("resolveInlineVars", () => {
-  test("resolves a variable assigned earlier in the same command", () => {
-    const out = resolveInlineVars(["SCRATCH=/tmp/x", "cd $SCRATCH/repo"]);
-    expect(out[1]).toBe("cd /tmp/x/repo");
-  });
-  test("supports the export prefix and ${VAR} syntax", () => {
-    const out = resolveInlineVars(["export DIR=/tmp/y", "cd ${DIR}/sub"]);
-    expect(out[1]).toBe("cd /tmp/y/sub");
-  });
-  test("leaves external (unassigned) variables untouched", () => {
-    const out = resolveInlineVars(["cd $CI_WORKDIR/build"]);
-    expect(out[0]).toBe("cd $CI_WORKDIR/build");
-  });
-});
-
-describe("resolveMutationLocation — pure directory resolution", () => {
-  test("cd to /tmp before the mutation → external", () => {
-    expect(resolveMutationLocation("cd /tmp/x && git commit -m x", SESSION_CWD)).toBe("external");
-  });
-  test("mutation BEFORE the cd → session (order matters)", () => {
-    expect(resolveMutationLocation("git commit -m x && cd /tmp", SESSION_CWD)).toBe("session");
-  });
-  test("inline variable resolved through cd → external", () => {
-    expect(
-      resolveMutationLocation("SCRATCH=/private/tmp/b; cd $SCRATCH/fake-repo; git commit -m x", SESSION_CWD),
-    ).toBe("external");
-  });
-  test("unresolvable external variable → unknown", () => {
-    expect(resolveMutationLocation("cd $CI_WORKDIR && git commit -m x", SESSION_CWD)).toBe("unknown");
-  });
-  test("relative cd inside the session tree → session", () => {
-    expect(resolveMutationLocation("cd src && git commit -m x", SESSION_CWD)).toBe("session");
-  });
-  test("git -C to an external path → external", () => {
-    expect(resolveMutationLocation("git -C /tmp/other commit -m x", SESSION_CWD)).toBe("external");
-  });
-  test("git -C pointing INTO the session repo → session (new alert class, deliberate)", () => {
-    expect(resolveMutationLocation(`git -C ${SESSION_CWD} commit -m x`, SESSION_CWD)).toBe("session");
-  });
-  test("no cd at all → session (base case)", () => {
-    expect(resolveMutationLocation("git commit -m x", SESSION_CWD)).toBe("session");
-  });
-  test("cd ~ is unresolvable → unknown (home is not under the session cwd)", () => {
-    expect(resolveMutationLocation("cd ~ && git commit -m x", SESSION_CWD)).toBe("unknown");
-  });
-  // Audit 010: the comparison must be separator-agnostic — on Windows the
-  // native resolver yields `\`, and the old `startsWith(base + "/")` never matched.
-  test("native absolute cd INTO the session tree → session (separator-agnostic)", () => {
-    const nativeCwd = resolve(SESSION_CWD);
-    const inside = join(nativeCwd, "src", "deep");
-    expect(resolveMutationLocation(`cd ${inside} && git commit -m x`, nativeCwd)).toBe("session");
-  });
-  test("sibling directory sharing the base prefix → external (no prefix false positive)", () => {
-    const nativeCwd = resolve(SESSION_CWD);
-    expect(resolveMutationLocation(`cd ${nativeCwd}-other && git commit -m x`, nativeCwd)).toBe("external");
-  });
-});
-
-describe("GIT_MUTATION_RE — reconoce git -C (audit 2026-08-07)", () => {
-  test("git -C <path> commit matches", () => {
-    expect(GIT_MUTATION_RE.test("git -C /tmp/x commit -m y")).toBe(true);
-  });
-  test("git -C <path> status stays read-only (no match)", () => {
-    expect(GIT_MUTATION_RE.test("git -C /tmp/x status")).toBe(false);
-  });
-});
-
-describe("git discipline — cross-repo exclusion (audit 2026-08-07)", () => {
-  test("fixture de regresión real: benchmark git en scratchpad NO avisa", () => {
-    const cmd =
-      "SCRATCH=/private/tmp/bench-xyz; mkdir -p $SCRATCH/fake-repo && cd $SCRATCH/fake-repo; git init -q; git commit --allow-empty -qm init";
-    expect(buildGitDisciplineWarning("revisa los tests de la aplicacion", [cmd], SESSION_CWD)).toBeNull();
-  });
-
-  test("cd /tmp sin variable → no avisa", () => {
-    expect(buildGitDisciplineWarning("arregla el bug", ["cd /tmp/x && git commit -m wip"], SESSION_CWD)).toBeNull();
-  });
-
-  test("git -C externo → no avisa", () => {
-    expect(buildGitDisciplineWarning("arregla el bug", ["git -C /tmp/other commit -m wip"], SESSION_CWD)).toBeNull();
-  });
-
-  test("mutación antes del cd → avisa", () => {
-    expect(
-      buildGitDisciplineWarning("arregla el bug", ["git commit -m wip && cd /tmp"], SESSION_CWD),
-    ).not.toBeNull();
-  });
-
-  test("cd relativo dentro del árbol → avisa", () => {
-    expect(buildGitDisciplineWarning("arregla el bug", ["cd src && git commit -m wip"], SESSION_CWD)).not.toBeNull();
-  });
-
-  test("git -C al propio repo de sesión → avisa (clase de alerta nueva)", () => {
-    expect(
-      buildGitDisciplineWarning("arregla el bug", [`git -C ${SESSION_CWD} commit -m wip`], SESSION_CWD),
-    ).not.toBeNull();
-  });
-
-  test("variable externa no resoluble → no avisa (fail-open, warn-not-gate)", () => {
-    expect(
-      buildGitDisciplineWarning("arregla el bug", ["cd $CI_WORKDIR && git commit -m wip"], SESSION_CWD),
-    ).toBeNull();
-  });
-
-  test("sin cd → avisa (caso base sin cambios)", () => {
-    expect(buildGitDisciplineWarning("arregla el bug", ["git commit -m wip"], SESSION_CWD)).not.toBeNull();
-  });
-
-  test("sin sessionCwd → comportamiento legacy (escape hatch de tests puros)", () => {
-    expect(buildGitDisciplineWarning("arregla el bug", ["cd /tmp/x && git commit -m wip"])).not.toBeNull();
-  });
-});
-
-// Quality review 2026-09-11 — H18 (quoted keys never matched) and H54 (dotted .env variants).
-describe("secret detection — key shapes and file shapes (H18, H54)", () => {
+describe("secret detection: key shapes and file shapes", () => {
   const SECRET = "y".repeat(24);
 
-  test("H18 — matches a quoted JSON key, which .json files always use", () => {
+  test("matches a quoted JSON key, which .json files always use", () => {
     expect(lineHasSecret(`  "password": "${SECRET}",`)).toBe(true);
   });
 
-  test("H18 — matches a quoted YAML/JSON api_key", () => {
+  test("matches a quoted YAML/JSON api_key", () => {
     expect(lineHasSecret(`  "api_key": "${SECRET}"`)).toBe(true);
   });
 
-  test("H18 — still matches the unquoted env form", () => {
+  test("still matches the unquoted env form", () => {
     expect(lineHasSecret(`API_KEY=${SECRET}`)).toBe(true);
   });
 
-  test("H18 — still ignores a line with no credential", () => {
+  test("still ignores a line with no credential", () => {
     expect(lineHasSecret(`  "timeout": 30000,`)).toBe(false);
   });
 
-  test("H54 — accepts dotted .env variants", () => {
+  test("accepts dotted .env variants", () => {
     for (const f of [".env.local", ".env.production", "app/.env.development"]) {
       expect(hasTextExtension(f)).toBe(true);
     }

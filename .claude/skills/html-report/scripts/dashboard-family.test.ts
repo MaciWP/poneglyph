@@ -14,7 +14,7 @@ const canonical = () => {
   return new Set([p.light, p.dark, p.darkMedia, p.print].flatMap((o) => Object.keys(o)));
 };
 
-test.each(FAMILY)("T5.1 — %s starts dark and uses canonical surfaces", (name) => {
+test.each(FAMILY)("T5.1: %s starts dark and uses canonical surfaces", (name) => {
   const html = readFileSync(join(TEMPLATES_DIR, name), "utf8");
 
   const htmlTag = html.match(/<html\b[^>]*>/i)?.[0] ?? "";

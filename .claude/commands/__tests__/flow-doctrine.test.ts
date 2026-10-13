@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { frontmatterField } from "../../scripts/lib/budget";
+import { frontmatter } from "../../scripts/lib/skill-metadata";
 
 // Quality review 2026-09-10, finding H51. Two facts about /flow-lifecycle lived in several files
 // and drifted: how many phases the pipeline has, and whether `allowed-tools` exempts a
@@ -48,7 +48,8 @@ function alwaysLoaded(): Array<[string, string]> {
     if (!existsSync(join(skillsDir, skill, "SKILL.md"))) continue;
     const text = read(".claude", "skills", skill, "SKILL.md");
     if (/^disable-model-invocation:\s*true\s*$/m.test(text.split(/^---\s*$/m)[1] ?? "")) continue;
-    const surface = `${frontmatterField(text, "description")}\n${frontmatterField(text, "when_to_use")}`;
+    const { fields } = frontmatter(text);
+    const surface = `${fields.description ?? ""}\n${fields.when_to_use ?? ""}`;
     texts.push([`skills/${skill} frontmatter`, surface]);
   }
   return texts;

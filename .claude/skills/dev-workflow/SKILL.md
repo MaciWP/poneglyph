@@ -1,30 +1,24 @@
 ---
 name: dev-workflow
 description: >-
-  Field manual for the CLAUDE.md dev loop: reuse scan, a plan with defaulted
-  questions, the simplicity ladder, an impact review and loop-back. Use for
-  "planea cómo arreglar estos findings", a pasted ticket or bug to fix,
-  "simplifica esto" or "revisa este diff por sobreingeniería". Not for a
-  question, a read or a one-line fix.
-metadata:
-  keywords: >
-    Keywords - bucle dev, aplica el bucle dev, planea cómo arreglar, arregla estos findings,
-    cómo deberías desarrollar, simplifica esto, demasiado complejo, over-engineering,
-    sobreingeniería, mínimas líneas, lente ponytail, cosecha la deuda, deuda técnica, YAGNI
+  Aplica el ciclo de desarrollo a cualquier trabajo que cambie código: entender y
+  reutilizar lo que existe, planear con preguntas con respuesta por defecto, construir lo
+  más simple y revisar el impacto. Úsala cuando el usuario pide arreglar, implementar,
+  refactorizar o seguir un plan: "corrige este bug", "implementa este ticket", "sigue con
+  el plan", "¿cómo de difícil es este ticket?", "revisa los tests", o pega un ticket o un
+  bug. No es para una pregunta o explicación (changes-explain).
 disable-model-invocation: false
-when_to_use: |
-  Fixing review findings or a pasted ticket; reviewing a diff for excess.
 ---
 
-# dev — the development loop, elaborated
+# dev: the development loop, elaborated
 
-The always-loaded core (CLAUDE.md §The dev loop) is the law; this skill is its
+The always-loaded core (CLAUDE.md §How to work) is the law; this skill is its
 field manual. Adapted from ponytail (MIT, DietrichGebert/ponytail) and the
-contractor protocol (Oriol, 2026-08-05). `changes-verify` owns stage 4's deep protocol;
-/flow-lifecycle wraps this same loop at feature scale — neither is duplicated here.
+contractor protocol (Oriol). `changes-verify` owns stage 4's deep protocol;
+/flow-lifecycle wraps this same loop at feature scale, neither is duplicated here.
 
-The level rule (trivial · normal · high blast radius, and the evidence floor) is
-CLAUDE.md §The dev loop. Judging a task "trivial"
+The levels (trivial · normal · high blast radius) are CLAUDE.md §How to work; what
+each level shows, the evidence floor included, is the output style §2. Judging a task "trivial"
 *before* looking is circular: read what you will change and what uses it, then judge.
 
 ## Definition of Done
@@ -39,7 +33,7 @@ CLAUDE.md §The dev loop. Judging a task "trivial"
 - Verified correctness and scope compliance come first. Extra code, repeated green checks and speculative improvements add no value.
 - Define task-specific quality priorities in PLAN when needed. Do not lower acceptance criteria or add scope to improve a grade.
 
-## Stage 1 — KNOW (learn / investigate / reuse)
+## Stage 1: KNOW (learn / investigate / reuse)
 
 - Read the full problem statement and the surrounding code before forming an opinion.
   Laziness applies to the SOLUTION, never to comprehension.
@@ -50,11 +44,11 @@ CLAUDE.md §The dev loop. Judging a task "trivial"
   or the pattern smells standard (someone solved it well already). Sources in order:
   official docs → reputable experts → high-quality reference projects. Verify version.
 - Anything discoverable in <1 min (test framework, lint rules, layout, existing
-  abstractions) is research you owe — never a question to the user.
+  abstractions) is research you owe, never a question to the user.
 - If the task includes publication, run the remote preflight in
   [verify's publication protocol](../changes-verify/references/publication.md) before PLAN.
 
-## Stage 2 — PLAN (analyze / price / de-risk)
+## Stage 2: PLAN (analyze / price / de-risk)
 
 Produce, then STOP on high blast radius (new module, schema, auth, money,
 migrations, deletion). Else proceed once the DoD is settled.
@@ -77,20 +71,21 @@ migrations, deletion). Else proceed once the DoD is settled.
   mitigation each. One line per REAL risk; none invented.
 - **Price it (internal)**: weigh which pieces carry the most effort/risk and order
   the work accordingly; surface the weighing only when it changes a decision.
-- Non-trivial task → run `choose-skills` (propose→ratify the skill shortlist).
+- Non-trivial task → weigh the router's candidates, or launch the `prompt-router` agent when no
+  note covers this phase; load the ones the task justifies.
 - A blocking gap the questions can't close → `drillme-clarify` (deep sweep).
 
-## Stage 3 — BUILD (minimum code / simple / maintainable / elegant)
+## Stage 3: BUILD (minimum code / simple / maintainable / elegant)
 
-The ladder — stop at the FIRST rung that holds:
+The ladder: stop at the FIRST rung that holds:
 
-1. Does this need to exist at all? (YAGNI — challenge the requirement)
+1. Does this need to exist at all? (YAGNI, challenge the requirement)
 2. Already in this codebase? → reuse it (stage 1's scan already knows)
 3. Stdlib does it? → use it
 4. Platform-native feature? → native input over picker lib, CSS over JS, DB constraint over app code
 5. Already-installed dependency? → use it; adding a NEW dependency needs explicit justification
 6. Can it be one line? → one line
-7. Only then: the minimum code that works — in the project's own style
+7. Only then: the minimum code that works, in the project's own style
 
 **Non-negotiable floor** (laziness never crosses this): trust-boundary validation,
 error handling, security, accessibility, anything explicitly requested. Bug fix =
@@ -109,38 +104,39 @@ the end of the task.
 → report the position, what remains and a new estimate, then ask whether to
 continue. Hard gates and blocking questions still apply.
 
-## Stage 4 — REVIEW (analyze / comply)
+## Stage 4: REVIEW (analyze / comply)
 
 Before "done": run the project's checks, sweep the impact of every touched symbol,
 drive the real flow end-to-end when there is runtime surface, and declare residual
 risk. Full protocol: `Skill(changes-verify)`. Compliance is bidirectional: meet every agreed
 AC, and add NOTHING beyond them.
 
-**Diff review lens** (on request — "revisa este diff por sobreingeniería"): tags and
+**Diff review lens** (on request, "revisa este diff por sobreingeniería"): tags and
 scope in `references/02-on-request-lenses.md`.
 
-## Stage 5 — LEARN (persist knowledge)
+## Stage 5: LEARN (persist knowledge)
 
 - Persist the non-obvious: surprises, emergent patterns, deferred cuts and their
-  triggers — via memory (global) or the project's learning capture.
+  triggers: via memory (global) or the project's learning capture.
 - Nothing non-obvious → nothing to write. Mention LEARN only when it persisted
   something, or at high blast radius ("nothing new").
-- **Debt harvest** (on request — "cosecha la deuda"): `references/02-on-request-lenses.md`.
+- **Debt harvest** (on request: "cosecha la deuda"): `references/02-on-request-lenses.md`.
 
-## Loop-back — when a stage fails
+## Loop-back: when a stage fails
 
-A failed stage sends you BACK to the stage whose output broke — never forward on
+A failed stage sends you BACK to the stage whose output broke, never forward on
 a broken premise:
 
 | Failure | Go back to |
 |---|---|
-| REVIEW finds failing checks or unexpected impact | BUILD — fix the root cause |
-| An assumption proves false mid-BUILD | PLAN — re-plan with the new fact, and TELL the user (never quietly improvise) |
-| BUILD discovers existing code late (duplication) | KNOW — rerun the reuse scan properly |
-| The goal itself was misunderstood | KNOW — restart the loop |
+| REVIEW finds failing checks or unexpected impact | BUILD: fix the root cause |
+| An assumption proves false mid-BUILD | PLAN: re-plan with the new fact, and TELL the user (never quietly improvise) |
+| BUILD discovers existing code late (duplication) | KNOW: rerun the reuse scan properly |
+| The goal itself was misunderstood | KNOW: restart the loop |
 
-Same failure twice, or a gap PLAN's questions cannot close → run `drillme-clarify`
-(exhaustive sweep) before retrying; still stuck → escalate per `error-recovery.md`.
+Same failure twice → one change-of-technique pass with `troubleshooting`, then stop and ask
+(CLAUDE.md §How to work). A gap PLAN's questions cannot close → `drillme-clarify` before
+retrying. Budgets: `agent-routing` references/07-error-recovery.md.
 Never a louder retry of the same attack.
 
 ## Worked example
@@ -159,13 +155,12 @@ A trivial change, and a small task with one loop-back in full and compact render
 - **Scan line** for multi-step coding, re-emitted on change:
   `🟢 KNOW · 🟢 PLAN · 🔵 BUILD · ⚪ REVIEW · ⚪ LEARN`.
 - Skipping KNOW to "save time" is the root cause of rework.
-- The floor is absolute — no rung of the ladder ever overrides it.
+- The floor is absolute: no rung of the ladder ever overrides it.
 - Loop-back over push-forward: a broken premise invalidates everything built on it.
-- Maximum quality is the default for every task — the user's care budget is not
+- Maximum quality is the default for every task, the user's care budget is not
   inferred from how small the diff looks.
-- Git/PR and agent-spawn hard gates: CLAUDE.md §Operating rules owns them — not
-  restated here. "Done" is never permission to commit; custom agents need this-turn
-  permission.
+- Git/PR and agent-spawn gates: CLAUDE.md §Hard rules and §Agents and skills. "Done" is never
+  permission to commit; Workflow/Team needs this-turn permission.
 
 ## Anti-patterns
 
@@ -174,14 +169,14 @@ A trivial change, and a small task with one loop-back in full and compact render
 | Calling a task trivial before reading what it touches | Look first; trivial means behavior-neutral, ≤1 file, easy to revert; a high-blast trait wins |
 | Full five-stage ceremony on a typo or a question | Trivial level: do it, one line of evidence |
 | Judging importance or care level before KNOW | Investigate first; never infer care from diff size; propose the time estimate for the user to confirm |
-| Ladder applied before understanding the problem | "Read fully, then be lazy" — comprehension first |
-| Simplifying away validation/errors to score fewer lines | Floor violation — restore it |
+| Ladder applied before understanding the problem | "Read fully, then be lazy", comprehension first |
+| Simplifying away validation/errors to score fewer lines | Floor violation: restore it |
 | `ponytail:` comment without an upgrade trigger | Add the trigger or treat as a bug |
 | Asking the user something Grep answers | Stage 1 owes that research |
 | Inventing the finish line, or asking for it mid-run | Settle the DoD at KNOW→PLAN; propose it with a default |
-| Improvising when an assumption breaks mid-task | Loop-back to PLAN and tell — always |
-| Risks section padded with invented dangers | Proportionality of *depth* — real risks only, or none |
-| End-of-task shipping (commit / push / PR / "¿hago commit?") or AI authorship in a commit | CLAUDE.md §Git / PR — about to slip → drillme-clarify/AskUserQuestion, leave the tree dirty |
+| Improvising when an assumption breaks mid-task | Loop-back to PLAN and tell, always |
+| Risks section padded with invented dangers | Proportionality of *depth*: real risks only, or none |
+| End-of-task shipping (commit / push / PR / "¿hago commit?") or AI authorship in a commit | CLAUDE.md §Hard rules: about to slip → drillme-clarify/AskUserQuestion, leave the tree dirty |
 
 ## Commandments cubiertos
 
@@ -197,5 +192,5 @@ A trivial change, and a small task with one loop-back in full and compact render
 
 | Topic | File |
 |---|---|
-| Worked examples — trivial level; full and compact rendering of the five stages | `references/01-worked-example.md` |
+| Worked examples: trivial level; full and compact rendering of the five stages | `references/01-worked-example.md` |
 | Diff review lens (over-engineering tags) · ponytail debt harvest | `references/02-on-request-lenses.md` |

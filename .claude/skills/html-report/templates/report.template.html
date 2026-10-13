@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{TITLE}} — Audit Report</title>
+  <title>{{TITLE}}: Audit Report</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -12,7 +12,7 @@
        single source (write it with `bun scripts/tokens.ts --write`). Do not edit it here. */
     /* tokens:begin */
 /* ============================================================
-   Poneglyph DESIGN TOKENS — single source of truth
+   Poneglyph DESIGN TOKENS: single source of truth
    ------------------------------------------------------------
    This file is the single source of the Poneglyph HTML design
    system: the report family, the dashboard family and the dynamic
@@ -168,7 +168,7 @@ html[data-theme="dark"] {
     a { color: var(--link); }
 
     /* ============================================================
-       C8 — metadata-header (report title strip)
+       C8: metadata-header (report title strip)
     ============================================================ */
     .report-header {
       grid-area: header;
@@ -186,7 +186,7 @@ html[data-theme="dark"] {
       position: absolute;
       top: 0; left: 0; right: 0;
       height: 4px;
-      background: var(--accent); /* single teal hairline — editorial restraint */
+      background: var(--accent); /* single teal hairline, editorial restraint */
     }
     .report-meta {
       display: flex;
@@ -313,7 +313,7 @@ html[data-theme="dark"] {
       line-height: var(--lh-snug);
     }
     .toc nav a:hover { background: var(--accent-bg); color: var(--accent); }
-    /* CSS-only active section via :target — no JS */
+    /* CSS-only active section via :target, no JS */
     section[id]:target ~ * { /* no-op anchor for smooth scroll */ }
     .toc summary { display: none; } /* hidden on desktop; shown on mobile */
 
@@ -325,7 +325,7 @@ html[data-theme="dark"] {
       min-width: 0;
     }
 
-    /* C7 — section-header (numbered + anchor + trailing rule) */
+    /* C7: section-header (numbered + anchor + trailing rule) */
     .section-header {
       font-family: var(--serif);
       font-size: var(--t-lg);
@@ -382,7 +382,7 @@ html[data-theme="dark"] {
     }
 
     /* ============================================================
-       C1 — score-gauge (radial SVG, N/10)
+       C1: score-gauge (radial SVG, N/10)
     ============================================================ */
     .gauge {
       position: relative;
@@ -422,7 +422,7 @@ html[data-theme="dark"] {
     }
 
     /* ============================================================
-       C5 — stat-tile + severity-bar
+       C5: stat-tile + severity-bar
     ============================================================ */
     .stat-grid {
       list-style: none;
@@ -487,7 +487,7 @@ html[data-theme="dark"] {
     .dot.sev--ok      { background: var(--ok); }
 
     /* ============================================================
-       C4 — callout (note / warn / info)
+       C4: callout (note / warn / info)
     ============================================================ */
     .callout {
       display: flex;
@@ -522,7 +522,7 @@ html[data-theme="dark"] {
     .callout--warn .callout-icon { background: var(--major); }
 
     /* ============================================================
-       C2 — data-table (zebra + severity rows + score pills)
+       C2: data-table (zebra + severity rows + score pills)
     ============================================================ */
     .table-card {
       background: var(--surface);
@@ -589,7 +589,7 @@ html[data-theme="dark"] {
     .data-table tr.sev-row.sev--minor   td:first-child { box-shadow: inset 3px 0 0 var(--minor); }
     .data-table tr.sev-row.sev--nit     td:first-child { box-shadow: inset 3px 0 0 var(--nit); }
 
-    /* sev-badge — reusable severity pill (findings, cells) */
+    /* sev-badge: reusable severity pill (findings, cells) */
     .sev-badge {
       display: inline-block;
       padding: 0.12rem 0.5rem;
@@ -607,7 +607,7 @@ html[data-theme="dark"] {
     .sev-badge.sev--ok      { color: var(--ok);      background: var(--ok-bg);      border: 1px solid var(--ok-bd); }
 
     /* ============================================================
-       C3 — finding-card (severity left-border + action)
+       C3: finding-card (severity left-border + action)
     ============================================================ */
     .finding-grid {
       list-style: none;
@@ -660,7 +660,7 @@ html[data-theme="dark"] {
     }
 
     /* ============================================================
-       C6 — progress-bar (horizontal score / AC compliance)
+       C6: progress-bar (horizontal score / AC compliance)
     ============================================================ */
     .pbar-row { display: flex; align-items: center; gap: var(--space-3); margin-bottom: 0.5rem; max-width: 72ch; }
     .pbar-name { flex: 0 0 11rem; font-size: var(--t-sm); color: var(--ink-2); }
@@ -713,7 +713,7 @@ html[data-theme="dark"] {
     footer.report-footer code { font-family: var(--mono); }
 
     /* ============================================================
-       RESPONSIVE — collapse to single column under 880px
+       RESPONSIVE: collapse to single column under 880px
     ============================================================ */
     @media (max-width: 880px) {
       body {
@@ -773,7 +773,7 @@ html[data-theme="dark"] {
 <body>
 
   <!-- =========================================================
-       C8 — METADATA HEADER
+       C8: METADATA HEADER
        Text scalars filled by the renderer. VERDICT_CLASS is one of
        verdict--ok | verdict--minor | verdict--major | verdict--blocker
        (APPROVED / APPROVED_WITH_WARNINGS / NEEDS_CHANGES / BLOCKED).
@@ -882,7 +882,7 @@ html[data-theme="dark"] {
     {{EXEC_SUMMARY}}
 
     <!-- =======================================================
-         SECTIONS — the body of the report. Renderer concatenates
+         SECTIONS: the body of the report. Renderer concatenates
          one <section id="…"> per report.md section (§2 Top-10,
          §3 Quick-wins, §4 Scoring, §5 Cross, §6 Rúbrica,
          §7 Inventario, §8 Corpus, §8.5 Síntesis, §9 Limitaciones).

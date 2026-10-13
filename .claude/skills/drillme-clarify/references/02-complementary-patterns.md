@@ -1,7 +1,7 @@
 ---
 parent: drillme-clarify
 name: complementary-patterns
-description: Three patterns that deepen Socratic questioning when canonical categories alone are insufficient — 5-whys, first principles, inversion.
+description: Three patterns that deepen Socratic questioning when canonical categories alone are insufficient, 5-whys, first principles, inversion.
 ---
 
 # Complementary patterns
@@ -14,7 +14,7 @@ description: Three patterns that deepen Socratic questioning when canonical cate
 - [Combining patterns](#combining-patterns)
 - [When to escalate beyond drillme-clarify](#when-to-escalate-beyond-drillme)
 
-The canonical 4 categories (`[location]` / `[approach]` / `[context]` / `[failure]` — see `01-catalog-socratic.md`) are the WHAT. These three patterns are the HOW: techniques to dig deeper when a single canonical question doesn't crystallize the answer.
+The canonical 4 categories (`[location]` / `[approach]` / `[context]` / `[failure]`, see `01-catalog-socratic.md`) are the WHAT. These three patterns are the HOW: techniques to dig deeper when a single canonical question doesn't crystallize the answer.
 
 ## 1. 5-whys
 
@@ -24,14 +24,14 @@ The canonical 4 categories (`[location]` / `[approach]` / `[context]` / `[failur
 |---|---|
 | User describes a symptom, not a cause | "The API is slow" → why? → why? → ... |
 | Multiple symptoms with possible common root | Tests flaky + deploys slow + on-call burned → 5-whys reveals shared cause |
-| Solution feels disproportionate to problem | "Adding caching" — why? → "users complain" → why? → "page slow" → why? ... |
+| Solution feels disproportionate to problem | "Adding caching": why? → "users complain" → why? → "page slow" → why? ... |
 | Symptom vs root cause not clear | Almost any debugging context |
 
 ### Protocol
 
 1. Start with the symptom as stated.
-2. Ask "why?" — record the answer.
-3. Ask "why?" of the new answer — record.
+2. Ask "why?": record the answer.
+3. Ask "why?" of the new answer, record.
 4. Repeat up to 5 times.
 5. The root is the deepest answer that still has actionable response.
 
@@ -45,7 +45,7 @@ The canonical 4 categories (`[location]` / `[approach]` / `[context]` / `[failur
 
 | Anti-pattern | Detection | Correction |
 |---|---|---|
-| Stopping at convenient answer | Stop at "the previous dev did it" without going deeper | "Why did they?" — go further |
+| Stopping at convenient answer | Stop at "the previous dev did it" without going deeper | "Why did they?": go further |
 | Stopping at blame | Root is "team X is slow" → blame, not analysis | Reframe as system issue: why is the work organized so that bottleneck happens? |
 | Over-applying | Use 5-whys on a 1-line change | If decision is trivial, drillme-clarify itself shouldn't fire |
 
@@ -72,7 +72,7 @@ Root: onboarding doc gap. Surface fix (eager loading) addresses symptom; structu
 |---|---|
 | Novel problem with no clear precedent | "We need a custom rate limiter for a new modality" |
 | Existing pattern feels wrong for this case | "Everyone uses Redis for sessions; ours shouldn't have sessions at all" |
-| Stack inertia drives the choice | "We're using X because we always have" — strip down |
+| Stack inertia drives the choice | "We're using X because we always have", strip down |
 | Premature pattern matching | Solution proposed before problem fully understood |
 
 ### Protocol
@@ -122,14 +122,14 @@ Question: which atoms are wrong, or which atoms is the proposal serving that we 
 | Trigger | Example |
 |---|---|
 | Decision between 2 close options | "Library A vs B, both adequate" |
-| Stuck on a single framing | "We must do X" — what if we MUST NOT do X? |
+| Stuck on a single framing | "We must do X": what if we MUST NOT do X? |
 | Suspect groupthink | Everyone agrees → inversion forces dissent |
 | Pre-mortem framing | "It's 6 months later, this failed" → why? |
 
 ### Protocol
 
 1. Take the proposed decision (e.g., "use approach A").
-2. Invert: "we must use the OPPOSITE of A" — and explore.
+2. Invert: "we must use the OPPOSITE of A", and explore.
 3. Find the strongest reasons OPPOSITE would be better.
 4. Find what would have to be true for OPPOSITE to be the right call.
 5. Compare: are those conditions present?
@@ -157,7 +157,7 @@ What if we MUST NOT use Postgres?
 - Best of those: cookie-based state for trivial users, with cookie size cap.
 - For that to be better than Postgres: most user state fits in <4KB AND we don't need server-side queries.
 
-Are those conditions present? <answer> — informs the original decision.
+Are those conditions present? <answer>: informs the original decision.
 ```
 
 ## Combining patterns

@@ -5,19 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{{PAGE_TITLE}}</title>
 <!-- ============================================================
-     html-report DECISION template (dark-first) — feature 007, OQ2.
+     html-report DECISION template (dark-first).
      For decisions WITH comparable options (dev or non-dev: monitor,
      PC component, shoe brand…). Layout: recommendation hero +
      weighted options×criteria matrix + per-option pros/cons +
      criteria & weights. SELF-CONTAINED: one <style>, ONE Google-Fonts
-     <link>, ZERO JS. Consumed by the `decide` skill (US4) AND for
+     <link>, ZERO JS. Consumed by the `decide` skill AND for
      standalone purchase/choice memos.
 
      The block between the tokens:begin / tokens:end markers is a
      byte-identical copy of templates/tokens.css (the single source): never
      edit it here, run `bun scripts/tokens.ts --write <file>`. The page
      opens dark (data-theme on html). The .dmatrix component is the
-     one defined in references/visuals-svg-first.md (US2) — single source.
+     one defined in references/visuals-svg-first.md (single source).
 
      PLACEHOLDER CONTRACT
        {{LANG}} {{BRAND}} {{KICKER}} {{MODE}} {{DATE_DOTTED}}
@@ -39,7 +39,7 @@
 <style>
   /* tokens:begin */
 /* ============================================================
-   Poneglyph DESIGN TOKENS — single source of truth
+   Poneglyph DESIGN TOKENS: single source of truth
    ------------------------------------------------------------
    This file is the single source of the Poneglyph HTML design
    system: the report family, the dashboard family and the dynamic
@@ -180,7 +180,7 @@ html[data-theme="dark"] {
   .top .lbl.brand { color:var(--accent); } .top .sep { color:var(--ink-3); }
   .top time { margin-left:auto; font-family:var(--mono); font-size:.75rem; color:var(--ink-3); }
 
-  /* Recommendation hero — the answer, above the fold */
+  /* Recommendation hero: the answer, above the fold */
   .rec { background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--good); border-radius:16px; padding:clamp(1.4rem,3vw,2rem); margin-bottom:2.4rem; }
   .rec .conf { display:inline-flex; align-items:center; gap:.5rem; font-family:var(--mono); font-size:.6875rem; letter-spacing:.12em; text-transform:uppercase; color:var(--good); margin-bottom:.8rem; }
   .rec .conf.c-mid { color:var(--mid); } .rec .conf.c-low { color:var(--warn); }
@@ -197,7 +197,7 @@ html[data-theme="dark"] {
   .head .t { font-family:var(--sans); font-weight:600; font-size:1.1rem; letter-spacing:-.01em; color:var(--ink); }
   .head .rule { flex:1; height:1px; background:var(--line-soft); }
 
-  /* Decision matrix — options × criteria, weighted (US2 .dmatrix, single source) */
+  /* Decision matrix: options × criteria, weighted (.dmatrix, single source) */
   .dmatrix-wrap { border:1px solid var(--line); border-radius:14px; overflow-x:auto; background:var(--surface); } /* scrolls on mobile, never clips */
   .dmatrix { width:100%; border-collapse:collapse; font-size:.82rem; }
   .dmatrix th { text-align:left; padding:.7rem .9rem; font-family:var(--mono); font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); background:var(--surface-2); border-bottom:1px solid var(--line); }
@@ -252,7 +252,7 @@ html[data-theme="dark"] {
     <time>{{DATE_DOTTED}}</time>
   </div>
 
-  <!-- RECOMMENDATION HERO — the answer first, above the fold -->
+  <!-- RECOMMENDATION HERO: the answer first, above the fold -->
   <section class="rec">
     <div class="conf {{CONFIDENCE_CLASS}}"><span class="pip"></span>Confianza: {{CONFIDENCE}}</div>
     <h1 class="q">{{QUESTION}}</h1>
@@ -260,7 +260,7 @@ html[data-theme="dark"] {
     <p class="why">{{REC_WHY}}</p>
   </section>
 
-  <!-- DECISION MATRIX — options × weighted criteria.
+  <!-- DECISION MATRIX: options × weighted criteria.
        UNIT: MROW (add class="win" to the recommended row):
        <tr class="win"><td class="opt">Monitor A</td>
          <td><span class="cell"><i><b style="width:80%;background:var(--good)"></b></i>8</span></td>
@@ -283,7 +283,7 @@ html[data-theme="dark"] {
     <div class="opts">{{OPTION_CARDS}}</div>
   </section>
 
-  <!-- CRITERIA & weights — transparency on how the score was built -->
+  <!-- CRITERIA & weights: transparency on how the score was built -->
   <section class="block">
     <div class="head"><span class="n">03</span><span class="t">Criterios y pesos</span><span class="rule"></span></div>
     <table class="tbl">

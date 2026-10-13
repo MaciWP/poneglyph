@@ -1,7 +1,7 @@
 # Workboard
 
-Native Claude Code mod: a compact work/quality band above the prompt and one pane for
-completed work, decisions, active tasks, agents and the latest ROBIN summary. No external
+Native Claude Code mod: one pane for completed work, active tasks, quality, changed files,
+agents and the latest ROBIN summary. Nothing of it draws outside the pane. No external
 web UI or extra service. Agentic OS is an optional local bridge for related repositories
 and sessions; the mod works with local Git while that bridge is offline.
 
@@ -19,23 +19,27 @@ claude --plugin-dir /absolute/path/to/poneglyph/plugins/workboard
 This is an activation command for the user, not a verification probe to run automatically.
 For every session, Poneglyph's root `.claude-plugin/marketplace.json` lists the mod; enable
 `workboard@poneglyph` in the machine overlay and run `sync-poneglyph`. Claude reads it from
-this folder, so edits apply to new sessions without a version bump. `/workboard` toggles the pane. Claude
-places it on the right in a sufficiently wide fullscreen terminal; narrow terminals may
-place it above the prompt or leave it unplaced. The band and pane use native buttons and
-inputs: a click presses them in the fullscreen terminal; by keyboard, focus with Claude's
-`ctrl+x tab`, move with Tab, activate with Enter, leave with Esc. In the band, `p` opens or
-closes the pane («Cerrar panel» while it is open) and `a` refreshes; a refresh ends with a toast
-that says whether it worked.
-Opening/updating the pane does not request keyboard focus.
+this folder, so edits apply to new sessions without a version bump. `/workboard` is the only
+entry: it closes a pane that is shown and placed, and otherwise opens it, so one call is enough
+when a narrow terminal left the pane unplaced. Claude places it on the right in a sufficiently
+wide fullscreen terminal; a terminal too narrow for it shows nothing of Workboard until the
+window grows. The pane uses native buttons: a click presses them in the fullscreen terminal; by
+keyboard, focus with Claude's `ctrl+x tab`, move with Tab, activate with Enter, leave with Esc.
+**Actualizar** in the header (`a`) refreshes Git, GitHub and coverage and ends with a toast that
+says whether it worked. Opening/updating the pane does not request keyboard focus.
 
-The band displays at most two repositories until expanded. A file's **Ver cambio** button
-shows its current text/diff inside the same pane; **Volver al trabajo** restores the board.
+The pane uses the room it gets. Docked beside the transcript it runs floor to ceiling: ROBIN, the
+plan and the changes wrap instead of truncating, every open feature shows its subtasks and the
+footer sits at the bottom. Details stay on one line everywhere: the turn's facts, quality values,
+an agent's last message and the last 4 communications. Inline above the prompt
+it asks for up to 40 rows and the frame fits the content. Below 36 columns each card's right
+label and each row's state drop under their text.
+
+The **Cambios** card lists every repository: branch, change count, GitHub, CI and coverage, the
+errors that hide data, and the PR link. **Ficheros (N) +** unfolds each repository's CI checks,
+its first 100 files with their attribution and coverage, and its coverage button. A file's
+**Ver cambio** button shows its current text/diff inside the same pane; **Volver al trabajo** restores the board.
 The detail is capped at 9000 characters and labels truncation. It never edits files.
-
-`ccstatusline.minimal.json` is an optional two-line preset derived from Poneglyph's current
-configuration: model/effort/context and account limits. Keep the existing statusline until
-the board is visible in your terminal, then select this preset in your ccstatusline setup.
-The mod does not silently replace the global statusline or remove its fallback.
 
 ## Repository configuration
 
@@ -60,7 +64,7 @@ that path (default `coverage.xml`, Cobertura) and the command is `.venv/bin/pyte
 repository has one, else `pytest`. An explicit configuration always wins; other tools need it.
 Cobertura filenames relative to a `<source>` directory inside the repository are resolved
 against it. Changed files of a kind the report never measures (`.json` beside `.py`) do not
-count as missing; the band then shows the percentage of what was measured and how many changed
+count as missing; the Cambios card then shows the percentage of what was measured and how many changed
 files the report misses.
 
 A coverage command is an argv array, spawned without a shell. No tests run during polling.
@@ -94,61 +98,80 @@ matches, and the repository fingerprint is unchanged from start through observat
 during/after testing, an old report, a failed command, partial instrumentation and a missing
 report are distinct states. Completion of an AI task never turns checks green.
 
-## Plans, decisions and ROBIN
+## Plans and ROBIN
 
 The `mcp__workboard__progress` tool publishes explicit tasks (`id`, `title`, `state`, optional
-`dependsOn` and `parent`) and decisions (`id`, `question`, `options`, `blocking`, optional
-`context`, `recommended`). A task with `parent` is a subtask of that feature, one level deep;
-the instruction asks for 2–6 features with 2–6 checkable subtasks each. An option is a label or
-`{label, detail}`; `recommended` is the advised option's index and shows as `★`. The id `chat`
-is reserved. Tasks merge by id: an update sends only the tasks that change, and an existing task needs only
-`{id, state}`; a new one needs `title` and `state`. `replace: true` starts a new plan. The
-instruction asks to publish the plan before work starts, update it when a feature closes or
-something blocks or fails, and close it at the end, so the chat carries few, short calls. The tool does not infer a plan from chat or invent task progress. File attribution is labelled as initially present,
+`dependsOn` and `parent`). A task with `parent` is a subtask of that feature, one level deep;
+the instruction asks for 2–6 features with 2–6 checkable subtasks each. Tasks merge by id: an
+update sends only the tasks that change, and an existing task needs only `{id, state}`; a new
+one needs `title` and `state`. `replace: true` starts a new plan. The instruction asks to
+publish the plan before work starts, update it when a feature closes or something blocks or
+fails, and close it at the end, so the chat carries few, short calls. The tool does not infer
+a plan from chat or invent task progress. File attribution is labelled as initially present,
 observed through editing tools, or unknown; shell edits are not attributed to the model.
-The tool answers with JSON text (core rejects a plain object from a mod tool's hook): `accepted`
-and the decisions still open (`pending`, `queued`, `failed`) with their id, state and revision.
+The tool answers with JSON text (core rejects a plain object from a mod tool's hook):
+`{"accepted":true}`.
+
+Questions to the user are not the board's job: they go through Claude Code's native
+`AskUserQuestion` dialog. An update that still carries `decisions` (the field of an older
+build) is refused with a message that says so. A session state saved by that build loads
+without its decisions, and Agentic OS receives an empty `decisions` list.
 
 While the mod is loaded, a `tool.describe` hook keeps this one tool's schema in the prompt
 instead of behind ToolSearch, and a `prompt.submit` line asks the model to publish its task
-list before the first other tool call when the task edits files or needs more than two tool
-calls. Without the mod neither exists, and both texts are fixed, so the prompt cache holds.
+list once it knows the steps of work that edits files in several steps; questions, reads,
+reviews and one-file edits get none. Without the mod neither exists, and both texts are fixed, so the prompt cache holds.
 Measured on 2.1.292 with the same build task: Sonnet published the plan unprompted and closed
 it at the end; Haiku received the same line and skipped it. Both publish when asked. A
 read-only summary usually gets no plan, which matches the instruction.
 
-When a turn ends with the house style's `Espera tu decisión:` block, that question becomes the
-`chat` decision with a free-text answer that goes through the same queue; the next turn without
-the block cancels it. `AskUserQuestion` stays a native dialog. The last `Aviso:` line and the
-turn's duration, edits and commands show under ROBIN.
-
-Decision revisions reject obsolete responses and duplicate clicks. A button/free-text answer
-is saved as queued. While a turn is active, independent work continues; delivery starts after
-completion. A host-accepted next prompt counts as delivered, **not proof the model understood
-or acted on it**. After an interrupted delivery/reload, inspect the chat before manually
-retrying. Blocking decisions instruct the model to stop dependent work; this is a workflow
-contract, not a new permission/security boundary. Native tool/agent/Git approvals stay native.
-
+The last `Aviso:` line and the turn's duration, edits and commands show under ROBIN.
 Only the final standalone `ROBIN:` line is relocated, and only while its replacement pane is
 shown and placed. Quotes, fences and older summaries remain in the chat. Stored transcripts
 and `turn.complete` text remain unchanged. Closing the pane, viewing a diff or insufficient
 placement keeps ROBIN in the chat. The pane shows the latest summary separately from observed
 failures. Native render exceptions fall back to normal rendering.
 
+## Quality
+
+The Quality card shows only signals with data: the PR's review state when there is a PR (or a
+real GitHub error), CI when the PR has checks, coverage when it is configured and has a report
+or a run. «Sin PR» and «sin remoto» stay in the Cambios card. Local rows are the last three commands
+that ran a test, type or lint tool (`bun test`, `npm run lint`, `.venv/bin/pytest`), never a
+word inside another command (`grep test`, `git diff --check`, the shell's `test`); each says
+«pasó», «falló», «denegado» or «en segundo plano» from the tool's own result. The shell runs
+without pipefail, so when a pipe, `||`, `;` or `&` follows the check (`bun test | tail`)
+another command decides the exit status and the row says «sin veredicto». A card with
+nothing to show takes no screen: no quality data hides Quality, and Agents hides while all
+four of its sections are empty.
+
 ## One pane per terminal
 
-ROBIN, Plan, Quality, Decisions and the history show only this session's data, even when
+ROBIN, Plan, Quality and the history show only this session's data, even when
 Agentic OS knows other sessions in the same repository. The Agents card is the only view
-outward, and it lists only sessions linked to this one:
+outward, and it lists only sessions linked to this one, by rank, one colour per section:
 
-| Section | Source |
-|---|---|
-| A su cargo | `$.agent.list()` (subagents and teammates) and Agentic OS consultations this terminal created |
-| Conversa con | Native `session.send` / `session.receive` and Agentic OS messages from or to this terminal |
-| Últimas comunicaciones | The four latest messages, replies, agent launches and consultations; under 60 s reads «nuevo» |
+| Section | Colour | Source |
+|---|---|---|
+| Subagentes | purple | `$.agent.list()` rows without `teammateId`, and the prompt router's latest run |
+| Coworkers | teal | Native `session.send` / `session.receive` and Agentic OS messages that carry no rank |
+| Orquestador | pink | Senders whose message came with origin `coordinator` (or a `projects-relay` prompt) |
+| Subordinados | orange | Teammates this session leads and Agentic OS consultations this terminal created |
+| Últimas comunicaciones | none | The four latest messages, replies, agent launches and consultations; under 60 s reads «nuevo» |
 
-The header names the mode: «Trabaja sola», «Dirige N», «De tú a tú · nombre» or «En grupo ·
-N sesiones» (two or more partners, or one partner that also messages another of them).
+A teammate's messages keep it under Subordinados, never under Coworkers. The prompt router is
+a `claude -p` that a Poneglyph hook starts, so no agent list names it: `scripts/workboard.mjs`
+reads this session's latest line in `<repo>/.claude/learned/prompt-router.log` (session id
+prefix, `host=claude`). Its row shows the proposed skills and reads «seguida» once a proposed
+skill loads through the Skill tool after the run started, else «no seguida»; it leaves after
+30 minutes. Known limit: when this session gives orders to another session that is not its
+teammate, neither Claude Code nor Agentic OS marks the message as an order, so that session
+shows under Coworkers.
+
+The header names the mode: «Trabaja sola», «Dirige N», «De tú a tú · nombre», «En grupo ·
+N sesiones» (two or more partners, or one partner that also messages another of them) or
+«A las órdenes de nombre» when someone directs this session; «Sin otras sesiones · router» when
+the router's row is all there is.
 `session.receive` takes the sender from a team mailbox or from the `from-name` of the
 cross-session envelope; without either it shows as «otra sesión». A partner reached through
 both Agentic OS and native messages counts once: `scripts/workboard.mjs` maps native names to
@@ -172,7 +195,8 @@ outside an Agentic OS terminal sees only its native links. At most 50 events sta
 
 ## Agentic OS bridge
 
-Agentic OS exposes `/api/workboard/context`, `/session`, `/response` and `/ack`; the Agents
+Agentic OS exposes `/api/workboard/context` and `/session` (its `/response` and `/ack` routes
+served the removed decisions and go unused); the Agents
 card also reads the existing `GET /api/coordination` and `GET /api/terminals`. Its existing
 local Host/Origin guard and local-desktop restriction apply. `AOS_URL` must be a loopback
 HTTP origin. `AOS_AGENT_ID` identifies an existing running managed agent terminal; it is local
@@ -183,8 +207,8 @@ Repository discovery uses configured checkouts/worktrees, environment checkouts 
 sessions. A session started in a ticket environment folder, which holds one checkout per
 repository but is not a repository itself, uses those checkouts (one level, at most twenty). Ticket matching is exact (`ABC-12` never matches `ABC-123`). Only related changed
 repositories are displayed, or the current checkout when none has changes. No entire-disk scan.
-The mod still publishes its session for the Agentic OS web app, but its pane no longer draws
-other sessions' plans, decisions or terminals. This package supplies **only a Claude native
+The mod publishes its session for the Agentic OS web app, but its pane does not draw
+other sessions' plans or terminals. This package supplies **only a Claude native
 UI**.
 
 Data refreshes every fifteen seconds; GitHub reads are cached for sixty seconds and repository
@@ -206,7 +230,7 @@ bun test plugins/workboard/tests/*.spec.ts
 `*.test.ts` uses Claude's deterministic engine kit; `*.spec.ts` uses Bun and temporary Git
 repositories. Engine tests validate native trees, hooks, controls and delivery with stubbed
 host/provider operations. They do not launch a model or prove Ink painting in a real TTY.
-Agentic OS tests include real loopback HTTP requests and persisted response/ack round trips.
+Agentic OS tests include real loopback HTTP requests.
 
 Run state/leases are in `~/.claude/workboard/runs/`; generated terminal scripts are in
 `launches/`. A crash can leave a lease. Inspect its recorded PID/terminal and confirm the

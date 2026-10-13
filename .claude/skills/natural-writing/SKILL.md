@@ -1,16 +1,17 @@
 ---
 name: natural-writing
-description: |
-  Quita las señales de texto generado por IA (español e inglés) de prosa para otros o pegada, sin cambiar lo que dice.
-  Úsala cuando: un texto suena a IA o una skill de redacción pide el repaso final.
-metadata:
-  keywords: suena a ia, humaniza, humanizar, que no parezca chatgpt, parece escrito por una ia, texto natural, ai tells, humanize
+description: >-
+  Escribe o pule prosa para otras personas para que suene natural, sin cambiar lo que
+  dice: quita las señales de texto generado por IA en español o inglés. Aplica junto a
+  la skill que produce el texto siempre que lo vaya a leer alguien (comentarios de PR,
+  un commit, un documento, un ticket, un mensaje) y cuando el usuario pide ajustar el
+  tono, la longitud o el estilo de un texto. Úsala para "esto suena a IA", "hazlo más
+  natural", "que no parezca ChatGPT", "escríbelo como lo diría yo", "redacta la
+  respuesta al compañero". No es para código ni notas internas.
 disable-model-invocation: false
-when_to_use: |
-  "esto suena a IA", "humaniza este texto", "que no parezca ChatGPT", "hazlo más natural", "make this sound human"
 ---
 
-# natural-writing — remove AI tells from prose
+# natural-writing: remove AI tells from prose
 
 A model writes the most likely continuation, so by default it makes the choice
 that fits the widest range of readers. A human writes for one reader and one
@@ -41,7 +42,7 @@ level is stated in `references/tells-es.md`.
 
 ## When NOT to use
 
-- Chat replies to the user: the output style (`poneglyph.md` §1 Truth kill list, §3 Voice) already governs them.
+- Chat replies to the user: the output style (`poneglyph.md` §3 Voice) already governs them.
 - UI that "looks AI-made": `ui-design`.
 - Code, identifiers, commands, config, data, logs: never edit them.
 - Fiction where invented detail is the task: the no-invention rule does not apply; ask what the user wants.

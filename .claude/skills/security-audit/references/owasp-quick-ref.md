@@ -29,7 +29,7 @@ Detailed vulnerability descriptions with detection methods and before/after exam
 ENDPOINT GET /api/users/{id}:
     user = database.findUserById(id)
     RETURN user
-    // Anyone can access any user's data — no auth check
+    // Anyone can access any user's data: no auth check
 ```
 
 **AFTER** (secure):
@@ -54,16 +54,16 @@ ENDPOINT GET /api/users/{id}:
 
 **BEFORE** (vulnerable):
 ```pseudocode
-// Weak hashing — MD5 is trivially reversible
+// Weak hashing. MD5 is trivially reversible
 hash = MD5(password)
 
-// Hardcoded secret — exposed in version control
+// Hardcoded secret: exposed in version control
 JWT_SECRET = "my-secret-key"
 ```
 
 **AFTER** (secure):
 ```pseudocode
-// Strong hashing — use argon2id or bcrypt with cost >= 10
+// Strong hashing: use argon2id or bcrypt with cost >= 10
 hash = hashPassword(password, algorithm="argon2id")
 
 // Secret from environment variable
@@ -83,27 +83,27 @@ IF JWT_SECRET IS EMPTY OR length(JWT_SECRET) < 32:
 
 **BEFORE** (vulnerable):
 ```pseudocode
-// SQL injection — user input interpolated into query
+// SQL injection: user input interpolated into query
 database.query("SELECT * FROM users WHERE id = '" + userId + "'")
 
-// Command injection — unsanitized input passed to shell
+// Command injection: unsanitized input passed to shell
 shell.exec("git clone " + userUrl)
 
-// Code injection — arbitrary code execution
+// Code injection: arbitrary code execution
 evaluate(userProvidedCode)
 ```
 
 **AFTER** (secure):
 ```pseudocode
-// Parameterized query — input treated as data, not SQL
+// Parameterized query: input treated as data, not SQL
 database.query("SELECT * FROM users WHERE id = ?", [userId])
 
-// Validated command — allowlist pattern
+// Validated command: allowlist pattern
 IF userUrl DOES NOT MATCH pattern "^https://github.com/[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+.git$":
     THROW Error("Invalid repository URL")
 safeClone(userUrl)
 
-// Never evaluate user input — use safe alternatives like JSON parsing
+// Never evaluate user input; use safe alternatives like JSON parsing
 result = parseJSON(userProvidedJson)
 ```
 
@@ -121,7 +121,7 @@ result = parseJSON(userProvidedJson)
 ENDPOINT POST /api/login:
     user = authenticate(body.email, body.password)
     RETURN { token: generateToken(user) }
-    // No rate limiting — attacker can brute force passwords
+    // No rate limiting: attacker can brute force passwords
 ```
 
 **AFTER** (secure):
@@ -154,16 +154,16 @@ ENDPOINT POST /api/login:
 
 **BEFORE** (vulnerable):
 ```pseudocode
-// Open CORS — any origin can make requests
+// Open CORS: any origin can make requests
 setCORS(origin="*")
 
-// No security headers — browser protections disabled
+// No security headers: browser protections disabled
 server.start(port=3000)
 ```
 
 **AFTER** (secure):
 ```pseudocode
-// Restricted CORS — only trusted origins
+// Restricted CORS: only trusted origins
 setCORS(
     origin=["https://myapp.com"],
     credentials=true,
@@ -209,7 +209,7 @@ packageManager install --frozen-lockfile
 
 **BEFORE** (vulnerable):
 ```pseudocode
-// Predictable session — user ID as token
+// Predictable session: user ID as token
 setCookie("session", toString(userId))
 
 // Weak password requirements
@@ -248,7 +248,7 @@ FUNCTION validatePassword(password):
 
 **BEFORE** (vulnerable):
 ```pseudocode
-// No JWT verification — just decode and trust
+// No JWT verification: just decode and trust
 payload = base64Decode(token.split(".")[1])
 
 // Trusting client-submitted total
@@ -276,7 +276,7 @@ order.total = calculateTotal(order.items)  // Never trust client-computed values
 
 **BEFORE** (vulnerable):
 ```pseudocode
-// Sensitive data in logs — password and token exposed
+// Sensitive data in logs: password and token exposed
 log("Login attempt:", { email, password, token })
 
 // No audit trail
@@ -285,7 +285,7 @@ createUser(userData)
 
 **AFTER** (secure):
 ```pseudocode
-// Safe logging — only non-sensitive fields
+// Safe logging: only non-sensitive fields
 logger.info("Login attempt", {
     email: email,
     success: false,
@@ -313,7 +313,7 @@ logger.audit("user.created", {
 
 **BEFORE** (vulnerable):
 ```pseudocode
-// User-controlled URL — can target internal services
+// User-controlled URL: can target internal services
 data = httpGet(userProvidedUrl)
 
 ENDPOINT GET /proxy:

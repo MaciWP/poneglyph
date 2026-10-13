@@ -8,21 +8,21 @@ description: Phase-specific question banks for the poneglyph 5-phase workflow. L
 
 ## Contents
 
-- [Phase 1 — Scope (flow scope)](#phase-1--scope-flow-scope)
-- [Phase 2 — Plan (flow plan)](#phase-2--plan-flow-plan)
-- [Phase 2.5 — TDD design (flow test-plan)](#phase-25--tdd-design-flow-test-plan)
-- [Phase 3 — Build (flow build, intra-HU)](#phase-3--build-flow-build-intra-hu)
-- [Phase 4 — Review (flow review)](#phase-4--review-flow-review)
-- [Phase 5 — Retro (flow retro)](#phase-5--retro-flow-retro)
+- [Phase 1: Scope (flow scope)](#phase-1-scope-flow-scope)
+- [Phase 2: Plan (flow plan)](#phase-2-plan-flow-plan)
+- [Phase 2.5: TDD design (flow test-plan)](#phase-25-tdd-design-flow-test-plan)
+- [Phase 3: Build (flow build, intra-HU)](#phase-3-build-flow-build-intra-hu)
+- [Phase 4: Review (flow review)](#phase-4-review-flow-review)
+- [Phase 5: Retro (flow retro)](#phase-5-retro-flow-retro)
 - [Loading rule for drillme-clarify](#loading-rule-for-drillme)
 - [Phase auto-detection priority](#phase-auto-detection-priority)
 - [When phase questions don't fit the actual context](#when-phase-questions-dont-fit-the-actual-context)
 
-When drillme-clarify detects an active 5-phase workflow context (see SKILL.md §The recipe — Step 1), it loads the relevant phase bank **in addition to** the canonical 4 categories. Phase questions are tagged `[phase-N]` in the output so the user sees their origin.
+When drillme-clarify detects an active 5-phase workflow context (see SKILL.md §The recipe, Step 1), it loads the relevant phase bank **in addition to** the canonical 4 categories. Phase questions are tagged `[phase-N]` in the output so the user sees their origin.
 
-These question banks are the **canonical source**. The `flow` skill's phase references (`skills/flow/references/01-scope.md` … `06-retro.md`) cite them — they do NOT duplicate the content.
+These question banks are the **canonical source**. The `flow` skill's phase references (`skills/flow/references/01-scope.md` … `06-retro.md`) cite them, they do NOT duplicate the content.
 
-## Phase 1 — Scope (flow scope)
+## Phase 1: Scope (flow scope)
 
 Closing the spec.md before hard gate 1->2.
 
@@ -32,15 +32,21 @@ Closing the spec.md before hard gate 1->2.
 |---|---|---|
 | 1 | **Root problem?** What is the root cause, not the symptom? Apply 5-whys if needed. | `[approach]` |
 | 2 | **What if we don't?** Severity test: what happens if we skip this work entirely? | `[failure]` |
-| 3 | **Who suffers today?** Implicit stakeholders — who feels the problem now? | `[context]` |
+| 3 | **Who suffers today?** Implicit stakeholders, who feels the problem now? | `[context]` |
 | 4 | **MVP outcome?** What's the minimum viable result that resolves the core pain? | `[approach]` |
 | 5 | **Out of scope?** Close doors explicitly. What is NOT included? | `[location]` |
+
+Ask when relevant (conditional, beyond the 5):
+
+- **Constraints?** Technical or temporal limits to respect: time, stack, compatibility, freeze. `[context]`
+- **Discarded alternatives?** What was already ruled out and why; avoids reinvention. `[approach]`
+- **Success measure?** How will success be measured in 2 weeks; forces measurable outcomes. `[approach]`
 
 ### Closing rule
 
 If any of the 5 returns "no sé / not sure" without follow-up reason → **do not close Phase 1**. Iterate until concrete answer or marked `[OPEN]` in spec.md with explicit reason.
 
-## Phase 2 — Plan (flow plan)
+## Phase 2: Plan (flow plan)
 
 Closing tasks/ before hard gate 2->3.
 
@@ -59,7 +65,7 @@ Closing tasks/ before hard gate 2->3.
 
 If "I don't know" or evasive on any of the 6 → iterate plan; do NOT close. Question 6 closes the `[location]` coverage gap detected in US3 (3/4 → 4/4).
 
-## Phase 2.5 — TDD design (flow test-plan)
+## Phase 2.5: TDD design (flow test-plan)
 
 Closing tests.md or validations.md.
 
@@ -76,7 +82,7 @@ Closing tests.md or validations.md.
 
 If >30% HUs are "untestable" → the Phase 2 decomposition is wrong; reopen Phase 2 (smell signal).
 
-## Phase 3 — Build (flow build, intra-HU)
+## Phase 3: Build (flow build, intra-HU)
 
 Before marking a single HU as completed.
 
@@ -94,7 +100,7 @@ Before marking a single HU as completed.
 
 Tests must pass before marking the HU completed. Drillme is in addition to, not instead of, test passing.
 
-## Phase 4 — Review (flow review)
+## Phase 4: Review (flow review)
 
 Before producing the verdict in review.md.
 
@@ -112,7 +118,7 @@ Before producing the verdict in review.md.
 
 If E2E happy path fails (question 2) → verdict cannot be APPROVED. Drillme failure here is a blocking signal, not just guidance.
 
-## Phase 5 — Retro (flow retro)
+## Phase 5: Retro (flow retro)
 
 Before closing the feature.
 
@@ -128,7 +134,7 @@ Before closing the feature.
 
 ### Closing rule
 
-If question 5 surfaces a Commandment violation → MUST be reported in retro.md "Commandments check" section (Commandment III — radical honesty, no softening). The feature can still close, but the violation is documented for future sessions.
+If question 5 surfaces a Commandment violation → MUST be reported in retro.md "Commandments check" section (Commandment III, radical honesty, no softening). The feature can still close, but the violation is documented for future sessions.
 
 ## Loading rule for drillme-clarify
 
@@ -163,4 +169,4 @@ Don't force phase questions where they don't apply. Honesty > coverage.
 
 ## Phase banks are a floor, not a ceiling
 
-These banks are the **minimum** sweep per phase, not the maximum. Under the exhaustive model (SKILL.md), drillme-clarify also sweeps the lateral / improvement categories from `01-catalog-socratic.md` (partial failures, retries, security surface, migration, observability, cost…) whenever a gap there would change the decision. The phase bank identifies phase-critical topics to examine; the lateral sweep catches the gaps the requester didn't mention. Both are gap-gated — no padding.
+These banks are the **minimum** sweep per phase, not the maximum. Under the exhaustive model (SKILL.md), drillme-clarify also sweeps the lateral / improvement categories from `01-catalog-socratic.md` (partial failures, retries, security surface, migration, observability, cost…) whenever a gap there would change the decision. The phase bank identifies phase-critical topics to examine; the lateral sweep catches the gaps the requester didn't mention. Both are gap-gated: no padding.

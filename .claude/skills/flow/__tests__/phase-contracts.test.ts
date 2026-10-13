@@ -2,8 +2,8 @@ import { describe, expect, it } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-// Quality review 2026-09-10, findings H19, H30 and H53. Three contradictions between the
-// /flow-lifecycle phase references (one skill `flow` since 2026-09-17). Each one is a pair of rules that a single real case cannot satisfy,
+// Three contradictions between the
+// /flow-lifecycle phase references (one skill `flow`). Each one is a pair of rules that a single real case cannot satisfy,
 // so each is locked here as a text invariant on the doctrine files themselves.
 const root = resolve(import.meta.dir, "..", "..", "..", "..");
 const claude = join(root, ".claude");
@@ -18,10 +18,10 @@ const tddDesign = read("skills", "flow", "references", "03-test-plan.md");
 const testPolicy = read("rules", "test-policy.md");
 const bank = read("skills", "drillme-clarify", "references", "03-phase-questions.md");
 
-// H19. scope forbade naming any technology in spec.md; flow-plan reopened Phase 1 whenever
+// scope forbade naming any technology in spec.md; flow-plan reopened Phase 1 whenever
 // a library was not already in spec.md Constraints. A new library satisfied neither rule:
 // it could not be recorded in Phase 1 and it could not be introduced in Phase 2.
-describe("a new library can satisfy scope and flow-plan at once (H19)", () => {
+describe("a new library can satisfy scope and flow-plan at once", () => {
   it("finds the scope rule about technology in spec.md", () => {
     expect(scope).toContain("No technology in spec.md");
   });
@@ -49,20 +49,20 @@ describe("a new library can satisfy scope and flow-plan at once (H19)", () => {
   });
 });
 
-// H30. `03-phase-questions.md` declares itself the canonical bank and forbids phase skills
+// `03-phase-questions.md` declares itself the canonical bank and forbids phase skills
 // from duplicating it. Three of them copied it anyway and drifted: flow-plan announced 5
 // questions and listed 6, flow-test-plan copied 3 of 4.
 // The phase skills now cite the same bank, including retro and its location category.
-describe("phase skills cite the canonical drillme-clarify bank instead of copying it (H30)", () => {
+describe("phase skills cite the canonical drillme-clarify bank instead of copying it", () => {
   function phase(heading: string): { titles: string[]; tags: string[] } {
     const section = bank.split(`## ${heading}`)[1]?.split("\n## ")[0] ?? "";
     const rows = [...section.matchAll(/^\|\s*\d+\s*\|\s*\*\*([^*]+)\*\*[^|]*\|\s*`(\[[a-z]+\])`\s*\|/gm)];
     return { titles: rows.map((m) => m[1].trim()), tags: rows.map((m) => m[2]) };
   }
 
-  const p1 = phase("Phase 1 — Scope (flow scope)");
-  const p2 = phase("Phase 2 — Plan (flow plan)");
-  const p25 = phase("Phase 2.5 — TDD design (flow test-plan)");
+  const p1 = phase("Phase 1: Scope (flow scope)");
+  const p2 = phase("Phase 2: Plan (flow plan)");
+  const p25 = phase("Phase 2.5: TDD design (flow test-plan)");
 
   it("parses the canonical bank", () => {
     expect(p1.titles).toHaveLength(5);
@@ -103,7 +103,7 @@ describe("phase skills cite the canonical drillme-clarify bank instead of copyin
     expect(wrong).toEqual([]);
   });
 
-  // The 2026-09-17 merge removed scope's inline copy of the Phase 1 questions: the bank is
+  // The merge removed scope's inline copy of the Phase 1 questions: the bank is
   // the only source, so scope must cite it and re-list nothing (same rule as the others).
   it("scope cites the canonical file and does not re-list the Phase 1 questions", () => {
     expect(scope).toMatch(CITATION);
@@ -111,10 +111,10 @@ describe("phase skills cite the canonical drillme-clarify bank instead of copyin
   });
 });
 
-// H53. test-policy.md called itself the single source of the project's test policy while
+// test-policy.md called itself the single source of the project's test policy while
 // flow-test-plan added a /flow-lifecycle default (`tdd: forced` for behaviour-changing HUs, auxiliary
 // code included). Two files decided the effective policy and only one admitted it.
-describe("the flow test-policy escalation has one owner (H53)", () => {
+describe("the flow test-policy escalation has one owner", () => {
   const ESCALATION = /tdd:\s*forced/;
   const flowLines = (text: string) =>
     text.split("\n").filter((l) => /\bflow\b/i.test(l)).join(" ");

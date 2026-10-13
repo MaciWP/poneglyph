@@ -8,13 +8,13 @@ The capability `html-report`'s generation path does not have: **review** a rende
 - Self-check after generating a report, before sharing.
 - Auditing an external/legacy page for AI-slop tells.
 
-## How (markdown-mode — no JS by default, Cmd V)
+## How (markdown-mode: no JS by default, Cmd V)
 
 The model performs the critique guided by the references; no framework required.
 
 1. **Load the corpus**: `taste-hard-rules.md` (measurable rules) + `anti-slop.md` (bans/tells) + `pre-flight-checklist.md` (the gate).
 2. **Inspect** the target across dimensions: typography · color+contrast · spacing+layout · depth · motion · accessibility · anti-slop.
-3. **Emit findings** — each: `dimension · rule violated · severity · location · fix`.
+3. **Emit findings**: each: `dimension · rule violated · severity · location · fix`.
 4. **Run the pre-flight checklist** → pass/fail per item.
 5. **Verdict**: `CLEAN` (no MAJOR+), `WARN` (MINOR/NIT only), `FAIL` (≥1 BLOCKER/MAJOR).
 
@@ -30,13 +30,13 @@ The model performs the critique guided by the references; no framework required.
 ## Output format
 
 ```
-## Critique — <target>
+## Critique: <target>
 | Dimension | Rule | Severity | Location | Fix |
 |---|---|---|---|---|
 | color | WCAG 4.5:1 body | BLOCKER | .lead grey on teal | darker shade of bg hue |
 ...
 Pre-flight: 18/22 pass (4 fail: contrast×2, centered long-form, missing reduced-motion)
-Verdict: FAIL — 1 BLOCKER, 2 MAJOR
+Verdict: FAIL, 1 BLOCKER, 2 MAJOR
 ```
 
 ## Deterministic contrast
@@ -44,4 +44,4 @@ Verdict: FAIL — 1 BLOCKER, 2 MAJOR
 Measure contrast ratios with `contrast(fg, bg)` from `scripts/tokens.ts` (WCAG 2.x, covered by `tokens.test.ts`); do not estimate them. A ratio you could not measure is reported as an estimate.
 
 ## Source
-Pattern from impeccable (deterministic + LLM critique layering) + critic skill (severity vocabulary). Provenance: `.claude/plans/_research-skill-evolution-2026-05-29.md` Part B.
+Pattern from impeccable (deterministic + LLM critique layering).

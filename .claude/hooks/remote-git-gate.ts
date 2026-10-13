@@ -1,16 +1,16 @@
 #!/usr/bin/env bun
 
-// PreToolUse (Bash|PowerShell|Monitor) — remote git actions run only when Oriol asked for them
+// PreToolUse (Bash|PowerShell|Monitor), remote git actions run only when Oriol asked for them
 // this turn. Contract and logic: ./lib/remote-git.ts.
 //
 // This entrypoint has no static imports on purpose. A hook that exits with any code other than
 // 0 or 2, or that times out, does not block the call (code.claude.com/docs/en/hooks), and a
 // failed static import exits 1 before any code runs (a partial sync that ships this file without
-// its library). So stdin is read first, the logic is imported lazily, and every failure path —
-// import error, throw, unhandled rejection or the internal deadline — blocks with exit 2 when the
+// its library). So stdin is read first, the logic is imported lazily, and every failure path
+// (import error, throw, unhandled rejection or the internal deadline) blocks with exit 2 when the
 // payload looks remote. The deadline sits below the hook's 15 s timeout in settings.global.json.
 const REMOTE_HINT = /\bpush\b|\bgh(?:\.exe)?\b[\s\S]*\bpr\b/i;
-const FAILURE_REASON = "The remote-git gate could not judge this command, so it blocks anything that looks like a push or a gh pr call. Do not retry it in another form; tell Oriol the gate failed and let him run it himself.";
+const FAILURE_REASON = "The remote-git gate could not judge this command, so it blocks anything that looks like a push or a gh pr call. Do not retry it in another form; tell the user the gate failed and let them run it themselves.";
 const DEADLINE_MS = 10_000;
 
 let raw = "";

@@ -34,7 +34,7 @@ Common prompt errors and how to avoid them.
 
 | Error | Problem | Fix |
 |-------|----------|-----|
-| `claude-3-opus` | Stale model ID from memory | Verify the current ID against the host (`/model`, provider docs) — never hard-code one |
+| `claude-3-opus` | Stale model ID from memory | Verify the current ID against the host (`/model`, provider docs), never hard-code one |
 | `rm -rf` on Windows | Unix command | `Remove-Item -Recurse` |
 | `cat file.txt` | Unix command | `type file.txt` or Read tool |
 | Path with `/` | Unix separator | Use `\` on Windows |

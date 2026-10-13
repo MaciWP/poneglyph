@@ -1,10 +1,10 @@
 ---
 parent: flow
 name: review
-description: Phase 4 — validate end-to-end that the assembled HUs solve spec.md, produce review.md with findings and a supported verdict.
+description: Phase 4, validate end-to-end that the assembled HUs solve spec.md, produce review.md with findings and a supported verdict.
 ---
 
-# Phase 4 — Review
+# Phase 4: Review
 
 Validate **end-to-end** that the problem in `spec.md` was solved, not only that each HU's
 tests pass. Produce `review.md` with the 5-section checklist, findings with severity and a
@@ -25,14 +25,14 @@ review wastes effort.
 
 - Favor accurate coverage and consequential, evidence-backed findings. Zero findings is valid; never invent issues or approve missing checks.
 
-## Step 1 — Read inputs
+## Step 1: Read inputs
 
 `spec.md` (problem, ACs, out-of-scope), `tasks/index.md` and every `tasks/US{N}.md`,
 `tests.md` / `validations.md`, `state.json`, `review.template.md` (project templates, then
 global; both missing → `review-fallback.md`), `rules/test-policy.md`. Resolve the approved
 starting revision and inspect committed **and** working-tree changes against it.
 
-## Step 2 — Prerequisites
+## Step 2: Prerequisites
 
 | Check | If it fails |
 |---|---|
@@ -41,7 +41,7 @@ starting revision and inspect committed **and** working-tree changes against it.
 | `spec.md` still describes what was delivered | Continue; flag spec drift (Step 8) |
 | Diff is empty since approval | STOP; ask whether phase 3 ran |
 
-## Step 3 — Review level
+## Step 3: Review level
 
 | Level | When | Scope |
 |---|---|---|
@@ -52,16 +52,16 @@ starting revision and inspect committed **and** working-tree changes against it.
 Override with `--light` / `--standard` / `--full`. Declare `review_level` and its reason in
 the `review.md` frontmatter. Doc-only features skip Performance and Security.
 
-## Step 4 — Base checks (one parallel batch)
+## Step 4: Base checks (one parallel batch)
 
 Project tests, type check, lint, `git diff <approved-base> --stat`. Capture exit codes and
 output; each becomes a row in Correctness or Quality. Claude Code's native `/code-review`
 complements this batch when the user runs it; its findings enter like any other check, and
-after `/code-review --fix` the critic still reviews the resulting diff before the verdict.
+after `/code-review --fix` the inline review still covers the resulting diff before the verdict.
 It never replaces Step 7. `/ultrareview` is a billed cloud review: user-triggered only, the
 Lead never launches it.
 
-## Step 5 — Five-section checklist (findings cite `file:line`)
+## Step 5: Five-section checklist (findings cite `file:line`)
 
 **Correctness.** Each `spec.md` AC → responsible HU, executed check, observed result in
 `review.md`; a closed HU or a code location alone proves nothing. Happy path end-to-end:
@@ -81,53 +81,53 @@ async work batched; large buffers stream.
 
 **Maintainability.** Comments only for a non-obvious "why". No TODO without an issue link.
 New abstractions justified by ≥2 callers. Naming consistent. **Lessons pass**:
-`Skill(lessons-learned)` — a violated lesson is a finding quoted with its rule; G6 forbids
+`Skill(lessons-learned)`: a violated lesson is a finding quoted with its rule; G6 forbids
 APPROVED while a merge gate is red.
 
-## Step 6 — Quality lenses (from `pr-review`)
+## Step 6: Quality lenses (from `pr-review`)
 
 Refactoring, SOLID/DRY, complexity → Read
-`../../pr-review/references/05-lens-maintainability.md` + `maintainability/`. Loops with I/O,
-async, memory, hot paths → `../../pr-review/references/06-lens-performance.md` + `performance/`.
+`../../pr-review/references/05-lens-maintainability.md`. Loops with I/O,
+async, memory, hot paths → `../../pr-review/references/06-lens-performance.md`.
 Both when both. The catalog
-is the checklist; this phase orchestrates it (AC8 KEEP, see `07-history.md`).
+is the checklist; this phase orchestrates it.
 
-## Step 7 — Independent review and conditional gates
+## Step 7: Independent review and conditional gates
 
-**ONE fresh-context reviewer** at standard/full on code. Evidence (018 W1 D1/D3, W2 D1):
+**ONE fresh-context reviewer** at standard/full on code. Evidence:
 deliberative panels are the weak form for code review; runnable checks plus one fresh
 reviewer is the strong form. Dispatch one read-only `general-purpose` agent (never `fork`:
 it inherits the author's context) with the **top-tier model set explicitly**, constrained to
 correctness and requirements only: trace each AC to the diff, verify the happy path, flag
 gaps. Style, performance and maintainability stay in Steps 5-6. Merge its findings with
-attribution; on a correctness conflict the reviewer wins, on style the critic wins,
-irreconcilable → the user. In an Orca team the reviewer is the approved review worker. If no
+attribution; on a correctness conflict the reviewer wins, on style the inline review wins,
+irreconcilable → the user. If no
 agent can run, review inline and declare residual author bias in `review.md`; never skip the
 independence concern silently. Panels (≥4 perspectives) belong to decision review via
 `compare-and-decide`, never to code.
 
 `security-audit`: mandatory when the diff touches `auth/`, `payments/`, `secrets/`,
 `credentials/`, `*.env*`, `crypto/`, `session/`, `cookie/`, JWT code.
-`troubleshooting`: when Step 4 fails (root cause, retry budget per `error-recovery.md`).
+`troubleshooting`: when Step 4 fails (root cause, retry budget per `agent-routing` references/07-error-recovery.md).
 
-## Step 8 — Spec drift (living-spec loop)
+## Step 8: Spec drift (living-spec loop)
 
 | Observation | `spec_drift` | Action |
 |---|---|---|
-| Delivered matches `spec.md` | `none` | — |
+| Delivered matches `spec.md` | `none` | none |
 | Divergence looks intentional and reasonable | `legitimate` | Propose a `spec.md` patch for the retro to ratify |
 | Scope creep or an AC skipped | `scope_creep` / `skipped_ac` | Verdict NEEDS_CHANGES; never auto-update the spec |
 | `spec.md` edited after approval | flag | Review against the latest approved version; note it |
 
 The retro decides the spec update. This phase classifies.
 
-## Step 9 — Drillme, phase 4
+## Step 9: Drillme, phase 4
 
 Sweep the Phase 4 bank of `../../drillme-clarify/references/03-phase-questions.md` (single
 source) and any new gap. If `drillme-clarify` does not fire, invoke
 `/drillme-clarify "Phase 4 review of <NNN-slug>"` before the verdict.
 
-## Step 10 — Write `review.md`
+## Step 10: Write `review.md`
 
 From `review.template.md`. Frontmatter: `spec`, `phase: 4`, `review_level`, `verdict`,
 `spec_drift`, `findings_count` (blocker / major / minor / nit), `fresh_reviewer_invoked`
@@ -136,7 +136,7 @@ From `review.template.md`. Frontmatter: `spec`, `phase: 4`, `review_level`, `ver
 findings, verdict, spec drift. Required outcomes without evidence are unmet;
 `coverageMet` includes them.
 
-## Step 11 — Verdict and report
+## Step 11: Verdict and report
 
 | Verdict | Condition, in order |
 |---|---|
@@ -171,7 +171,7 @@ Next: flow retro (approving verdict) | flow build US{N} (NEEDS_CHANGES) | STOP a
 - Suite green on the assembled branch before any APPROVED (Cmd IV).
 - Spec drift is classified, never absorbed (Cmd VII).
 - Research or evidence deliverables: numeric claims quote-anchored or marked
-  `[Probable]`/UNVERIFIED; sampled citations target claims not already refuter-verified.
+  `[Suposición]`/UNVERIFIED; sampled citations target claims not already refuter-verified.
   Method: `docs/research-rigor.md`.
 
 ## Anti-patterns

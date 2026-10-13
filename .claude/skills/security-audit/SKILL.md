@@ -1,11 +1,12 @@
 ---
 name: security-audit
-description: |
-  Revisión de seguridad de los cambios pendientes: secretos hardcodeados, validación de inputs en boundaries, vectores OWASP Top 10, superficie de amenaza.
-  Úsala cuando: el cambio toca auth/pagos/secretos/credenciales/crypto/sesión, "revisa la seguridad", "esto es seguro", "vulnerabilidad", "auth", "jwt", "secrets".
-metadata:
-  keywords: >
-    Keywords - security, owasp, vulnerability, injection, xss, csrf, audit
+description: >-
+  Revisa la seguridad de los cambios pendientes: secretos en el código, validación de
+  entradas en los límites, vectores OWASP Top 10 y superficie de ataque. Úsala cuando el
+  cambio toca auth, pagos, secretos, credenciales, cifrado o sesiones, o para "revisa la
+  seguridad", "¿esto es seguro?", "hay alguna vulnerabilidad", "mira el JWT", "security
+  review", "is this secure". No es para un fallo funcional sin impacto de seguridad
+  (troubleshooting).
 disable-model-invocation: false
 argument-hint: "[file-path or module]"
 effort: xhigh
@@ -15,8 +16,6 @@ paths:
   - "**/middleware/**"
   - "**/*security*"
   - "**/*.env*"
-when_to_use: |
-  "revisa la seguridad", "esto es seguro", "vulnerabilidad", "auth/jwt/secrets", "security review", "is this secure", "threat surface"
 ---
 
 # Security Review Checklist
@@ -155,7 +154,7 @@ For detailed patterns with detection methods and before/after examples, see `ref
 | Bearer Token | `Bearer\s+[A-Za-z0-9\-._~+/]+=*` | Bearer eyJhbG... |
 | Private Key | `-----BEGIN\s+(RSA\s+)?PRIVATE KEY-----` | PEM block |
 
-## SQL Injection — Safe Parameterization by Tech
+## SQL Injection: Safe Parameterization by Tech
 
 | Technology | Safe Pattern | Unsafe Pattern |
 |-----------|-------------|----------------|
@@ -180,35 +179,29 @@ Supporting files loaded on demand based on task context. Consult the Contents co
 
 | Topic | File | Contents |
 |---|---|---|
-| OWASP Top 10 quick reference | `${CLAUDE_SKILL_DIR}/references/owasp-quick-ref.md` | Detailed per-vulnerability descriptions (A01-A10) with Problem / Detection / BEFORE-vulnerable / AFTER-secure pseudocode pairs. Read when you need the full vulnerability explanation with code examples — e.g., fixing an identified A03 injection or A01 access control issue, or generating a remediation plan with concrete before/after snippets. |
-| Pre-deploy security checklist | `${CLAUDE_SKILL_DIR}/checklists/pre-deploy.md` | Full 38-item checklist across 6 categories (Auth 8, Authz 6, Input Validation 7, Data Protection 6, Headers/Config 6, Logging 5) — each item is a boolean gate. Read when doing a pre-deployment audit, or when the `## Review Checklist` summary in this SKILL.md is not granular enough and you need concrete pass/fail items to tick. |
-| Review depth layer | `${CLAUDE_SKILL_DIR}/references/02-review-depth.md` | Beyond the Top 10: ASVS rigor levels (L1/L2/L3 — pick by data sensitivity), OWASP Proactive Controls 2024 (C1-C10 positive guidance), and concrete auth/session/JWT/access-control review checklists (MFA, session fixation, JWT alg-pinning, IDOR/BOLA) + secret-leak incident response (rotate-first). Read when reviewing auth/session/access-control code, calibrating review rigor, or handling a leaked secret. OWASP/GitHub primary-sourced. |
+| OWASP Top 10 quick reference | `${CLAUDE_SKILL_DIR}/references/owasp-quick-ref.md` | Detailed per-vulnerability descriptions (A01-A10) with Problem / Detection / BEFORE-vulnerable / AFTER-secure pseudocode pairs. Read when you need the full vulnerability explanation with code examples, e.g., fixing an identified A03 injection or A01 access control issue, or generating a remediation plan with concrete before/after snippets. |
+| Pre-deploy security checklist | `${CLAUDE_SKILL_DIR}/checklists/pre-deploy.md` | Full 38-item checklist across 6 categories (Auth 8, Authz 6, Input Validation 7, Data Protection 6, Headers/Config 6, Logging 5), each item is a boolean gate. Read when doing a pre-deployment audit, or when the `## Review Checklist` summary in this SKILL.md is not granular enough and you need concrete pass/fail items to tick. |
+| Review depth layer | `${CLAUDE_SKILL_DIR}/references/02-review-depth.md` | Beyond the Top 10: ASVS rigor levels (L1/L2/L3, pick by data sensitivity), OWASP Proactive Controls 2024 (C1-C10 positive guidance), and concrete auth/session/JWT/access-control review checklists (MFA, session fixation, JWT alg-pinning, IDOR/BOLA) + secret-leak incident response (rotate-first). Read when reviewing auth/session/access-control code, calibrating review rigor, or handling a leaked secret. OWASP/GitHub primary-sourced. |
 
 ## Emergency: Secret Committed to Git
 
-1. **Rotate the secret immediately** — assume compromised. This is the only step that actually mitigates exposure; history rewriting does NOT (the secret is already cloned/cached). Do this first, regardless of the rest.
-2. **Remove from history**: `git filter-branch --force --index-filter 'git rm --cached --ignore-unmatch PATH' HEAD` (or `git filter-repo`, preferred upstream). ⚠️ History rewrite — get explicit user authorization before running (Commandment VI: `--force`/history rewrites require it).
-3. **Force push**: `git push --force-with-lease` (never bare `--force`) — coordinate with team first; rewriting shared history is irreversible for collaborators. ⚠️ Requires explicit authorization (Commandment VI).
+1. **Rotate the secret immediately**: assume compromised. This is the only step that actually mitigates exposure; history rewriting does NOT (the secret is already cloned/cached). Do this first, regardless of the rest.
+2. **Remove from history**: `git filter-branch --force --index-filter 'git rm --cached --ignore-unmatch PATH' HEAD` (or `git filter-repo`, preferred upstream). ⚠️ History rewrite: get explicit user authorization before running (Commandment VI: `--force`/history rewrites require it).
+3. **Force push**: `git push --force-with-lease` (never bare `--force`), coordinate with team first; rewriting shared history is irreversible for collaborators. ⚠️ Requires explicit authorization (Commandment VI).
 4. **Audit**: Check access logs for the compromised credential
 5. **Add to .gitignore**: Prevent recurrence
 
-> The secret is compromised the instant it is pushed — step 1 (rotation) is what protects you. Steps 2-3 only clean the record and are destructive; never run them unprompted. Full rationale (why history rewrite alone never mitigates) in `references/02-review-depth.md` §4.
+> The secret is compromised the instant it is pushed; step 1 (rotation) is what protects you. Steps 2-3 only clean the record and are destructive; never run them unprompted. Full rationale (why history rewrite alone never mitigates) in `references/02-review-depth.md` §4.
 
 ## Commandments cubiertos
 
 | # | Cómo |
 |---|---|
-| II | Findings are evidence-backed (OWASP refs, secret patterns) — not speculative "looks risky" |
+| II | Findings are evidence-backed (OWASP refs, secret patterns), not speculative "looks risky" |
 | IV | Security is a blocking gate in the `flow` review phase for auth/payments/credentials/crypto |
-| VI | The core skill — secret-leak prevention; history-rewrite/force-push gated on Cmd VI authorization |
+| VI | The core skill: secret-leak prevention; history-rewrite/force-push gated on Cmd VI authorization |
 
 ## Related
 
-- `flow` skill (review phase) — Phase 4 owner that dispatches this skill on sensitive surfaces.
+- `flow` skill (review phase). Phase 4 owner that dispatches this skill on sensitive surfaces.
 - Verify the vulnerable path/symbol exists before reporting it (`changes-verify` → existence checks).
-
----
-
-**Version**: 2.0
-**For**: Phase 4 `flow` (review phase) (Step 7 dispatch for auth/payments/secrets/credentials/crypto). The legacy `reviewer` agent was cut in feature 008.
-**Patterns**: Language-agnostic

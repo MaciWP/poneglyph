@@ -1,29 +1,17 @@
 ---
 name: flow
-description: |
-  Todas las fases del ciclo `/flow-lifecycle` en una sola skill: scope (spec.md),
-  plan (tasks/ con DAG de HUs), test-plan (oracle tests.md/validations.md), build
-  (una HU con TDD/validación), review (veredicto end-to-end en review.md) y retro
-  (lecciones, promotions, cierre). El cuerpo compartido carga una vez; cada fase
-  se lee bajo demanda desde `references/`.
-  Úsala cuando: `/flow-lifecycle` entra en una fase, o pides una fase suelta:
-  "define el alcance", "descompón en HUs", "diseña los tests / el oracle",
-  "implementa la HU", "revisa el feature y dame el veredicto", "haz la retro".
-metadata:
-  keywords: >
-    Keywords - flow, scope, alcance, spec, HU, DAG, tareas, descomponer, roadmap,
-    oracle, TDD, tests, validations, test-design, build, implementa, ejecuta,
-    siguiente HU, critic, revisa, audita, veredicto, verdict, retro, retrospectiva,
-    lecciones, promotions, fase-1, fase-2, fase-2.5, fase-3, fase-4, fase-5
+description: >-
+  Ejecuta una fase del ciclo de feature de /flow-lifecycle: alcance (spec), plan en HUs
+  con dependencias, diseño de tests, build de una HU con TDD, revisión con veredicto y
+  retro. Aplica cuando /flow-lifecycle entra en una fase o se pide una fase suelta de un
+  feature grande. Úsala para "define el alcance", "descompón esto en HUs", "diseña los
+  tests del feature", "implementa la siguiente HU", "dame el veredicto del feature",
+  "haz la retro". No es para un cambio pequeño de código (dev-workflow).
 disable-model-invocation: false
 argument-hint: "[scope|plan|test-plan|build|review|retro] [US{id} | brief]"
-when_to_use: |
-  "define el alcance", "descompón en tareas", "atomiza en HUs", "diseña los tests",
-  "especifica el oracle", "implementa la HU", "siguiente HU", "revisa el feature",
-  "dame el veredicto", "haz la retro", "qué hemos aprendido", inside /flow-lifecycle
 ---
 
-# flow — the lifecycle phases
+# flow: the lifecycle phases
 
 One skill, every phase. `/flow-lifecycle` (commands/flow-lifecycle.md) coordinates a
 feature across them and owns the human gates; `docs/flow-contract.md` owns state and the
@@ -79,8 +67,6 @@ file holds what every phase shares. Read exactly one phase reference per entry.
 - **Test policy.** `rules/test-policy.md` owns the project level and the flow escalation.
   Cite it; never restate it.
 - **Execution model.** Inline in the main session. A single HU is never a reason to spawn.
-  An authorized Orca team uses the supervised-worker branch in `references/04-build.md`;
-  only the coordinator records transitions.
 - **Checklist and time budget.** `tasks/index.md` and `state.json` are the checklist:
   read them before ending a turn; open HUs and no blocker → continue. Phase 2 records the
   budget in minutes; each boundary compares it with `date`. Budget spent → report the
@@ -117,4 +103,4 @@ file holds what every phase shares. Read exactly one phase reference per entry.
 The phase table above names the six phase references. Also: `references/plan/01…06-*.md`
 (plan deep dives: discovery, research, gap analysis, waves, team mode, quality gates),
 `references/review-fallback.md` and `retro-fallback.md` (templates when the plan templates
-are missing), `references/07-history.md` (rationale, decisions, the 2026-09-17 merge).
+are missing).

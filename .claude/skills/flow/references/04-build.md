@@ -1,14 +1,13 @@
 ---
 parent: flow
 name: build
-description: Phase 3 — implement ONE approved HU from its task and oracle, verify it, and record its closure; includes the supervised Orca worker branch.
+description: Phase 3, implement ONE approved HU from its task and oracle, verify it, and record its closure.
 ---
 
-# Phase 3 — Build
+# Phase 3: Build
 
 Implement **one HU** per run from approved `tasks/` and the phase 2.5 oracle. The inline
-path closes that HU before selecting another. An authorized Orca coordinator may assign
-independent HUs to separate workers; only the coordinator records closures.
+path closes that HU before selecting another.
 
 Precondition: `state.json.current_phase == 3` (gate 2→3 recorded) and a pending HU whose
 dependencies are complete. Draft tasks, a missing oracle or all HUs closed → STOP and route
@@ -17,30 +16,18 @@ dependencies are complete. Draft tasks, a missing oracle or all HUs closed → S
 ## Definition of Done
 
 - Reuse the assigned HU's accepted DoD and oracle. Implement its scope and collect required checks on the final inputs.
-- Inline/coordinator closure requires the verification record. A worker returns evidence and stops writing; it does not close state.
+- Closure requires the verification record. A delegated unit returns evidence; only the Lead closes state.
 
 ## Quality Bar
 
 - Favor the smallest maintainable change that meets the HU and safety floor. Extra features and repeated checks on unchanged inputs do not earn credit.
 
-## Supervised Orca worker
-
-When the current prompt carries a live Orca Dispatch under an approved `orca-team` team,
-read its worker contract (`../../orca-team/references/coordination.md`). Execute only the
-assigned HU in the shared worktree. Follow Steps 1-8 below, ask the coordinator about gaps,
-and reserve resources before edits or checks. Run scoped checks on stable inputs; ask the
-coordinator to schedule shared checks that conflict with another writer. Return actual
-evidence and remaining checks; never invent a pass. **Do not run Step 9 or the next-HU
-actions of Step 10**: only the coordinator closes state and approval frontmatter. Send the
-result through the current Orca lifecycle, then stop writing. The inline-only guidance
-below describes the default executor; it does not override this authorized branch.
-
-## Step 1 — Read inputs
+## Step 1: Read inputs
 
 `tasks/index.md`, the pending `tasks/US{N}.md`, `tests.md` and/or `validations.md`,
 `state.json`, `rules/test-policy.md`. Several plans at phase 3 → ask.
 
-## Step 2 — Identify the HU
+## Step 2: Identify the HU
 
 | Invocation | Selection |
 |---|---|
@@ -50,25 +37,22 @@ below describes the default executor; it does not override this authorized branc
 Read the chosen `tasks/US{N}.md` fully with its `T{N}.X` tests or validation block. Its
 "Execution prompt (Phase 3 input)" block is the primary instruction; the rest elaborates it.
 
-## Step 3 — Execute inline
+## Step 3: Execute inline
 
 The HU is one unit of work in the main session. One agent for "context isolation" is
 forbidden (`agent-routing` P1/P2); `/clear` between HUs if context grows. Fan-out is a
-wave-level, user opt-in decision at ≥4 independent HUs with disjoint files (`Workflow`), or
-an authorized Orca team. A sensitive path (`.env`, `*.lock`, `package.json`,
-`.claude/settings*.json`, `secrets/`) gets an inline `sensitive: <reason ≥8 chars>` before
-the edit. A new skill, hook, rule, MCP or plugin → consult `harness-config` first.
+wave-level, user opt-in decision at ≥4 independent HUs with disjoint files (parallel worktree agents). A sensitive path follows CLAUDE.md §Hard rules (inline `sensitive: <reason>` before the edit). A new skill, hook, rule, MCP or plugin → consult `harness-config` first.
 
-## Step 4 — Style anchors
+## Step 4: Style anchors
 
 Before any Edit/Write: Glob for outputs of the same kind, Read 1-3 close examples, Grep the
 functions and patterns the HU will use. When the HU writes tests, Glob the test
 infrastructure and load the project's test-conventions skill; reuse fixtures by name and
 add a new one only at the shared level the oracle flagged. **Lessons pass**:
-`Skill(lessons-learned)` — cross-repo guards plus the `references/<stack>-*.md` file of the
+`Skill(lessons-learned)`: cross-repo guards plus the `references/<stack>-*.md` file of the
 HU's stack; mandatory when the HU touches code recovered from a stash or an old branch.
 
-## Step 5 — Honor the TDD mode of the HU
+## Step 5: Honor the TDD mode of the HU
 
 Read `tdd_policy` in `tests.md` plus the per-node override (`tdd: forced` /
 `tdd-skip: <reason>`); `rules/test-policy.md` §Override in plan owns the escalation.
@@ -80,14 +64,14 @@ Read `tdd_policy` in `tests.md` plus the per-node override (`tdd: forced` /
 | Optional | Implement → run the suite → unrelated breakage → `troubleshooting` |
 | Validation HU | Implement the document change → verify the five categories of `validations.md` → run the project smoke suite → a failed structural assertion is fixed before closure |
 
-## Step 6 — Ask on concrete doubts, never improvise
+## Step 6: Ask on concrete doubts, never improvise
 
 Ambiguous interface, a decision the spec left open (path, name, default), an edge case the
 ACs and oracle do not cover, a conflict between AC and project style → `AskUserQuestion`.
 Never guess, never add features beyond the ACs. Two or more questions in one HU means the
 HU was poorly defined: flag it for the retro.
 
-## Step 7 — Drillme intra-HU
+## Step 7: Drillme intra-HU
 
 Sweep the Phase 3 bank of `../../drillme-clarify/references/03-phase-questions.md` (single
 source) and any new gap; ask only what would change the decision. Report coverage and
@@ -95,16 +79,16 @@ unresolved gaps; never infer coverage from a fixed count or from an earlier phas
 `drillme-clarify` does not fire and a real doubt blocks, invoke
 `/drillme-clarify "<doubt — HU US{N}>"` before closing.
 
-## Step 8 — Verify (blocking gate per HU)
+## Step 8: Verify (blocking gate per HU)
 
 Run `changes-verify` on the final diff before touching state: tests on touched files, the
 project's required gate (baseline vs introduced failures distinguished), type check and lint
 when configured, component documentation updated in the same HU. A failure →
-`troubleshooting` within the `error-recovery.md` budget; after 2 retries → escalate. **A
+`troubleshooting` within the retry budget (`agent-routing` references/07-error-recovery.md); after 2 retries → escalate. **A
 failed or unexecuted required check leaves the HU pending.** Document-only work may record
 `tests_passed: null`; never invent a suite run.
 
-## Step 9 — Persist the verified closure
+## Step 9: Persist the verified closure
 
 Write `verification-US{N}.json` per `docs/flow-contract.md` §Verification record: US id,
 checked revision fingerprint, measured test result, every required check with observed
@@ -119,13 +103,13 @@ closure into the HU frontmatter. After an interrupted projection use `sync-artif
 a review requests changes, `reopen-us US{N} --note <finding>` precedes new implementation.
 Missing state is recovered from recorded decisions, never invented.
 
-## Step 10 — Report
+## Step 10: Report
 
 ```text
 🟢 HU US{N} closed.
 - Files: <list>
 - Tests: <pass>/<total>; red→green honored | tdd-skip: <reason> | validation closure
-- Execution: inline | Orca worker (coordinator records closure)
+- Execution: inline | delegated unit (Lead records closure)
 - AskUserQuestion fired: <count>
 - verification-US{N}.json recorded; state.json updated
 

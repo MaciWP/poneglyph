@@ -67,7 +67,7 @@ describe("summarize and renderField", () => {
     expect(r.longSilent).toBe(0.5);
   });
 
-  it("prints aggregates only — no text, command or tool output from the transcripts", () => {
+  it("prints aggregates only: no text, command or tool output from the transcripts", () => {
     const out = renderField(rows, 14);
     expect(out).toContain(MODEL);
     expect(out).not.toMatch(/PRIVATE|Buena pregunta|Hecho/);

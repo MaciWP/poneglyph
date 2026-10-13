@@ -3,19 +3,14 @@ name: {{SKILL_NAME}}
 description: |
   {{DESCRIPTION}}
   Use for "{{TRIGGER_PHRASE_1}}", "{{TRIGGER_PHRASE_2}}". Not for {{NOT_FOR}}.
-metadata:
-  keywords: >
-    Keywords - {{KEYWORD_1}}, {{KEYWORD_2}}, {{KEYWORD_3}}
 disable-model-invocation: false
-when_to_use: |
-  {{TRIGGER_CONDITION}}
 ---
 
 # {{SKILL_TITLE}}
 
 {{Brief overview of what this skill provides}}
 
-Instantiate: `{{SKILL_NAME}}` kebab 1–64 matching the directory; `description` 1–1024; `when_to_use` and `metadata.keywords` strings. This-repo activation copy is English with the user's literal es-ES trigger phrases. Foreign repo: portable description, drop keywords/`when_to_use` if unused.
+Instantiate: `{{SKILL_NAME}}` kebab 1–64 matching the directory; `description` 1–1024. This repo: follow the description contract in `references/t01-skill.md` (Spanish, `Úsala para` / `No es para`, no `when_to_use`). Foreign repo: portable description.
 
 ## Definition of Done
 
@@ -38,7 +33,7 @@ Instantiate: `{{SKILL_NAME}}` kebab 1–64 matching the directory; `description`
 
 ## When NOT to use
 
-- {{Anti-trigger 1 — use a hook / memory / different skill}}
+- {{Anti-trigger 1: use a hook / memory / different skill}}
 - {{Anti-trigger 2}}
 
 ## Patterns
@@ -61,9 +56,9 @@ Instantiate: `{{SKILL_NAME}}` kebab 1–64 matching the directory; `description`
 
 ## Eval scenarios (≥3)
 
-1. {{Happy path — prompt in, expected behaviour}}
-2. {{Near-miss — must not fire}}
-3. {{Edge — empty input / conflict / missing tool}}
+1. {{Happy path: prompt in, expected behaviour}}
+2. {{Near-miss: must not fire}}
+3. {{Edge: empty input / conflict / missing tool}}
 
 ## Anti-patterns
 

@@ -1,15 +1,15 @@
 ---
-spec: {NNN}-{slug}
-created: {ISO-date}
-approved: <ISO-date cuando el hard gate 2→3 se cierra; omitir mientras draft>
+spec: "{NNN}-{slug}"
+created: "{ISO-date}"
+approved: "<ISO-date cuando el hard gate 2→3 se cierra; omitir mientras draft>"
 mode: full
 status: draft
 phase: 2
-total_us: {N}
+total_us: "{N}"
 dag_complete: true|false
 ---
 
-# Tasks index — <título corto del feature>
+# Tasks index: <título corto del feature>
 
 ## Resumen ejecutivo
 
@@ -21,7 +21,7 @@ dag_complete: true|false
 |---|---|---|---|
 | W{N} <nombre> | US{ids} | <X sesiones> | <naturaleza del trabajo> |
 
-**Critical path**: <suma de waves no paralelizables — ej. "~4 sesiones standard">.
+**Critical path**: <suma de waves no paralelizables, ej. "~4 sesiones standard">.
 
 ## DAG
 
@@ -44,7 +44,7 @@ graph TD
 
 | # | HU | Fase del workflow | Wave | Estimate | TDD-mode | Decisión absorbida |
 |---|---|---|---|---|---|---|
-| US1 | <título> | <Fase N> | W{N} | S\|M\|L | optional | — |
+| US1 | <título> | <Fase N> | W{N} | S\|M\|L | optional | none |
 
 ## Cross-cutting decisions
 

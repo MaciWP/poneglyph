@@ -1,13 +1,13 @@
 # Improvement Process
 
-Step-by-step process to improve prompts with score < 70.
+Step-by-step process to improve a prompt that fails a criterion.
 
 ## Workflow
 
 ```mermaid
 graph TD
     A[Receive Prompt] --> B[Evaluate 5 Criteria]
-    B --> C{Score >= 70?}
+    B --> C{All pass?}
     C -->|Yes| D[Proceed]
     C -->|No| E[Identify Low Criteria]
     E --> F[Apply Corrections]

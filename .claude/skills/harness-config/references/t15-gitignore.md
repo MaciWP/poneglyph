@@ -1,10 +1,10 @@
 ---
 parent: harness-config
 name: t15-gitignore
-description: T15 layer gitignore pack. Grok skill discovery does not use gitignore — hide via [skills] ignore / disabled.
+description: T15 layer gitignore pack. Grok skill discovery does not use gitignore; hide via [skills] ignore / disabled.
 ---
 
-# T15 — Layer gitignore
+# T15: Layer gitignore
 
 Shared: [lookup.md](lookup.md) · [lifecycle.md](lifecycle.md) · [t01-skill.md](t01-skill.md) · [t10-settings.md](t10-settings.md).
 Absorbs cookbook `06-gitignore.md` (D27).
@@ -40,15 +40,15 @@ Do not add `.claude/skills/` or `.grok/skills/` as a “disable” trick.
 
 ## 5. Evidence
 
-T1: Grok 08-skills.md 2026-09-10 — discovery skips gitignore. Cookbook 06: local vs shared table. **sin evidencia A/B** for “ignoring skills speeds startup”.
+T1: Grok 08-skills.md 2026-09-10, discovery skips gitignore. Cookbook 06: local vs shared table. **sin evidencia A/B** for “ignoring skills speeds startup”.
 
 ## 6. Poneglyph grain
 
-Shared config stays committed. Machine paths (`ccstatusline.exe`) go in `settings.local.json`. Impact before deleting an ignore rule that was hiding secrets.
+Shared config stays committed. Machine paths (a statusline `.exe`) go in `settings.local.json`. Impact before deleting an ignore rule that was hiding secrets.
 
 ## 7. Absences
 
 | Cell | Status |
 |---|---|
-| Grok hide-via-gitignore | **ausente** — use `[skills] ignore` / `disabled` |
+| Grok hide-via-gitignore | **ausente**: use `[skills] ignore` / `disabled` |
 | Gitignoring `.claude/**` as “Grok unloaded the skill” | **ausente** |

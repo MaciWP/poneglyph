@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import * as path from "path";
 import {
@@ -12,11 +12,14 @@ import {
   mergeHookEvents,
   statusExitCode,
   formatSpTwinStatusLine,
+  generateRouterAgent,
   generateSettings,
   generateSpTwin,
-  mergeHookEvents,
   parseDoctorInvalidSettings,
   problemsForFile,
+  PROJECT_ONLY_RULES,
+  staleGlobalRules,
+  staleRetiredFolders,
   timeoutValidation,
 } from "../sync-claude.ts";
 
@@ -77,23 +80,17 @@ describe("expandFolderLinks", () => {
     expect(out).toEqual([]);
   });
 
-  it("handles the real poneglyph rules layout: error-recovery + paths/ in, test-policy out", () => {
+  it("handles the real poneglyph rules layout: test-policy and paths/ (Poneglyph hook inventory) stay project-only", () => {
     const out = expandFolderLinks(
       SRC,
       DEST,
       [
-        { name: "error-recovery.md", isDirectory: false },
         { name: "test-policy.md", isDirectory: false },
         { name: "paths", isDirectory: true },
       ],
-      PROJECT_ONLY,
+      PROJECT_ONLY_RULES,
     );
-    expect(out.map((l) => path.basename(l.dest)).sort()).toEqual([
-      "error-recovery.md",
-      "paths",
-    ]);
-    expect(out.find((l) => l.dest.endsWith("paths"))!.type).toBe("directory");
-    expect(out.every((l) => !l.dest.endsWith("test-policy.md"))).toBe(true);
+    expect(out).toEqual([]);
   });
 
   it("excludes a project-only DIRECTORY, not just files (regression: the directory branch used to skip the projectOnly check entirely)", () => {
@@ -265,7 +262,7 @@ describe("generateSpTwin (style SSOT → body-only twin)", () => {
     expect(formatSpTwinStatusLine("error", "boom")).toContain("boom");
   });
 
-  // PR #39 review, finding H3: a style edit shipped without its twin twice (PR #20, PR #39).
+  // A style edit shipped without its twin twice (PR #20, PR #39).
   // Codex and Grok read the twin, so a stale copy serves them the old doctrine.
   it("the committed twin matches the committed style", () => {
     const repoRoot = path.resolve(import.meta.dir, "..", "..", "..");
@@ -273,8 +270,8 @@ describe("generateSpTwin (style SSOT → body-only twin)", () => {
   });
 });
 
-// 032/WP1 — the generated settings.json is ACCEPTED by Claude Code, not merely written.
-// Sample = real `claude doctor` output captured 2026-09-03 (2.1.259) for the audit-010
+// The generated settings.json is ACCEPTED by Claude Code, not merely written.
+// Sample = real `claude doctor` output captured 2026-09-03 (2.1.259) for a
 // regression (attribution booleans); doctor exits 0 even then, so only the text counts.
 const DOCTOR_OUTPUT = [
   "Claude Code doctor",
@@ -337,13 +334,13 @@ describe("formatSettingsValidationLine", () => {
   });
 });
 
-// Plan 038 — the machine overlay used to REPLACE a whole hooks.<event> array, masking every
+// The machine overlay used to REPLACE a whole hooks.<event> array, masking every
 // base handler for that event (bash-output-shaper vanished on 2026-09-09). Now: union per
 // event, base groups first, handlers de-duplicated by `command` (first occurrence wins).
 const handler = (command: string, timeout = 10) => ({ type: "command", command, timeout });
 const GATE = "bun $HOME/.claude/hooks/headless-model-gate.ts";
 const SHAPER = "bun $HOME/.claude/hooks/bash-output-shaper.ts";
-const ORCA = "powershell -File C:/orca/hook.ps1";
+const FOREIGN = "powershell -File C:/vendor/hook.ps1";
 const BASE_HOOKS = {
   PreToolUse: [{ matcher: "Bash", hooks: [handler(GATE, 5), handler(SHAPER, 5)] }],
   InstructionsLoaded: [{ hooks: [{ ...handler("bun $HOME/.claude/hooks/instructions-loaded.ts"), async: true }] }],
@@ -351,18 +348,18 @@ const BASE_HOOKS = {
 const OVERLAY_HOOKS = {
   PreToolUse: [
     { matcher: "Bash", hooks: [handler(GATE)] },
-    { matcher: "*", hooks: [handler(ORCA)] },
+    { matcher: "*", hooks: [handler(FOREIGN)] },
   ],
-  SubagentStart: [{ hooks: [handler(ORCA)] }],
+  SubagentStart: [{ hooks: [handler(FOREIGN)] }],
 };
 const commands = (groups: unknown) =>
   (groups as Array<{ hooks: Array<{ command: string }> }>).flatMap((g) => g.hooks.map((h) => h.command));
 
-describe("mergeHookEvents (plan 038)", () => {
+describe("mergeHookEvents", () => {
   const merged = mergeHookEvents(BASE_HOOKS, OVERLAY_HOOKS) as Record<string, unknown>;
 
   it("a. keeps both sides' groups for a shared event, base group first", () => {
-    expect(commands(merged.PreToolUse)).toEqual([GATE, SHAPER, ORCA]);
+    expect(commands(merged.PreToolUse)).toEqual([GATE, SHAPER, FOREIGN]);
     expect((merged.PreToolUse as Array<{ matcher: string }>).map((g) => g.matcher)).toEqual(["Bash", "*"]);
   });
 
@@ -392,7 +389,7 @@ describe("mergeHookEvents (plan 038)", () => {
   });
 });
 
-describe("generateSettings — hooks union is wired, other arrays still replaced", () => {
+describe("generateSettings, hooks union is wired, other arrays still replaced", () => {
   it("e. unions hooks.PreToolUse but lets permissions.allow be replaced by the overlay", () => {
     const root = mkdtempSync(path.join(tmpdir(), "settings-hooks-"));
     const repo = path.join(root, "repo");
@@ -409,11 +406,11 @@ describe("generateSettings — hooks union is wired, other arrays still replaced
     expect(generateSettings(repo, profile, { execute: true, backup: false }).status).toBe("written");
     const out = JSON.parse(readFileSync(path.join(profile, ".claude", "settings.json"), "utf-8"));
     expect(out.permissions.allow).toEqual(["Bash(bun *)"]);
-    expect(commands(out.hooks.PreToolUse)).toEqual([GATE, SHAPER, ORCA]);
+    expect(commands(out.hooks.PreToolUse)).toEqual([GATE, SHAPER, FOREIGN]);
     expect(Object.keys(out.hooks).sort()).toEqual(["InstructionsLoaded", "PreToolUse", "SubagentStart"]);
   });
 
-  it("unions permissions.ask and deny so an overlay never drops a base safety rule (H8)", () => {
+  it("unions permissions.ask and deny so an overlay never drops a base safety rule", () => {
     const root = mkdtempSync(path.join(tmpdir(), "settings-perms-"));
     const repo = path.join(root, "repo");
     const profile = path.join(root, "profile");
@@ -453,11 +450,83 @@ describe("LINK_FOLDERS", () => {
     expect(LINK_FOLDERS).not.toContain("plans");
     expect(path.join("/home", ".claude", "plans/templates")).toBe(path.join("/home", ".claude", "plans", "templates"));
   });
+
+  it("does not link agents: the router agent is a generated file", () => {
+    expect(LINK_FOLDERS).not.toContain("agents");
+  });
 });
 
-// Quality review 2026-09-11 — H32 (hook dedup ignores the matcher) and H63 (--status
-// reports a rejected settings.json as success).
-describe("hook merge is matcher-aware (H32)", () => {
+describe("generateRouterAgent", () => {
+  function fixture() {
+    const root = mkdtempSync(path.join(tmpdir(), "router-agent-"));
+    const project = path.join(root, "repo");
+    const home = path.join(root, "home");
+    mkdirSync(path.join(project, ".claude", "hooks", "router"), { recursive: true });
+    writeFileSync(path.join(project, ".claude", "hooks", "router", "prompt-router.md"), "---\nname: prompt-router\nmodel: haiku\n---\n\nRoute it.\n");
+    mkdirSync(path.join(home, ".claude", "skills", "alpha"), { recursive: true });
+    writeFileSync(path.join(home, ".claude", "skills", "alpha", "SKILL.md"), "---\nname: alpha\ndescription: does alpha\n---\n");
+    return { project, home, dest: path.join(home, ".claude", "agents", "prompt-router.md") };
+  }
+
+  it("writes the source with the user-level catalog, then reports it up to date", async () => {
+    const { project, home, dest } = fixture();
+    expect((await generateRouterAgent(project, home, false)).status).toBe("preview");
+    expect(existsSync(dest)).toBe(false);
+    expect((await generateRouterAgent(project, home, true)).status).toBe("written");
+    const text = readFileSync(dest, "utf8");
+    expect(text).toStartWith("---\nname: prompt-router\nmodel: haiku\n---\n\nRoute it.\n\nGlossary");
+    expect(text).toContain("Catalog (name: description):\n- alpha: does alpha");
+    expect((await generateRouterAgent(project, home, true)).status).toBe("up-to-date");
+    writeFileSync(path.join(home, ".claude", "skills", "alpha", "SKILL.md"), "---\nname: alpha\ndescription: does alpha better\n---\n");
+    expect((await generateRouterAgent(project, home, false)).status).toBe("preview");
+  });
+
+  it("replaces an earlier install's agents link into the repo, but never writes through another link", async () => {
+    const { project, home, dest } = fixture();
+    mkdirSync(path.join(project, ".claude", "agents"));
+    symlinkSync(path.join(project, ".claude", "agents"), path.join(home, ".claude", "agents"));
+    expect((await generateRouterAgent(project, home, true)).status).toBe("written");
+    expect(lstatSync(path.join(home, ".claude", "agents")).isSymbolicLink()).toBe(false);
+    expect(existsSync(dest)).toBe(true);
+
+    const other = fixture();
+    const elsewhere = mkdtempSync(path.join(tmpdir(), "elsewhere-"));
+    symlinkSync(elsewhere, path.join(other.home, ".claude", "agents"));
+    expect((await generateRouterAgent(other.project, other.home, true)).status).toBe("error");
+    expect(existsSync(path.join(elsewhere, "prompt-router.md"))).toBe(false);
+  });
+
+  it("marks what it writes, and replaces a hand-made agent only with --backup", async () => {
+    const { project, home, dest } = fixture();
+    mkdirSync(path.dirname(dest), { recursive: true });
+    writeFileSync(dest, "my own agent\n");
+    const refused = await generateRouterAgent(project, home, true);
+    expect(refused.status).toBe("error");
+    expect(readFileSync(dest, "utf8")).toBe("my own agent\n");
+    expect((await generateRouterAgent(project, home, true, true)).status).toBe("written");
+    expect(readFileSync(dest, "utf8")).toContain("<!-- generated by sync-claude");
+    const backups = path.join(home, ".claude.backup");
+    const saved = path.join(backups, readdirSync(backups)[0], "prompt-router.md");
+    expect(readFileSync(saved, "utf8")).toBe("my own agent\n");
+    // a generated file is ours: regenerated without --backup
+    writeFileSync(path.join(home, ".claude", "skills", "alpha", "SKILL.md"), "---\nname: alpha\ndescription: changed\n---\n");
+    expect((await generateRouterAgent(project, home, true)).status).toBe("written");
+  });
+
+  it("refuses to write through a symlinked agent file", async () => {
+    const { project, home, dest } = fixture();
+    mkdirSync(path.dirname(dest), { recursive: true });
+    const real = path.join(home, "real.md");
+    writeFileSync(real, "keep");
+    symlinkSync(real, dest);
+    expect((await generateRouterAgent(project, home, true, true)).status).toBe("error");
+    expect(readFileSync(real, "utf8")).toBe("keep");
+  });
+});
+
+// Hook dedup must not ignore the matcher, and --status must not report a rejected
+// settings.json as success.
+describe("hook merge is matcher-aware", () => {
   const group = (matcher: string, command: string) => ({ matcher, hooks: [{ type: "command", command }] });
 
   it("keeps the same script registered under two different matchers", () => {
@@ -477,7 +546,7 @@ describe("hook merge is matcher-aware (H32)", () => {
   });
 });
 
-describe("--status tells the truth through its exit code (H63)", () => {
+describe("--status tells the truth through its exit code", () => {
   it("fails when claude doctor rejected the generated settings.json", () => {
     expect(statusExitCode({ ok: false, problems: ["settings.json: invalid key"] })).toBe(1);
   });
@@ -491,12 +560,12 @@ describe("--status tells the truth through its exit code (H63)", () => {
   });
 });
 
-// Quality review 2026-09-11 — H36. `validateGeneratedSettings` deliberately ignores
+// `validateGeneratedSettings` deliberately ignores
 // `claude doctor`'s exit code (sync-claude.ts:620-624: doctor exits 0 even when it
 // rejects a settings file, so only the OUTPUT carries the verdict). What was missing
 // is a machine-readable reason: a timeout and a missing CLI both surfaced as the same
 // `ok: true` with a free-text `skipped`, so no caller could tell them apart.
-describe("skipped validations carry a distinct reason (H36)", () => {
+describe("skipped validations carry a distinct reason", () => {
   it("labels a timeout as a timeout and keeps the human sentence", () => {
     const v = timeoutValidation(90_000);
     expect(v.reason).toBe("timeout");
@@ -515,5 +584,42 @@ describe("skipped validations carry a distinct reason (H36)", () => {
   it("renders both as the same yellow unknown line", () => {
     expect(formatSettingsValidationLine(timeoutValidation(1_000))).toStartWith("🟡");
     expect(formatSettingsValidationLine(cliUnavailableValidation("missing"))).toStartWith("🟡");
+  });
+});
+
+describe("staleRetiredFolders", () => {
+  it("lists a retired folder link into the repo, even dangling, and keeps a foreign link", () => {
+    const root = mkdtempSync(path.join(tmpdir(), "stale-folders-"));
+    const src = path.join(root, "repo", ".claude");
+    const dest = path.join(root, "home", ".claude");
+    mkdirSync(dest, { recursive: true });
+    mkdirSync(src, { recursive: true });
+    symlinkSync(path.join(src, "workflows"), path.join(dest, "workflows")); // dangling
+    expect(staleRetiredFolders(src, dest, ["workflows"])).toEqual([path.join(dest, "workflows")]);
+    rmSync(path.join(dest, "workflows"));
+    symlinkSync(root, path.join(dest, "workflows"));
+    expect(staleRetiredFolders(src, dest, ["workflows"])).toEqual([]);
+  });
+});
+
+describe("staleGlobalRules", () => {
+  it("removes links to retired or project-only rules, keeps live and foreign links, only reports plain files", () => {
+    const root = mkdtempSync(path.join(tmpdir(), "stale-rules-"));
+    const src = path.join(root, "repo", "rules");
+    const dest = path.join(root, "home", "rules");
+    mkdirSync(path.join(src, "paths"), { recursive: true });
+    mkdirSync(dest, { recursive: true });
+    writeFileSync(path.join(src, "live.md"), "x");
+    writeFileSync(path.join(root, "foreign.md"), "x");
+    symlinkSync(path.join(src, "live.md"), path.join(dest, "live.md"));
+    symlinkSync(path.join(src, "retired.md"), path.join(dest, "retired.md")); // dangling
+    symlinkSync(path.join(src, "paths"), path.join(dest, "paths"));
+    symlinkSync(path.join(root, "foreign.md"), path.join(dest, "foreign.md"));
+    writeFileSync(path.join(dest, "old-copy.md"), "x");
+
+    const out = staleGlobalRules(src, dest, new Set(["paths"]));
+
+    expect(out.remove.map((p) => path.basename(p)).sort()).toEqual(["paths", "retired.md"]);
+    expect(out.report.map((p) => path.basename(p))).toEqual(["old-copy.md"]);
   });
 });

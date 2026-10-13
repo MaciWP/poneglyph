@@ -1,6 +1,6 @@
-# Critic — embedded fallback template (if `review.template.md` missing)
+# Critic: embedded fallback template (if `review.template.md` missing)
 
-Extracted from the former critic skill (017/US9); since the 2026-09-17 merge it belongs to `flow` phase 4. Used when `.claude/plans/templates/review.template.md` does not exist.
+Part of `flow` phase 4. Used when `.claude/plans/templates/review.template.md` does not exist.
 
 ```markdown
 # Review — {feature-name}

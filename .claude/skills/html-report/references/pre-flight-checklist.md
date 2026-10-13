@@ -1,6 +1,6 @@
 # Pre-flight checklist (quality gate)
 
-Run before declaring any `html-report` render done. **Gate semantics: if any item fails, the output is NOT done** — fix or justify. Items trace to `taste-hard-rules.md` and `anti-slop.md` (no novel rules here).
+Run before declaring any `html-report` render done. **Gate semantics: if any item fails, the output is NOT done**: fix or justify. Items trace to `taste-hard-rules.md` and `anti-slop.md` (no novel rules here).
 
 ## Typography
 - [ ] Body line length 45–75ch (`max-width: 65ch`)
@@ -46,16 +46,16 @@ Run before declaring any `html-report` render done. **Gate semantics: if any ite
 - [ ] Single inlined `<style>`; the only allowed external request is one Google Fonts `<link>` (v1.2.0 client-grade). For pure-offline: omit it and confirm the system-stack fallback renders.
 - [ ] `report.template`: dark/light both render. `dashboard`, `glance` and `decision` templates: dark-first + print-light (no OS flip, by design). Print stylesheet intact in both.
 
-## Cliente-ready / v2 (feature 007)
+## Cliente-ready / v2
 - [ ] **Vistazo**: la acción/conclusión principal + KPIs/distribución se captan above-the-fold (sin scroll).
 - [ ] **Self-contained verificado**: abre con la red desactivada; sólo los webfonts degradan (system stack).
 - [ ] **Diagramas**: SVG inline legible offline; `mermaid.js` SOLO si es complejo y la dependencia está declarada en el header del documento.
 - [ ] **Interactividad** (si la hay): tabs/tooltips sin JS; command = único `<script>` vanilla declarado; `:focus-visible` ring en todo elemento interactivo (navegable por teclado).
 - [ ] **decision layout**: recomendación + confianza arriba; matriz opciones×criterios ponderada legible de un vistazo.
-- [ ] **Persistencia (deliverable)**: si el artefacto debe sincronizarse/commitearse (p.ej. un template del skill), `git check-ignore <path>` devuelve vacío — o hay excepción `!` en `.gitignore`. El patrón `*.html` se ha comido el deliverable 2× (commit 8a85e4a v8 + 007-M1); verifícalo antes de declarar el render entregado.
+- [ ] **Persistencia (deliverable)**: si el artefacto debe sincronizarse/commitearse (p.ej. un template del skill), `git check-ignore <path>` devuelve vacío, o hay excepción `!` en `.gitignore`. El patrón `*.html` se ha comido el deliverable 2× (commit 8a85e4a v8 + 007-M1); verifícalo antes de declarar el render entregado.
 
-## Modo dynamic (feature 010 — generador)
-- [ ] **Generación por datos**: el informe se produce desde un `ReportData` JSON vía `render.ts` (no HTML a mano) — baja tokens + consistencia.
+## Modo dynamic (generador)
+- [ ] **Generación por datos**: el informe se produce desde un `ReportData` JSON vía `render.ts` (no HTML a mano): baja tokens + consistencia.
 - [ ] **Un solo `<style>`**: charts/componentes inyectan su CSS en el `<style>` global (NO un `<style>` por SVG). Verificar `grep -c '<style' out.html` = 1.
 - [ ] **Fallback sin-JS**: deshabilitar JS → secciones abiertas (`<details open>`), nav por anclas, valores de charts/tabla visibles.
 - [ ] **Tests verdes**: `bun test ./.claude/skills/html-report/scripts/` (render/charts/components) + hooks 100/100 sin regresión.

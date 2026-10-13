@@ -135,11 +135,11 @@ describe("hook stdin path end-to-end (readHookStdin)", () => {
   });
 });
 
-// US4 (plan 028): the Stop response must reach the MODEL (additionalContext),
-// not only the user (systemMessage) — CG-05.
+// The Stop response must reach the MODEL (additionalContext),
+// not only the user (systemMessage), CG-05.
 import { buildStopResponse } from "../security-gate";
 
-describe("buildStopResponse (028/US4)", () => {
+describe("buildStopResponse", () => {
   test("T4.1 hits → systemMessage AND hookSpecificOutput.additionalContext with locus + action", () => {
     const res = buildStopResponse(["src/config.ts:12", ".env.example:3"]);
     expect(res).not.toBeNull();
@@ -156,7 +156,7 @@ describe("buildStopResponse (028/US4)", () => {
 
 import { buildCanaryWarning, checkCanary, extractFinalAssistantText } from "../security-gate";
 
-describe("degradation canary (2026-09-24)", () => {
+describe("degradation canary", () => {
   const user = (content: string) => JSON.stringify({ type: "user", message: { content } });
   const assistant = (...blocks: object[]) => JSON.stringify({ type: "assistant", message: { content: blocks } });
   const text = (t: string) => ({ type: "text", text: t });
@@ -175,9 +175,15 @@ describe("degradation canary (2026-09-24)", () => {
     expect(checkCanary("Hecho. ROBIN:")).toBe("miss");
   });
 
-  test("no text this turn yields no verdict", () => {
+  test("no text this turn, or harness filler, yields no verdict", () => {
     expect(checkCanary(null)).toBeNull();
     expect(checkCanary("   ")).toBeNull();
+    expect(checkCanary("No response requested.")).toBeNull();
+  });
+
+  test("a missing line on a turn that ends waiting is logged as wait, never a miss", () => {
+    expect(checkCanary("Quedan dos agentes; integro sus resultados al terminar.", true)).toBe("wait");
+    expect(checkCanary("Espero.\nROBIN: Quedan dos agentes.", true)).toBe("ok");
   });
 
   test("the final text block of the current turn is the one checked", () => {

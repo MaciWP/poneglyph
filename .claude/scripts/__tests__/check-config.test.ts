@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "bun:test";
-import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync, symlinkSync } from "node:fs";
+import { execFileSync, spawnSync } from "node:child_process";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { check, frontmatter, privacyMatches, readSource, render, validate, withoutGitEnv, type Source } from "../check-config";
@@ -67,12 +67,12 @@ describe("core skill completion contract", () => {
       .toEqual([expect.objectContaining({ rule: "skill.contract.dod", severity: "error" })]);
   });
 
-  // PR #39 review, finding H7: a horizontal rule or a bare bullet is not a criterion.
+  // A horizontal rule or a bare bullet is not a criterion.
   it("rejects sections that hold only punctuation", () => {
     expect(findings("## Definition of Done\n---\n## Quality Bar\n-\n")).toHaveLength(2);
   });
 
-  // PR #39 review, finding H9: a comment opener inside a code example hid every later section.
+  // A comment opener inside a code example hid every later section.
   it("keeps sections after a fence that contains a comment opener", () => {
     expect(findings("```html\n<!-- example\n```\n" + contract)).toEqual([]);
     expect(findings("<!-- one --> <!--\nstill hidden\n-->\n" + contract)).toEqual([]);
@@ -98,7 +98,8 @@ describe("core skill completion contract", () => {
     const paths = execFileSync("git", ["ls-files", "-z", "--", ".claude/skills"], {
       cwd: root, env: withoutGitEnv(process.env),
     }).toString().split("\0").filter(Boolean);
-    const files = new Map(paths.filter(path => path.endsWith(".md")).map(path =>
+    // A tracked file deleted in the working tree (not yet staged) is no longer a skill.
+    const files = new Map(paths.filter(path => path.endsWith(".md") && existsSync(join(root, path))).map(path =>
       [path, readFileSync(join(root, path), "utf8")]));
     const report = validate({ files, links: [] });
     expect(report.skills).toBeGreaterThan(0);
@@ -186,7 +187,7 @@ describe("three-host agent definition files (AC20)", () => {
     expect(errors(source({ ".grok/agents/reviewer.md": grokAgent("other") }))).toContain("metadata.name");
   });
 
-  it.each([500, 1024, 1025])("T2.5 D29: %s code points on a Claude agent", length => {
+  it.each([500, 1024, 1025])("T2.5 %s code points on a Claude agent", length => {
     const result = errors(source({ ".claude/agents/reviewer.md": claudeAgent("reviewer", "x".repeat(length)) }));
     expect(result.includes("metadata.description")).toBe(length === 1025);
   });
@@ -212,7 +213,7 @@ describe("three-host agent definition files (AC20)", () => {
     expect(errors(source({ ".grok/personas/researcher.toml": 'description = ""\n' })).filter(r => r.startsWith("metadata."))).toEqual([]);
   });
 
-  it("T2.10 no 500-character description error rule (D29)", () => {
+  it("T2.10 no 500-character description error rule", () => {
     const src = readFileSync(join(import.meta.dir, "../check-config.ts"), "utf8");
     expect(src).toContain("chars(fields.description) > 1024");
     expect(src).not.toMatch(/description[^;\n]{0,80}>\s*500/);
@@ -285,7 +286,7 @@ describe("private addon and data boundaries", () => {
 describe("real Git snapshot input", () => {
   it.skipIf(process.platform !== "win32")("accepts Windows root aliases without accepting subdirectories", () => {
     const root = fixture(); git(root, "add", ".");
-    const short = execFileSync("cmd.exe", ["/d", "/c", `for %I in ("${root}") do @echo %~sI`], { encoding: "utf8", windowsVerbatimArguments: true }).trim();
+    const short = spawnSync("cmd.exe", ["/d", "/c", `for %I in ("${root}") do @echo %~sI`], { encoding: "utf8", windowsVerbatimArguments: true }).stdout.trim();
     // Short names may be disabled on a volume; drive-case still exercises alias resolution.
     for (const alias of [short, root.replace(/^[A-Z]:/, drive => drive.toLowerCase()), root.replace("poneglyph-config-test-", "PONEGLYPH-CONFIG-TEST-")]) {
       for (const staged of [false, true]) {
@@ -364,13 +365,13 @@ describe("real Git snapshot input", () => {
   });
 });
 
-// Quality review 2026-09-11, finding H64 — REFUTED, and locked so it is not "fixed".
+// REFUTED, and locked so it is not "fixed".
 // An external reviewer read the agent branch, saw that it checks `names.has(name)` without
 // calling `names.add(name)`, and reported a missing collision. Adding the name breaks the
 // documented three-host pattern: ONE agent declared for Claude and for Grok shares a name
-// on purpose (AC20). The case that matters — an agent shadowing a skill or command — is
+// on purpose (AC20). The case that matters, an agent shadowing a skill or command, is
 // already caught, because skills and commands are scanned into the set first.
-describe("agent name collisions, by design (H64 refuted)", () => {
+describe("agent name collisions, by design", () => {
   it("flags an agent that shadows a skill", () => {
     const s = source({
       ".claude/skills/reviewer/SKILL.md": skill("reviewer"),

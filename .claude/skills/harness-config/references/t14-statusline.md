@@ -1,13 +1,13 @@
 ---
 parent: harness-config
 name: t14-statusline
-description: T14 statusline pack — Claude statusLine, Codex tui.status_line, Grok [ui.status_line]. All three hosts have a real key.
+description: T14 statusline pack, Claude statusLine, Codex tui.status_line, Grok [ui.status_line]. All three hosts have a real key.
 ---
 
-# T14 — Statusline
+# T14: Statusline
 
 Shared: [lookup.md](lookup.md) · [lifecycle.md](lifecycle.md) · [t10-settings.md](t10-settings.md).
-Absorbs cookbook `07-statusline.md` (D27). Machine install for ccstatusline: `docs/statusline-setup.md`.
+Absorbs cookbook `07-statusline.md` (D27).
 
 ## 1. What / when
 
@@ -22,25 +22,25 @@ Claude `statusLine` in settings-reference. Codex `tui.status_line` (`config-refe
 | | Claude Code | Codex | Grok Build |
 |---|---|---|---|
 | Key | `statusLine` in settings (`type`, `command`, `padding`, `refreshInterval`) | `tui.status_line` = `array<string>` of item ids (default `["spinner", "project"]`). `/statusline` picker persists it | `[ui.status_line]` in `~/.grok/config.toml`. `type = "builtin" \| "command" \| "disabled"` (default disabled) |
-| Command | Absolute path to the script (bare `ccstatusline` often fails PATH). Windows: `.exe` in `settings.local.json` | Built-in items (model, context, git, tokens, …) — not a Claude command script | `type = "command"` + `command = "~/…"`. **Project `.grok/config.toml` cannot set this** (user/managed only) |
+| Command | Absolute path to the script (a bare name often fails PATH). Windows: `.exe` in `settings.local.json` | Built-in items (model, context, git, tokens, …), not a Claude command script | `type = "command"` + `command = "~/…"`. **Project `.grok/config.toml` cannot set this** (user/managed only) |
 | Disable | Omit / empty command | `tui.status_line = []` (empty item list) | `type = "disabled"` (`off`/`none`/`hidden` spell the same) |
 | Reload | New session | Immediate after `/statusline` | Restart (`[ui.status_line]` read at startup) |
 
 **Codex gotcha.** The config reference prints the type as `array<string> | null` and says the empty
 value disables the line. That `null` is type notation: TOML has no null literal, and a config file
 carrying it fails to load (`codex doctor` → "config could not be loaded"). Write the empty list
-instead. Omitting the key does **not** disable anything — it restores the default two items.
+instead. Omitting the key does **not** disable anything; it restores the default two items.
 
-This repo's Claude command is `ccstatusline` via `settings.global.json`. Pin **`ccstatusline@2.2.19`** (not `@latest`; supply-chain #298). Widget names (`reset-timer`, `git-review`) differ from the README aliases. Widget config is git-tracked at `.claude/ccstatusline/settings.json` and linked by `bun .claude/commands/sync-poneglyph.ts --execute --backup`. Windows: override `statusLine.command` to the `.exe` path in gitignored `settings.local.json`.
+This repo sets **no** Claude `statusLine`: the `hud` mod (`plugins/hud`) draws its bar above the prompt from `session.measure`, with no command and no API call. A machine that wants a command anyway sets it in the gitignored `settings.machine.json`; pin any third-party tool to an exact version (supply-chain #298).
 
 ## 4. Min template
 
-Claude (this repo — command path is machine-local):
+Claude (command path is machine-local):
 
 ```json
 "statusLine": {
   "type": "command",
-  "command": "$HOME/.bun/bin/ccstatusline",
+  "command": "$HOME/.claude/statusline.sh",
   "padding": 0,
   "refreshInterval": 10
 }
@@ -64,12 +64,12 @@ error. The rendered footer was not inspected, so "empty list hides the line" sta
 
 ## 6. Poneglyph grain
 
-Keep the ccstatusline recipe in `docs/statusline-setup.md`. This pack owns the three host keys. Do not rewrite sync.
+The Claude footer is the `hud` mod (`plugins/hud/README.md`); this pack owns the three host keys. Do not rewrite sync.
 
 ## 7. Absences
 
 | Cell | Status |
 |---|---|
-| Any host without a statusline key | **ausente** — all three have one |
-| Grok project-repo command statusline | **ausente** — user/managed only |
-| Copying Claude `statusLine` JSON into Codex | **ausente** — Codex uses item ids |
+| Any host without a statusline key | **ausente**, all three have one |
+| Grok project-repo command statusline | **ausente**, user/managed only |
+| Copying Claude `statusLine` JSON into Codex | **ausente**, Codex uses item ids |

@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile, rename, open, unlink, stat } from "node:fs/
 import { dirname, isAbsolute, join } from "node:path";
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { contained, fingerprint, git, gitSnapshot, safeRelative, sha } from "./git.mjs";
+import { contained, fingerprint, gitSnapshot, safeRelative, sha } from "./git.mjs";
 import { parseCoverage, coverageFor } from "./coverage.mjs";
 
 export async function jsonRead(path, fallback = null) {

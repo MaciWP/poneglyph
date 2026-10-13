@@ -1,17 +1,17 @@
 ---
-spec: {NNN}-{slug}
-tasks_implemented: [US{ids}]
+spec: "{NNN}-{slug}"
+tasks_implemented: ["US{ids}"]
 oracle_source: validations.md|tests.md|both|none
-created: {ISO-date}
+created: "{ISO-date}"
 phase: 4
 status: draft
 ---
 
-# Review — <feature>
+# Review: <feature>
 
 ## Veredicto
 
-**APPROVED** | **APPROVED_WITH_WARNINGS** | **NEEDS_CHANGES** | **BLOCKED** — <supported reason>
+**APPROVED** | **APPROVED_WITH_WARNINGS** | **NEEDS_CHANGES** | **BLOCKED**, <supported reason>
 
 ## Requirement evidence
 
@@ -30,9 +30,9 @@ prevents approval. Record the assessment using the flow-state helper.
 | HU | Oracle source | Pre | Post | Structural | Smoke | Cross | Resultado |
 |---|---|---|---|---|---|---|---|
 | US{N} | validations.md §US{N} | ✅ | ✅ | ✅ | ⚠️ | ✅ | PASS / FAIL |
-| US{N} | tests.md §T{N}.* | — | — | — | — | — | <X/Y tests passing> |
+| US{N} | tests.md §T{N}.* | none | none | none | none | none | <X/Y tests passing> |
 
-> Para HUs con TDD-mode, completar columnas relevantes (tests passing) y dejar las de validation con `—`. Para HUs con validation-mode, al revés. Si ambos: ambas filas.
+> Para HUs con TDD-mode, completar columnas relevantes (tests passing) y dejar las de validation con `none`. Para HUs con validation-mode, al revés. Si ambos: ambas filas.
 
 ## Checklist
 
@@ -76,7 +76,7 @@ prevents approval. Record the assessment using the flow-state helper.
 
 ## Living-spec deltas detectadas
 
-> Solo si spec.md y lo entregado divergen. Omitir en caso contrario. NO aplicar cambios aquí — proponer para Fase 5.
+> Solo si spec.md y lo entregado divergen. Omitir en caso contrario. NO aplicar cambios aquí, proponer para Fase 5.
 
 - **Sección afectada**: <sección de spec.md>
 - **Diff propuesto**: <qué cambiaría>
@@ -84,7 +84,7 @@ prevents approval. Record the assessment using the flow-state helper.
 
 ## Tests ejecutables (si aplica)
 
-> Reporte de `bun test` u otro runner — paso fundamental para HUs con código nuevo. Omitir si el feature es 100% docs/markdown.
+> Reporte de `bun test` u otro runner: paso necesario para HUs con código nuevo. Omitir si el feature es 100% docs/markdown.
 
 - **Comando ejecutado**: `<cmd>`
 - **Resultado**: `<X pass / Y fail / Z skipped>`

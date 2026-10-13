@@ -40,9 +40,9 @@ describe("codexTargets (one run per profile)", () => {
   const exists = (dirs: string[]) => (p: string) => dirs.map((d) => path.resolve(d)).includes(path.resolve(p));
 
   it("shared ~/.codex first, then CODEX_HOME, when both profiles exist (account links may point at the shared AGENTS.md)", () => {
-    const orca = path.resolve("/apps/orca/codex-accounts/x/home");
-    const targets = codexTargets(HOME, { CODEX_HOME: orca }, exists([orca, path.join(HOME, ".codex")]));
-    expect(targets).toEqual([path.join(HOME, ".codex"), orca]);
+    const alt = path.resolve("/apps/alt/codex-accounts/x/home");
+    const targets = codexTargets(HOME, { CODEX_HOME: alt }, exists([alt, path.join(HOME, ".codex")]));
+    expect(targets).toEqual([path.join(HOME, ".codex"), alt]);
   });
 
   it("de-duplicates when CODEX_HOME is the default profile", () => {
@@ -51,22 +51,22 @@ describe("codexTargets (one run per profile)", () => {
   });
 
   it("only existing profiles are targets", () => {
-    const orca = path.resolve("/apps/orca/home");
-    expect(codexTargets(HOME, { CODEX_HOME: orca }, exists([orca]))).toEqual([orca]);
+    const alt = path.resolve("/apps/alt/home");
+    expect(codexTargets(HOME, { CODEX_HOME: alt }, exists([alt]))).toEqual([alt]);
   });
 
   it("nothing installed yet → the single default target (CODEX_HOME when set)", () => {
     expect(codexTargets(HOME, {}, () => false)).toEqual([path.join(HOME, ".codex")]);
-    const orca = path.resolve("/apps/orca/home");
-    expect(codexTargets(HOME, { CODEX_HOME: orca }, () => false)).toEqual([orca]);
+    const alt = path.resolve("/apps/alt/home");
+    expect(codexTargets(HOME, { CODEX_HOME: alt }, () => false)).toEqual([alt]);
   });
 });
 
-// Quality review 2026-09-11, finding H67. sync-codex concatenates the style twin that the
+// sync-codex concatenates the style twin that the
 // Claude engine regenerates, so a Codex-only run can install a stale twin. Grok already
 // pulls Claude in for the same reason; Codex must too.
 import { selectHosts } from "../../commands/sync-poneglyph";
-describe("host selection respects the twin dependency (H67)", () => {
+describe("host selection respects the twin dependency", () => {
   const detected = [
     { name: "claude" as const, cli: "claude", targets: ["/h/.claude"], installed: true },
     { name: "codex" as const, cli: "codex", targets: ["/h/.codex"], installed: true },

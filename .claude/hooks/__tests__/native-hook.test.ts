@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { handleNativeHook, patchPaths } from "../native-hook";
+import { routerNoteFile } from "../prompt-router";
 import { analyzePayload } from "../skill-activation";
 
 describe("native hook contracts", () => {
@@ -11,7 +12,7 @@ describe("native hook contracts", () => {
       tool_name: "Bash", tool_input: { command: "claude -p test" },
     });
     const grok = await handleNativeHook("grok", "PreToolUse", {
-      toolName: "run_shell_command", toolInput: { command: "claude -p test" },
+      toolName: "run_terminal_command", toolInput: { command: "claude -p test" },
     });
     expect(codex?.hookSpecificOutput?.permissionDecision).toBe("deny");
     expect(grok?.decision).toBe("deny");
@@ -32,9 +33,11 @@ describe("native hook contracts", () => {
   });
 
   it("delivers Codex hints as context and leaves explicit skill invocation alone", async () => {
-    const hint = await handleNativeHook("codex", "UserPromptSubmit", { prompt: "revisa la pr" });
+    const hint = await handleNativeHook("codex", "UserPromptSubmit", { prompt: "quiero una nueva funcionalidad de informes" });
     expect(hint?.hookSpecificOutput?.hookEventName).toBe("UserPromptSubmit");
-    expect(hint?.hookSpecificOutput?.additionalContext).toContain("Skill(");
+    expect(hint?.hookSpecificOutput?.additionalContext).toContain("$flow-lifecycle");
+    // Skill discovery is the prompt router's job; the shared hint names no skill.
+    expect(hint?.hookSpecificOutput?.additionalContext).not.toContain("Skill(");
     expect(await handleNativeHook("codex", "UserPromptSubmit", { prompt: "$flow-lifecycle una nueva funcionalidad" })).toBeNull();
   });
 
@@ -49,6 +52,38 @@ describe("native hook contracts", () => {
     expect(response).not.toHaveProperty("hookSpecificOutput");
   });
 
+  it("hands the router note to the first tool call that runs, once", async () => {
+    const session = `test-${process.pid}-${Date.now()}`;
+    mkdirSync(join(tmpdir(), "poneglyph-router"), { recursive: true });
+    writeFileSync(routerNoteFile(session), "<prompt-router>note</prompt-router>");
+    // A denied call never runs, so the note waits for the next one.
+    const denied = await handleNativeHook("grok", "PreToolUse", {
+      sessionId: session, toolName: "run_terminal_command", toolInput: { command: "claude -p test" },
+    });
+    expect(denied?.decision).toBe("deny");
+    const grok = await handleNativeHook("grok", "PreToolUse", {
+      sessionId: session, toolName: "read_file", toolInput: { path: "a.ts" },
+    });
+    expect(grok?.hookSpecificOutput?.additionalContext).toBe("<prompt-router>note</prompt-router>");
+    expect(await handleNativeHook("grok", "PreToolUse", {
+      sessionId: session, toolName: "read_file", toolInput: { path: "a.ts" },
+    })).toBeNull();
+    writeFileSync(routerNoteFile(session), "<prompt-router>again</prompt-router>");
+    const codex = await handleNativeHook("codex", "PreToolUse", {
+      session_id: session, tool_name: "Bash", tool_input: { command: "git status" },
+    });
+    expect(codex?.hookSpecificOutput).toEqual({ hookEventName: "PreToolUse", additionalContext: "<prompt-router>again</prompt-router>" });
+  });
+
+  it("a new prompt drops the note left for the previous one", async () => {
+    const session = `test-new-${process.pid}-${Date.now()}`;
+    mkdirSync(join(tmpdir(), "poneglyph-router"), { recursive: true });
+    writeFileSync(routerNoteFile(session), "stale");
+    // Two words: below the router gate, so nothing is spawned.
+    await handleNativeHook("grok", "UserPromptSubmit", { sessionId: session, prompt: "sigue así" });
+    expect(existsSync(routerNoteFile(session))).toBe(false);
+  });
+
   it("reports malformed CLI payloads as errors instead of silently succeeding", () => {
     const proc = Bun.spawnSync([process.execPath, resolve(import.meta.dir, "../native-hook.ts"), "--host", "grok", "--event", "PreToolUse"], {
       stdin: Buffer.from("{broken"),
@@ -59,49 +94,11 @@ describe("native hook contracts", () => {
   });
 });
 
-// Quality review 2026-09-11, finding H21. The Codex adapter listed the core skills dir
-// first and `loadSkills` keeps the FIRST directory that defines a name, so a project
-// override lost on Codex and won on Claude. Hermetic on purpose: two temp roots, so the
-// assertion does not break when a real skill edits its keywords.
-function writeSkillFixture(root: string, name: string, keywords: string): void {
-  const dir = join(root, ".claude", "skills", name);
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, "SKILL.md"), `---\nname: ${name}\ndescription: Routing fixture\nmetadata:\n  keywords: >\n    Keywords - ${keywords}\n---\n\n# ${name}\n`);
-}
-
-describe("native hook skill precedence (H21)", () => {
-  it("lets the project override a core skill of the same name", async () => {
-    const core = mkdtempSync(join(tmpdir(), "native-core-"));
-    const project = mkdtempSync(join(tmpdir(), "native-project-"));
-    writeSkillFixture(core, "changes-verify", "core only phrase");
-    writeSkillFixture(project, "changes-verify", "project only phrase");
-    const hint = await handleNativeHook(
-      "codex", "UserPromptSubmit",
-      { prompt: "aplica la project only phrase ahora", cwd: project },
-      core,
-    );
-    expect(hint?.hookSpecificOutput?.additionalContext).toContain('matched "project only phrase"');
-  });
-
-  it("still reads the core skills when the payload carries no project cwd", async () => {
-    const core = mkdtempSync(join(tmpdir(), "native-core-only-"));
-    writeSkillFixture(core, "changes-verify", "core only phrase");
-    const hint = await handleNativeHook(
-      "codex", "UserPromptSubmit", { prompt: "usa la core only phrase" }, core,
-    );
-    expect(hint?.hookSpecificOutput?.additionalContext).toContain('matched "core only phrase"');
-  });
-});
-
-// Quality review 2026-09-11, finding H43. The shared hint text names Claude built-ins
+// The shared hint text names Claude built-ins
 // (`/autocompact`, `/effort`) and the Claude command prefix (`/flow-lifecycle`); Codex
 // reads the same text through this adapter. Self-maintaining: the expected tokens are
 // read from the Claude-bound injection, not hardcoded, so a reworded hint stays covered.
-// Scope is the shape lines — `Skill(<name>)` lines are host-neutral already and a skill
-// keyword may legitimately contain a slash (`consult` carries `/codex:`). The two sides are
-// deliberately asymmetric: the Claude side runs with no catalog so only shape lines appear,
-// while the Codex side loads the real core skills through the adapter.
-describe("native hook host-neutral hints (H43)", () => {
+describe("native hook host-neutral hints", () => {
   // A slash command: not a path segment (`docs/x`), not the wrapper's closing tag (`</…>`).
   const SLASH = /(?<![\w/<])\/[a-z][\w-]*/g;
   const PROMPTS = [
@@ -112,9 +109,8 @@ describe("native hook host-neutral hints (H43)", () => {
 
   it("leaves no Claude-only command in the Codex context", async () => {
     for (const prompt of PROMPTS) {
-      const claude = analyzePayload(JSON.stringify({ prompt }), []).injection;
-      const shapeLines = claude.split("\n").filter((l) => !l.startsWith("Skill("));
-      const tokens = [...new Set(shapeLines.join("\n").match(SLASH) ?? [])];
+      const claude = analyzePayload(JSON.stringify({ prompt })).injection;
+      const tokens = [...new Set(claude.match(SLASH) ?? [])];
       expect(tokens.length).toBeGreaterThan(0);
       const codex = (await handleNativeHook("codex", "UserPromptSubmit", { prompt }))
         ?.hookSpecificOutput?.additionalContext ?? "";
@@ -125,13 +121,12 @@ describe("native hook host-neutral hints (H43)", () => {
   it("offers the interactive Codex model selector for effort changes", async () => {
     const hint = (await handleNativeHook("codex", "UserPromptSubmit", { prompt: PROMPTS[2] }))?.hookSpecificOutput?.additionalContext;
     expect(hint).toContain("/model");
-    expect(hint).toContain("Orca");
     expect(hint).not.toContain("not an in-session command");
   });
 });
 
-// Plan 041 US5: the design-file note on a Codex apply_patch; Grok stays silent.
-describe("native hook design-file note (041)", () => {
+// The design-file note on a Codex apply_patch; Grok stays silent.
+describe("native hook design-file note", () => {
   const fresh = () => mkdtempSync(join(tmpdir(), "native-design-"));
   const patch = (...lines: string[]) => ["*** Begin Patch", ...lines, "*** End Patch", ""].join("\n");
   const logOf = (dir: string) => join(dir, ".claude", "learned", "design-file-hints.log");
@@ -156,6 +151,19 @@ describe("native hook design-file note (041)", () => {
     expect(await call("c-2", "*** Add File: src/util.ts", "+x")).toBeNull();
     expect(await call("c-3", "*** Add File: src/util.ts", "+x", "*** Add File: src/Button.vue", "+y")).not.toBeNull();
     expect(await call("c-3", "*** Add File: src/Button.vue", "+y")).toBeNull();
+  });
+
+  it("T5.4 a router note waiting for the session joins the design note in one context", async () => {
+    const session = `c-combo-${process.pid}-${Date.now()}`;
+    mkdirSync(join(tmpdir(), "poneglyph-router"), { recursive: true });
+    writeFileSync(routerNoteFile(session), "<prompt-router>n</prompt-router>");
+    const out = await handleNativeHook("codex", "PreToolUse", {
+      session_id: session, cwd: fresh(), tool_name: "apply_patch",
+      tool_input: { command: patch("*** Update File: web/index.html", "@@", "-a", "+b") },
+    });
+    const context = out?.hookSpecificOutput?.additionalContext ?? "";
+    expect(context).toContain("DESIGN_SYSTEM.md");
+    expect(context).toEndWith("\n\n<prompt-router>n</prompt-router>");
   });
 
   it("T5.3 Grok gets nothing for the same payload", async () => {

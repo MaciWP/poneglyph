@@ -1,8 +1,9 @@
 import { afterAll, describe, test, expect } from "bun:test";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { formatLogLine, appendLog } from "../instructions-loaded";
+import { learnedLog } from "../lib/paths";
 
 describe("post-compaction language reminder", () => {
   const script = join(import.meta.dir, "..", "instructions-loaded.ts");
@@ -90,5 +91,32 @@ describe("appendLog", () => {
     appendLog("line one", logPath);
     appendLog("line two", logPath);
     expect(readFileSync(logPath, "utf8")).toBe("line one\nline two\n");
+  });
+});
+
+describe("log location", () => {
+  const root = mkdtempSync(join(tmpdir(), "poneglyph-root-test-"));
+  const sub = join(root, "nested", "dir");
+  mkdirSync(sub, { recursive: true });
+  afterAll(() => rmSync(root, { recursive: true, force: true }));
+
+  test("an agent that cd'd into a subdirectory still logs under the project root", () => {
+    const result = Bun.spawnSync([process.execPath, join(import.meta.dir, "..", "instructions-loaded.ts")], {
+      stdin: Buffer.from(JSON.stringify({ session_id: "s1", cwd: sub, file_path: "/x/CLAUDE.md", hook_event_name: "InstructionsLoaded" })),
+      env: { ...process.env, CLAUDE_PROJECT_DIR: root },
+    });
+    expect(result.exitCode).toBe(0);
+    expect(readFileSync(join(root, ".claude", "learned", "instructions-loaded.log"), "utf8")).toContain("/x/CLAUDE.md");
+    expect(existsSync(join(sub, ".claude"))).toBe(false);
+  });
+
+  test("without CLAUDE_PROJECT_DIR (another host) the payload cwd is the root", () => {
+    const saved = process.env.CLAUDE_PROJECT_DIR;
+    delete process.env.CLAUDE_PROJECT_DIR;
+    try {
+      expect(learnedLog(sub, "a.log")).toBe(join(sub, ".claude", "learned", "a.log"));
+    } finally {
+      if (saved !== undefined) process.env.CLAUDE_PROJECT_DIR = saved;
+    }
   });
 });

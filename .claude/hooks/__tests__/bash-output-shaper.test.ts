@@ -2,12 +2,12 @@ import { describe, expect, it } from "bun:test";
 import { basename } from "node:path";
 import { BIG_FILE_BYTES, buildOutput, shapeCommand } from "../bash-output-shaper";
 
-// Sizes by basename so the fixture is path-separator agnostic (Windows suite, audit 010).
+// Sizes by basename so the fixture is path-separator agnostic (Windows suite).
 const sizes: Record<string, number> = { "plan.md": 28_000, "README.md": 5_000, "big.log": BIG_FILE_BYTES + 1, "small.txt": 10 };
 const fileSize = (p: string) => sizes[basename(p)] ?? null;
 const shape = (cmd: string) => shapeCommand(cmd, "/repo", fileSize);
 
-describe("bash-output-shaper — shapeCommand (plan 037, WP3)", () => {
+describe("bash-output-shaper: shapeCommand", () => {
   const allowed = [
     "git status",
     "git diff",
@@ -45,7 +45,7 @@ describe("bash-output-shaper — shapeCommand (plan 037, WP3)", () => {
     "sed -n '1,400p' plan.md",
     "echo '=== a ===' && cat README.md && cat plan.md",
     "cat big.log",
-    "cat plan.md 2>/dev/null", // only stderr is redirected — the dump still reaches the context
+    "cat plan.md 2>/dev/null", // only stderr is redirected, the dump still reaches the context
     "cat plan.md 2>&1",
   ];
   for (const cmd of denied) {
@@ -79,7 +79,7 @@ describe("bash-output-shaper — shapeCommand (plan 037, WP3)", () => {
   });
 });
 
-describe("bash-output-shaper — hook output shapes", () => {
+describe("bash-output-shaper: hook output shapes", () => {
   it("is silent on allow", () => {
     expect(buildOutput({ action: "allow" }, { command: "git status" })).toBeNull();
   });
@@ -95,10 +95,10 @@ describe("bash-output-shaper — hook output shapes", () => {
   });
 });
 
-// Quality review 2026-09-11 — H22: the command is split on newlines BEFORE the heredoc
+// The command is split on newlines BEFORE the heredoc
 // check, so a heredoc BODY line is shaped as if it were a command. Heredocs are writes:
 // the shaper must never touch them.
-describe("heredoc bodies are data, not commands (H22)", () => {
+describe("heredoc bodies are data, not commands", () => {
   it("allows a heredoc whose body line starts with cat", () => {
     expect(shape("cat > notes.md <<'EOF'\ncat plan.md\nEOF").action).toBe("allow");
   });
@@ -112,10 +112,10 @@ describe("heredoc bodies are data, not commands (H22)", () => {
   });
 });
 
-// Audit 012 — H2: ~32 real denials over 13 sessions were all bounded numeric ranges (largest span
+// ~32 real denials over 13 sessions were all bounded numeric ranges (largest span
 // ~140 lines). A bounded `sed -n` is the same cost as Read with offset/limit, so it passes while the
 // total span stays within SED_MAX_LINES; whole-file and open-ended scripts stay denied.
-describe("bounded sed -n ranges are not whole dumps (audit 012, H2)", () => {
+describe("bounded sed -n ranges are not whole dumps", () => {
   const bounded = [
     "sed -n '215,235p' plan.md",
     "sed -n 480,620p plan.md",
@@ -144,9 +144,9 @@ describe("bounded sed -n ranges are not whole dumps (audit 012, H2)", () => {
   }
 });
 
-// Audit 012 — H3: zsh `nomatch` aborts a command whose unquoted glob matches nothing; ~80 hits,
+// zsh `nomatch` aborts a command whose unquoted glob matches nothing; ~80 hits,
 // most of them `grep --include=*.py`. Quoting the grep option value changes nothing for grep.
-describe("unquoted grep --include/--exclude globs are quoted (audit 012, H3)", () => {
+describe("unquoted grep --include/--exclude globs are quoted", () => {
   const quoted: Array<[string, string]> = [
     ["grep -rn foo --include=*.py apps", "grep -rn foo --include='*.py' apps"],
     ["grep -rln x . --include=*.ts --exclude-dir=node_modules", "grep -rln x . --include='*.ts' --exclude-dir=node_modules"],

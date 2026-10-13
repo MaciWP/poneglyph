@@ -2,12 +2,12 @@ import { describe, expect, it } from "bun:test";
 import { copyFileSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { authorized, extractTurn, judge, remoteActions, type Turn } from "../lib/remote-git";
+import { authorized, extractTurn, judge, remoteActions, type RemoteAction, type Turn } from "../lib/remote-git";
 
 const turn = (prompt: string, previousAssistantText = ""): Turn => ({ prompt, previousAssistantText });
 
-describe("remote-git-gate — remoteActions", () => {
-  const remote: Array<[string, string[]]> = [
+describe("remote-git-gate: remoteActions", () => {
+  const remote: Array<[string, RemoteAction[]]> = [
     ["git push", ["push"]],
     ["git push origin feat/x", ["push"]],
     ["git -C . push", ["push"]],
@@ -27,7 +27,7 @@ describe("remote-git-gate — remoteActions", () => {
     ["gh pr create --fill", ["pr-create"]],
     ["gh -R MaciWP/poneglyph pr merge 45 --squash", ["pr-merge"]],
     ["git push -u origin b && gh pr create --fill", ["push", "pr-create"]],
-    // PR #48 review (rev-opus H1/H2): forms the first detector missed or downgraded.
+    // forms the first detector missed or downgraded.
     [`git commit -m "don't break" && git push origin main && gh pr create --fill --title 'x'`, ["push", "pr-create"]],
     ['git -C "D:/my repo" push', ["push"]],
     ['git "push" origin main', ["push"]],
@@ -73,8 +73,8 @@ describe("remote-git-gate — remoteActions", () => {
   });
 });
 
-describe("remote-git-gate — authorized", () => {
-  // Oriol's own message that opened PR #48's review round, verbatim.
+describe("remote-git-gate: authorized", () => {
+  // Oriol's own message, verbatim.
   const canonical = "haz commit push abre pr revisalo con asatra /orca-team 6 high y un agente de opus y luego arregla si crees que tioenes razon y merge";
   const yes: Array<[Turn, string]> = [
     [turn("haz push"), "push"],
@@ -121,7 +121,7 @@ describe("remote-git-gate — authorized", () => {
     [turn("haz push"), "push-force"],
     [turn(canonical), "push-force"],
     [turn("sí, pero antes revisa el diff completo y los tests de integración y luego ya vemos", "¿Hago push?"), "push"],
-    // PR #48 review (rev-opus H3/H4/H5): mentions, refusals and agent prompts.
+    // mentions, refusals and agent prompts.
     [turn("sí, pero no hagas push", "Tests en verde. ¿Hago push?"), "push"],
     [turn("sí", "¿Subo el timeout a 30 segundos?"), "push"],
     [turn("sí", "¿Resuelvo el conflicto de merge en utils.ts?"), "pr-merge"],
@@ -135,14 +135,66 @@ describe("remote-git-gate — authorized", () => {
     [turn("the push to the queue drops messages, fix it"), "push"],
     [turn("explícame qué hace gh pr create --fill"), "pr-create"],
     [turn('Check false denials in his wording ("haz push", "abre la PR"). Never run a real git push.'), "push"],
-    [turn("You are working inside Orca, a multi-agent IDE. You are a dispatched worker. Task: haz push y abre la PR."), "push"],
   ];
   for (const [t, action] of no) {
     it(`denies ${action} on: ${t.prompt}`, () => expect(authorized(t, action as never)).toBe(false));
   }
 });
 
-describe("remote-git-gate — extractTurn", () => {
+// The gate's real denials over 14 days of transcripts (2026-09-25 → 10-08), identifiers removed.
+// Ten were the user's explicit asks; three were right and must stay denied.
+describe("remote-git-gate: real denials replayed", () => {
+  const allow: Array<[Turn, string[]]> = [
+    [turn("si", 'Los checks están hechos; responde "sí" o "abre la PR" en un mensaje nuevo y la abro con este título.'), ["pr-create", "push"]],
+    [turn("Revisa si tienen algún problema y vamos a hacer un commit a main y el push. A priori debería ser seguro."), ["push"]],
+    [turn("Por favor. Have un push.", "El commit está en `main` en local; para subirlo, contesta «haz push»."), ["push"]],
+    [turn("haz commit, push y merge"), ["push", "pr-merge", "pr-create"]],
+    [turn("abre la PR y mérgeala"), ["pr-create", "pr-merge", "push"]],
+    [turn("Sí, adelante. Eh, sí hacer pus, abrir la PR y mergearla, por favor.", "Dime «sí, haz push, abre la PR y mergéala» y lo termino."), ["push", "pr-create", "pr-merge"]],
+    [turn("adelante hazlo pero antes de mergear quiero que pegues un repaso a los cambios", "Dime «sí, abre la PR» y creo la rama, la subo y abro la PR."), ["push", "pr-create"]],
+    [turn("soluciona estos errores y vamos a gacer comnit push merge y git pull de main"), ["push", "pr-merge"]],
+    [turn("sigue adelante haz el push y pr"), ["push", "pr-create"]],
+    [turn("no pasa nada, haz commit y push"), ["push"]],
+  ];
+  for (const [t, actions] of allow) {
+    for (const action of actions) it(`allows ${action} on: ${t.prompt}`, () => expect(authorized(t, action as never)).toBe(true));
+  }
+
+  const deny: Array<[Turn, string]> = [
+    [turn("Haz commit push con el texto en ingles breve y claro /natural-writing"), "pr-create"],
+    [turn("abre pr", "Falta que me digas «abre la PR y mergea la PR» para abrirla y mergearla."), "pr-merge"],
+    [turn("[Request interrupted by user]"), "push"],
+    [turn("adelante hazlo pero antes de mergear quiero que pegues un repaso", "Dime «sí, abre la PR y mergéala»."), "pr-merge"],
+    // Assent never reaches a force push, even when the previous text quotes one.
+    [turn("sí", "Para forzarlo contesta «haz push --force»."), "push-force"],
+    [turn("revisa el diff y la PR"), "pr-create"],
+    // False allows the 14-day sweep found in a looser draft.
+    [turn('<pasted_content id="ab12">\nDo not edit coordination.md. Do not spawn agents, commit, push, change branches.\n</pasted_content id="ab12">\nsigue'), "push"],
+    [turn("Report in this terminal only. Do not comment on, approve, or merge the PR, and do not push."), "pr-merge"],
+    [turn("Report in this terminal only. Do not edit code, commit, push, approve, merge or write to the tracker."), "push"],
+    [turn("ayúdame a escribir el mensaje, voy a mergear la rama del ticket"), "pr-merge"],
+    [turn("si está bien la rama y estamos listos para abrir pr o no"), "pr-create"],
+    [turn("Candidatos la protección de push, merge creo que debería ser menos dura"), "pr-merge"],
+    [turn("Si me refiero a asignar puertos a cada worktree", "Luego hago push de la rama."), "push"],
+    [turn("Sí, yo entiendo que esto ha llegado a una PR mergeada, no pasa nada.", "¿Mergeo la PR?"), "pr-merge"],
+    [{ ...turn("revisa y dime"), answers: ["PR⇒push; merge⇒PR según replay (Recomendado)"] }, "pr-create"],
+    [{ ...turn("revisa y dime"), answers: ["me asigna como revisor en el ticket y en la pr"] }, "pr-create"],
+    // A local merge publishes nothing, so it implies no PR and no push.
+    [turn("mergea dev en mi rama"), "push"],
+    [turn("haz merge de dev en mi rama"), "pr-create"],
+  ];
+  for (const [t, action] of deny) {
+    it(`still denies ${action} on: ${t.prompt}`, () => expect(authorized(t, action as never)).toBe(false));
+  }
+
+  it("counts an AskUserQuestion answer from this turn that names the action", () => {
+    expect(authorized({ ...turn("revisa y dime"), answers: ["Subir y abrir la PR (Recomendado)"] }, "pr-create")).toBe(true);
+    expect(authorized({ ...turn("revisa y dime"), answers: ["Push y PR"] }, "push")).toBe(true);
+    expect(authorized({ ...turn("revisa y dime"), answers: ["Dejarlo en local"] }, "push")).toBe(false);
+  });
+});
+
+describe("remote-git-gate: extractTurn", () => {
   const line = (o: unknown) => JSON.stringify(o);
   const human = { origin: { kind: "human" } };
   const jsonl = [
@@ -169,9 +221,26 @@ describe("remote-git-gate — extractTurn", () => {
     expect(extractTurn(jsonl, "p3")).toBeNull();
     expect(extractTurn(jsonl, "p4")).toBeNull();
   });
+
+  it("collects this turn's AskUserQuestion answers from the main thread only", () => {
+    const asked = [
+      jsonl,
+      line({ type: "user", promptId: "p2", toolUseResult: { answers: { "¿Qué hago?": "Push y PR" } }, message: { content: [{ type: "tool_result", content: "ok" }] } }),
+      line({ type: "user", promptId: "p2", isSidechain: true, toolUseResult: { answers: { q: "Mergear" } }, message: { content: [] } }),
+      line({ type: "user", promptId: "p1", toolUseResult: { answers: { q: "Force push" } }, message: { content: [] } }),
+    ].join("\n");
+    expect(extractTurn(asked, "p2")).toEqual({ prompt: "sí", previousAssistantText: "¿Hago push?", answers: ["Push y PR"] });
+  });
+
+  it("drops the answers of a call whose input already carried them", () => {
+    const ask = (id: string, input: object) => line({ type: "assistant", promptId: "p2", message: { content: [{ type: "tool_use", id, name: "AskUserQuestion", input }] } });
+    const result = (id: string, answer: string) => line({ type: "user", promptId: "p2", toolUseResult: { answers: { q: answer } }, message: { content: [{ type: "tool_result", tool_use_id: id, content: "ok" }] } });
+    const asked = [jsonl, ask("t1", { questions: [], answers: { q: "Push y PR" } }), result("t1", "Push y PR"), ask("t2", { questions: [] }), result("t2", "Mergear")].join("\n");
+    expect(extractTurn(asked, "p2")?.answers).toEqual(["Mergear"]);
+  });
 });
 
-describe("remote-git-gate — judge", () => {
+describe("remote-git-gate: judge", () => {
   it("stays silent for local commands without reading the transcript", async () => {
     let read = false;
     expect(await judge("git checkout -- f", async () => ((read = true), null))).toBeNull();
@@ -183,8 +252,8 @@ describe("remote-git-gate — judge", () => {
   });
 
   it("denies an unasked push and names only the missing action", async () => {
-    const reason = await judge("git push && gh pr create --fill", async () => turn("abre la PR"));
-    expect(reason).toMatch(/^git push publishes/);
+    const reason = await judge("git push --force && gh pr create --fill", async () => turn("abre la PR"));
+    expect(reason).toMatch(/^a force push or remote branch delete publishes/);
     expect(reason).not.toMatch(/gh pr create/);
   });
 
@@ -199,7 +268,7 @@ describe("remote-git-gate — judge", () => {
 });
 
 // The real entrypoint, spawned as Claude Code runs it: exit 2 blocks, anything else lets the call run.
-describe("remote-git-gate — entrypoint exit codes", () => {
+describe("remote-git-gate: entrypoint exit codes", () => {
   const entry = resolve(import.meta.dir, "..", "remote-git-gate.ts");
   const dir = mkdtempSync(join(tmpdir(), "remote-git-gate-"));
   const transcript = join(dir, "t.jsonl");

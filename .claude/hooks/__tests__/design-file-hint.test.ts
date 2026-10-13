@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { alreadyNoted, buildNote, commandPaths, findDesignFiles, isUiFile, noteOnce } from "../design-file-hint";
 
-// Plan 041 US3. Each test builds its own temp project with the named design files.
+// Each test builds its own temp project with the named design files.
 function project(files: string[]): string {
   const dir = mkdtempSync(join(tmpdir(), "design-file-hint-"));
   for (const f of files) {
@@ -29,7 +29,7 @@ function run(stdin: string, projectDir?: string): { code: number; out: string } 
   return { code: proc.exitCode, out: proc.stdout.toString().trim() };
 }
 
-describe("design-file-hint — pure parts", () => {
+describe("design-file-hint: pure parts", () => {
   it("T3.1 recognises UI files by extension, case-insensitive", () => {
     for (const p of ["src/App.tsx", "a/B.VUE", "styles.scss", "index.html", "x.svelte", "y.jsx", "z.css"]) {
       expect(isUiFile(p)).toBe(true);
@@ -49,7 +49,7 @@ describe("design-file-hint — pure parts", () => {
     expect(found).toMatch(/docs\/DESIGN_SYSTEM\.md[^.]*in use/);
     expect(found).toContain("DESIGN.md");
     const none = buildNote([]);
-    for (const p of ["docs/DESIGN_SYSTEM.md", "DESIGN_SYSTEM.md", "DESIGN.md", "references/design-file.md", "**Decide:**"]) {
+    for (const p of ["docs/DESIGN_SYSTEM.md", "DESIGN_SYSTEM.md", "DESIGN.md", "references/design-file.md", "AskUserQuestion"]) {
       expect(none).toContain(p);
     }
     expect(found).not.toMatch(IMPERATIVE);
@@ -78,6 +78,10 @@ describe("design-file-hint — pure parts", () => {
   it("T3.10 extracts UI-file paths from a shell command", () => {
     expect(commandPaths("sed -i '' 's/a/b/' index.html")).toEqual(["index.html"]);
     expect(commandPaths(`python3 - <<'EOF'\nopen("src/styles.css").read()\nEOF`)).toEqual(["src/styles.css"]);
+    expect(commandPaths("grep -rn foo --include=*.tsx src")).toEqual([]);
+    expect(commandPaths("rg -n foo -g '*.css' && find . -name '*.vue'")).toEqual([]);
+    expect(commandPaths("grep -rn foo --include=*.ts src/App.tsx")).toEqual(["src/App.tsx"]);
+    expect(commandPaths("cp a/file-name src/a.css")).toEqual(["src/a.css"]);
     expect(commandPaths("cat web/App.TSX docs/notes.md > out.txt")).toEqual(["web/App.TSX"]);
     expect(commandPaths("cat notes.md && ls src")).toEqual([]);
     expect(commandPaths("cat theme.cssx data.json")).toEqual([]);
@@ -95,7 +99,7 @@ describe("design-file-hint — pure parts", () => {
   });
 });
 
-describe("design-file-hint — hook process", () => {
+describe("design-file-hint: hook process", () => {
   it("T3.5 notes the first UI edit, stays silent on the repeat and on non-UI", () => {
     const dir = project([]);
     const edit = (session: string, tool: string, file: string) =>

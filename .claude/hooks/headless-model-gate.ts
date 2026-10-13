@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
 
-// PreToolUse (Bash) — the belt against paying Fable/Opus for a headless run (plan 033, D2).
+// PreToolUse (Bash), the belt against paying Fable/Opus for a headless run.
 //
 // 2026-09-03: the Lead launched 82 `claude -p` sessions in one day, 44 on Opus (no --model,
-// host default) and 29 on Fable (explicit). CLAUDE.md §Agent spawn already says a headless
+// host default) and 29 on Fable (explicit). CLAUDE.md §Agents and skills already says a headless
 // run is a separate model worker; this hook makes the rule mechanical for the one surface
 // where it slipped: a Bash command typed by the Lead. Denies when the command
 //   (a) runs `claude -p` / `claude --print` without `--model`,
@@ -42,12 +42,12 @@ export function judgeCommand(cmd: string): Judgement {
   if (HEADLESS_SCRIPT_RE.test(cmd)) {
     const model = flagValue(toks, "--model");
     if (model && EXPENSIVE_MODEL_RE.test(model) && !allowExpensive) {
-      return { allow: false, reason: `Headless script on "${model}" without --allow-expensive. Fable/Opus are never the default for evals or probes (CLAUDE.md §Agent spawn, plan 033). Drop --model to get the cheap tier, or add --allow-expensive with Oriol's this-turn permission.` };
+      return { allow: false, reason: `Headless script on "${model}" without --allow-expensive. Fable/Opus are never the default for evals or probes (CLAUDE.md §Agents and skills). Drop --model to get the cheap tier, or add --allow-expensive with the user's this-turn permission.` };
     }
     return { allow: true };
   }
 
-  // (a)/(b) raw claude CLI — only when `claude` is the COMMAND word (start of the line or
+  // (a)/(b) raw claude CLI, only when `claude` is the COMMAND word (start of the line or
   // right after a shell operator), so `echo "claude -p …"` or a grep for it stays allowed.
   const OPERATORS = new Set(["&&", "||", ";", "|", "(", "{", "then", "do", "else", "exec", "time", "nohup"]);
   const claudeIdx = toks.findIndex((t, i) => /(^|[\\/])claude(\.exe)?$/.test(t) && (i === 0 || OPERATORS.has(toks[i - 1]) || /[;&|]$/.test(toks[i - 1])));
@@ -57,11 +57,11 @@ export function judgeCommand(cmd: string): Judgement {
   if (!headless) return { allow: true }; // `claude doctor`, `claude plugin …`, interactive
   const model = flagValue(rest, "--model");
   if (!model) {
-    return { allow: false, reason: `Headless \`claude -p\` without --model inherits the host default (Opus/Fable — 82 sessions on 2026-09-03). Name a cheap tier: --model ${CHEAP_TIER} (prose/smoke) or --model ${MID_TIER} (skill triggers). Plan 033.` };
+    return { allow: false, reason: `Headless \`claude -p\` without --model inherits the host default (Opus/Fable, 82 sessions on 2026-09-03). Name a cheap tier: --model ${CHEAP_TIER} (prose/smoke) or --model ${MID_TIER} (skill triggers). Plan 033.` };
   }
   const fallback = flagValue(rest, "--fallback-model") ?? "";
   if ((EXPENSIVE_MODEL_RE.test(model) || EXPENSIVE_MODEL_RE.test(fallback)) && !allowExpensive) {
-    return { allow: false, reason: `Headless \`claude -p\` on "${model}" costs several times the cheap tiers. Use ${CHEAP_TIER} / ${MID_TIER}, or add --allow-expensive together with Oriol's this-turn permission (CLAUDE.md §Agent spawn).` };
+    return { allow: false, reason: `Headless \`claude -p\` on "${model}" costs several times the cheap tiers. Use ${CHEAP_TIER}, or add --allow-expensive together with the user's this-turn permission (CLAUDE.md §Agents and skills).` };
   }
   return { allow: true };
 }
@@ -81,7 +81,7 @@ if (import.meta.main) {
       if (!verdict.allow) process.stdout.write(buildDenial(verdict.reason) + "\n");
     }
   } catch {
-    // best-effort — a broken payload never blocks a command
+    // best-effort, a broken payload never blocks a command
   }
   process.exit(0);
 }

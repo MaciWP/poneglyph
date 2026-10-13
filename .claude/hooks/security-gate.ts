@@ -1,23 +1,18 @@
 #!/usr/bin/env bun
 // Stop hook: scans recently modified files for potential secret leaks.
 // Synchronous + visible: when a secret is suspected it surfaces a `systemMessage`
-// to the user (stdout JSON). It NEVER blocks the turn (always exits 0) — it warns,
+// to the user (stdout JSON). It NEVER blocks the turn (always exits 0), it warns,
 // it does not gate. Registered WITHOUT `async` so the systemMessage is not discarded.
 
-import {
-  isAbsolute as isAbsolutePathNative,
-  join,
-  relative as relativePathNative,
-  resolve as resolvePathNative,
-  sep as pathSep,
-} from "node:path";
+import { stat } from "node:fs/promises";
 import { appendLog } from "./instructions-loaded";
+import { learnedLog } from "./lib/paths";
 import { readHookStdin } from "./lib/hook-stdin";
+import { readTranscriptTail } from "./lib/transcript";
 
 // The optional quote after the key is what makes JSON and quoted YAML match: `"password":
 // "..."` puts a closing quote between the key and the separator, so without it every .json
-// file walked past the gate although .json is a scanned extension (H54, quality review
-// 2026-09-11).
+// file walked past the gate although .json is a scanned extension.
 export const SECRET_PATTERN =
   /(?:API_KEY|SECRET|TOKEN|PASSWORD|PRIVATE_KEY)['"]?\s*[=:]\s*['"]?[A-Za-z0-9_\-\.]{16,}['"]?/gi;
 
@@ -27,7 +22,7 @@ export const SECRET_PATTERN_CI =
 // Markdown is documentation/illustration by nature: how-tos, skill references,
 // and PR reports routinely contain `SECRET_KEY=...` / `password: ...` as EXAMPLES.
 // SECRET_PATTERN_CI matches that prose en masse, so a stateless Stop hook re-surfaces
-// the same false positives every turn — training the user to ignore the gate, which
+// the same false positives every turn, training the user to ignore the gate, which
 // is exactly when a REAL leak gets missed. Real secrets live in .env / code / config,
 // not in .md. So .md is intentionally NOT scanned; detection in the rest stays intact.
 const TEXT_EXTENSIONS = new Set([
@@ -36,7 +31,7 @@ const TEXT_EXTENSIONS = new Set([
 
 export function hasTextExtension(filePath: string): boolean {
   // A dotted environment file (.env.local, .env.production) holds the same class of secret
-  // as .env, but its last dot yields ".local" / ".production" and misses the set (H54).
+  // as .env, but its last dot yields ".local" / ".production" and misses the set.
   const base = (filePath.split(/[\\/]/).pop() ?? "").toLowerCase();
   if (base === ".env" || base.startsWith(".env.")) return true;
   const dot = filePath.lastIndexOf(".");
@@ -44,14 +39,14 @@ export function hasTextExtension(filePath: string): boolean {
   return TEXT_EXTENSIONS.has(filePath.slice(dot).toLowerCase());
 }
 
-// The .claude/ tree is Claude Code orchestration config — hooks, skills, commands,
-// rules, settings — i.e. meta-system plumbing, NOT the project's business code where
+// The .claude/ tree is Claude Code orchestration config, hooks, skills, commands,
+// rules, settings, i.e. meta-system plumbing, NOT the project's business code where
 // a real secret leak matters. By nature it CONTAINS secret-shaped literals: this very
 // detector's SECRET_PATTERN, its tests (`API_KEY = "..."`), security how-tos, auth
 // skills. Scanning it produces self-matching false positives every turn. The gate
 // watches YOUR code; .claude/ is the tool, not the codebase. (.md anywhere is already
 // excluded by hasTextExtension.) Tradeoff: a literal secret in .claude/settings.json
-// is not caught — acceptable, that's tool config (secrets belong in env/gitignore).
+// is not caught, acceptable, that's tool config (secrets belong in env/gitignore).
 export function isOrchestrationPath(filePath: string): boolean {
   return /(?:^|\/)\.claude\//.test(filePath);
 }
@@ -59,18 +54,18 @@ export function isOrchestrationPath(filePath: string): boolean {
 // An OpenAPI/Swagger document is an API CONTRACT: its `examples:` blocks exist to
 // illustrate request/response shapes, so credential-shaped placeholders are the
 // point, not a leak. Measured case (an OpenAPI contract repo, 2026-08-06): the canonical
-// `token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` — a bare JWT *header*, no
-// payload, no signature — sits at openapi.yaml:103 and re-fired on every turn that
+// `token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`, a bare JWT *header*, no
+// payload, no signature, sits at openapi.yaml:103 and re-fired on every turn that
 // touched the contract. Same failure mode the .md exclusion above was written for:
 // a gate that cries wolf every turn trains the user to ignore it.
 // Scoped by CONTENT, not extension, on purpose: docker-compose.yaml, Helm values.yaml
 // and CI workflows are exactly where a real secret lives, and none of them declare
-// an `openapi:`/`swagger:` version — their detection is untouched.
+// an `openapi:`/`swagger:` version, their detection is untouched.
 // Tradeoff (same shape as .md / .claude/): a real credential pasted into an
-// `example:` is not caught. Measured cost at write time: 0 — the only secret-shaped
+// `example:` is not caught. Measured cost at write time: 0, the only secret-shaped
 // lines in the whole contract repo were three copies of that placeholder.
 // Known limit: a conventional openapi.json (indented root key) is NOT recognised.
-// Left narrow on purpose — widen it when a real case shows up, not before.
+// Left narrow on purpose, widen it when a real case shows up, not before.
 export function isApiSpecDocument(content: string): boolean {
   return /^["']?(?:openapi|swagger)["']?:\s*['"]?\d/m.test(content.slice(0, 2048));
 }
@@ -103,22 +98,22 @@ const TYPE_KEYWORDS = new Set([
 ]);
 
 /** RHS after a secret-shaped key, or null when the line has no key match. */
-export function extractSecretRhs(line: string): string | null {
+function extractSecretRhs(line: string): string | null {
   const m = line.match(SECRET_RHS_EXTRACT);
   return m ? m[1] : null;
 }
 
 // Type/schema RHS is not a credential value. Measured FP class (a frontend repo's
 // generated types.gen.ts, 2026-08 and earlier turns): `password: string;` / `old_password:
-// string;` — OpenAPI-generated property types. SECRET_PATTERN_CI's `.{8,}` treats
+// string;`, OpenAPI-generated property types. SECRET_PATTERN_CI's `.{8,}` treats
 // ` string;` as a value because it is ≥8 chars, so every turn that touches the
 // generated client re-fires the Stop gate. Same cry-wolf failure mode as .md /
 // OpenAPI yaml exclusions above.
 // Hand-written interfaces, Zod (`z.string()`), and Django field defs share the
-// shape — path-excluding `types.gen.ts` would miss them. Filter by RHS class.
-// Tradeoff: `password = getSecret()` (call, no literal) is not flagged — the gate
+// shape, path-excluding `types.gen.ts` would miss them. Filter by RHS class.
+// Tradeoff: `password = getSecret()` (call, no literal) is not flagged, the gate
 // hunts leaked VALUES, not dataflow.
-export function isCredentialTypeAnnotation(rhs: string): boolean {
+function isCredentialTypeAnnotation(rhs: string): boolean {
   let s = rhs.replace(/\/\/.*$/, "").replace(/\/\*[\s\S]*$/, "").trim();
   s = s.replace(/[,;]\s*$/, "").trim();
   if (!s) return false;
@@ -127,10 +122,10 @@ export function isCredentialTypeAnnotation(rhs: string): boolean {
   if (/['"`]/.test(s)) return false;
 
   // PascalCase single identifier (`AccessToken`, `PasswordInput`) is a type name,
-  // not a leaked value — must win over the continuous-token check below.
+  // not a leaked value, must win over the continuous-token check below.
   if (/^[A-Z][A-Za-z0-9]*$/.test(s) && /[a-z]/.test(s)) return true;
 
-  // Continuous secret-like token (JWT, base64, bare password) — not a type name,
+  // Continuous secret-like token (JWT, base64, bare password), not a type name,
   // unless it is exactly a type keyword (`string`, `number`, …).
   if (/^[A-Za-z0-9_\-+/=.]{8,}$/.test(s) && !TYPE_KEYWORDS.has(s.toLowerCase())) {
     return false;
@@ -153,7 +148,7 @@ export function isCredentialTypeAnnotation(rhs: string): boolean {
   return false;
 }
 
-// Per-line secret check. Resets the stateful /g regex BEFORE testing — the
+// Per-line secret check. Resets the stateful /g regex BEFORE testing, the
 // lastIndex gotcha would silently skip alternating lines otherwise.
 // Type/schema annotations that only LOOK secret-shaped are filtered out (see
 // isCredentialTypeAnnotation) so the gate stays loud on real leaks only.
@@ -166,8 +161,8 @@ export function lineHasSecret(line: string): boolean {
 }
 
 // In TS/JS a leaked credential can only be a string literal: an unquoted right-hand side
-// is an identifier, a call or a member access — dataflow, not a value. Measured FP class
-// (a local web app, 2026-10-05): 15 hits re-fired every turn, none real — `accessToken:
+// is an identifier, a call or a member access, dataflow, not a value. Measured FP class
+// (a local web app, 2026-10-05): 15 hits re-fired every turn, none real, `accessToken:
 // t.access_token`, `clientSecret = await getSecret(...)`, test decoys ("gho_FAKE_…",
 // "sk-ant-decoy-…"), short templates (`a${n}`) and key NAMES ("anthropic.api_key").
 // .env / .json / .yaml keep the plain line rule: there an unquoted value IS the value.
@@ -204,7 +199,26 @@ export async function getModifiedFiles(cwd = process.cwd()): Promise<string[]> {
     .filter(f => f.length > 0 && hasTextExtension(f) && !isOrchestrationPath(f));
 }
 
-// Returns a list of "path:line" hits (empty if none). Pure — no stderr side effects,
+// Only files written during this turn: a dirty file the user left alone re-warned on every
+// Stop (11 of 12 warns over 14 days were one unchanged line). Files over 1 MB are generated or
+// data. An unknown turn start (prompt outside the transcript tail) scans every dirty file.
+const MAX_SCAN_BYTES = 1024 * 1024;
+
+export async function filesChangedSince(files: string[], since: number | null): Promise<string[]> {
+  const kept = await Promise.all(
+    files.map(async (f) => {
+      try {
+        const s = await stat(f);
+        return s.size <= MAX_SCAN_BYTES && (since === null || s.mtimeMs >= since) ? f : null;
+      } catch {
+        return null; // deleted or unreadable
+      }
+    }),
+  );
+  return kept.filter((f): f is string => f !== null);
+}
+
+// Returns a list of "path:line" hits (empty if none). Pure, no stderr side effects,
 // so main() can aggregate hits into a single visible systemMessage.
 export async function scanFile(filePath: string): Promise<string[]> {
   const hits: string[] = [];
@@ -221,12 +235,12 @@ export async function scanFile(filePath: string): Promise<string[]> {
       }
     }
   } catch {
-    // best-effort — skip unreadable files
+    // best-effort, skip unreadable files
   }
   return hits;
 }
 
-// Builds the Stop response for a set of hits, or null when clean (028/US4).
+// Builds the Stop response for a set of hits, or null when clean.
 // Two channels on purpose: systemMessage reaches the USER; hookSpecificOutput
 // .additionalContext reaches the MODEL (CC ≥2.1.163) so it can verify/redact
 // in-turn instead of the warning dying on screen (CG-05). Still non-blocking.
@@ -250,156 +264,15 @@ export function buildStopResponse(hits: string[]): {
   };
 }
 
-// --- Git discipline (029/US4; hard gate expanded CLAUDE.md §Git / PR) ---------
-// Measured friction: 10 incidents of unasked git mutations (commits taken over,
-// unwanted authorship, pushes). Always-loaded rule: CLAUDE.md §Git / PR —
-// hard gate (no proactive commit/push/PR; THIS-turn ask only; if about to
-// slip → AskUserQuestion/drillme-clarify). This is the best-effort mechanical
-// backstop: at Stop, compare the turn's git mutations against the user
-// prompt's intent. Warn, never block.
-
-// Full mutating class (critic MAJOR 3, 029): the measured incidents were
-// commit/push, but the spec says "fix the input CLASS" — any state-mutating
-// git/gh op counts. Read-only ops (log/diff/status/branch --list) never match.
-// Tolerates `git -C <path> <verb>` (audit 2026-08-07): without it, -C mutations
-// were invisible to the gate AND unexcludable by the cross-repo filter below.
-export const GIT_MUTATION_RE =
-  /\bgit\s+(?:-C\s+\S+\s+)?(?:commit|push|merge|rebase|reset\s+--hard|branch\s+-D)\b|\bgh\s+pr\s+(?:create|merge)\b/;
-
-// A grep-shaped check must scan COMMANDS, not data (run-don't-predict corollary,
-// docs/model-uplift-playbook.md —
-// this gate's own test fixtures tripped it in production, 2026-08-05): strip
-// heredoc bodies and quoted spans before matching, so `cat << EOF ... "git
-// commit" ... EOF` and `echo "git push"` never count as mutations. Tradeoff:
-// a real mutation hidden inside quotes (`bash -c "git push"`) is missed —
-// acceptable for a best-effort warn.
-export function stripShellData(command: string): string {
-  let out = command;
-  // Heredoc: from <<WORD / <<'WORD' / <<-"WORD" up to the line holding WORD.
-  out = out.replace(/<<-?\s*['"]?(\w+)['"]?[\s\S]*?\n\s*\1(?:\n|$)/g, " ");
-  // Escaped quotes are CONTENT, not span delimiters — drop them first, or a
-  // double-quoted JSON payload (`printf "{\"cmd\":\"git commit\"}"`) breaks the
-  // span regex's parity and its fragments survive as fake mutations (the gate's
-  // own smoke test tripped this on 2026-08-07 — same class as the heredoc fix).
-  out = out.replace(/\\['"]/g, " ");
-  // Quoted spans (single and double) — data, not invocations.
-  out = out.replace(/'[^']*'/g, " ").replace(/"[^"]*"/g, " ");
-  return out;
-}
-// User intent covers his real phrasings (es/EN, typos included in class).
-export const COMMIT_INTENT_RE =
-  /\b(commit|comm?itea|push|sube|súbelo|subelo|mergea|merge|rebasea|rebase|versiona|guarda los cambios|crea la pr|abre la pr|borra la rama|resetea)\b/i;
-
-// --- Cross-repo exclusion (audit 2026-08-07) ----------------------------------
-// Measured: 3/3 git-discipline fires in a month were contextual false positives —
-// mutations in DISPOSABLE repos (test fixtures in /tmp, benchmark repos in the
-// scratchpad), never in the session's working repo. The fix targets the CLASS:
-// a mutation only counts if it lands under the session cwd. Best-effort warn →
-// unresolvable destinations fail OPEN (silence over noise, same reasoning as the
-// .md / OpenAPI exclusions in the secrets channel above).
-
-export type MutationLocation = "session" | "external" | "unknown";
-
-// Shell command → individual statements (chaining/pipes/newlines). Runs on the
-// stripShellData output, so quoted spans and heredocs are already gone.
-export function splitStatements(command: string): string[] {
-  return command
-    .split(/&&|\|\||;|\||\n/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-
-// Resolves $VAR / ${VAR} for variables ASSIGNED INLINE in the same command
-// (`SCRATCH=/tmp/x; cd $SCRATCH/y`). External vars stay unresolved on purpose —
-// they surface as "unknown" downstream. `X=$(cmd ...)` never registers (the
-// space inside breaks the \S+ anchor), which is the desired behavior for
-// dynamically generated scratch dirs (mktemp): unresolvable → skip.
-export function resolveInlineVars(statements: string[]): string[] {
-  const vars = new Map<string, string>();
-  const substitute = (s: string) =>
-    s.replace(/\$\{?(\w+)\}?/g, (m, name: string) => vars.get(name) ?? m);
-  return statements.map((stmt) => {
-    const cleaned = stmt.replace(/^export\s+/, "");
-    const assign = cleaned.match(/^([A-Za-z_]\w*)=(\S+)$/);
-    if (assign) {
-      vars.set(assign[1], substitute(assign[2]));
-      return stmt;
-    }
-    return substitute(stmt);
-  });
-}
-
-function resolveTarget(base: string | "unknown", target: string): string | "unknown" {
-  if (target.includes("$") || target.startsWith("~")) return "unknown";
-  if (target.startsWith("/")) return resolvePathNative(target);
-  if (base === "unknown") return "unknown";
-  return resolvePathNative(base, target);
-}
-
-// "dir is base or lives under it" — separator-agnostic (Windows `\` vs POSIX
-// `/`), case-insensitive where the OS is, and cross-drive aware (`path.relative`
-// returns an absolute path when the drives differ). Audit 010: the old
-// `dir.startsWith(base + "/")` never matched on Windows, so `cd src && git
-// commit` resolved to "external" and the discipline warning stayed silent.
-function isInsideBase(base: string, dir: string): boolean {
-  const rel = relativePathNative(base, dir);
-  if (rel === "") return true;
-  if (isAbsolutePathNative(rel)) return false;
-  return rel !== ".." && !rel.startsWith(".." + pathSep);
-}
-
-// Where does the FIRST git mutation in this command land, relative to the
-// session cwd? Tracks `cd` statement by statement (starting AT the session cwd)
-// and honors `git -C <path>`. Mutations before a `cd` count as session-local.
-// Both sides are normalized with the same resolver before comparing.
-// ponytail: Git Bash drive paths (`cd /d/PYTHON/x`) resolve to `D:\d\PYTHON\x`
-// and read as "external" (fail-open silence); upgrade trigger = a real missed
-// fire on Windows with such a cd.
-export function resolveMutationLocation(command: string, sessionCwd: string): MutationLocation {
-  const statements = resolveInlineVars(splitStatements(command));
-  const base = resolvePathNative(sessionCwd);
-  let cwd: string | "unknown" = base;
-  for (const stmt of statements) {
-    const cdMatch = stmt.match(/^cd\s+(\S+)/);
-    if (cdMatch) {
-      cwd = resolveTarget(cwd, cdMatch[1]);
-      continue;
-    }
-    if (GIT_MUTATION_RE.test(stmt)) {
-      const scoped = stmt.match(/\bgit\s+-C\s+(\S+)/);
-      const dir = scoped ? resolveTarget(cwd, scoped[1]) : cwd;
-      if (dir === "unknown") return "unknown";
-      return isInsideBase(base, dir) ? "session" : "external";
-    }
-  }
-  // Callers only invoke this on commands already confirmed as mutations.
-  return "session";
-}
-
 // Stop can re-fire when a stop hook's additionalContext keeps the turn going;
 // without this guard the gate is stateless and re-warns the same hits in a loop
-// (030). stop_hook_active=true marks that continuation — skip everything.
+//. stop_hook_active=true marks that continuation, skip everything.
 export function shouldSkipStopHook(payload: unknown): boolean {
   return (
     typeof payload === "object" &&
     payload !== null &&
     (payload as { stop_hook_active?: unknown }).stop_hook_active === true
   );
-}
-
-// Bounded tail read (030): transcripts grow to many MB; loading the whole file
-// on EVERY Stop is the heaviest I/O in the hook set. Byte-slice the end instead —
-// a cut first line is fine, extractTurnFromTranscript skips malformed lines.
-export async function readTranscriptTail(path: string, maxBytes = 256 * 1024): Promise<string> {
-  const file = Bun.file(path);
-  const size = file.size;
-  if (size <= maxBytes) return file.text();
-  return file.slice(size - maxBytes).text();
-}
-
-export interface TurnExtract {
-  userPrompt: string;
-  bashCommands: string[];
 }
 
 // The text the human typed, or null when a "user" event is not a prompt: tool results
@@ -417,13 +290,19 @@ export function userPromptOf(event: unknown): string | null {
   return texts.length ? texts.join("\n") : null;
 }
 
-// Walks the transcript JSONL from the end: collects Bash tool_use commands seen
-// AFTER the last user prompt (the turn's prompt). Malformed lines
-// are skipped (best-effort by contract).
-export function extractTurnFromTranscript(jsonl: string): TurnExtract {
+// What the Stop hook needs from the turn: when its prompt arrived, and whether the turn ends
+// waiting. A task-notification turn reports one background result while others may run, and a
+// turn that launched background work (agents run async here) cannot have its result yet.
+export interface TurnFacts {
+  startedAt: number | null; // ms; null when the prompt is outside the tail
+  waiting: boolean;
+}
+
+const BACKGROUND_TOOLS = new Set(["Agent", "Task", "Workflow", "Monitor", "ScheduleWakeup"]);
+
+export function readTurnFacts(jsonl: string): TurnFacts {
   const lines = jsonl.split("\n");
-  let userPrompt = "";
-  const bashCommands: string[] = [];
+  let waiting = false;
   for (let i = lines.length - 1; i >= 0; i--) {
     let event: unknown;
     try {
@@ -431,28 +310,27 @@ export function extractTurnFromTranscript(jsonl: string): TurnExtract {
     } catch {
       continue;
     }
-    const e = event as { type?: string; message?: { content?: unknown } };
+    const e = event as { type?: string; isSidechain?: boolean; timestamp?: string; message?: { content?: unknown } };
+    if (e.isSidechain) continue;
     const prompt = userPromptOf(event);
     if (prompt !== null) {
-      userPrompt = prompt;
-      break; // everything below this is a previous turn
+      const at = Date.parse(e.timestamp ?? "");
+      return { startedAt: Number.isNaN(at) ? null : at, waiting: waiting || /^\s*<task-notification>/.test(prompt) };
     }
     if (e.type === "assistant" && Array.isArray(e.message?.content)) {
-      for (const block of e.message.content as Array<{ type?: string; name?: string; input?: { command?: string } }>) {
-        if (block.type === "tool_use" && block.name === "Bash" && typeof block.input?.command === "string") {
-          bashCommands.push(block.input.command);
-        }
+      for (const block of e.message.content as Array<{ type?: string; name?: string; input?: { run_in_background?: unknown } }>) {
+        if (block.type === "tool_use" && (BACKGROUND_TOOLS.has(block.name ?? "") || block.input?.run_in_background === true)) waiting = true;
       }
     }
   }
-  return { userPrompt, bashCommands: bashCommands.reverse() };
+  return { startedAt: null, waiting };
 }
 
 // Degradation canary: the house style asks every final answer to END with a line starting
 // `ROBIN:` (verdict + the user's next step). A missing line is the cheap, mechanical sign that
 // always-on instructions are dropping out of attention. A present one proves nothing about
 // subtler rules.
-export const CANARY = "ROBIN:";
+const CANARY = "ROBIN:";
 
 // Last assistant text block AFTER the turn's plain-string user prompt; null if the turn
 // produced no text (tool-only or interrupted).
@@ -477,47 +355,19 @@ export function extractFinalAssistantText(jsonl: string): string | null {
   return null;
 }
 
-export function checkCanary(text: string | null): "ok" | "miss" | null {
-  if (text === null || !text.trim()) return null;
+// "wait": the line is missing on a turn that ends waiting for background work. Logged, never
+// warned: an interim note is not a final answer. "No response requested." is harness filler.
+export function checkCanary(text: string | null, waiting = false): "ok" | "miss" | "wait" | null {
+  if (text === null || !text.trim() || text.trim() === "No response requested.") return null;
   const lastLine = text.trimEnd().split("\n").pop() as string;
-  return lastLine.trimStart().startsWith(CANARY) ? "ok" : "miss";
+  if (lastLine.trimStart().startsWith(CANARY)) return "ok";
+  return waiting ? "wait" : "miss";
 }
 
 // User channel only: an additionalContext would re-open the turn just to fix a prefix.
 export function buildCanaryWarning(transcriptKb: number): { systemMessage: string } {
   return {
-    systemMessage: `[canario] La respuesta no terminó con una línea ${CANARY} — posible degradación (transcript ${transcriptKb} KB).`,
-  };
-}
-
-// sessionCwd (optional, audit 2026-08-07): when provided, mutations resolving
-// OUTSIDE it are excluded (disposable-repo false positives). Omitted → legacy
-// behavior, kept as a pure-test escape hatch; main() always passes a real cwd.
-export function buildGitDisciplineWarning(
-  userPrompt: string,
-  bashCommands: string[],
-  sessionCwd?: string,
-): { systemMessage: string; hookSpecificOutput: { hookEventName: "Stop"; additionalContext: string } } | null {
-  const mutations = bashCommands.filter((c) => {
-    const stripped = stripShellData(c);
-    if (!GIT_MUTATION_RE.test(stripped)) return false;
-    if (!sessionCwd) return true;
-    return resolveMutationLocation(stripped, sessionCwd) === "session";
-  });
-  if (mutations.length === 0) return null;
-  if (COMMIT_INTENT_RE.test(userPrompt)) return null; // the user asked — no friction
-  const list = mutations.map((m) => `  - ${m.slice(0, 120)}`).join("\n");
-  return {
-    systemMessage:
-      `[security-gate] Mutación git ejecutada sin petición aparente del usuario este turno:\n${list}\n` +
-      `Regla (CLAUDE.md §Git / PR — hard gate): commit/push/PR proactivos PROHIBIDOS; solo con petición explícita ESTE turno. Si dudabas, debías AskUserQuestion/drillme-clarify, no mutar.`,
-    hookSpecificOutput: {
-      hookEventName: "Stop",
-      additionalContext:
-        `[security-gate] A git mutation ran this turn without apparent user request:\n${list}\n` +
-        `Hard gate (CLAUDE.md §Git / PR): no proactive commit/push/PR. If it was NOT requested, tell the user now, ` +
-        `offer to undo (e.g. soft reset), check no AI authorship was added, and next time STOP → AskUserQuestion/drillme-clarify.`,
-    },
+    systemMessage: `[canario] La respuesta no terminó con una línea ${CANARY}, posible degradación (transcript ${transcriptKb} KB).`,
   };
 }
 
@@ -531,72 +381,47 @@ async function main(): Promise<void> {
     try {
       payload = JSON.parse(raw) as StopPayload;
     } catch {
-      // best-effort — unparseable payload → run with defaults
+      // best-effort, unparseable payload → run with defaults
     }
-    if (shouldSkipStopHook(payload)) process.exit(0); // re-entry guard (030)
+    if (shouldSkipStopHook(payload)) process.exit(0); // re-entry guard
 
-    const files = await getModifiedFiles();
+    let text = "";
+    try {
+      if (payload.transcript_path) text = await readTranscriptTail(payload.transcript_path);
+    } catch {
+      // best-effort, transcript unavailable/unreadable → full secret scan, no canary
+    }
+    const facts = readTurnFacts(text);
+
+    const files = await filesChangedSince(await getModifiedFiles(), facts.startedAt);
     const hits = files.length > 0 ? (await Promise.all(files.map(scanFile))).flat() : [];
     const secretResponse = buildStopResponse(hits);
 
-    // Git discipline check (029/US4) — reads the turn from the transcript tail.
-    let gitResponse: ReturnType<typeof buildGitDisciplineWarning> = null;
     let canaryResponse: ReturnType<typeof buildCanaryWarning> | null = null;
     try {
       if (payload.transcript_path) {
-        const text = await readTranscriptTail(payload.transcript_path);
-        const tail = text.split("\n").slice(-400).join("\n");
-        // Canary — prefer the payload's final message: the transcript may not be flushed yet.
-        try {
-          const finalText =
-            typeof payload.last_assistant_message === "string" ? payload.last_assistant_message : extractFinalAssistantText(tail);
-          const verdict = checkCanary(finalText);
-          if (verdict) {
-            const kb = Math.round(Bun.file(payload.transcript_path).size / 1024);
-            const base = typeof payload.cwd === "string" ? payload.cwd : process.cwd();
-            appendLog(
-              `${new Date().toISOString()} ${payload.session_id ?? "unknown"} ${verdict} ${kb}`,
-              join(base, ".claude", "learned", "canary.log"),
-            );
-            if (verdict === "miss") canaryResponse = buildCanaryWarning(kb);
-          }
-        } catch {
-          // best-effort — the canary never blocks the other checks
-        }
-        // Cheap prefilters (031 + audit 2026-08-07): no Bash tool_use, or no
-        // git/gh text at all, in the tail → no git mutation possible this turn;
-        // skip the per-line JSONL parse entirely.
-        if (tail.includes('"name":"Bash"') && (tail.includes("git") || tail.includes("gh pr"))) {
-          const turn = extractTurnFromTranscript(tail);
-          const sessionCwd = typeof payload.cwd === "string" ? payload.cwd : process.cwd();
-          gitResponse = buildGitDisciplineWarning(turn.userPrompt, turn.bashCommands, sessionCwd);
+        // Prefer the payload's final message: the transcript may not be flushed yet.
+        const finalText =
+          typeof payload.last_assistant_message === "string" ? payload.last_assistant_message : extractFinalAssistantText(text);
+        const verdict = checkCanary(finalText, facts.waiting);
+        if (verdict) {
+          const kb = Math.round(Bun.file(payload.transcript_path).size / 1024);
+          appendLog(`${new Date().toISOString()} ${payload.session_id ?? "unknown"} ${verdict} ${kb}`, learnedLog(payload.cwd, "canary.log"));
+          if (verdict === "miss") canaryResponse = buildCanaryWarning(kb);
         }
       }
     } catch {
-      // best-effort — transcript unavailable/unreadable → skip this check
+      // best-effort, the canary never blocks the secret check
     }
 
-    if (canaryResponse && !secretResponse && !gitResponse) {
+    if (secretResponse) {
+      const systemMessage = [secretResponse.systemMessage, canaryResponse?.systemMessage].filter(Boolean).join("\n\n");
+      process.stdout.write(JSON.stringify({ ...secretResponse, systemMessage }) + "\n");
+    } else if (canaryResponse) {
       process.stdout.write(JSON.stringify(canaryResponse) + "\n");
-    } else if (secretResponse || gitResponse) {
-      const merged = {
-        systemMessage: [secretResponse?.systemMessage, gitResponse?.systemMessage, canaryResponse?.systemMessage]
-          .filter(Boolean)
-          .join("\n\n"),
-        hookSpecificOutput: {
-          hookEventName: "Stop" as const,
-          additionalContext: [
-            secretResponse?.hookSpecificOutput.additionalContext,
-            gitResponse?.hookSpecificOutput.additionalContext,
-          ]
-            .filter(Boolean)
-            .join("\n\n"),
-        },
-      };
-      process.stdout.write(JSON.stringify(merged) + "\n");
     }
   } catch {
-    // best-effort — never block
+    // best-effort, never block
   }
 
   process.exit(0);

@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
 
-// PreToolUse (Edit|Write|MultiEdit|Bash) — design-file note on the first UI-file contact of a session (plan 041).
+// PreToolUse (Edit|Write|MultiEdit|Bash), design-file note on the first UI-file contact of a session.
 //
-// Text-only skill changes never produced the extraction offer (039 r1-r4, 041 US1 A/B 0-0):
-// skill loading depends on keywords and the reference is not read. This hook adds one
+// Text-only skill changes never produced the extraction offer:
+// the skill may not load and the reference is not read. This hook adds one
 // factual `additionalContext` note on the session's first UI-file contact: the design file in use,
 // or that none exists and how the offer is made. It never blocks. PreToolUse is
 // best-effort (#6305), so the note reinforces `ui-design` step 0; it does not replace it.
@@ -15,11 +15,12 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { readHookStdin } from "./lib/hook-stdin";
 import { appendLog } from "./instructions-loaded";
+import { projectRoot } from "./lib/paths";
 
 const UI_EXT_RE = /\.(html|css|scss|tsx|jsx|vue|svelte)$/i;
 const EDIT_TOOLS = new Set(["Edit", "Write", "MultiEdit"]);
 // Same order as ui-design/references/design-file.md §Lookup order.
-export const LOOKUP = ["docs/DESIGN_SYSTEM.md", "DESIGN_SYSTEM.md", "DESIGN.md"];
+const LOOKUP = ["docs/DESIGN_SYSTEM.md", "DESIGN_SYSTEM.md", "DESIGN.md"];
 
 export function isUiFile(path: string): boolean {
   return UI_EXT_RE.test(path);
@@ -30,12 +31,17 @@ export function isUiFile(path: string): boolean {
 // that names a UI file counts as contact, even a read. A bare extension (`.css` in prose
 // written by a heredoc) has no file name and a URL is not a project file, so neither counts.
 // A glob stays: `sed -i … src/*.css` edits real files. Quoted paths with spaces split into
-// pieces; the last piece still carries the extension, so the hit survives.
+// pieces; the last piece still carries the extension, so the hit survives. A search filter
+// (`grep --include=*.tsx`, `rg -g '*.css'`, `find -name '*.vue'`) names a pattern, not a file.
 const SHELL_SPLIT_RE = /[\s"'`()<>|;&=,:]+/;
 const NAMED_RE = /[^/.]\.\w+$/;
+const SEARCH_FILTER_RE = /(?<![\w-])(--(?:include|exclude)(?:-dir)?|--glob|-g|-i?name)(?:=|\s+)(?:'[^']*'|"[^"]*"|\S+)/g;
 
 export function commandPaths(command: string): string[] {
-  return command.split(SHELL_SPLIT_RE).filter((token) => isUiFile(token) && NAMED_RE.test(token) && !token.includes("//"));
+  return command
+    .replace(SEARCH_FILTER_RE, " ")
+    .split(SHELL_SPLIT_RE)
+    .filter((token) => isUiFile(token) && NAMED_RE.test(token) && !token.includes("//"));
 }
 
 export function findDesignFiles(root: string): string[] {
@@ -46,7 +52,7 @@ export function findDesignFiles(root: string): string[] {
 // prompt-injection defenses.
 export function buildNote(found: string[]): string {
   if (found.length === 0) {
-    return `Design file: none found. Checked ${LOOKUP[0]}, ${LOOKUP[1]} and ${LOOKUP[2]} in this repo. The ui-design skill (references/design-file.md) covers extracting docs/DESIGN_SYSTEM.md from the existing code; nothing is written until the user says yes. The extraction offer belongs in the final report on its own **Decide:** line, also when the report carries other decisions.`;
+    return `Design file: none found. Checked ${LOOKUP[0]}, ${LOOKUP[1]} and ${LOOKUP[2]} in this repo. The ui-design skill (references/design-file.md) covers extracting docs/DESIGN_SYSTEM.md from the existing code; nothing is written until the user says yes. The extraction offer goes to the user through the host's question tool (Claude Code: AskUserQuestion), also when the turn carries other decisions.`;
   }
   const [first, ...rest] = found;
   const others = rest.length ? ` Also present: ${rest.join(", ")}.` : "";
@@ -78,7 +84,7 @@ export function noteOnce({ cwd, session, paths }: { cwd: string; session: string
   try {
     appendLog(`${new Date().toISOString()} ${session} ${found.length ? "found" : "none"} ${found[0] ?? "-"}`, logPath);
   } catch {
-    // best-effort — the note still goes out
+    // best-effort, the note still goes out
   }
   return buildNote(found);
 }
@@ -97,14 +103,14 @@ export interface ClaudeEditPayload {
 // Thin Claude Code wrapper: tool_input.file_path for Edit/Write/MultiEdit, the paths in
 // tool_input.command for Bash. The payload cwd follows the agent's `cd`; CLAUDE_PROJECT_DIR
 // stays at the session's project root, so it decides the lookup and the marker.
-export function designFileHint(payload: ClaudeEditPayload): ReturnType<typeof noteOutput> | null {
+function designFileHint(payload: ClaudeEditPayload): ReturnType<typeof noteOutput> | null {
   const { file_path: file, command } = payload.tool_input ?? {};
   const paths = EDIT_TOOLS.has(payload.tool_name ?? "") && typeof file === "string" ? [file]
     : payload.tool_name === "Bash" && typeof command === "string" ? commandPaths(command)
     : [];
   if (paths.length === 0) return null;
   const note = noteOnce({
-    cwd: process.env.CLAUDE_PROJECT_DIR || (typeof payload.cwd === "string" ? payload.cwd : process.cwd()),
+    cwd: projectRoot(payload.cwd),
     session: payload.session_id ?? "unknown",
     paths,
   });
@@ -117,7 +123,7 @@ if (import.meta.main) {
     const out = designFileHint(JSON.parse(raw) as ClaudeEditPayload);
     if (out) process.stdout.write(JSON.stringify(out) + "\n");
   } catch {
-    // best-effort — a broken payload never blocks an edit
+    // best-effort, a broken payload never blocks an edit
   }
   process.exit(0);
 }

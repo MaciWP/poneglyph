@@ -6,22 +6,6 @@ export type Task = {
   // A subtask names its feature; features have no parent (one level).
   parent?: string;
 };
-export type Decision = {
-  id: string;
-  question: string;
-  options: string[];
-  blocking: boolean;
-  revision: number;
-  state: "pending" | "queued" | "delivered" | "failed" | "cancelled";
-  response?: string;
-  error?: string;
-  context?: string;
-  // Parallel to options: one optional explanation per option.
-  details?: (string | null)[];
-  recommended?: number;
-  // "chat": read from the answer's "Espera tu decisión" block, not published by the tool.
-  source?: "chat";
-};
 export type Agent = {
   id: string;
   title: string;
@@ -54,6 +38,9 @@ export type Link = {
   harness?: string;
   text?: string;
   status?: string;
+  // The origin kind a received message carried; `coordinator` marks the session that directs
+  // this one (a team lead's mailbox, or a coordinating session's hand-off).
+  via?: string;
   source: "native" | "aos";
 };
 export type Check = {
@@ -70,7 +57,6 @@ export type State = {
   cwd: string;
   ticket: string | null;
   tasks: Task[];
-  decisions: Decision[];
   agents: Agent[];
   checks: Check[];
   observed: string[];
@@ -82,6 +68,8 @@ export type State = {
   links: Link[];
   notice: string | null;
   turn: { at: number; ms: number | null; edits: number; commands: number } | null;
+  // Skills this session loaded, newest last: whether it followed the prompt router.
+  skills?: { name: string; at: number }[];
 };
 export const initialState = (sessionId: string, cwd: string): State => ({
   version: 1,
@@ -89,7 +77,6 @@ export const initialState = (sessionId: string, cwd: string): State => ({
   cwd,
   ticket: null,
   tasks: [],
-  decisions: [],
   agents: [],
   checks: [],
   observed: [],
@@ -142,22 +129,23 @@ export function extractRobin(value: string): { text: string; body: string } | nu
     body: lines.slice(0, candidate).join("\n").trimEnd(),
   };
 }
-// The house style's decision block: "**Espera tu decisión:** …" up to a blank line or the
-// closing Aviso/ROBIN lines. Same signal Agentic OS reads (server/features/agents/state.ts).
-export function extractAsk(value: string): string | null {
-  const lines = value.trimEnd().split("\n");
-  const open = prose(lines);
-  const label = /^[\s*_>-]*espera tu decisi[oó]n\b[*_:\s]*/iu;
-  const start = lines.findIndex((l, i) => open[i] && label.test(l));
-  if (start < 0) return null;
-  const body = [lines[start]!.replace(label, "")];
-  for (let i = start + 1; i < lines.length; i++) {
-    const line = lines[i]!;
-    if (!line.trim() || /^(?:\*\*)?(?:ROBIN|Aviso):/.test(line)) break;
-    body.push(line);
-  }
-  const ask = body.join("\n").trim();
-  return ask ? ask.slice(0, 1500) : null;
+// A check runs a test, type or lint tool as a command (`bun test`, `npm run lint`,
+// `.venv/bin/pytest`), never a word inside another one (`grep test`, `git diff --check`).
+// A bare `test` is the shell builtin, so it counts only after a runner.
+const RUNNER = String.raw`(?:bunx?|npx|pnpm|yarn|npm|uv|poetry|python3?\s+-m|cargo|go|make|claude\s+plugin)\s+(?:run\s+)?`;
+const TOOL = String.raw`(?:pytest|vitest|jest|tsc|eslint|ruff|mypy|biome|playwright|lint|check|typecheck|coverage)`;
+const CHECK = new RegExp(
+  String.raw`(?:^|[;&|(]\s*)(?:[A-Za-z_]\w*=\S*\s+)*(?:${RUNNER}(?:\S*\/)?(?:tests?|${TOOL})|(?:\S*\/)?${TOOL})(?=[\s:;&|)]|$)`,
+);
+// Whether a command runs a check, and whether its exit status is the check's own: a pipe
+// (without pipefail), `||`, `;` or `&` after the check hands the status to another command.
+export function checkExit(command: string): "own" | "hidden" | null {
+  const m = CHECK.exec(command);
+  if (!m) return null;
+  const rest = command.slice(m.index + m[0].length).replace(/\d*>&\d*-?/g, "");
+  const hidden =
+    /\|\||;|(?:^|[^&])&(?!&)/.test(rest) || (/\|/.test(rest) && !/pipefail/.test(command));
+  return hidden ? "hidden" : "own";
 }
 export function extractNotice(value: string): string | null {
   const lines = value.trimEnd().split("\n");
@@ -167,32 +155,6 @@ export function extractNotice(value: string): string | null {
     if (open[i] && m) return m[1]!.slice(0, 500);
   }
   return null;
-}
-// The chat question becomes the "chat" decision so the panel's answer queue delivers it; a
-// turn without one cancels the previous question.
-export function askFromChat(state: State, ask: string | null): State {
-  const old = state.decisions.find((d) => d.id === "chat");
-  if (!ask) {
-    if (!old || !["pending", "failed"].includes(old.state)) return state;
-    return {
-      ...state,
-      decisions: state.decisions.map((d) =>
-        d.id === "chat" ? { ...d, state: "cancelled", revision: d.revision + 1 } : d,
-      ),
-    };
-  }
-  // The same question still open is not new; asked again after an answer, it is.
-  if (old?.question === ask && ["pending", "queued", "failed"].includes(old.state)) return state;
-  const decision: Decision = {
-    id: "chat",
-    question: ask,
-    options: [],
-    blocking: true,
-    revision: (old?.revision ?? 0) + 1,
-    state: "pending",
-    source: "chat",
-  };
-  return { ...state, decisions: [...state.decisions.filter((d) => d.id !== "chat"), decision] };
 }
 export function publish(state: State, raw: unknown): State {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw Error("Expected update object");
@@ -255,108 +217,10 @@ export function publish(state: State, raw: unknown): State {
     };
     for (const t of next.tasks) visit(t.id, new Set());
   }
-  if (input.decisions !== undefined) {
-    if (!Array.isArray(input.decisions) || input.decisions.length > 30)
-      throw Error("At most 30 decisions");
-    next.decisions = [...state.decisions];
-    for (const d of input.decisions as Record<string, unknown>[]) {
-      const id = identifier(d.id);
-      const old = next.decisions.find((x) => x.id === id);
-      if (d.cancel === true) {
-        if (old)
-          next.decisions = next.decisions.map((x) =>
-            x.id === id ? { ...x, state: "cancelled", revision: x.revision + 1 } : x,
-          );
-        continue;
-      }
-      if (id === "chat") throw Error("The id chat is reserved");
-      if (!Array.isArray(d.options) || d.options.length > 6 || typeof d.blocking !== "boolean")
-        throw Error("Invalid decision");
-      const question = text(d.question, 1500);
-      // An option is a label, or {label, detail} when it needs one line of explanation.
-      const rich = d.options.map((x: unknown) =>
-        x && typeof x === "object"
-          ? {
-              label: text((x as Record<string, unknown>).label, 150),
-              detail:
-                (x as Record<string, unknown>).detail === undefined
-                  ? null
-                  : text((x as Record<string, unknown>).detail, 300),
-            }
-          : { label: text(x, 150), detail: null },
-      );
-      const options = rich.map((o) => o.label);
-      const details = rich.some((o) => o.detail) ? rich.map((o) => o.detail) : undefined;
-      const context = d.context === undefined ? undefined : text(d.context, 400);
-      if (
-        d.recommended !== undefined &&
-        !(
-          Number.isInteger(d.recommended) &&
-          (d.recommended as number) >= 0 &&
-          (d.recommended as number) < options.length
-        )
-      )
-        throw Error("Invalid recommended option");
-      const recommended = d.recommended as number | undefined;
-      if (
-        old &&
-        old.question === question &&
-        JSON.stringify(old.options) === JSON.stringify(options) &&
-        old.blocking === d.blocking &&
-        old.context === context &&
-        JSON.stringify(old.details) === JSON.stringify(details) &&
-        old.recommended === recommended
-      )
-        continue;
-      const decision: Decision = {
-        id,
-        question,
-        options,
-        blocking: d.blocking,
-        revision: (old?.revision ?? 0) + 1,
-        state: "pending",
-        ...(context ? { context } : {}),
-        ...(details ? { details } : {}),
-        ...(recommended === undefined ? {} : { recommended }),
-      };
-      next.decisions = [...next.decisions.filter((x) => x.id !== id), decision];
-      if (next.decisions.length > 30) {
-        const removable = next.decisions.findIndex((x) =>
-          ["delivered", "cancelled"].includes(x.state),
-        );
-        if (removable < 0) throw Error("Resolve or cancel a decision before publishing another");
-        next.decisions.splice(removable, 1);
-      }
-    }
-  }
+  // Questions to the user go through the host's native dialog, never through the board.
+  if (input.decisions !== undefined)
+    throw Error("Decisions were removed: ask the user with AskUserQuestion");
   return next;
-}
-export function answer(s: State, id: string, revision: number, response: string): State {
-  const d = s.decisions.find((x) => x.id === id);
-  if (!d || d.revision !== revision || !["pending", "failed"].includes(d.state))
-    throw Error("La decisión cambió o ya tiene respuesta");
-  return {
-    ...s,
-    decisions: s.decisions.map((x) =>
-      x.id === id ? { ...x, response: text(response, 2000), state: "queued", error: undefined } : x,
-    ),
-  };
-}
-export function settle(
-  s: State,
-  id: string,
-  revision: number,
-  delivered: boolean,
-  error?: string,
-): State {
-  return {
-    ...s,
-    decisions: s.decisions.map((d) =>
-      d.id === id && d.revision === revision && d.state === "queued"
-        ? { ...d, state: delivered ? "delivered" : "failed", error }
-        : d,
-    ),
-  };
 }
 const stopped = (state: string) => ["completed", "failed", "killed", "unknown"].includes(state);
 export function reconcileAgents(
@@ -430,18 +294,8 @@ export const bridgeSession = (s: State) => ({
   cwd: s.cwd,
   ticket: s.ticket,
   tasks: s.tasks.map(({ id, title, state, dependsOn }) => ({ id, title, state, dependsOn })),
-  decisions: s.decisions.map(
-    ({ id, question, options, blocking, revision, state, response, error }) => ({
-      id,
-      question,
-      options,
-      blocking,
-      revision,
-      state,
-      response,
-      error,
-    }),
-  ),
+  // Agentic OS still requires the array; decisions now live in the native dialog.
+  decisions: [],
   checks: s.checks,
   agents: s.agents.map(({ id, title, state }) => ({ id, title, state })),
   working: s.working,
@@ -483,18 +337,31 @@ export type Collaboration =
   | { kind: "solo" }
   | { kind: "lead"; count: number }
   | { kind: "pair"; peer: Peer }
-  | { kind: "group"; sessions: number };
-// The peers this session exchanged messages with, and how it collaborates. `peersTalk` says
-// whether two of those peers also message each other (Agentic OS sees that; this session
-// does not).
+  | { kind: "group"; sessions: number }
+  | { kind: "worker"; lead: Peer };
+// Origin kinds of a message from whoever directs this session.
+export const DIRECTS = ["coordinator", "projects-relay"];
+// The sessions this one exchanged messages with, split by rank, and how it collaborates.
+// A sender whose message came as a coordinator's hand-off directs this session (`leads`); a
+// teammate this session leads is one of its agents, never a peer. Everyone else is a peer.
+// `peersTalk` says whether two of those peers also message each other (Agentic OS sees that;
+// this session does not).
 export function collaboration(
   agents: Agent[],
   links: Link[],
   peersTalk: boolean,
-): { mode: Collaboration; peers: Peer[] } {
+): { mode: Collaboration; peers: Peer[]; leads: Peer[] } {
+  const team = new Set(
+    agents
+      .filter((a) => a.teammateId)
+      .flatMap((a) => [a.teammateId!, a.teammateId!.split("@")[0]!, a.name ?? ""])
+      .filter(Boolean),
+  );
   const byKey = new Map<string, Peer>();
+  const directs = new Set<string>();
   for (const l of links) {
-    if (l.kind !== "sent" && l.kind !== "received") continue;
+    if ((l.kind !== "sent" && l.kind !== "received") || team.has(l.peer)) continue;
+    if (l.kind === "received" && DIRECTS.includes(l.via ?? "")) directs.add(l.peer);
     const p = byKey.get(l.peer) ?? {
       key: l.peer,
       sent: 0,
@@ -512,16 +379,19 @@ export function collaboration(
       p.status = "waiting";
     byKey.set(l.peer, p);
   }
-  const peers = [...byKey.values()].sort((a, b) => b.last - a.last);
+  const all = [...byKey.values()].sort((a, b) => b.last - a.last);
+  const leads = all.filter((p) => directs.has(p.key));
+  const peers = all.filter((p) => !directs.has(p.key));
   const charge =
     agents.length + new Set(links.filter((l) => l.kind === "consult").map((l) => l.peer)).size;
-  const mode: Collaboration =
-    peers.length >= 2 || (peers.length === 1 && peersTalk)
+  const mode: Collaboration = leads.length
+    ? { kind: "worker", lead: leads[0]! }
+    : peers.length >= 2 || (peers.length === 1 && peersTalk)
       ? { kind: "group", sessions: peers.length + 1 }
       : peers.length === 1
         ? { kind: "pair", peer: peers[0]! }
         : charge
           ? { kind: "lead", count: charge }
           : { kind: "solo" };
-  return { mode, peers };
+  return { mode, peers, leads };
 }

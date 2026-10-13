@@ -24,10 +24,10 @@ import {
 } from "./validation.mjs";
 
 const SCRIPT = fileURLToPath(import.meta.url);
-export const dataHome = () =>
+const dataHome = () =>
   process.env.WORKBOARD_HOME ||
   join(process.env.CLAUDE_CONFIG_DIR || join(homedir(), ".claude"), "workboard");
-export function localUrl(value) {
+function localUrl(value) {
   const url = new URL(value);
   if (
     url.protocol !== "http:" ||
@@ -41,7 +41,7 @@ export function localUrl(value) {
     throw Error("Agentic OS must be a local HTTP origin");
   return url.origin;
 }
-export async function aosRequest(origin, path, body, actor, fetcher = fetch) {
+async function aosRequest(origin, path, body, actor, fetcher = fetch) {
   const base = localUrl(origin);
   const response = await fetcher(base + path, {
     method: body === undefined ? "GET" : "POST",
@@ -226,8 +226,44 @@ export async function sessionAliases(
   }
   return aliases;
 }
+// The prompt router (a Poneglyph hook that runs a cheap model on each prompt) logs one line per
+// run in <project>/.claude/learned/prompt-router.log, keyed by the session id's first 8 characters.
+// The latest line of this session, or null when there is no log (another project, router off).
+export async function routerRun(cwd, session) {
+  if (!session) return null;
+  let handle;
+  try {
+    handle = await open(join(cwd, ".claude", "learned", "prompt-router.log"), "r");
+    const { size } = await handle.stat();
+    const length = Math.min(size, 32768);
+    const buffer = Buffer.alloc(length);
+    await handle.read(buffer, 0, length, size - length);
+    const key = `session=${session.slice(0, 8)}`;
+    const line = buffer
+      .toString("utf8")
+      .split("\n")
+      .reverse()
+      .find((l) => l.includes(" host=claude ") && l.split(" ").includes(key));
+    if (!line) return null;
+    const [stamp, ...pairs] = line.split(" ");
+    const f = Object.fromEntries(pairs.map((p) => p.split("=")));
+    const at = Date.parse(stamp);
+    if (!at || typeof f.outcome !== "string") return null;
+    return {
+      at,
+      ms: Number(f.ms) || 0,
+      outcome: f.outcome.slice(0, 30),
+      skills: !f.skills || f.skills === "-" ? [] : f.skills.split(",").slice(0, 5),
+      fixes: Number(f.fixes) || 0,
+    };
+  } catch {
+    return null;
+  } finally {
+    await handle?.close();
+  }
+}
 // A ticket environment folder (bjenv) is not a repository: it holds one checkout per repository.
-export async function childRepos(directory) {
+async function childRepos(directory) {
   const entries = await readdir(directory, { withFileTypes: true }).catch(() => []);
   const found = [];
   for (const e of entries) {
@@ -371,6 +407,7 @@ export async function snapshot(directory, home, options = {}) {
       : repos.filter((r) => r.cwd === cwd || workspace.includes(r.cwd)),
     allRepos: repos.map((r) => ({ cwd: r.cwd, location: r.location })),
     bridge,
+    router: await routerRun(cwd, options.session),
   };
 }
 export async function fileDiff(cwd, file, base) {
@@ -475,6 +512,7 @@ export async function main(argv) {
     aos: flags.aos,
     ticket: flags.ticket,
     location: flags.location,
+    session: flags.session,
     actor: process.env.AOS_AGENT_ID,
   };
   if (command === "configure") return configure(cwd, JSON.parse(flags.json), home);

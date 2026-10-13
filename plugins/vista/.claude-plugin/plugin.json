@@ -1,0 +1,6 @@
+{
+  "name": "vista",
+  "version": "0.3.1",
+  "description": "Interactive answers in the transcript: a comparison with clickable topics, a ranking with thumbnails and a draft with Copiar.",
+  "author": { "name": "Oriol Macias" }
+}

@@ -3,15 +3,13 @@ import {
   extractRobin,
   initialState,
   publish,
-  answer,
-  settle,
   reconcileAgents,
   recentAgents,
   parseEnvelope,
   viewStatus,
-  extractAsk,
   extractNotice,
-  askFromChat,
+  bridgeSession,
+  checkExit,
   addLinks,
   collaboration,
   annotateAgent,
@@ -25,22 +23,13 @@ test("ROBIN only extracts a final unquoted standalone line outside fences", () =
   expect(extractRobin("ROBIN: example\nFurther explanation")).toBeNull();
   expect(extractRobin("Answer\n\n**ROBIN:** Done.")?.text).toBe("Done.");
 });
-test("decisions are versioned, duplicate clicks refuse and failed deliveries remain retryable", () => {
-  let s = initialState("session", "/repo");
-  s = publish(s, {
-    decisions: [{ id: "d", question: "Which?", options: ["A", "B"], blocking: true }],
-  });
-  const revision = s.decisions[0]!.revision;
-  s = answer(s, "d", revision, "A");
-  expect(s.decisions[0]!.state).toBe("queued");
-  expect(() => answer(s, "d", revision, "B")).toThrow();
-  s = settle(s, "d", revision, false, "offline");
-  expect(s.decisions[0]!.state).toBe("failed");
-  const changed = publish(s, {
-    decisions: [{ id: "d", question: "New question?", options: ["A", "B"], blocking: true }],
-  });
-  expect(() => answer(changed, "d", revision, "A")).toThrow();
-  expect(settle(changed, "d", revision, true).decisions[0]!.state).toBe("pending");
+test("decisions were removed: the tool refuses them and the bridge gets an empty list", () => {
+  const s = initialState("s", "/repo");
+  expect(() =>
+    publish(s, { decisions: [{ id: "d", question: "Which?", options: ["A"], blocking: true }] }),
+  ).toThrow("Decisions were removed: ask the user with AskUserQuestion");
+  expect(bridgeSession(s).decisions).toEqual([]);
+  expect("decisions" in s).toBe(false);
 });
 test("a completed task does not pass checks and an old ROBIN cannot hide a tool failure", () => {
   const s = publish(initialState("s", "/repo"), {
@@ -125,61 +114,42 @@ test("tasks merge by id, new tasks need a title and replace starts a new plan", 
     "New task t needs a title",
   );
 });
-test("rich decisions keep context, per-option detail and a valid recommendation", () => {
-  const s = publish(initialState("s", "/repo"), {
-    decisions: [
-      {
-        id: "d",
-        question: "Which palette?",
-        context: "It sets every card colour.",
-        options: [{ label: "Cyan", detail: "Matches ROBIN" }, "Amber"],
-        recommended: 0,
-        blocking: true,
-      },
-    ],
-  });
-  expect(s.decisions[0]).toMatchObject({
-    options: ["Cyan", "Amber"],
-    details: ["Matches ROBIN", null],
-    context: "It sets every card colour.",
-    recommended: 0,
-  });
-  expect(() =>
-    publish(s, {
-      decisions: [{ id: "x", question: "Q?", options: ["A"], recommended: 3, blocking: false }],
-    }),
-  ).toThrow("Invalid recommended option");
-  expect(() =>
-    publish(s, { decisions: [{ id: "chat", question: "Q?", options: [], blocking: false }] }),
-  ).toThrow("reserved");
-});
-test("the chat question block and the notice line are read outside fences only", () => {
+test("the notice line is read outside fences only", () => {
   const answer =
-    "Done.\n\n**Espera tu decisión:** borrar o no `/v1/export`.\nCon detalle.\n\nAviso: rama atrasada.\nROBIN: Hecho.";
-  expect(extractAsk(answer)).toBe("borrar o no `/v1/export`.\nCon detalle.");
+    "Done.\n\n**Espera tu decisión:** borrar o no `/v1/export`.\n\nAviso: rama atrasada.\nROBIN: Hecho.";
   expect(extractNotice(answer)).toBe("rama atrasada.");
-  expect(extractAsk("```text\nEspera tu decisión: ejemplo\n```\nROBIN: x")).toBeNull();
+  expect(extractNotice("```text\nAviso: ejemplo\n```\nROBIN: x")).toBeNull();
   expect(extractNotice("Nada que avisar.\nROBIN: x")).toBeNull();
 });
-test("a chat question becomes the chat decision and a turn without one cancels it", () => {
-  let s = askFromChat(initialState("s", "/repo"), "¿Seguimos?");
-  expect(s.decisions[0]).toMatchObject({
-    id: "chat",
-    state: "pending",
-    source: "chat",
-    revision: 1,
-  });
-  expect(askFromChat(s, "¿Seguimos?")).toBe(s);
-  s = askFromChat(s, null);
-  expect(s.decisions[0]).toMatchObject({ state: "cancelled", revision: 2 });
-  expect(askFromChat(s, "¿Otra?").decisions[0]).toMatchObject({ state: "pending", revision: 3 });
-  // Asked again after an answer was delivered, the same question opens again.
-  let d = askFromChat(initialState("s", "/repo"), "¿Seguimos?");
-  d = settle(answer(d, "chat", 1, "Sí"), "chat", 1, true);
-  expect(askFromChat(d, "¿Seguimos?").decisions[0]).toMatchObject({
-    state: "pending",
-    revision: 2,
-  });
+test("a local check runs a test, type or lint tool, never a word inside another command", () => {
+  for (const command of [
+    "bun test plugins/workboard",
+    "npm run lint",
+    "cd app && uv run pytest -q",
+    ".venv/bin/pytest",
+    "bunx tsc --noEmit",
+    "CI=1 npx vitest run",
+    "claude plugin test plugins/workboard",
+  ])
+    expect(checkExit(command)).toBe("own");
+  for (const command of [
+    "grep -n test src",
+    "git diff --check",
+    "test -f x && echo ok",
+    "cat src/check.ts",
+    "ls tests/",
+  ])
+    expect(checkExit(command)).toBeNull();
+  // Without pipefail the last command of a pipe, `||` or `;` decides the exit status.
+  for (const command of [
+    "bun test 2>&1 | tail -5",
+    "bun test || true",
+    "bun test; echo done",
+    "bun test &",
+  ])
+    expect(checkExit(command)).toBe("hidden");
+  expect(checkExit("set -o pipefail; cd a && bun test 2>&1 | tail -5")).toBe("own");
+  expect(checkExit("bun test 2>&1 && echo ok")).toBe("own");
 });
 test("links upsert by id and collaboration names the mode", () => {
   const msg = (
@@ -344,4 +314,53 @@ test("an agent keeps how it ran across refreshes, and internal messages never ma
   const { mode, peers } = collaboration(agents.map((a) => ({ ...a, state: "running" })), [internal], false);
   expect(peers).toEqual([]);
   expect(mode).toEqual({ kind: "lead", count: 1 });
+});
+test("collaboration ranks partners: a coordinator directs, a led teammate is no peer", () => {
+  const link = (id: string, peer: string, kind: "sent" | "received", via?: string) => ({
+    id,
+    at: Number(id),
+    kind,
+    peer,
+    ...(via ? { via } : {}),
+    source: "native" as const,
+  });
+  const team = [{ id: "t1", title: "scout", state: "running", teammateId: "scout@crew", name: "scout" }];
+  const links = [
+    link("1", "lead", "received", "coordinator"),
+    link("2", "mate", "received", "peer"),
+    link("3", "scout", "received", "peer"),
+    link("4", "scout@crew", "sent"),
+  ];
+  const r = collaboration(team, links, false);
+  expect(r.leads.map((p) => p.key)).toEqual(["lead"]);
+  expect(r.peers.map((p) => p.key)).toEqual(["mate"]);
+  expect(r.mode).toMatchObject({ kind: "worker", lead: { key: "lead" } });
+  // Without a coordinator the same peers keep the old modes.
+  expect(collaboration(team, links.slice(1), false).mode).toMatchObject({ kind: "pair" });
+});
+test("the router run of this session is the latest claude line with its session prefix", async () => {
+  const { routerRun } = await import("../scripts/workboard.mjs");
+  const { mkdtemp, mkdir, writeFile } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const dir = await mkdtemp(`${tmpdir()}/wb-router-`);
+  await mkdir(`${dir}/.claude/learned`, { recursive: true });
+  await writeFile(
+    `${dir}/.claude/learned/prompt-router.log`,
+    [
+      "2026-10-08T17:00:00.000Z host=claude session=abcdef12 outcome=empty ms=3000 skills=- fixes=0",
+      "2026-10-08T17:01:00.000Z host=claude session=abcdef12 outcome=ok ms=5141 skills=dev-workflow,ui-design fixes=1",
+      "2026-10-08T17:02:00.000Z host=codex session=abcdef12 outcome=ok ms=4000 skills=flow fixes=0",
+      "2026-10-08T17:03:00.000Z host=claude session=99999999 outcome=ok ms=4000 skills=flow fixes=0",
+      "",
+    ].join("\n"),
+  );
+  expect(await routerRun(dir, "abcdef12-0000-4000-8000-000000000000")).toEqual({
+    at: Date.parse("2026-10-08T17:01:00.000Z"),
+    ms: 5141,
+    outcome: "ok",
+    skills: ["dev-workflow", "ui-design"],
+    fixes: 1,
+  });
+  expect(await routerRun(dir, "11111111-x")).toBeNull();
+  expect(await routerRun(`${dir}/missing`, "abcdef12")).toBeNull();
 });

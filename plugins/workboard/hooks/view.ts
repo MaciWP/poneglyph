@@ -3,7 +3,7 @@ import type {
   ButtonProps,
   CodeProps,
   ElementConstructor,
-  InputProps,
+  LinkProps,
   RenderChildren,
   RenderElement,
   TextProps,
@@ -14,19 +14,27 @@ export type Ui = {
   Box: ElementConstructor<BoxProps>;
   Text: ElementConstructor<TextProps>;
   Button: ElementConstructor<ButtonProps>;
-  Input: ElementConstructor<InputProps>;
   Code: ElementConstructor<CodeProps>;
+  Link: ElementConstructor<LinkProps>;
 };
+// How the pane fits its room: docked it runs floor to ceiling, so text wraps instead of
+// truncating; below NARROW columns a label moves under what it labels instead of beside it.
+type Fit = Ui & { wrap: boolean; stack: boolean };
+const NARROW = 36;
 
 // One colour per section, so a glance tells which card needs attention.
 export const C = {
   robin: "#22d3ee",
   decision: "#fbbf24",
-  block: "#f87171",
   plan: "#4ade80",
   quality: "#60a5fa",
   agents: "#c084fc",
+  changes: "#fda4af",
   fail: "#f87171",
+  // The Agents card's four sections, one colour per rank.
+  coworkers: "#2dd4bf",
+  orchestrator: "#f472b6",
+  subordinates: "#fb923c",
   faint: "#4b5563",
 } as const;
 
@@ -39,40 +47,44 @@ const tone: Record<Tone, string | undefined> = {
   muted: undefined,
 };
 
-export type PaneDecision = {
-  key: string;
-  question: string;
-  blocking: boolean;
-  status: string;
-  error?: string;
-  context?: string;
-  options: { label: string; detail?: string }[];
-  recommended?: number;
-  // Read from the chat's "Espera tu decisión" block instead of published by the tool.
-  chat: boolean;
-  open: boolean;
-  draft: string;
-  onAnswer: (value: string) => void;
-  onDraft: (value: string) => void;
-};
 export type PaneTask = { title: string; state: string; label: string };
 // A feature (a task without parent) with its subtasks; `total` 0 when it has none.
 export type PaneFeature = PaneTask & { done: number; total: number; subtasks: PaneTask[] };
 export type PaneQuality = { label: string; value: string; tone: Tone; ratio?: number | null };
+export type PaneCharge = PaneTask & {
+  kind?: string;
+  depth: number;
+  // How it ran ("haiku 5.5 · medium · 12K tok · 40 s"), its latest internal message and
+  // whether it waits for main's reply.
+  detail?: string;
+  last?: string;
+  waiting?: boolean;
+};
+export type PanePeer = { name: string; counts: string; ago: string; tone: Tone };
+export type AgentRole = "subagents" | "coworkers" | "orchestrator" | "subordinates";
 export type PaneAgents = {
-  mode: "solo" | "lead" | "pair" | "group";
+  mode: "solo" | "lead" | "pair" | "group" | "worker";
   label: string;
-  charge: (PaneTask & {
-    kind?: string;
-    depth: number;
-    // How it ran ("haiku 5.5 · medium · 12K tok · 40 s"), its latest internal message and
-    // whether it waits for main's reply.
-    detail?: string;
-    last?: string;
-    waiting?: boolean;
-  })[];
-  peers: { name: string; counts: string; ago: string; tone: Tone }[];
+  // Only the sections with someone in them, in this order.
+  sections: { role: AgentRole; charge: PaneCharge[]; peers: PanePeer[] }[];
   events: { icon: string; text: string; trail: string; fresh: boolean; tone: Tone }[];
+};
+const roles: Record<AgentRole, { title: string; color: string }> = {
+  subagents: { title: "Subagentes", color: C.agents },
+  coworkers: { title: "Coworkers", color: C.coworkers },
+  orchestrator: { title: "Orquestador", color: C.orchestrator },
+  subordinates: { title: "Subordinados", color: C.subordinates },
+};
+// One repo of the Cambios card: its summary always, the rest once the files unfold.
+export type PaneRepo = {
+  heading: string;
+  status: string;
+  notes: { text: string; tone: Tone }[];
+  pr: { href: string; label: string } | null;
+  checks: string[];
+  files: { key: string; path: string; detail: string; onView: () => void }[];
+  more: number;
+  coverage: { key: string; label: string; onPress: () => void };
 };
 export type PaneModel = {
   title: string;
@@ -81,12 +93,15 @@ export type PaneModel = {
   robin: { text: string; at: number | null; detail: string | null; notice: string | null };
   failure: string | null;
   error: string | null;
-  decisions: PaneDecision[];
   plan: { done: number; total: number; features: PaneFeature[] };
   quality: { heading: string | null; rows: PaneQuality[] }[];
+  changes: { repos: PaneRepo[]; open: boolean; onToggle: () => void };
+  refresh: { busy: boolean; onPress: () => void };
   agents: PaneAgents;
   history: { open: boolean; items: { title: string; label: string }[]; onToggle: () => void };
   bridge: { connected: boolean; age: number | null; issues: string[] };
+  // Docked beside the transcript with this many body rows, or null when inline above the prompt.
+  dock: number | null;
 };
 
 export const gauge = (ratio: number, width: number) => {
@@ -109,7 +124,7 @@ const stateIcon = (state: string): { icon: string; color?: string } => icons[sta
 const qualityIcon: Record<Tone, string> = { fail: "✗", ok: "✓", info: "✓", warn: "!", muted: "·" };
 
 function card(
-  ui: Ui,
+  ui: Fit,
   color: string,
   title: string,
   right: RenderChildren,
@@ -124,11 +139,12 @@ function card(
     paddingX: 1,
     children: [
       ui.Box({
+        flexDirection: ui.stack ? "column" : "row",
         justifyContent: "space-between",
         columnGap: 1,
         children: [
           ui.Box({ flexShrink: 0, children: ui.Text({ color, bold: true, children: title }) }),
-          // A long label truncates instead of wrapping under the title.
+          // Beside the title a long label truncates; narrow, it takes its own line.
           right ? ui.Box({ flexShrink: 1, children: right }) : null,
         ],
       }),
@@ -137,35 +153,38 @@ function card(
   });
 }
 
-// A row whose middle text truncates while its icon and trailing label stay visible.
+// A row whose middle text truncates (or wraps, docked) while its icon and trailing label stay
+// visible; narrow, the label sits under the text.
 function row(
-  ui: Ui,
+  ui: Fit,
   icon: RenderChildren,
   text: string,
   trail?: RenderChildren,
   strong = false,
 ): RenderElement {
-  return ui.Box({
+  const line = ui.Box({
     columnGap: 1,
     children: [
       icon,
       ui.Box({
         flexGrow: 1,
         flexShrink: 1,
-        children: ui.Text({ wrap: "truncate", bold: strong, children: text }),
+        children: ui.Text({ wrap: ui.wrap ? "wrap" : "truncate", bold: strong, children: text }),
       }),
-      trail ? ui.Box({ flexShrink: 0, children: trail }) : null,
+      trail && !ui.stack ? ui.Box({ flexShrink: 0, children: trail }) : null,
     ],
   });
+  if (!trail || !ui.stack) return line;
+  return ui.Box({ flexDirection: "column", children: [line, ui.Box({ paddingLeft: 2, children: trail })] });
 }
 
-function bar(ui: Ui, ratio: number, width: number, color: string) {
+function bar(ui: Fit, ratio: number, width: number, color: string) {
   const g = gauge(ratio, width);
   return [ui.Text({ color, children: g.on }), ui.Text({ color: C.faint, children: g.off })];
 }
 
 // A state's icon and label in the state's colour; uncoloured states stay dim.
-function marked(ui: Ui, state: string) {
+function marked(ui: Fit, state: string) {
   const s = stateIcon(state);
   return {
     icon: ui.Text({
@@ -183,7 +202,7 @@ const capped = <T>(items: T[], max: number) => ({
   more: Math.max(0, items.length - max),
 });
 
-function planCard(ui: Ui, plan: PaneModel["plan"], width: number): RenderElement {
+function planCard(ui: Fit, plan: PaneModel["plan"], width: number): RenderElement {
   const { Text } = ui;
   const body: RenderChildren[] = [];
   if (plan.total)
@@ -227,10 +246,11 @@ function planCard(ui: Ui, plan: PaneModel["plan"], width: number): RenderElement
         f.state === "running",
       ),
     );
-    // Subtasks unfold only under the feature that is moving or stuck.
-    const unfold = [f, ...f.subtasks].some((t) =>
-      ["running", "blocked", "failed"].includes(t.state),
-    );
+    // Subtasks unfold under the feature that is moving or stuck, and under every open one
+    // once docked, where the height is there to use.
+    const unfold =
+      ui.wrap ||
+      [f, ...f.subtasks].some((t) => ["running", "blocked", "failed"].includes(t.state));
     if (unfold)
       for (const t of f.subtasks) {
         const s = marked(ui, t.state);
@@ -252,7 +272,7 @@ function planCard(ui: Ui, plan: PaneModel["plan"], width: number): RenderElement
 }
 
 // Always red: quality is what "done" has not proven yet.
-function qualityCard(ui: Ui, quality: PaneModel["quality"], width: number): RenderElement {
+function qualityCard(ui: Fit, quality: PaneModel["quality"], width: number): RenderElement {
   const { Box, Text } = ui;
   const body: RenderChildren[] = [];
   for (const group of quality) {
@@ -289,7 +309,6 @@ function qualityCard(ui: Ui, quality: PaneModel["quality"], width: number): Rend
       );
     }
   }
-  if (!body.length) body.push(Text({ dimColor: true, children: "Sin repositorio con datos" }));
   return card(
     ui,
     C.quality,
@@ -299,16 +318,58 @@ function qualityCard(ui: Ui, quality: PaneModel["quality"], width: number): Rend
   );
 }
 
-function agentsCard(ui: Ui, a: PaneAgents): RenderElement {
-  const { Text } = ui;
-  if (a.mode === "solo")
-    return card(ui, C.agents, "AGENTES", Text({ dimColor: true, children: a.label }), [], true);
+// What changed in each repo and what GitHub, CI and coverage say about it.
+function changesCard(ui: Fit, c: PaneModel["changes"]): RenderElement {
+  const { Box, Text, Button, Link } = ui;
+  const count = c.repos.reduce((n, r) => n + r.files.length + r.more, 0);
   const body: RenderChildren[] = [];
-  const section = (title: string) => body.push(Text({ bold: true, children: title }));
+  for (const r of c.repos) {
+    body.push(Text({ bold: true, wrap: ui.wrap ? "wrap" : "truncate", children: r.heading }));
+    body.push(Text({ dimColor: true, wrap: ui.wrap ? "wrap" : "truncate", children: r.status }));
+    for (const n of r.notes) body.push(Text({ color: tone[n.tone], children: n.text }));
+    if (r.pr) body.push(Link({ href: r.pr.href, label: r.pr.label }));
+    if (!c.open) continue;
+    for (const check of r.checks) body.push(Text({ wrap: "truncate", children: check }));
+    for (const f of r.files)
+      body.push(
+        row(
+          ui,
+          Text({ color: C.changes, children: "·" }),
+          f.path,
+          Button({ key: f.key, label: "Ver cambio", plain: true, onPress: f.onView }),
+        ),
+        Box({ paddingLeft: 2, children: Text({ dimColor: true, wrap: "truncate", children: f.detail }) }),
+      );
+    if (r.more)
+      body.push(
+        Text({ dimColor: true, children: `${r.more} ficheros más; consulta Git para el detalle completo` }),
+      );
+    body.push(Button({ key: r.coverage.key, label: r.coverage.label, onPress: r.coverage.onPress }));
+  }
+  return card(
+    ui,
+    C.changes,
+    "CAMBIOS",
+    Button({
+      key: "changes-files",
+      label: `Ficheros (${count}) ${c.open ? "−" : "+"}`,
+      plain: true,
+      onPress: c.onToggle,
+    }),
+    body,
+  );
+}
+
+function agentsCard(ui: Fit, a: PaneAgents): RenderElement {
+  const { Text } = ui;
+  const body: RenderChildren[] = [];
+  const section = (title: string, color?: string) =>
+    body.push(Text({ bold: true, color, children: color ? `● ${title}` : title }));
   const more = (n: number) => n && body.push(Text({ dimColor: true, children: `+${n} más` }));
-  if (a.charge.length) {
-    section("A su cargo");
-    const { shown, more: rest } = capped(a.charge, 6);
+  for (const s of a.sections) {
+    const { title, color } = roles[s.role];
+    section(title, color);
+    const { shown, more: rest } = capped(s.charge, 6);
     for (const c of shown) {
       const m = marked(ui, c.state);
       body.push(
@@ -340,37 +401,36 @@ function agentsCard(ui: Ui, a: PaneAgents): RenderElement {
         );
     }
     more(rest);
-  }
-  if (a.peers.length) {
-    section("Conversa con");
-    const { shown, more: rest } = capped(a.peers, 6);
-    for (const p of shown) {
-      const color = tone[p.tone] ?? C.agents;
+    const peers = capped(s.peers, 6);
+    for (const p of peers.shown) {
+      const dot = p.tone === "ok" ? color : (tone[p.tone] ?? color);
       body.push(
         row(
           ui,
-          Text({ color, children: p.tone === "ok" ? "●" : "○" }),
+          Text({ color: dot, children: p.tone === "ok" ? "●" : "○" }),
           p.name,
           Text({
             children: [
-              Text({ color: C.agents, children: p.counts }),
+              Text({ color, children: p.counts }),
               Text({ color: tone[p.tone], dimColor: p.tone === "ok", children: `  ${p.ago}` }),
             ],
           }),
         ),
       );
     }
-    more(rest);
+    more(peers.more);
   }
   if (a.events.length) {
     section("Últimas comunicaciones");
     for (const e of a.events)
       body.push(
         row(
-          ui,
+          // One line each: the whole message is in the agents' own view.
+          { ...ui, wrap: false },
           Text({ color: C.agents, bold: e.fresh, children: e.icon }),
           e.text,
           Text({
+            wrap: "truncate",
             children: [
               Text({ color: tone[e.tone], dimColor: e.tone === "muted", children: e.trail }),
               e.fresh ? Text({ color: C.agents, bold: true, children: "  nuevo" }) : null,
@@ -384,95 +444,25 @@ function agentsCard(ui: Ui, a: PaneAgents): RenderElement {
     ui,
     C.agents,
     "AGENTES",
-    Text({ color: C.agents, bold: a.mode === "group", wrap: "truncate", children: a.label }),
-    body,
-  );
-}
-
-function decisionsCard(ui: Ui, decisions: PaneDecision[]): RenderElement {
-  const { Box, Text, Button, Input } = ui;
-  if (!decisions.length)
-    return card(
-      ui,
-      C.decision,
-      "DECISIONES",
-      Text({ dimColor: true, children: "Sin decisiones pendientes" }),
-      [],
-      true,
-    );
-  const body: RenderChildren[] = [];
-  for (const d of decisions) {
-    const color = d.blocking ? C.block : C.decision;
-    body.push(
-      Text({
-        children: [
-          Text({ color, bold: true, children: d.blocking ? "⛔ Bloquea " : "◷ Puede esperar " }),
-          d.chat ? Text({ dimColor: true, children: "· pregunta en el chat " }) : null,
-        ],
-      }),
-      Text({ bold: true, children: d.question }),
-      d.context ? Text({ dimColor: true, children: d.context }) : null,
-      d.status ? Text({ dimColor: true, children: d.status }) : null,
-    );
-    if (d.error) body.push(Text({ color: C.decision, children: d.error }));
-    if (!d.open) continue;
-    const label = (o: { label: string }, i: number) =>
-      `${i + 1}. ${o.label}${d.recommended === i ? " ★" : ""}`;
-    const button = (o: { label: string }, i: number) =>
-      Button({
-        key: `answer-${d.key}-${i}`,
-        label: label(o, i),
-        onPress: () => d.onAnswer(o.label),
-      });
-    // Options with an explanation stack one per line; bare labels share a row.
-    if (d.options.some((o) => o.detail))
-      for (const [i, o] of d.options.entries())
-        body.push(
-          Box({
-            flexDirection: "column",
-            children: [
-              button(o, i),
-              o.detail
-                ? Box({ paddingLeft: 3, children: Text({ dimColor: true, children: o.detail }) })
-                : null,
-            ],
-          }),
-        );
-    else if (d.options.length)
-      body.push(Box({ flexWrap: "wrap", columnGap: 1, children: d.options.map(button) }));
-    body.push(
-      Input({
-        key: `answer-${d.key}-text`,
-        label: "Respuesta",
-        placeholder: d.chat ? "Responde a la pregunta del chat" : "Escribe tu decisión",
-        value: d.draft,
-        onInput: d.onDraft,
-        submitLabel: "Enviar",
-        onSubmit: d.onAnswer,
-      }),
-    );
-  }
-  const blocking = decisions.some((d) => d.blocking && d.open);
-  const open = decisions.filter((d) => d.open).length;
-  return card(
-    ui,
-    blocking ? C.block : C.decision,
-    "DECISIONES",
     Text({
-      color: blocking ? C.block : C.decision,
-      children: blocking ? "te bloquea" : `${open} ${open === 1 ? "abierta" : "abiertas"}`,
+      color: a.mode === "worker" ? C.orchestrator : C.agents,
+      bold: a.mode === "group" || a.mode === "worker",
+      wrap: "truncate",
+      children: a.label,
     }),
     body,
   );
 }
 
-export function paneView(ui: Ui, m: PaneModel): RenderElement {
+export function paneView(base: Ui, m: PaneModel): RenderElement {
+  const ui: Fit = { ...base, wrap: m.dock !== null, stack: m.cols < NARROW };
   const { Box, Text, Button } = ui;
   const width = Math.max(6, Math.min(20, m.cols - 24));
   const nodes: RenderChildren[] = [];
 
   nodes.push(
     Box({
+      flexDirection: ui.stack ? "column" : "row",
       justifyContent: "space-between",
       paddingX: 1,
       columnGap: 1,
@@ -485,9 +475,23 @@ export function paneView(ui: Ui, m: PaneModel): RenderElement {
             Text({ bold: true, children: m.title }),
           ],
         }),
-        m.working
-          ? Text({ color: C.plan, bold: true, children: "● trabajando" })
-          : Text({ dimColor: true, children: "○ esperando" }),
+        Box({
+          flexShrink: 0,
+          // A pane too narrow for the state and the button puts the button on its own line.
+          flexWrap: "wrap",
+          columnGap: 1,
+          children: [
+            m.working
+              ? Text({ color: C.plan, bold: true, children: "● trabajando" })
+              : Text({ dimColor: true, children: "○ esperando" }),
+            Button({
+              key: "workboard-refresh",
+              label: m.refresh.busy ? "Actualizando" : "Actualizar",
+              hotkey: "a",
+              onPress: m.refresh.onPress,
+            }),
+          ],
+        }),
       ],
     }),
   );
@@ -507,7 +511,7 @@ export function paneView(ui: Ui, m: PaneModel): RenderElement {
           : null,
         m.robin.notice ? Text({ color: C.decision, children: `Aviso: ${m.robin.notice}` }) : null,
         m.failure
-          ? Text({ color: C.decision, children: `⚠ Incidencia observada: ${m.failure}` })
+          ? Text({ color: C.decision, wrap: "truncate", children: `⚠ ${m.failure}` })
           : null,
         m.error ? Text({ color: C.fail, children: `✗ ${m.error}` }) : null,
       ],
@@ -515,12 +519,16 @@ export function paneView(ui: Ui, m: PaneModel): RenderElement {
   );
 
   nodes.push(planCard(ui, m.plan, width));
-  nodes.push(qualityCard(ui, m.quality, width));
-  nodes.push(agentsCard(ui, m.agents));
-  nodes.push(decisionsCard(ui, m.decisions));
+  // A card with nothing to say takes no screen: no quality data, or an agent working alone.
+  if (m.quality.length) nodes.push(qualityCard(ui, m.quality, width));
+  if (m.changes.repos.length) nodes.push(changesCard(ui, m.changes));
+  if (m.agents.sections.length) nodes.push(agentsCard(ui, m.agents));
+  // Docked, the footer sits at the bottom of the pane, as a sidebar's footer on a web page.
+  if (m.dock !== null) nodes.push(Box({ flexGrow: 1 }));
 
   nodes.push(
     Box({
+      flexDirection: ui.stack ? "column" : "row",
       justifyContent: "space-between",
       paddingX: 1,
       columnGap: 1,
@@ -561,14 +569,15 @@ export function paneView(ui: Ui, m: PaneModel): RenderElement {
         }),
       );
 
-  return Box({ flexDirection: "column", children: nodes });
+  return Box({ flexDirection: "column", minHeight: m.dock ?? undefined, children: nodes });
 }
 
 export function diffView(
-  ui: Ui,
+  base: Ui,
   d: { path: string; source: string; truncated: boolean },
   onBack: () => void,
 ): RenderElement {
+  const ui: Fit = { ...base, wrap: false, stack: false };
   const { Box, Text, Button, Code } = ui;
   return Box({
     flexDirection: "column",

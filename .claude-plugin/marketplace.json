@@ -9,6 +9,21 @@
       "name": "workboard",
       "source": "./plugins/workboard",
       "description": "Ticket, changes, evidence, agents and decisions inside Claude Code. Agentic OS is optional."
+    },
+    {
+      "name": "hud",
+      "source": "./plugins/hud",
+      "description": "Stats bar above the prompt with model, effort, context, plan limits, cache countdown and cost, plus thumbnails of pasted images."
+    },
+    {
+      "name": "vista",
+      "source": "./plugins/vista",
+      "description": "Interactive answers in the transcript: a comparison with clickable topics, a ranking with thumbnails and a draft with Copiar."
+    },
+    {
+      "name": "dock",
+      "source": "./plugins/dock",
+      "description": "Action buttons in the transcript: open a file, a folder, a terminal, an agent session, a URL or Finder; through Agentic OS when it runs."
     }
   ]
 }

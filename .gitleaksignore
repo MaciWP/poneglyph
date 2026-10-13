@@ -1,6 +1,7 @@
-# Three exact occurrences of the reviewed truncated synthetic JWT header.
+# Exact occurrences of the reviewed truncated synthetic JWT header.
 # These detector fixtures have no usable payload or signature.
 # Do not broaden these exceptions to files, rules, paths, or later commits.
 48b5e1d364c89ed830eb6fecbe418eae97b0c228:.claude/hooks/__tests__/security-gate-functions.test.ts:generic-api-key:64
 48b5e1d364c89ed830eb6fecbe418eae97b0c228:.claude/hooks/__tests__/security-gate.test.ts:generic-api-key:157
 48b5e1d364c89ed830eb6fecbe418eae97b0c228:.claude/hooks/security-gate.ts:generic-api-key:52
+fe9511e1c1387bd1587e492f2560afcd6bfeaf5f:.claude/hooks/security-gate.ts:generic-api-key:57

@@ -1,7 +1,7 @@
 import { expect, it } from "bun:test";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { isAbsolute, join, relative, resolve } from "node:path";
 import { memoryFile } from "../../hooks/router/memory";
 
 // `CLAUDE_CONFIG_DIR` moves the whole Claude Code config, transcripts and memory included.
@@ -32,5 +32,6 @@ it("only hooks/lib/paths.ts resolves the Claude config dir", () => {
 // The router memory holds real prompts: its file must live in the config dir, never in the repo.
 it("memoryFile() resolves outside the repo root", () => {
   const rel = relative(root, memoryFile());
-  expect(rel.startsWith("..")).toBe(true);
+  // On Windows the repo and the config dir can sit on different drives: relative() is then absolute.
+  expect(rel.startsWith("..") || isAbsolute(rel)).toBe(true);
 });

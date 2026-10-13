@@ -35,7 +35,7 @@ function skill(dir: string, name: string, extra = "") {
 
 describe("prompt-router: routablePrompt (gate)", () => {
   test("passes an attended human prompt of six words or more", () => {
-    expect(routablePrompt(payload(LONG), attended)).toBe(LONG);
+    expect(routablePrompt(payload(LONG), attended, "darwin")).toBe(LONG);
   });
 
   test("skips short replies, slash commands, non-human payloads and malformed input", () => {
@@ -46,7 +46,7 @@ describe("prompt-router: routablePrompt (gate)", () => {
   });
 
   test("reads the task of /goal", () => {
-    expect(routablePrompt(payload(`/goal ${LONG}`), attended)).toBe(LONG);
+    expect(routablePrompt(payload(`/goal ${LONG}`), attended, "darwin")).toBe(LONG);
   });
 
   test("skips its own child, an explicit opt-out and headless sessions", () => {
@@ -60,9 +60,9 @@ describe("prompt-router: routablePrompt (gate)", () => {
     expect(routablePrompt(payload(LONG), attended, "darwin", "codex")).toBe(LONG);
     expect(routablePrompt(payload(LONG), { ...attended, CLAUDECODE: "1" }, "darwin", "codex")).toBeNull();
     expect(routablePrompt(payload(LONG), { ...attended, CLAUDECODE: "1" }, "darwin", "grok")).toBeNull();
-    expect(routablePrompt(payload(LONG), { ...attended, CLAUDECODE: "1" })).toBe(LONG);
+    expect(routablePrompt(payload(LONG), { ...attended, CLAUDECODE: "1" }, "darwin")).toBe(LONG);
     expect(routablePrompt(payload(`$flow ${LONG}`), attended, "darwin", "codex")).toBeNull();
-    expect(routablePrompt(payload(`$flow ${LONG}`), attended)).toBe(`$flow ${LONG}`);
+    expect(routablePrompt(payload(`$flow ${LONG}`), attended, "darwin")).toBe(`$flow ${LONG}`);
   });
 
   test("does not run on Windows", () => {
@@ -70,7 +70,7 @@ describe("prompt-router: routablePrompt (gate)", () => {
   });
 
   test("caps the text sent to the router", () => {
-    expect(routablePrompt(payload(`${LONG} ${"x".repeat(5000)}`), attended)!.length).toBe(3000);
+    expect(routablePrompt(payload(`${LONG} ${"x".repeat(5000)}`), attended, "darwin")!.length).toBe(3000);
   });
 });
 
@@ -295,7 +295,8 @@ describe("prompt-router: takeRouterNote (Codex and Grok delivery)", () => {
   });
 });
 
-describe("prompt-router: runRouter", () => {
+// POSIX only: the router kills its process group, so routablePrompt turns it off on win32.
+describe.skipIf(process.platform === "win32")("prompt-router: runRouter", () => {
   const dir = mkdtempSync(join(tmpdir(), "router-run-"));
   const agent = { name: "r", definition: { prompt: "sys" } };
   const fake = (name: string, body: string) => {

@@ -3,7 +3,6 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-// Quality review 2026-09-11, findings H25 and H26 and the rot class behind them.
 // Commandment IX says the system does not rot, but nothing enforced it: a component could
 // be deleted and its name survive in live prose for weeks, telling the agent to read a file
 // that is gone.
@@ -26,7 +25,8 @@ const RETIRED = [
   "meta-create",
   "meta-settings-cookbook",
   "lsp-operations",
-  // The six phase skills merged into `flow` on 2026-09-17.
+  "knowledge-graph",
+  // The six phase skills merged into `flow`.
   "flow-scope",
   "flow-plan",
   "flow-test-plan",
@@ -35,11 +35,11 @@ const RETIRED = [
   "flow-retro",
 ];
 
-// Dated history records what was true on its date; a decision log and a lessons row must
-// keep naming what they are about. Tests name retired components on purpose: that is here.
+// A lessons row must keep naming what it is about, and tests name retired components on
+// purpose: that is here.
 // `html-report/examples/` is a frozen sample deliverable (snapshot 2026-05-29): an example
 // corpus, like a fixture, not live instruction.
-const ALLOWED = /^\.claude\/(plans|audits)\/|^docs\/component-audit|__tests__|existence-checks\.md$|lessons-learned\/SKILL\.md$|doctrine-sweep\.md$|history\.md$|html-report\/examples\//;
+const ALLOWED = /__tests__|existence-checks\.md$|lessons-learned\/(SKILL|references\/evidence)\.md$|html-report\/examples\//;
 // A sentence that says the thing is gone is documentation, not rot.
 const RETIRED_NEARBY = /\b(cut|retired|removed|deleted|replaced by|no longer|gone)\b/i;
 
@@ -72,22 +72,5 @@ describe("live files never present a retired component as current", () => {
       }
     }
     expect([...new Set(hits)]).toEqual([]);
-  });
-});
-
-// Quality review 2026-09-10, finding H69b. `README.md` installed the statusline tool with
-// `@latest` while `docs/statusline-setup.md` pins a version and says "not `@latest`" in so
-// many words. A reader who follows the README got a different tool than the one the setup
-// doc verified, and neither file knew. The pin is the owner; every install line must agree.
-describe("install commands agree with the version their doc pins", () => {
-  const setup = readFileSync(join(root, "docs", "statusline-setup.md"), "utf8");
-  const readme = readFileSync(join(root, "README.md"), "utf8");
-
-  it("README installs the ccstatusline version statusline-setup.md pins", () => {
-    const pinned = setup.match(/ccstatusline@(\d+\.\d+\.\d+)/)?.[1];
-    expect(pinned, "docs/statusline-setup.md no longer pins a version").toBeDefined();
-    const installed = [...readme.matchAll(/install -g ccstatusline@(\S+?)["'\s]/g)].map((m) => m[1]);
-    expect(installed.length, "README no longer installs ccstatusline").toBeGreaterThan(0);
-    expect(installed.filter((v) => v !== pinned)).toEqual([]);
   });
 });

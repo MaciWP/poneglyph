@@ -92,7 +92,7 @@ describe("diffDelta", () => {
     expect(diffDelta(before, { ...before, "b.ts": "??:ZZZ" })).toEqual(["b.ts"]);
   });
 
-  test("a tree at rest yields an empty delta — the dirty-repo case that absolute state would fail", () => {
+  test("a tree at rest yields an empty delta, the dirty-repo case that absolute state would fail", () => {
     const dirty: Snapshot = Object.fromEntries(Array.from({ length: 119 }, (_, i) => [`f${i}.ts`, ` M:h${i}`]));
     expect(diffDelta(dirty, dirty)).toEqual([]);
   });
@@ -129,7 +129,7 @@ describe("claimsVsDelta", () => {
     expect(claimsVsDelta(["a.ts", "b.ts"], ["a.ts"]).missing).toEqual(["b.ts"]);
   });
 
-  test("catches a file touched but not declared — task-pipeline's blind spot", () => {
+  test("catches a file touched but not declared, task-pipeline's blind spot", () => {
     expect(claimsVsDelta(["a.ts"], ["a.ts", "sneaky.ts"]).undeclared).toEqual(["sneaky.ts"]);
   });
 
@@ -158,7 +158,7 @@ describe("derivePatterns", () => {
     expect(p).toContain(".claude/settings.json");
   });
 
-  test("ignores Bash and Read rules — they bound running and reading, not mutating", () => {
+  test("ignores Bash and Read rules, they bound running and reading, not mutating", () => {
     const p = derivePatterns(settings);
     expect(p).not.toContain("rm -rf /");
     expect(p.some((x) => x.includes("rm -rf"))).toBe(false);
@@ -225,7 +225,7 @@ describe("outsideAllowlist", () => {
     expect(outsideAllowlist(["src/a.ts"], PHASE_WRITES.build)).toEqual([]);
   });
 
-  test("empty allowlist makes a phase read-only — a reviewer that cannot fix cannot quietly fix", () => {
+  test("empty allowlist makes a phase read-only, a reviewer that cannot fix cannot quietly fix", () => {
     expect(outsideAllowlist(["src/a.ts"], PHASE_WRITES.review)).toEqual(["src/a.ts"]);
   });
 
@@ -236,7 +236,7 @@ describe("outsideAllowlist", () => {
 });
 
 describe("parseSuite", () => {
-  test("zero tests is RED — a suite that did not run is not a green suite", () => {
+  test("zero tests is RED, a suite that did not run is not a green suite", () => {
     expect(parseSuite(0, "Ran 0 tests across 0 files.").ok).toBe(false);
   });
 
@@ -244,7 +244,7 @@ describe("parseSuite", () => {
     expect(parseSuite(1, "178 pass\n0 fail").ok).toBe(false);
   });
 
-  test("exit 0 with parsed failures is RED — contradictory signals", () => {
+  test("exit 0 with parsed failures is RED, contradictory signals", () => {
     expect(parseSuite(0, "170 pass\n8 fail").ok).toBe(false);
   });
 
@@ -272,13 +272,13 @@ describe("report", () => {
     expect(r.checks).toHaveLength(1);
   });
 
-  test("an empty check list passes — the caller decides which gates apply", () => {
+  test("an empty check list passes, the caller decides which gates apply", () => {
     expect(report("plan", []).passed).toBe(true);
   });
 });
 
 describe("SELF_PATHS", () => {
-  test("the gate protects its own source — a builder that edits its grader invalidates every gate", () => {
+  test("the gate protects its own source, a builder that edits its grader invalidates every gate", () => {
     expect(SELF_PATHS).toContain(".claude/scripts/gate.ts");
     expect(SELF_PATHS).toContain(".claude/workflows/task-pipeline.js");
   });

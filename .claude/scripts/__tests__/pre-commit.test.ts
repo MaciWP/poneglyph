@@ -23,12 +23,12 @@ test('test Git operations cannot replace the committing worktree index',()=>{
  expect(git(owner,['write-tree'],clean)).toBe(before);
 });
 
-// Quality review 2026-09-11 — H33. The test above exercises `withoutGitEnv` only: it
+// The test above exercises `withoutGitEnv` only: it
 // never spawns pre-commit.ts and never reaches `indexTree()`, so deleting the guard
 // left the suite green. These two runs drive the real script end to end. They are a
 // PAIR on purpose: exit 2 is the catch-all, so a broken fixture fails identically.
 // The control run proves the fixture is a valid `core` tree whose inner suite ran.
-describe('pre-commit.ts drives the staged-index guard (H33)',()=>{
+describe('pre-commit.ts drives the staged-index guard',()=>{
  const HOOK=join(import.meta.dir,'..','pre-commit.ts');
  // `claude plugin validate` runs on the green path and would reject a minimal fixture.
  // Drop only the PATH entries that expose the CLI; git and bun must stay reachable.

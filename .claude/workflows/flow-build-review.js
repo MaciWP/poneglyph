@@ -3,7 +3,7 @@ export const meta = {
   description:
     'Ciclo trasero de /flow-lifecycle COMPLETO y determinista: preflight del plan, build por waves con la disciplina de la skill build (style anchors, oracle red→green, drillme-clarify intra-HU, docs-sync, retry con diagnóstico), fase 4 estilo critic (base checks + fresh reviewer + lentes de calidad + security condicional + spec-drift) y review.md escrito desde el template con veredicto PROPUESTO. Los gates humanos (ratificar veredicto, retro, state.json) quedan fuera.',
   whenToUse:
-    'Plan /flow-lifecycle con tasks/ aprobado y fase 2.5 cerrada, cuando quieres el ciclo trasero COMPLETO — build + fase 4 con artefacto review.md — y no solo ejecutar las HUs. Opt-in explícito: ~2x el coste de un build directo por la fase 4 instrumentada.',
+    'Plan /flow-lifecycle con tasks/ aprobado y fase 2.5 cerrada, cuando quieres el ciclo trasero COMPLETO, build + fase 4 con artefacto review.md, y no solo ejecutar las HUs. Opt-in explícito: ~2x el coste de un build directo por la fase 4 instrumentada.',
   phases: [
     { title: 'Preflight', detail: 'readiness del plan + comandos de verificación + review_level + fecha (1 agente lector)' },
     { title: 'Build', detail: 'HUs por waves del DAG con la disciplina de flow/references/04-build.md; 1 retry con diagnóstico', model: 'sonnet' },
@@ -17,12 +17,12 @@ export const meta = {
 //   · Fase 3 = skills/flow/references/04-build.md  → steps 4-9 destilados en el prompt de HU.
 //   · Fase 4 = skills/flow/references/05-review.md → steps 3-11 repartidos entre Review + Synthesize.
 // Invariantes que hacen seguro el handback:
-//   1. NINGÚN agente escribe state.json ni frontmatter de US — cierra el Lead
+//   1. NINGÚN agente escribe state.json ni frontmatter de US, cierra el Lead
 //      con `flow-state close-us` tras validar contigo.
 //   2. NINGÚN agente hace git commit/push.
 //   3. El veredicto se calcula en el SCRIPT (determinista) y es PROPUESTO;
 //      lo ratifica el humano vía `flow-state verdict`.
-//   4. La retro (fase 5) queda fuera: se devuelven sus INPUTS como datos —
+//   4. La retro (fase 5) queda fuera: se devuelven sus INPUTS como datos:
 //      escribir retro.md sin ratificación humana rompería `close-feature`.
 // Restricciones del runtime: el script no tiene filesystem (todo I/O va por
 // agentes) y Date.now()/new Date() lanzan → la fecha la trae el preflight.
@@ -41,7 +41,7 @@ if (!slug || !/^\d{3}-[a-z0-9][a-z0-9-]*$/.test(slug)) {
     aborted: true,
     reason:
       `flow-build-review necesita el slug de un plan con forma NNN-kebab. Recibido: ${JSON.stringify(args)}. ` +
-      `Uso: Workflow({name:"flow-build-review", args:{slug:"032-mi-feature"}}) — opcionales: only:["US3"], level:"full".`,
+      `Uso: Workflow({name:"flow-build-review", args:{slug:"032-mi-feature"}}), opcionales: only:["US3"], level:"full".`,
   }
 }
 
@@ -52,7 +52,7 @@ const NO_WRITE = // prohibiciones comunes a todos los agentes que tocan el repo
   `NEVER edit sensitive paths (.env, *.lock, package.json, .claude/settings*.json, secrets/, credentials/): if the work requires one, stop and report it as blocked with the reason.`
 
 // ---------------------------------------------------------------------------
-// Fase 1 — Preflight: un solo lector barato resuelve TODO el contexto que el
+// Fase 1, Preflight: un solo lector barato resuelve TODO el contexto que el
 // script necesita (readiness, comandos, oracle, fecha, HUs con su prompt).
 // ---------------------------------------------------------------------------
 phase('Preflight')
@@ -63,7 +63,7 @@ const PREFLIGHT_SCHEMA = {
   properties: {
     ready: { type: 'boolean' },
     reason: { type: 'string' },
-    today: { type: 'string', description: 'YYYY-MM-DD obtenido con `date +%F` — el script no puede calcularlo' },
+    today: { type: 'string', description: 'YYYY-MM-DD obtenido con `date +%F`, el script no puede calcularlo' },
     check_command: { type: 'string' },
     typecheck_command: { type: 'string' },
     lint_command: { type: 'string' },
@@ -95,7 +95,7 @@ const PREFLIGHT_SCHEMA = {
 
 const plan = await agent(
   `Read the /flow-lifecycle plan at ${PLAN} in this repo and return its execution context. Read-only: do not modify anything.\n` +
-    `1) ${PLAN}/state.json — ready:true ONLY if tasks are approved, phase 2.5 is closed (tests.md or validations.md exists) and us_pending is non-empty. Otherwise ready:false with a one-line reason naming what is missing.\n` +
+    `1) ${PLAN}/state.json, ready:true ONLY if tasks are approved, phase 2.5 is closed (tests.md or validations.md exists) and us_pending is non-empty. Otherwise ready:false with a one-line reason naming what is missing.\n` +
     `2) today = output of \`date +%F\` (run it, do not guess the date).\n` +
     `3) For each US id in us_pending, read ${PLAN}/tasks/US{n}.md and extract: id, title, wave, depends_on, files, and the FULL "Execution prompt (Phase 3 input)" block VERBATIM as execution_prompt.\n` +
     `   Flow defaults to forced TDD for behavior changes, including auxiliary code. Use validation for documents; optional/skip requires a recorded exception before execution. Resolve oracle_mode per US from ${PLAN}/tests.md frontmatter (tdd_policy) + per-node overrides + .claude/rules/test-policy.md: "forced" (strict red→green), "optional" (impl + suite verify), "validation" (markdown/config US covered by validations.md), "skip" (node carries tdd-skip: <reason> → copy it into oracle_skip_reason). oracle_ref = the exact section that covers this US.\n` +
@@ -119,7 +119,7 @@ log(`${selected.length} HUs${only ? ' (subconjunto only)' : ''} · oracle: ${pla
 if (selected.length > 10) log(`⚠️ ${selected.length} HUs: la wave más ancha se ejecuta igual, pero el runtime encola por encima de ~10 agentes concurrentes`)
 
 // ---------------------------------------------------------------------------
-// Fase 2 — Build por waves. Barrera entre waves = dependencias reales del DAG.
+// Fase 2, Build por waves. Barrera entre waves = dependencias reales del DAG.
 // Dentro de una wave: ficheros DISJUNTOS → paralelo; colisión → cola secuencial
 // (el orden resuelve la colisión; worktrees añadirían costuras de merge).
 // ---------------------------------------------------------------------------
@@ -144,24 +144,24 @@ const HU_SCHEMA = {
 
 function huPrompt(u, retryOf) {
   const oracle = {
-    forced: `TDD forced — strict red→green: write the test from ${u.oracle_ref || `${PLAN}/tests.md`}, run it, VERIFY IT FAILS with the predicted error (a green before impl is a smell → stop and report blocked), then implement the minimum that turns it green. Record both the red error and the green run in oracle_evidence.`,
-    optional: `TDD optional — implement, then run the suite as post-impl verification (${u.oracle_ref || plan.check_command}). Record what you ran in oracle_evidence.`,
-    validation: `Validation-mode US (markdown/skill/doc/config) — verify the 5 categories of ${u.oracle_ref || `${PLAN}/validations.md`} for this US (Pre / Post / Structural / Smoke / Cross) and record each one in oracle_evidence. A failing Structural assertion (missing frontmatter field, broken reference) blocks the US.`,
-    skip: `tdd-skip declared — reason is binding, do NOT relitigate it: "${u.oracle_skip_reason || 'declared in the plan'}". Implement directly and verify with the existing suite. If on inspection the skip looks wrong (the change DOES have testable behavior), say so in oracle_evidence; do not silently add tests.`,
+    forced: `TDD forced, strict red→green: write the test from ${u.oracle_ref || `${PLAN}/tests.md`}, run it, VERIFY IT FAILS with the predicted error (a green before impl is a smell → stop and report blocked), then implement the minimum that turns it green. Record both the red error and the green run in oracle_evidence.`,
+    optional: `TDD optional, implement, then run the suite as post-impl verification (${u.oracle_ref || plan.check_command}). Record what you ran in oracle_evidence.`,
+    validation: `Validation-mode US (markdown/skill/doc/config), verify the 5 categories of ${u.oracle_ref || `${PLAN}/validations.md`} for this US (Pre / Post / Structural / Smoke / Cross) and record each one in oracle_evidence. A failing Structural assertion (missing frontmatter field, broken reference) blocks the US.`,
+    skip: `tdd-skip declared, reason is binding, do NOT relitigate it: "${u.oracle_skip_reason || 'declared in the plan'}". Implement directly and verify with the existing suite. If on inspection the skip looks wrong (the change DOES have testable behavior), say so in oracle_evidence; do not silently add tests.`,
   }[u.oracle_mode]
 
   return (
-    `You are executing ONE user story of an approved /flow-lifecycle plan, at inline-Lead quality. Plan: ${PLAN}. US: ${u.id} — ${u.title}.\n\n` +
+    `You are executing ONE user story of an approved /flow-lifecycle plan, at inline-Lead quality. Plan: ${PLAN}. US: ${u.id}, ${u.title}.\n\n` +
     (retryOf
-      ? `RETRY (attempt 2 of 2). The previous attempt failed with:\n"""${retryOf}"""\nDiagnose the ROOT CAUSE first (5-whys / read the failing output / .claude/skills/troubleshooting) and fix the cause, not the symptom. If you reproduce the very same error, stop and return status:"failed" with that error verbatim — do not keep retrying louder.\n\n`
+      ? `RETRY (attempt 2 of 2). The previous attempt failed with:\n"""${retryOf}"""\nDiagnose the ROOT CAUSE first (5-whys / read the failing output / .claude/skills/troubleshooting) and fix the cause, not the symptom. If you reproduce the very same error, stop and return status:"failed" with that error verbatim, do not keep retrying louder.\n\n`
       : '') +
-    `PRIMARY INSTRUCTION (execution prompt from ${PLAN}/tasks/${u.id}.md — Task/Context/Constraints/Deliverable/Verify govern the work):\n${u.execution_prompt}\n\n` +
-    `PROTOCOL (.claude/skills/flow/references/04-build.md steps 4-9 — follow in order):\n` +
+    `PRIMARY INSTRUCTION (execution prompt from ${PLAN}/tasks/${u.id}.md, Task/Context/Constraints/Deliverable/Verify govern the work):\n${u.execution_prompt}\n\n` +
+    `PROTOCOL (.claude/skills/flow/references/04-build.md steps 4-9, follow in order):\n` +
     `A. Style anchors BEFORE writing: Glob for 1-3 files of the same kind as your output and Read them; Grep the symbols/modules the US will use to confirm they exist. Report those files in style_anchors. Never claim a path exists without having seen it.\n` +
     `B. Oracle: ${oracle}\n` +
     `C. Scope floor: smallest diff that satisfies the ACs, in the surrounding code style. Reuse what the project already has instead of writing a variant. Add NOTHING beyond the ACs (no extra abstractions, hooks or fallbacks for impossible states). Never simplify away trust-boundary validation, error handling, security or accessibility. Stay inside the US files field (${u.files.join(', ') || 'declared in the US'}); anything else you had to touch goes in out_of_scope_files with the reason in summary.\n` +
-    `D. Ambiguity: if an AC is ambiguous and you would have to GUESS (undefined signature, unspecified path/default, uncovered edge case), do NOT improvise — return status:"blocked" with the exact question in questions. Being blocked on a real question is a success; guessing is a failure.\n` +
-    `E. Drillme before closing — answer these 4 in one line each, in this order: (1) is there a project pattern I ignored? (2) does my code duplicate an existing utility? (3) am I adding more than the AC requires? (4) are the names consistent with the codebase? A "yes" to (2) or (3) means FIX IT before returning.\n` +
+    `D. Ambiguity: if an AC is ambiguous and you would have to GUESS (undefined signature, unspecified path/default, uncovered edge case), do NOT improvise, return status:"blocked" with the exact question in questions. Being blocked on a real question is a success; guessing is a failure.\n` +
+    `E. Drillme before closing, answer these 4 in one line each, in this order: (1) is there a project pattern I ignored? (2) does my code duplicate an existing utility? (3) am I adding more than the AC requires? (4) are the names consistent with the codebase? A "yes" to (2) or (3) means FIX IT before returning.\n` +
     `F. Docs-sync in the SAME US: if you created or changed a component (hook, skill, command, rule, setting), update the doc that DESCRIBES it (registry tables such as .claude/rules/paths/hooks.md, .claude/docs/system-inventory.md). Report it in docs_sync, or "n/a".\n` +
     `G. Verify before returning done: run the scoped check for what you touched, then \`${plan.check_command}\`` +
     `${plan.typecheck_command ? ` and \`${plan.typecheck_command}\`` : ''}${plan.lint_command ? ` and \`${plan.lint_command}\`` : ''}. ` +
@@ -182,11 +182,11 @@ async function runHU(u, seq) {
   if (!first) return { id: u.id, status: 'failed', summary: 'el agente murió sin devolver resultado', files_touched: [], oracle_evidence: '-', check: '-', drillme: [], error: 'agent returned null' }
   if (first.status !== 'failed') return first
 
-  log(`↻ ${u.id} falló — 1 reintento con diagnóstico de causa raíz`)
+  log(`↻ ${u.id} falló, 1 reintento con diagnóstico de causa raíz`)
   const second = await agent(huPrompt(u, first.error || first.check), { label: `${tag}(retry)`, phase: 'Build', schema: HU_SCHEMA, model: 'sonnet' })
   if (!second) return { ...first, error: `${first.error} · retry agent died` }
   if (second.status === 'failed' && norm(second.error) === norm(first.error)) {
-    log(`⛔ ${u.id}: mismo error dos veces — se para (identical-error override), no se gasta más presupuesto`)
+    log(`⛔ ${u.id}: mismo error dos veces, se para (identical-error override), no se gasta más presupuesto`)
     return { ...second, error: `${second.error} [identical-error override: no progresa entre intentos]` }
   }
   return { ...second, summary: `${second.summary}\n(cerrada en reintento tras: ${norm(first.error)})` }
@@ -204,7 +204,7 @@ for (const w of waves) {
   // rota es la violación del DAG que /flow-lifecycle manda sacar a la luz, no absorber.
   const runnable = inWave.filter((u) => u.depends_on.every((d) => doneIds.has(d) || !plan.us.some((x) => x.id === d)))
   for (const u of inWave.filter((u) => !runnable.includes(u))) {
-    results.push({ id: u.id, status: 'blocked', summary: 'dependencia no cerrada — violación del DAG', files_touched: [], oracle_evidence: '-', check: '-', drillme: [], questions: [`depende de ${u.depends_on.join(', ')}, que no cerró`] })
+    results.push({ id: u.id, status: 'blocked', summary: 'dependencia no cerrada, violación del DAG', files_touched: [], oracle_evidence: '-', check: '-', drillme: [], questions: [`depende de ${u.depends_on.join(', ')}, que no cerró`] })
   }
 
   const parallelGroup = []
@@ -232,9 +232,9 @@ const failed = results.filter((r) => r.status === 'failed')
 const touched = [...new Set(done.flatMap((r) => [...(r.files_touched || []), ...(r.out_of_scope_files || [])]))]
 
 // ---------------------------------------------------------------------------
-// Fase 3 — Review (skills/flow/references/05-review.md steps 4-8). Fuentes INDEPENDIENTES sobre
-// dominios DISJUNTOS: no es un panel deliberativo (019 demotion: los paneles
-// sobre las mismas claims son la forma débil para revisar código).
+// Fase 3, Review (skills/flow/references/05-review.md steps 4-8). Fuentes INDEPENDIENTES sobre
+// dominios DISJUNTOS: no es un panel deliberativo: los paneles
+// sobre las mismas claims son la forma débil para revisar código.
 // ---------------------------------------------------------------------------
 phase('Review')
 
@@ -260,7 +260,7 @@ const finding = {
   properties: {
     severity: { enum: ['BLOCKER', 'MAJOR', 'MINOR', 'NIT'] },
     summary: { type: 'string' },
-    locus: { type: 'string', description: 'file:line exacto — sin "en algún sitio del módulo"' },
+    locus: { type: 'string', description: 'file:line exacto, sin "en algún sitio del módulo"' },
     recommendation: { type: 'string' },
     us: { type: 'string' },
   },
@@ -297,7 +297,7 @@ const wantQuality = done.length > 0 && level !== 'light'
 const wantPerf = hasCode && level === 'full'
 const wantSecurity = securityHit.length > 0
 if (wantSecurity) log(`🔒 security-audit disparado por: ${securityHit.join(', ')}`)
-if (hasCode && level === 'standard') log('lente de performance omitida (level standard) — súbelo con level:"full" si el diff tiene hot paths')
+if (hasCode && level === 'standard') log('lente de performance omitida (level standard), súbelo con level:"full" si el diff tiene hot paths')
 
 const [base, reviewer, quality, perf, security] = await parallel([
   () =>
@@ -315,19 +315,19 @@ const [base, reviewer, quality, perf, security] = await parallel([
         // La excepción P1 al árbol de spawn: el valor de este agente ES el
         // contexto fresco. Dominio acotado a correctness/requirements + drift.
         agent(
-          `You are a FRESH-CONTEXT reviewer, READ-ONLY, constrained to CORRECTNESS and REQUIREMENTS only. Style, performance and maintainability are explicitly OUT of your scope — other reviewers own them.\n` +
+          `You are a FRESH-CONTEXT reviewer, READ-ONLY, constrained to CORRECTNESS and REQUIREMENTS only. Style, performance and maintainability are explicitly OUT of your scope, other reviewers own them.\n` +
             `1) Read ${PLAN}/spec.md (problem + ACs + out-of-scope) and, for each completed US (${doneIdsLine}), its ${PLAN}/tasks/US{n}.md ACs.\n` +
             `2) Read the full delivered files and committed plus working-tree changes against the approved starting revision. The following diff is only one input: \`git diff HEAD\` on these files: ${filesLine}.\n` +
             `3) TRACE every AC to the assembled result. Execute its acceptance check, including the real user flow when runtime exists. Return one acceptance_checks entry per requirement: requirement, status (passed/failed/not_run), and evidence (command plus observed output). A code location or closed US is not execution evidence. Flag missing implementation, wrong results and uncovered edges.\n` +
             `4) Classify spec_drift (critic Step 8): "none" · "legitimate" (divergence looks intentional and reasonable → propose the spec.md patch in spec_drift_note) · "scope_creep" (delivered more than spec.md asked) · "skipped_ac" (an AC silently dropped). Name the affected spec.md section in spec_drift_note.\n` +
-            `Every finding carries an exact file:line you have actually read — no invented locations, no vague "somewhere in". Empty findings array is a valid, honest answer.`,
+            `Every finding carries an exact file:line you have actually read, no invented locations, no vague "somewhere in". Empty findings array is a valid, honest answer.`,
           { label: 'review:fresh-reviewer', phase: 'Review', schema: REVIEWER_SCHEMA, model: 'opus' },
         )
     : () => Promise.resolve({ findings: [], spec_drift: 'none', spec_drift_note: 'sin HUs cerradas que revisar' }),
   wantQuality
     ? () =>
         agent(
-          `Apply the project's OWN quality catalog to the delivered diff. Read .claude/skills/pr-review/references/05-lens-maintainability.md and the checklists under .claude/skills/pr-review/references/maintainability/, then review \`git diff HEAD\` on: ${filesLine}.\n` +
+          `Apply the project's OWN quality catalog to the delivered diff. Read .claude/skills/pr-review/references/05-lens-maintainability.md, then review \`git diff HEAD\` on: ${filesLine}.\n` +
             `Scope: SOLID/DRY violations, code smells, complexity, duplication of something the repo already has, over-engineering beyond the ACs, naming and comment noise, TODOs without a linked task. Correctness and security are NOT yours.\n` +
             `Read-only. Each finding: exact file:line, the catalog rule it breaks, and a concrete fix. Empty array if the diff is clean.`,
           { label: 'review:quality', phase: 'Review', schema: FINDINGS_SCHEMA, model: 'sonnet' },
@@ -336,8 +336,8 @@ const [base, reviewer, quality, perf, security] = await parallel([
   wantPerf
     ? () =>
         agent(
-          `Apply the project's performance catalog to the delivered diff. Read .claude/skills/pr-review/references/06-lens-performance.md and the checklists under .claude/skills/pr-review/references/performance/, then review \`git diff HEAD\` on: ${filesLine}.\n` +
-            `Scope: O(n²) where O(n) is reachable, I/O inside loops (N+1), missed batching/parallelism, unbounded buffers that should stream, leaks. Only flag what the DIFF introduces, on a path that can actually grow — do not report theoretical micro-optimizations.\n` +
+          `Apply the project's performance catalog to the delivered diff. Read .claude/skills/pr-review/references/06-lens-performance.md, then review \`git diff HEAD\` on: ${filesLine}.\n` +
+            `Scope: O(n²) where O(n) is reachable, I/O inside loops (N+1), missed batching/parallelism, unbounded buffers that should stream, leaks. Only flag what the DIFF introduces, on a path that can actually grow, do not report theoretical micro-optimizations.\n` +
             `Read-only. Each finding: exact file:line + concrete fix.`,
           { label: 'review:performance', phase: 'Review', schema: FINDINGS_SCHEMA, model: 'sonnet' },
         )
@@ -348,7 +348,7 @@ const [base, reviewer, quality, perf, security] = await parallel([
         agent(
           `Security review of a diff that touches a critical area (${securityHit.join(', ')}). Read .claude/skills/security-audit/SKILL.md and apply its checklist to \`git diff HEAD\` on: ${filesLine}.\n` +
             `Scope: hardcoded secrets or credentials in code/logs, missing validation at trust boundaries, OWASP Top 10 vectors introduced by the diff (injection, XSS, IDOR, SSRF, broken auth), weakened crypto/session/cookie handling, secrets reaching stdout.\n` +
-            `Read-only. A confirmed secret in code or an exploitable vector is BLOCKER — do not soften it. Each finding: exact file:line + the fix.`,
+            `Read-only. A confirmed secret in code or an exploitable vector is BLOCKER, do not soften it. Each finding: exact file:line + the fix.`,
           { label: 'review:security', phase: 'Review', schema: FINDINGS_SCHEMA, model: 'sonnet' },
         )
     : () => Promise.resolve({ findings: [] }),
@@ -393,7 +393,7 @@ else verdict = 'APPROVED'
 const verdictReason = `${findings_count.blocker} BLOCKER, ${findings_count.major} MAJOR, ${findings_count.minor} MINOR, ${findings_count.nit} NIT; checks=${review_assessment.checks}; coverage=${review_assessment.coverageMet}; spec_drift: ${specDrift}`
 
 // ---------------------------------------------------------------------------
-// Fase 4 — Synthesize: el artefacto de fase 4 se escribe desde el template.
+// Fase 4, Synthesize: el artefacto de fase 4 se escribe desde el template.
 // El writer NO decide el veredicto (ya viene calculado); redacta y ordena.
 // ---------------------------------------------------------------------------
 phase('Synthesize')
@@ -427,16 +427,16 @@ const WRITER_SCHEMA = {
 }
 
 const written = await agent(
-  `Write the Phase 4 artifact of a /flow-lifecycle lifecycle. Read .claude/plans/templates/review.template.md and follow its structure and section order; extend the frontmatter as declared below. Write the file to ${PLAN}/review.md (overwrite if it exists). Write NOTHING else — ${NO_WRITE}\n\n` +
+  `Write the Phase 4 artifact of a /flow-lifecycle lifecycle. Read .claude/plans/templates/review.template.md and follow its structure and section order; extend the frontmatter as declared below. Write the file to ${PLAN}/review.md (overwrite if it exists). Write NOTHING else, ${NO_WRITE}\n\n` +
     `Frontmatter: spec: ${slug} · tasks_implemented: [${doneIdsLine}] · oracle_source: ${plan.oracle_source} · created: ${plan.today} · phase: 4 · status: draft · review_level: ${level} · verdict: ${verdict} · spec_drift: ${specDrift} · findings_count (blocker/major/minor/nit) · fresh_reviewer_invoked: ${wantReviewer ? 'yes' : 'no'} · security_review_invoked: ${wantSecurity ? 'yes' : 'no'} · review_patterns_modes: [${[wantQuality ? 'quality' : null, wantPerf ? 'performance' : null].filter(Boolean).join(', ')}] · generated_by: flow-build-review workflow.\n\n` +
     `Body rules:\n` +
-    `- Veredicto: "${verdict}" — PROPUESTO por el workflow, pendiente de ratificación humana (\`flow-state verdict <VERDICT> --review <assessment.json>\`). Razón: ${verdictReason}.\n` +
+    `- Veredicto: "${verdict}", PROPUESTO por el workflow, pendiente de ratificación humana (\`flow-state verdict <VERDICT> --review <assessment.json>\`). Razón: ${verdictReason}.\n` +
     `- "Oracle ejecutado": one row per US from per_hu (oracle_evidence + check). Aggregate, never copy the oracle's content.\n` +
     `- Requirements: copy acceptance_checks into a requirement/status/evidence table. Missing evidence is not a pass.\n` +
-    `- Checklist of 5 sections: tick each item ONLY with evidence from the digest; an item without evidence stays unticked with "sin evidencia" — do not invent a check that nobody ran.\n` +
+    `- Checklist of 5 sections: tick each item ONLY with evidence from the digest; an item without evidence stays unticked with "sin evidencia", do not invent a check that nobody ran.\n` +
     `- Findings table: severity · description · file:line · recommendation, with the source in parentheses (fresh-reviewer / pr-review:maintainability / pr-review:performance / security-audit). Sort BLOCKER → NIT. Do NOT re-judge severities.\n` +
     `- "Living-spec deltas": only if spec_drift ≠ none; propose the patch, never apply it.\n` +
-    `- HUs blocked/failed get their own short section with their exact question or error — these are what the Lead resolves with the user.\n` +
+    `- HUs blocked/failed get their own short section with their exact question or error, these are what the Lead resolves with the user.\n` +
     `- Spanish (es-ES), same register as the template. No invented data: everything comes from the digest.\n\n` +
     `DIGEST (the single source of truth for this document):\n${JSON.stringify(digest)}\n\n` +
     `Return: path, written, summary_line (one line: verdict + findings + HUs), notes (anything in the digest that looked inconsistent).`,
@@ -472,7 +472,7 @@ return {
   findings,
   spec_drift: specDrift,
   boundary_checks,
-  // Inputs de la fase 5: datos, no artefacto — la retro la ratifica el humano.
+  // Inputs de la fase 5: datos, no artefacto, la retro la ratifica el humano.
   retro_inputs: {
     hu_questions: results.flatMap((r) => (r.questions || []).map((q) => `${r.id}: ${q}`)),
     out_of_scope_files: results.flatMap((r) => (r.out_of_scope_files || []).map((f) => `${r.id}: ${f}`)),
@@ -484,5 +484,5 @@ return {
   next:
     `El Lead cierra con el usuario: 1) valida cada HU done y la cierra con \`bun .claude/scripts/flow-state.ts close-us US{N} --verification <report.json> --files "..."\`; ` +
     `2) registra los boundary_checks; 3) resuelve blocked/failed contigo (nunca improvisando la respuesta); ` +
-    `4) ratifica o corrige el veredicto propuesto (\`flow-state verdict <VERDICT> --review <assessment.json>\`) — el workflow NO lo aprueba; 5) Skill(flow, "retro") con retro_inputs.`,
+    `4) ratifica o corrige el veredicto propuesto (\`flow-state verdict <VERDICT> --review <assessment.json>\`), el workflow NO lo aprueba; 5) Skill(flow, "retro") con retro_inputs.`,
 }

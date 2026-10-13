@@ -3,7 +3,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { parse as parseToml } from "smol-toml";
 
-// Quality review 2026-09-11, findings H57, H62, H68 and H70. Four defects in the
+// Four defects in the
 // always-loaded catalog and in the harness-config packs. Each assertion below locks the
 // corrected behaviour so the next edit cannot reintroduce the defect.
 const root = resolve(import.meta.dir, "..", "..", "..");
@@ -29,7 +29,7 @@ function statusLineAssignments(text: string): string[] {
   return [...text.matchAll(/`([^`\n]*tui\.status_line\s*=[^`\n]*)`/g)].map((m) => m[1].trim());
 }
 
-describe("H70 — the T14 pack only shows TOML that a TOML parser accepts", () => {
+describe("the T14 pack only shows TOML that a TOML parser accepts", () => {
   const pack = read(metaHarness, "references", "t14-statusline.md");
 
   it("shows at least one Codex statusline assignment", () => {
@@ -50,7 +50,7 @@ describe("H70 — the T14 pack only shows TOML that a TOML parser accepts", () =
   });
 });
 
-describe("H62 — the harness-config lifecycle contract has one source", () => {
+describe("the harness-config lifecycle contract has one source", () => {
   const files = markdownFiles(metaHarness).map((f) => ({ path: f, text: read(f) }));
   const carrying = (needle: string) =>
     files.filter((f) => f.text.includes(needle)).map((f) => relative(root, f.path).replace(/\\/g, "/"));
@@ -74,7 +74,7 @@ describe("H62 — the harness-config lifecycle contract has one source", () => {
   });
 });
 
-describe("H68 — one destination for a stack-specific lesson", () => {
+describe("one destination for a stack-specific lesson", () => {
   it("retro does not route a stack lesson into the core lessons skill", () => {
     expect(read(claude, "skills", "flow", "references", "06-retro.md")).not.toContain("lessons/references/");
   });
@@ -84,27 +84,27 @@ describe("H68 — one destination for a stack-specific lesson", () => {
   });
 });
 
-// H57 guard (green from the start, not a red test): `disable-model-invocation: true` sets
+// Guard (green from the start, not a red test): `disable-model-invocation: true` sets
 // "Claude can invoke: No" (code.claude.com/docs/en/skills, read 2026-09-11). A skill that
 // always-loaded law orders the model to invoke must therefore stay listed, or the law
-// becomes a dead reference. This is why the H57 demotion lever is exhausted on this tree.
-describe("H57 — no skill named by always-loaded law is hidden from the model", () => {
+// becomes a dead reference. This is why the demotion lever is exhausted on this tree.
+describe("no skill named by always-loaded law is hidden from the model", () => {
   const law = [join(root, "CLAUDE.md"), ...markdownFiles(join(claude, "rules"))]
     .map((f) => read(f))
     .join("\n");
 
+  const isDemoted = (text: string) => /^disable-model-invocation:\s*true\s*$/m.test(text.split(/^---\s*$/m)[1] ?? "");
   const demoted = readdirSync(join(claude, "skills")).filter((s) => {
-    let text: string;
     try {
-      text = read(claude, "skills", s, "SKILL.md");
+      return isDemoted(read(claude, "skills", s, "SKILL.md"));
     } catch {
       return false;
     }
-    return /^disable-model-invocation:\s*true\s*$/m.test(text.split(/^---\s*$/m)[1] ?? "");
   });
 
-  it("finds the demoted skills", () => {
-    expect(demoted.length).toBeGreaterThan(0);
+  it("detects a demoted skill from its frontmatter", () => {
+    expect(isDemoted("---\nname: x\ndisable-model-invocation: true\n---\nbody")).toBe(true);
+    expect(isDemoted("---\nname: x\ndisable-model-invocation: false\n---\nbody")).toBe(false);
   });
 
   it("none of them is named as a model-invoked step in CLAUDE.md or .claude/rules/", () => {

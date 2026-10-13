@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
 // Golden-prompt harness runner (019/US3).
 // Live mode: executes each case via `claude -p --output-format stream-json`
-// (session auth — the published pattern, W2 D1) and grades the transcript.
+// (session auth, the published pattern) and grades the transcript.
 // Offline mode (--offline <dir>): grades stored transcripts (<dir>/<case-id>.txt
-// or .jsonl) — used by tests and for re-grading without model cost.
+// or .jsonl), used by tests and for re-grading without model cost.
 // Graders are pure (graders.ts); only this runner touches processes/files.
 
 import { graders, type CaseSpec, type GradeResult } from "./graders";
@@ -15,9 +15,9 @@ export interface CaseResult {
   grader: string;
   trials: number;
   pass: boolean;
-  errored?: boolean; // session never produced behaviour (quota/auth/API) — not a FAIL
+  errored?: boolean; // session never produced behaviour (quota/auth/API), not a FAIL
   unverified?: boolean;
-  model?: string; // the tier the case actually ran on (plan 033)
+  model?: string; // the tier the case actually ran on
   detail: string;
 }
 
@@ -30,7 +30,7 @@ export interface Report {
   ok: boolean;
 }
 
-export function parseCases(jsonl: string): CaseSpec[] {
+function parseCases(jsonl: string): CaseSpec[] {
   const cases: CaseSpec[] = [];
   for (const line of jsonl.split("\n")) {
     const trimmed = line.trim();
@@ -44,9 +44,9 @@ export function parseCases(jsonl: string): CaseSpec[] {
 }
 
 // A transcript with no assistant turn, or whose `result` event reports an error, is not
-// behaviour — it is a session that never ran (quota exhausted, auth, API outage). Grading
-// it as FAIL hides the cause: on 2026-09-03 the claude.ai usage limit hit mid-run and
-// 4/4 skill cases "failed" twice in a row for that reason (plan 032). Pure, unit-tested.
+// behaviour: it is a session that never ran (quota exhausted, auth, API outage). Grading
+// it as FAIL hides the cause: a claude.ai usage limit hit mid-run once and
+// 4/4 skill cases "failed" twice in a row for that reason. Pure, unit-tested.
 export function transcriptHealth(transcript: string, requireTerminal = false): { ok: true } | { ok: false; reason: string } {
   if (!transcript.trim()) return { ok: false, reason: "empty transcript (quota/auth/API?)" };
   let events = 0;
@@ -70,7 +70,7 @@ export function transcriptHealth(transcript: string, requireTerminal = false): {
       return { ok: false, reason: `session error: ${msg}` };
     }
   }
-  // Plain-text transcripts (offline .txt fixtures) carry no events — nothing to judge.
+  // Plain-text transcripts (offline .txt fixtures) carry no events: nothing to judge.
   if (events === 0) return requireTerminal ? { ok: false, reason: "no live stream events" } : { ok: true };
   if (assistantTurns === 0) return { ok: false, reason: "no assistant turn in transcript (quota/auth/API?)" };
   if (requireTerminal && !terminal) return { ok: false, reason: "no terminal successful result" };
@@ -78,9 +78,9 @@ export function transcriptHealth(transcript: string, requireTerminal = false): {
 }
 
 function gradeTranscripts(c: CaseSpec, transcripts: string[]): CaseResult {
-  const sick = transcripts.map(transcriptHealth).find((h) => !h.ok) as { ok: false; reason: string } | undefined;
+  const sick = transcripts.map((t) => transcriptHealth(t)).find((h) => !h.ok) as { ok: false; reason: string } | undefined;
   if (sick) {
-    return { id: c.id!, grader: c.grader!, trials: transcripts.length, pass: false, errored: true, detail: `ERROR — ${sick.reason}; rerun, this is not a behaviour failure` };
+    return { id: c.id!, grader: c.grader!, trials: transcripts.length, pass: false, errored: true, detail: `ERROR: ${sick.reason}; rerun, this is not a behaviour failure` };
   }
   // pass^k: every trial must pass for consistency-critical behaviors (W2 D1).
   const results: GradeResult[] = transcripts.map((t) => graders[c.grader!](t, c));
@@ -117,7 +117,7 @@ export async function runOffline(casesPath: string, transcriptDir: string): Prom
 }
 
 // `argv` carries the model policy flags (--model / --allow-expensive / --dry-run); the
-// model is resolved PER CASE (plan 033): prose graders run on the cheap tier, skill-trigger
+// model is resolved PER CASE: prose graders run on the cheap tier, skill-trigger
 // cases on the mid tier, and an expensive tier is refused without --allow-expensive.
 export async function runLive(casesPath: string, argv: string[] = []): Promise<Report> {
   const cases = parseCases(await Bun.file(casesPath).text());
@@ -127,7 +127,7 @@ export async function runLive(casesPath: string, argv: string[] = []): Promise<R
     const { model, dryRun } = resolveHeadlessModel(argv, kind);
     const trials = c.trials && c.trials > 1 ? Math.min(c.trials, 3) : 1;
     const transcripts: string[] = [];
-    // Style/honesty/register graders score the PROSE response — they don't need the
+    // Style/honesty/register graders score the PROSE response, they don't need the
     // agentic tool loop, which makes each case a multi-minute session (4 timeouts in 024).
     // Force a single prose turn for them. skillTriggerParse is the exception: it asserts a
     // real Skill() tool_use, so it MUST keep tools enabled.
@@ -139,9 +139,9 @@ export async function runLive(casesPath: string, argv: string[] = []): Promise<R
     if (dryRun) {
       console.log(`DRY  ${c.id}  ×${trials}  ${cmd.map((a) => (/\s/.test(a) ? JSON.stringify(a) : a)).join(" ")}`);
       // A command that was never executed has not passed anything. Reporting it as a PASS
-      // made `--dry-run` print a green suite (H34, quality review 2026-09-11): it is an
-      // ERROR-class outcome — no behaviour observed — exactly like a quota abort.
-      results.push({ id: c.id!, grader: c.grader!, trials: 0, pass: false, errored: true, model, detail: "dry-run — not executed" });
+      // made `--dry-run` print a green suite: it is an
+      // ERROR-class outcome (no behaviour observed), exactly like a quota abort.
+      results.push({ id: c.id!, grader: c.grader!, trials: 0, pass: false, errored: true, model, detail: "dry-run: not executed" });
       continue;
     }
     let failure: string | undefined;
@@ -176,10 +176,10 @@ function printReport(report: Report): void {
     const tag = r.pass ? "PASS" : r.errored ? "ERR " : r.unverified ? "UNVERIFIED" : "FAIL";
     console.log(`${tag}  ${r.id}  [${r.grader} ×${r.trials}${r.model ? ` · ${r.model}` : ""}]  ${r.pass ? "" : r.detail}`);
   }
-  console.log(`\n${report.passed}/${report.results.length} passed${report.errored ? ` · ${report.errored} errored (sessions that never ran — rerun them, they say nothing about behaviour)` : ""}`);
+  console.log(`\n${report.passed}/${report.results.length} passed${report.errored ? ` · ${report.errored} errored (sessions that never ran: rerun them, they say nothing about behaviour)` : ""}`);
   if (report.unverified) console.log(`${report.unverified} unverified semantic cases; excluded from PASS/FAIL, validation pending in harness-lab.`);
   if (report.failed) {
-    console.log("Expected ≈100% — SUSPECT THE EVAL FIRST (grading bug), then the config change. See .claude/evals/README.md");
+    console.log("Expected ≈100%: SUSPECT THE EVAL FIRST (grading bug), then the config change. See .claude/evals/README.md");
   }
 }
 

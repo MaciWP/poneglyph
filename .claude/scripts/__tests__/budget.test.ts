@@ -18,7 +18,7 @@ describe("activationSurface", () => {
 
 describe("compare (ratchet)", () => {
   const base = { alwaysLoaded: { "CLAUDE.md": 1000, "skills: description + when_to_use": 2000 }, skillBodies: { dev: 500 } };
-  it("is silent when sizes are equal or shrink (ratchet 0 %, plan 037)", () => {
+  it("is silent when sizes are equal or shrink (ratchet 0 %)", () => {
     expect(compare({ alwaysLoaded: { "CLAUDE.md": 1000, "skills: description + when_to_use": 1500 }, skillBodies: { dev: 400 } }, base)).toEqual([]);
   });
   it("flags a file, a skill body and the total on any growth", () => {
@@ -35,7 +35,7 @@ describe("compare (ratchet)", () => {
 });
 
 describe("measure", () => {
-  it("counts CLAUDE.md, the style, global rules and the skills' activation surface — never keywords or bodies", () => {
+  it("counts CLAUDE.md, the style, global rules and the skills' activation surface, never keywords or bodies", () => {
     const root = mkdtempSync(join(tmpdir(), "budget-"));
     mkdirSync(join(root, ".claude", "rules", "paths"), { recursive: true });
     mkdirSync(join(root, ".claude", "output-styles"), { recursive: true });
@@ -53,12 +53,12 @@ describe("measure", () => {
     expect(m.alwaysLoaded["rules/test-policy.md"]).toBeUndefined();
     expect(m.alwaysLoaded["skills: description + when_to_use"]).toBe("ab\n".length + "cd\n".length);
     expect(m.informative?.[PLUGIN_SURFACE_LABEL]).toBe(0); // no registry
-    expect(m.alwaysLoaded[PLUGIN_SURFACE_LABEL]).toBeUndefined(); // machine-dependent — outside the ratchet
+    expect(m.alwaysLoaded[PLUGIN_SURFACE_LABEL]).toBeUndefined(); // machine-dependent, outside the ratchet
     expect(m.skillBodies.a).toBeGreaterThan(40);
     expect(total(m.alwaysLoaded)).toBe(5 + 4 + 3 + 6);
   });
 
-  it("counts installed plugin skills' description + when_to_use (F1 — the moved surface still loads)", () => {
+  it("counts installed plugin skills' description + when_to_use (F1, the moved surface still loads)", () => {
     const home = mkdtempSync(join(tmpdir(), "budget-home-"));
     const pluginDir = join(home, ".claude", "plugins", "cache", "m", "p", "1.0.0");
     mkdirSync(join(pluginDir, "skills", "x"), { recursive: true });
@@ -92,17 +92,17 @@ describe("measure", () => {
   });
 });
 
-describe("the real layer stays within its snapshot (ratchet — Cmd IX)", () => {
+describe("the real layer stays within its snapshot (ratchet, Cmd IX)", () => {
   it("no always-loaded piece, skill body or total grew since the last ratified snapshot", () => {
     const snapshot = loadSnapshot(SNAPSHOT_DIR);
-    expect(snapshot, "budget-snapshot.json missing — run `bun .claude/scripts/budget.ts --update`").not.toBeNull();
+    expect(snapshot, "budget-snapshot.json missing, run `bun .claude/scripts/budget.ts --update`").not.toBeNull();
     const violations = compare(measure(REPO), snapshot!);
     expect(violations, violations.map((v) => `${v.key}: ${v.snapshot} → ${v.current}`).join("; ")).toEqual([]);
   });
 
-  it("no tracked row sits below its snapshot — lock the win with `--tighten`", () => {
+  it("no tracked row sits below its snapshot, lock the win with `--tighten`", () => {
     const unlocked = slack(measure(REPO), loadSnapshot(SNAPSHOT_DIR)!);
-    expect(unlocked, `${unlocked.map((v) => `${v.key}: ${v.snapshot} → ${v.current}`).join("; ")} — run \`bun .claude/scripts/budget.ts --tighten\``).toEqual([]);
+    expect(unlocked, `${unlocked.map((v) => `${v.key}: ${v.snapshot} → ${v.current}`).join("; ")}, run \`bun .claude/scripts/budget.ts --tighten\``).toEqual([]);
   });
 });
 
@@ -115,10 +115,11 @@ describe("slack and tighten (the ratchet locks savings)", () => {
     informative: { [PLUGIN_SURFACE_LABEL]: 100 },
   };
 
-  it("reports only the tracked rows that shrank", () => {
+  it("reports the rows that shrank or were retired, never a new one", () => {
     const current = { alwaysLoaded: { "CLAUDE.md": 990, "rules/a.md": 310, "rules/new.md": 5 }, skillBodies: { dev: 480 } };
     expect(slack(current, snapshot)).toEqual([
       { key: "CLAUDE.md", snapshot: 1000, current: 990 },
+      { key: "retired-row", snapshot: 50, current: 0 },
       { key: "skill dev", snapshot: 500, current: 480 },
     ]);
   });
@@ -148,11 +149,9 @@ describe("slack and tighten (the ratchet locks savings)", () => {
   });
 });
 
-// Quality review 2026-09-11 — H74. The ratchet measures the activation surface, but
-// `frontmatterField` returned only the INDENTED continuation of a block scalar, so a
-// one-line `description: "..."` counted as zero bytes and the guard could not see it
-// grow. `measure` also counted skills Claude Code never lists.
-describe("activation surface is measured as the host loads it (H74)", () => {
+// The ratchet must count a one-line `description: "..."` as well as a block scalar, and
+// skip skills Claude Code never lists.
+describe("activation surface is measured as the host loads it", () => {
   it("counts a single-line description", () => {
     expect(activationSurface("---\ndescription: a short one-liner\n---\nbody\n")).toBe("a short one-liner".length);
   });
@@ -177,7 +176,7 @@ describe("activation surface is measured as the host loads it (H74)", () => {
   });
 });
 
-describe("activation surface is decoded, not sliced (H35)", () => {
+describe("activation surface is decoded, not sliced", () => {
   const tree = (skill: string) => {
     const root = mkdtempSync(join(tmpdir(), "budget-h35-"));
     mkdirSync(join(root, ".claude", "skills", "a"), { recursive: true });
@@ -216,7 +215,7 @@ describe("activation surface is decoded, not sliced (H35)", () => {
   });
 });
 
-describe("the ratchet is machine-independent (H35)", () => {
+describe("the ratchet is machine-independent", () => {
   it("never fails because this machine installed more plugins", () => {
     const snapshot = { alwaysLoaded: { "CLAUDE.md": 1000 }, skillBodies: {}, informative: { [PLUGIN_SURFACE_LABEL]: 100 } };
     const current = { alwaysLoaded: { "CLAUDE.md": 1000 }, skillBodies: {}, informative: { [PLUGIN_SURFACE_LABEL]: 9999 } };
@@ -230,12 +229,12 @@ describe("the ratchet is machine-independent (H35)", () => {
   });
 });
 
-// Quality review 2026-09-12, coordinator pass on H35. `compare` stopped counting the
+// `compare` stopped counting the
 // retired plugin row, but `doctor.ts` still printed `total(snapshot.alwaysLoaded)` in its
 // detail line, so the report read "48672 B <= snapshot 52200 B" and announced 3,528 bytes
 // of headroom that the ratchet would never grant. The verdict was right and the number was
 // not. One exported function now answers "what does the snapshot allow today".
-describe("the snapshot total a reader is shown matches the one enforced (H35)", () => {
+describe("the snapshot total a reader is shown matches the one enforced", () => {
   it("ignores snapshot rows the measurement no longer tracks", () => {
     const snapshot = { alwaysLoaded: { "CLAUDE.md": 1000, "retired-row": 5000 }, skillBodies: {} };
     const current = { alwaysLoaded: { "CLAUDE.md": 1000 }, skillBodies: {} };

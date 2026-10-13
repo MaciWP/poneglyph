@@ -8,7 +8,7 @@ const index = (...stems: string[]) => stems.map((s) => `- [${s}](${s}.md) — a 
 
 const errors = (r: { findings: { level: string; message: string; file: string }[] }) => r.findings.filter((f) => f.level === "error");
 
-describe("lintEstate — the invariants a grader can actually prove", () => {
+describe("lintEstate, the invariants a grader can actually prove", () => {
   it("passes a conforming estate and counts the index in UTF-8 bytes", () => {
     const report = lintEstate(index("alpha", "beta"), [
       { name: "alpha.md", text: good("alpha") },

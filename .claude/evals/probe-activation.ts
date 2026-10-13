@@ -1,15 +1,14 @@
 #!/usr/bin/env bun
-// Activation probe (plan 032/WP4, D11 → repo tool since plan 033): which `Skill()` each real
-// prompt fires. Runs `claude -p` per prompt in plan permission mode with 2 turns and reads
-// the stream-json tool_use blocks. Compare two labels (before/after a skill edit) on the
-// SAME model — deltas, not absolutes.
+// Activation probe: which `Skill()` each real prompt fires. Runs `claude -p` per prompt in
+// plan permission mode with 2 turns and reads the stream-json tool_use blocks. Compare two
+// labels (before/after a skill edit) on the SAME model: deltas, not absolutes.
 //
 //   bun .claude/evals/probe-activation.ts <label> [--only id1,id2] [--repeat N≤2]
 //                                          [--model X] [--allow-expensive] [--dry-run] [--out <dir>]
 //
-// Model: resolved by scripts/lib/headless.ts (kind "probe" → Sonnet 5 by default). Fable/Opus
-// are refused without --allow-expensive — 29 Fable probe sessions on 2026-09-03 were the cost
-// lesson (lessons G13). Results land in <out>/<label>.json (default: the working directory).
+// Model: resolved by scripts/lib/headless.ts (kind "probe" → the mid tier by default). Top-tier
+// models are refused without --allow-expensive: the cost lesson is lessons G13. Results land
+// in <out>/<label>.json (default: the working directory).
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { resolveHeadlessModel, stripHeadlessFlags } from "../scripts/lib/headless";

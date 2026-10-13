@@ -4,12 +4,12 @@
  * The estate is the one Poneglyph layer with no grader, and it drifted: two files asserted a
  * sync root that no longer existed, a description contradicted its own body, and the index had
  * grown from hooks into a second copy of the facts. This checks the mechanical invariants only
- * — it can prove that a link resolves, never that a sentence is still true.
+ * It can prove that a link resolves, never that a sentence is still true.
  *
  * Severity follows how certain the check is:
- *   error — a structural fact. A reader lands nowhere, or a hook carries a token (date, hash,
+ *   error: a structural fact. A reader lands nowhere, or a hook carries a token (date, hash,
  *           PR number, absolute path) whose whole purpose is to name a moment that passes.
- *   warn  — a judgement call. Status words and legacy frontmatter keys are reported, never
+ *   warn : a judgement call. Status words and legacy frontmatter keys are reported, never
  *           enforced: "Handling closed connections" is a subject, not a stale status, and no
  *           consumer has been shown to depend on `node_type` either way.
  */
@@ -52,7 +52,7 @@ export const VOLATILE_SHAPE =
   /\bPR #\d|(?<![A-Za-z])[A-Za-z]:[\\/]|(?:^|\s)\/\w[\w.-]*\/\w|\b(?=[0-9a-f]*\d)[0-9a-f]{7,40}\b|\d{4}-\d{2}-\d{2}/i;
 
 /**
- * Words that usually report a state that has since moved on — but that also appear as ordinary
+ * Words that usually report a state that has since moved on, but that also appear as ordinary
  * subjects. Reported, never enforced; the heuristic is not good enough to block on.
  */
 export const VOLATILE_STATUS =
@@ -89,7 +89,7 @@ export function lintEstate(index: string, files: EstateFile[]): EstateReport {
       add("error", "MEMORY.md", `line is not an index entry: ${line.slice(0, 60)}`);
       continue;
     }
-    // The target must be the file name itself — `[alpha](alpha)` resolved by accident before.
+    // The target must be the file name itself, `[alpha](alpha)` resolved by accident before.
     if (!names.has(target)) {
       add("error", "MEMORY.md", `entry points at a missing file: ${target}`);
     }
@@ -153,11 +153,11 @@ export function summarizeEstate(report: EstateReport): { status: "🟢" | "🟡"
   const size = `index ${report.indexBytes} B, ${report.entries} entries`;
   if (errors.length) {
     const shown = errors.slice(0, 3).map((f) => `${f.file}: ${f.message}`).join("; ");
-    return { status: "🔴", detail: `${errors.length} error(s) — ${shown}${errors.length > 3 ? "; …" : ""} (${size})` };
+    return { status: "🔴", detail: `${errors.length} error(s), ${shown}${errors.length > 3 ? "; …" : ""} (${size})` };
   }
   if (warns.length) {
     const keys = [...new Set(warns.map((f) => f.message))].slice(0, 3).join("; ");
-    return { status: "🟡", detail: `${warns.length} warning(s) — ${keys} (${size})` };
+    return { status: "🟡", detail: `${warns.length} warning(s), ${keys} (${size})` };
   }
-  return { status: "🟢", detail: `clean — ${size}` };
+  return { status: "🟢", detail: `clean, ${size}` };
 }

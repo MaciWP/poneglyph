@@ -1,9 +1,9 @@
 import { describe, expect, it } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { NATIVE_EVIDENCE_NOTE, exitCodeFor, renderChecks, summarizeConfig, statusFromSyncOutput, summarizeSessions, summarizeSyncOutput, summarizeTests, summarizeValidate, worstOf } from "../doctor";
+import { NATIVE_EVIDENCE_NOTE, exitCodeFor, renderChecks, summarizeConfig, statusFromSyncOutput, summarizeSessions, summarizeSyncOutput, summarizeTests, summarizeValidate } from "../doctor";
 
-describe("doctor — sessions today (plan 033)", () => {
+describe("doctor, sessions today", () => {
   it("is green for a handful of cheap sessions", () => {
     const r = summarizeSessions(["claude-sonnet-5", "claude-sonnet-5", "claude-haiku-4-5-20251001"]);
     expect(r.status).toBe("🟢");
@@ -24,7 +24,7 @@ describe("doctor — sessions today (plan 033)", () => {
   });
 });
 
-describe("doctor — pure summaries", () => {
+describe("doctor, pure summaries", () => {
   it("does not reuse an earlier footer when the final run is incomplete", () => {
     expect(summarizeTests(' 2 pass\n 0 fail\nRan 2 tests across 1 file.\nRan 4 tests across 1 file.').status).toBe("🔴");
   });
@@ -50,7 +50,7 @@ describe("doctor — pure summaries", () => {
   it("reads bun test summaries: green needs exit 0 + a 'Ran N tests' total + zero failures (E13/E17)", () => {
     expect(summarizeTests(" 382 pass\n 0 fail\nRan 382 tests across 22 files.", 0)).toEqual({ status: "🟢", detail: "382 pass (382 tests)" });
     expect(summarizeTests(" 380 pass\n 2 fail\nRan 382 tests across 22 files.", 1).status).toBe("🔴");
-    expect(summarizeTests(" 2 pass\n 0 fail", 0)).toEqual({ status: "🔴", detail: "no 'Ran N tests' line — the run did not complete" });
+    expect(summarizeTests(" 2 pass\n 0 fail", 0)).toEqual({ status: "🔴", detail: "no 'Ran N tests' line, the run did not complete" });
     expect(summarizeTests(" 397 pass\n 0 fail\nRan 397 tests across 23 files.", 137).detail).toContain("exited 137");
     expect(summarizeTests("bun: command not found", 127).status).toBe("🔴");
   });
@@ -60,7 +60,7 @@ describe("doctor — pure summaries", () => {
     expect(summarizeValidate("✘ 2 errors\n  - bad frontmatter").status).toBe("🔴");
   });
 
-  it("derives the sync status from row-leading icons, not from words inside prose (F7)", () => {
+  it("derives the sync status from row-leading icons, not from words inside prose", () => {
     expect(statusFromSyncOutput("🟢 skills: ✓\n🟢 settings.json: accepted")).toBe("🟢");
     expect(statusFromSyncOutput("🟢 skills: ✓\n🟡 grok twin: stale copy")).toBe("🟡");
     expect(statusFromSyncOutput("🟢 skills\n🔴 settings.json: REJECTED by claude doctor")).toBe("🔴");
@@ -84,14 +84,13 @@ describe("doctor — pure summaries", () => {
     expect(renderChecks(checks).split("\n")).toHaveLength(4);
     expect(exitCodeFor(checks)).toBe(0);
     expect(exitCodeFor([...checks, { name: "C", status: "🔴", detail: "x" }])).toBe(1);
-    expect(worstOf(["🟢", "🟡"])).toBe("🟡");
   });
 });
 
-// Quality review 2026-09-11 — H66: sync-claude prints an unlinked local copy as
+// sync-claude prints an unlinked local copy as
 // `🔵 <name>: local folder/file`. The parser did not know 🔵, so a layer holding a stale
 // local copy instead of a link was reported green.
-describe("doctor — local copies are not green (H66)", () => {
+describe("doctor, local copies are not green", () => {
   it("degrades to yellow when the engine reports a local folder", () => {
     expect(statusFromSyncOutput("🟢 skills: linked\n🔵 CLAUDE.md: local folder/file\n")).toBe("🟡");
   });
@@ -105,11 +104,11 @@ describe("doctor — local copies are not green (H66)", () => {
   });
 });
 
-// Quality review 2026-09-11, finding H47. "Native execution evidence" was pushed as a check
+// "Native execution evidence" was pushed as a check
 // row with a hardcoded 🟡 on every run. A row whose status can never change is not a check:
 // it teaches the eye to skip yellow, which is the one colour the other rows use to warn.
-// The caveat is true and worth printing — as a note under the table, with no semaphore.
-describe("doctor — a permanent caveat is a note, not a check row (H47)", () => {
+// The caveat is true and worth printing, as a note under the table, with no semaphore.
+describe("doctor, a permanent caveat is a note, not a check row", () => {
   it("carries the native-execution caveat without a status icon", () => {
     expect(NATIVE_EVIDENCE_NOTE).not.toMatch(/🟢|🟡|🔴|⚪|🔵/);
     expect(NATIVE_EVIDENCE_NOTE.length).toBeGreaterThan(40);
@@ -118,14 +117,5 @@ describe("doctor — a permanent caveat is a note, not a check row (H47)", () =>
   it("no longer builds it as a row", () => {
     const source = readFileSync(join(import.meta.dir, "..", "doctor.ts"), "utf8");
     expect(source).not.toMatch(/name:\s*"Native execution evidence"/);
-  });
-});
-
-// Same finding: sync-orca verified a real decision but was wired to nothing, so it only ran
-// when someone remembered it. One doctor row carries it.
-describe("doctor — the Orca append check is a row (H47)", () => {
-  it("calls the shared verdict", () => {
-    const source = readFileSync(join(import.meta.dir, "..", "doctor.ts"), "utf8");
-    expect(source).toMatch(/checkOrca\(\)/);
   });
 });

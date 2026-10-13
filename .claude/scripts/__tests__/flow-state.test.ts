@@ -9,7 +9,6 @@ import {
   setRetroStatus,
   addBoundaryCheck,
   closeFeature,
-  flipUsFrontmatter,
   runCommand,
   findOpenPlans,
   summarizeState,
@@ -55,8 +54,8 @@ describe("closeUs", () => {
     expect(s.us_history?.at(-1)).toMatchObject({ us: "US1", completed_at: DATE });
   });
 
-  // This assertion used to expect tests_passed: true unconditionally — it certified a
-  // hardcode that no measurement backed. The three paths are now distinguishable.
+  // tests_passed is never a hardcode: an unmeasured run records null, so the three paths
+  // (true, false, null) stay distinguishable.
   test("records tests_passed as null when nobody measured it", () => {
     const s = closeUs(baseState(), "US1", { date: DATE, verification: { ...verification(), tests_passed: null } });
     expect(s.us_history?.at(-1)?.tests_passed).toBeNull();
@@ -126,7 +125,7 @@ describe("setVerdict / closeFeature", () => {
     expect(ok.feature_closed).toBe(true);
   });
 
-  test("closeFeature refuses with retro unresolved — no silent auto-approve (029/US12)", () => {
+  test("closeFeature refuses with retro unresolved, no silent auto-approve", () => {
     // retro_status null: closing would stamp a retro that never ran
     expect(() =>
       closeFeature(
@@ -136,7 +135,7 @@ describe("setVerdict / closeFeature", () => {
     ).toThrow(/retro_status/);
   });
 
-  test("closeFeature preserves a justified skip instead of overwriting to approved (029/US12)", () => {
+  test("closeFeature preserves a justified skip instead of overwriting to approved", () => {
     const skipped = "skipped — feature trivial: 0 lecciones, 0 promotions, 0 drift";
     const s = closeFeature(
       { ...verifiedState(), us_pending: [], review_verdict: "APPROVED", review_assessment: GOOD_REVIEW, phases_completed: [1, 2, 2.5, 3, 4], retro_status: skipped },
@@ -147,7 +146,7 @@ describe("setVerdict / closeFeature", () => {
   });
 });
 
-describe("setRetroStatus (029/US12 — skip requires justification)", () => {
+describe("setRetroStatus (skip requires justification)", () => {
   test("accepts approved and pending", () => {
     expect(setRetroStatus(baseState(), "approved").retro_status).toBe("approved");
     expect(setRetroStatus(baseState(), "pending").retro_status).toBe("pending");
@@ -168,21 +167,6 @@ describe("setRetroStatus (029/US12 — skip requires justification)", () => {
 
   test("rejects arbitrary values", () => {
     expect(() => setRetroStatus(baseState(), "maybe")).toThrow(/retro/i);
-  });
-});
-
-describe("flipUsFrontmatter", () => {
-  const doc = ["---", "us: US1", "status: approved", "---", "", "# US1"].join("\n");
-
-  test("approved → closed with closed date", () => {
-    const out = flipUsFrontmatter(doc, DATE);
-    expect(out).toContain("status: closed");
-    expect(out).toContain(`closed: ${DATE}`);
-  });
-
-  test("already closed → unchanged", () => {
-    const closed = flipUsFrontmatter(doc, DATE);
-    expect(flipUsFrontmatter(closed, "2026-12-31")).toBe(closed);
   });
 });
 
@@ -280,7 +264,7 @@ describe("runCommand (integration, tmpdir)", () => {
   });
 });
 
-describe("complete-phase (028/US6-D6)", () => {
+describe("complete-phase", () => {
   test("T6.1 marks phase completed and refreshes updated_at", async () => {
     const plan = mkdtempSync(join(tmpdir(), "flow-state-phase-"));
     writeFileSync(join(plan, "state.json"), JSON.stringify({ ...baseState(), current_phase: 2, phases_completed: [1, 2] }, null, 2));
@@ -297,7 +281,7 @@ describe("complete-phase (028/US6-D6)", () => {
   });
 });
 
-describe("addBoundaryCheck (029/US17 — measurable boundary compliance)", () => {
+describe("addBoundaryCheck (measurable boundary compliance)", () => {
   test("appends a check entry for a valid phase", () => {
     const s = addBoundaryCheck(baseState(), "3", "phase skill invoked (build)", { date: DATE });
     expect(s.boundary_checks?.at(-1)).toMatchObject({ phase: "3", item: "phase skill invoked (build)", at: DATE });

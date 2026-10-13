@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-// .claude/commands/sync-poneglyph.ts — one sync for every installed harness.
+// .claude/commands/sync-poneglyph.ts, one sync for every installed harness.
 //
 // Detects Claude Code, Codex and Grok Build (CLI on PATH or config home present), shows the
 // detected set, asks once, then runs the per-host engines in dependency order:
@@ -27,7 +27,7 @@ export interface Run {
   env: Record<string, string>;
 }
 
-export const ENGINES: Record<HostName, string> = {
+const ENGINES: Record<HostName, string> = {
   claude: path.join(".claude", "scripts", "sync-claude.ts"),
   codex: path.join(".claude", "scripts", "sync-codex.ts"),
   grok: path.join(".claude", "scripts", "sync-grok.ts"),
@@ -51,7 +51,7 @@ export function selectHosts(detected: DetectedHost[], hostsFlag?: string): { sel
     notes.push("Grok reuses the shared Claude layer (~/.claude): Claude is synced first.");
   }
   // sync-codex embeds the style twin that the Claude engine regenerates, so a Codex-only
-  // run would install whatever twin happens to be on disk (H67, quality review 2026-09-11).
+  // run would install whatever twin happens to be on disk.
   if (names.includes("codex") && !names.includes("claude")) {
     names.push("claude");
     notes.push("Codex embeds the style twin the Claude engine regenerates: Claude is synced first.");
@@ -101,7 +101,7 @@ Options:
   --execute       Apply changes (asks once; add --force to skip the prompt)
   --backup        Save existing content before replacing (required by Codex/Grok when a target exists)
   --force         No confirmation prompt; required without an interactive terminal
-  --hosts LIST    Override detection: comma list of claude,codex,grok — or "all"
+  --hosts LIST    Override detection: comma list of claude,codex,grok, or "all"
   --no-validate   Skip the 'claude doctor' acceptance check of the generated settings.json (Claude only)
   -h, --help      Show this help
 
@@ -138,7 +138,7 @@ async function main(): Promise<void> {
   };
   if (flags.execute && !values.force && !process.stdin.isTTY) {
     console.error(
-      "\n❌ No interactive terminal and --force not set — this would hang on the\n" +
+      "\n❌ No interactive terminal and --force not set, this would hang on the\n" +
         "   confirmation prompt. Re-run non-interactively with --force:\n" +
         "     bun .claude/commands/sync-poneglyph.ts --execute --backup --force\n",
     );

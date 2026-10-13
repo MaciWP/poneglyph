@@ -9,14 +9,21 @@ import { describePolicy, grokConfigPlan } from "./lib/host-config";
 import { backupDestination, hookFilePlan, installHookFile, nativeHookConfig } from "./lib/native-hooks";
 
 // Native keys Poneglyph owns in ~/.grok/config.toml: inherited Claude hooks off (the native
-// adapter replaces them) plus the shared context/effort policy (plan 037). Other keys survive.
+// adapter replaces them) plus the shared context/effort policy. Other keys survive.
 export { grokConfigPlan };
 
-export function buildGrokLinks(coreRoot: string, home: string): CodexLink[] {
-  return [{
-    source: path.join(coreRoot, ".claude", "system-prompts", "poneglyph-sp.md"),
-    dest: path.join(home, ".grok", "rules", "poneglyph-sp.md"), type: "file",
-  }];
+function buildGrokLinks(coreRoot: string, home: string): CodexLink[] {
+  return [
+    {
+      source: path.join(coreRoot, ".claude", "system-prompts", "poneglyph-sp.md"),
+      dest: path.join(home, ".grok", "rules", "poneglyph-sp.md"), type: "file",
+    },
+    // Claude resolves the runtime contract natively; only Codex (concatenated) and Grok read it.
+    {
+      source: path.join(coreRoot, ".claude", "docs", "harness-runtime.md"),
+      dest: path.join(home, ".grok", "rules", "harness-runtime.md"), type: "file",
+    },
+  ];
 }
 
 if (import.meta.main) {
@@ -43,7 +50,7 @@ if (import.meta.main) {
     if (values.execute && !fs.existsSync(shared)) throw new Error("Install the shared Claude layer first; Grok reuses its doctrine and skills.");
     if (values.execute) {
       for (const link of links) {
-        if (!fs.existsSync(link.source)) throw new Error("Missing generated style source; run sync-claude first.");
+        if (!fs.existsSync(link.source)) throw new Error(`Missing source ${link.source}; run sync-claude first.`);
         if (["local", "conflict"].includes(linkStatus(link)) && !values.backup) throw new Error("Review the existing style; replacement requires --backup.");
       }
       if (configPlan.changed && fs.existsSync(configFile) && !values.backup) throw new Error("Native configuration change requires --backup.");

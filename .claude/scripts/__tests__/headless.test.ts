@@ -1,14 +1,14 @@
 import { describe, expect, it } from "bun:test";
 import { DEFAULT_MODEL, ExpensiveModelRefused, resolveHeadlessModel, stripHeadlessFlags } from "../lib/headless";
-import { isExpensiveModel } from "../../hooks/lib/headless-models";
+import { EXPENSIVE_MODEL_RE } from "../../hooks/lib/headless-models";
 
-describe("resolveHeadlessModel (plan 033 — never an expensive tier by default)", () => {
+describe("resolveHeadlessModel (never an expensive tier by default)", () => {
   it("defaults per kind: cheap for prose/smoke, mid for skill-trigger/probe", () => {
     expect(resolveHeadlessModel([], "style").model).toBe("claude-haiku-5-5");
     expect(resolveHeadlessModel([], "smoke").model).toBe("claude-haiku-5-5");
     expect(resolveHeadlessModel([], "skill-trigger").model).toBe("claude-sonnet-5-5");
     expect(resolveHeadlessModel([], "probe").model).toBe("claude-sonnet-5-5");
-    expect(Object.values(DEFAULT_MODEL).some(isExpensiveModel)).toBe(false);
+    expect(Object.values(DEFAULT_MODEL).some((m) => EXPENSIVE_MODEL_RE.test(m))).toBe(false);
   });
 
   it("honours an explicit cheap --model", () => {

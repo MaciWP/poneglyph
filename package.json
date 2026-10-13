@@ -6,11 +6,13 @@
   "description": "Sistema de orquestación multi-agente para Claude Code",
   "scripts": {
     "test": "bun test ./.claude/",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "doctor": "bun .claude/scripts/doctor.ts",
     "doctor:fast": "bun .claude/scripts/doctor.ts --fast",
     "budget": "bun .claude/scripts/budget.ts",
     "usage": "bun .claude/scripts/usage-profile.ts",
     "skill-usage": "bun .claude/scripts/skill-usage.ts",
+    "compliance": "bun .claude/scripts/compliance.ts",
     "check:config": "bun .claude/scripts/check-config.ts",
     "prepare": "husky"
   },
@@ -22,7 +24,8 @@
   "devDependencies": {
     "@types/bun": "^1.3.10",
     "husky": "9.1.7",
-    "smol-toml": "1.8.0"
+    "smol-toml": "1.8.0",
+    "typescript": "5.6.3"
   },
   "dependencies": {}
 }

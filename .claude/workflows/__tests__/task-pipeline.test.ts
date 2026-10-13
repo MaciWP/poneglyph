@@ -6,8 +6,8 @@ import { join } from "node:path";
 // importable module (the runtime injects args/agent/parallel/pipeline/phase/log and wraps
 // the body in an async function, which is why top-level `return` is legal). Compiling the
 // source with AsyncFunction reproduces that exactly and doubles as a parse check, so the
-// deterministic half — gate cross-checks, the fix loop's progress criterion, verdict
-// coherence, commit policy — is testable without spawning a single agent.
+// deterministic half, gate cross-checks, the fix loop's progress criterion, verdict
+// coherence, commit policy, is testable without spawning a single agent.
 const SOURCE = readFileSync(join(import.meta.dir, "..", "task-pipeline.js"), "utf8");
 const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor as new (
   ...args: string[]
@@ -79,7 +79,7 @@ describe("args", () => {
     expect(result.task).toBe("add a health endpoint");
   });
 
-  test("aborts when the request agent dies — no baseline means no gate is possible", async () => {
+  test("aborts when the request agent dies, no baseline means no gate is possible", async () => {
     const { result } = await run({ task: "t" }, { request: null });
     expect(result.aborted).toBe(true);
     expect(result.reason).toMatch(/baseline/);
@@ -121,7 +121,7 @@ describe("the gate decides, not the agent", () => {
     expect(result.gate.build.violations[0]).toMatch(/not declared/);
   });
 
-  test("a self-contradicting gate agent (passed=true, exit=1) is a hard fail — the 'helpful' agent signature", async () => {
+  test("a self-contradicting gate agent (passed=true, exit=1) is a hard fail, the 'helpful' agent signature", async () => {
     const { result } = await run({ task: "t" }, { "gate:build": { passed: true, exit_code: 1, violations: [], checks_run: 8 } });
     expect(result.verified).toBe(false);
     expect(result.gate.build.violations.join(" ")).toMatch(/se contradice/);
@@ -212,13 +212,13 @@ describe("revision cycle", () => {
     expect(calls.some((c) => c.label.startsWith("re-baseline"))).toBe(true);
   });
 
-  test("re-baselines BEFORE the fixer runs, not after — otherwise it measures nothing", async () => {
+  test("re-baselines BEFORE the fixer runs, not after, otherwise it measures nothing", async () => {
     const { calls } = await run({ task: "t" }, { review: REJECTED, "re-review": REJECTED });
     const labels = calls.map((c) => c.label);
     expect(labels.indexOf("re-baseline:1")).toBeLessThan(labels.indexOf("revise:1"));
   });
 
-  test("the fixer is gated too — a revision is not a way in for unmeasured work", async () => {
+  test("the fixer is gated too, a revision is not a way in for unmeasured work", async () => {
     const { calls } = await run({ task: "t" }, { review: REJECTED, "re-review": REJECTED });
     const g = calls.find((c) => c.label === "gate:revise1");
     expect(g).toBeDefined();
@@ -264,7 +264,7 @@ describe("revision cycle", () => {
   });
 
   // Regression: the retest used to pass --baseline, but its baseline is snapshotted
-  // AFTER the work, so the delta is empty and every claimed file lands in `missing` —
+  // AFTER the work, so the delta is empty and every claimed file lands in `missing`,
   // a red gate on a run that actually succeeded. The retest asks "does it still run",
   // which needs no diff cross-check.
   test("the retest runs the suite WITHOUT a diff cross-check", async () => {
@@ -319,13 +319,13 @@ describe("commit policy", () => {
     expect(calls.every((c) => !/git commit|git push/i.test(c.prompt) || /Do NOT git commit/i.test(c.prompt))).toBe(true);
   });
 
-  test("commit:true still does not commit — it only records the request", async () => {
+  test("commit:true still does not commit, it only records the request", async () => {
     const { result } = await run({ task: "t", commit: true });
     expect(result.commit_requested).toBe(true);
     expect(result.next).toMatch(/no commitea/);
   });
 
-  test("unverified work suggests only the plan commit — the spec is a real artifact either way", async () => {
+  test("unverified work suggests only the plan commit, the spec is a real artifact either way", async () => {
     const { result } = await run({ task: "t" }, { "gate:build": GATE_RED });
     expect(result.suggested_commits.map((c: any) => c.phase)).toEqual(["plan"]);
   });

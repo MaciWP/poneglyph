@@ -1,10 +1,10 @@
 #!/usr/bin/env bun
-// A/B comparator for the poneglyph system-prompt channel (plan: indexed-nebula).
+// A/B comparator for the poneglyph system-prompt channel.
 // Runs the SAME prompt through two claude invocations that differ in ONE variable
 // (the injected system prompt / config layer) and reports outputs + style markers.
-// This is an EXPLORATION tool (eyeball + descriptive markers), not a pass/fail gate —
+// This is an EXPLORATION tool (eyeball + descriptive markers), not a pass/fail gate:
 // the regression gate is run.ts. Run it OUTSIDE a sandboxed agent session: it spawns
-// live `claude -p` processes (nested sandboxed runs die — see evals/README.md).
+// live `claude -p` processes (nested sandboxed runs die, see evals/README.md).
 //
 // Usage:
 //   bun .claude/evals/compare.ts "<prompt>" [--preset sp|stock|style-vs-sp|dupe]
@@ -37,7 +37,7 @@ const SP_FILE = join(import.meta.dir, "..", "system-prompts", "poneglyph-sp.md")
 const STYLE_OFF = ["--settings", '{"outputStyle":"default"}'];
 
 // Descriptive style markers per side. esEsDetect "fails" on an English stock side by
-// design — that IS the signal being measured, so results are reported per side, never
+// design: that IS the signal being measured, so results are reported per side, never
 // aggregated into a suite verdict.
 const MARKER_GRADERS: Record<string, Grader> = {
   bannedOpeners,
@@ -74,7 +74,7 @@ export function buildSides(preset: string, spFile: string = SP_FILE): { a: Side;
   }
 }
 
-/** Count DISTINCT reference codes (D1, R2, P3…) — SP §5 Referencias, Spanish families:
+/** Count DISTINCT reference codes (D1, R2, P3…), SP §5 Referencias, Spanish families:
  * D decisiones · O opciones · H hallazgos · R riesgos · P preguntas · A acciones. */
 export function refCodeCount(text: string): number {
   const matches = text.match(/\b[DOHRPA]\d+\b/g) ?? [];
@@ -124,7 +124,7 @@ export const PROBES: Probe[] = [
   },
   {
     id: "tags",
-    law: "etiqueta [Suposición]/[Probable] en claim no verificable (§1)",
+    law: "etiqueta [Suposición] en claim no verificable (§1)",
     prompt:
       "Sin usar herramientas ni buscar: ¿el paquete npm left-pad sigue teniendo hoy el mismo mantenedor que en 2016?",
     check: (t) => labelPresence(t),
@@ -156,7 +156,7 @@ export function parseClaudeJson(raw: string): { text: string; outputTokens?: num
       return { text: j.result, outputTokens: j.usage?.output_tokens, durationMs: j.duration_ms, costUsd: j.total_cost_usd };
     }
   } catch {
-    // not JSON (older CLI or error output) — grade the raw text
+    // not JSON (older CLI or error output): grade the raw text
   }
   return { text: raw };
 }
@@ -167,7 +167,7 @@ function claudeBin(): string {
   return existsSync(local) ? local : "claude";
 }
 
-// Plan 033: the model is never the host default — cheap tier for prose comparisons unless
+// The model is never the host default: cheap tier for prose comparisons unless
 // --model names another one (Fable/Opus need --allow-expensive on top of permission).
 function headlessModel(): string {
   return resolveHeadlessModel(process.argv.slice(2), "style").model;
@@ -197,7 +197,7 @@ function printRow(name: string, a: string | number, b: string | number): void {
 }
 
 async function runProbes(a: Side, b: Side, tools: boolean, runs: number): Promise<void> {
-  console.log(`Batería de adherencia — ${PROBES.length} sondas × 2 lados × ${runs} run(s)\nA = ${a.label}\nB = ${b.label}\n`);
+  console.log(`Batería de adherencia: ${PROBES.length} sondas × 2 lados × ${runs} run(s)\nA = ${a.label}\nB = ${b.label}\n`);
   const rows: Array<{ id: string; a: string; b: string }> = [];
   for (const probe of PROBES) {
     for (let i = 0; i < runs; i++) {
@@ -218,13 +218,13 @@ async function runProbes(a: Side, b: Side, tools: boolean, runs: number): Promis
   for (const r of rows) {
     console.log(`| ${r.id.padEnd(14)} | ${r.a.slice(0, 38).padEnd(38)} | ${r.b.slice(0, 38).padEnd(38)} |`);
   }
-  console.log("\n(✓/✗ por lado y sonda — la comparación A vs B es el veredicto, no el ✗ aislado)");
+  console.log("\n(✓/✗ por lado y sonda: la comparación A vs B es el veredicto, no el ✗ aislado)");
 }
 
 if (import.meta.main) {
   const args = process.argv.slice(2);
   const probes = args.includes("--probes");
-  const prompt = args.find((a) => !a.startsWith("--"));
+  const prompt = args.find((a, i) => !a.startsWith("--") && args[i - 1] !== "--preset" && args[i - 1] !== "--runs");
   if (!prompt && !probes) {
     console.error('usage: bun .claude/evals/compare.ts "<prompt>" [--preset sp|stock|style-vs-sp|dupe] [--runs N] [--tools] [--dry-run] | --probes [--preset X]');
     process.exit(1);
@@ -256,6 +256,7 @@ if (import.meta.main) {
     }
   }
 
+  if (!prompt) process.exit(1); // unreachable: every promptless path exited above
   for (let i = 0; i < runs; i++) {
     console.log(`\n═══ run ${i + 1}/${runs} · preset ${preset} ═══`);
     // Sequential on purpose: two parallel interactive-auth sessions can race the OAuth lock.
@@ -279,6 +280,6 @@ if (import.meta.main) {
     for (const name of Object.keys(MARKER_GRADERS)) {
       printRow(name, ma.markers[name] ? "✓" : "✗", mb.markers[name] ? "✓" : "✗");
     }
-    console.log("\n(markers son descriptivos por lado — un ✗ en el lado control es el delta esperado, no un fallo)");
+    console.log("\n(markers son descriptivos por lado: un ✗ en el lado control es el delta esperado, no un fallo)");
   }
 }

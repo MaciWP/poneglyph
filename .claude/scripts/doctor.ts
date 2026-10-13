@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 // bun run doctor [--fast] [--ci] [--md <file>]
 //
-// One table that says whether the poneglyph layer is ON (plan 032/WP6, audit 010 R2):
+// One table that says whether the poneglyph layer is ON:
 // sync status of the Claude layer and the Codex adapter, structural validation of
 // .claude, the test suite, the always-loaded budget, and a privacy grep for company
 // terms that must not live in this public repo. Exit 1 on any 🔴.
@@ -10,16 +10,16 @@
 //   --ci     skip machine-bound sync/session checks; local privacy terms are optional
 //   --md F   also write the table as markdown to F (input for the html-report skill)
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { compare, loadSnapshot, measure, ratchetedSnapshotTotal, slack, total } from "./lib/budget";
 import { detectHosts, realProbe } from "./lib/hosts";
 import { check, type Report } from "./check-config";
-import { checkOrca } from "./sync-orca";
 import { lintEstate, summarizeEstate } from "./lib/memory-estate";
 import { collectTranscripts, contextRow, loadTranscripts, summarizeContext } from "./usage-profile";
-import { defaultSkillDirs, knownSkills, loadSkillTurns, skillsRow, summarizeSkills } from "./skill-usage";
+import { defaultSkillDirs, knownSkills, loadSkillTurns, skillsRow, summarizeSkills, windowStart } from "./skill-usage";
+import { complianceRow, loadComplianceTurns, summarizeCompliance } from "./compliance";
+import { claudeConfigDir } from "../hooks/lib/paths";
 
 export type Status = "🟢" | "🟡" | "🔴";
 export interface Check {
@@ -33,11 +33,6 @@ const REPO = join(here, "..", "..");
 
 // --- pure helpers (unit-tested) -----------------------------------------------
 
-export function worstOf(statuses: Status[]): Status {
-  if (statuses.includes("🔴")) return "🔴";
-  if (statuses.includes("🟡")) return "🟡";
-  return "🟢";
-}
 
 // sync-claude / sync-codex print one status line per item; the worst icon wins.
 export function summarizeSyncOutput(output: string): Check["detail"] & string {
@@ -47,7 +42,7 @@ export function summarizeSyncOutput(output: string): Check["detail"] & string {
   return bad === 0 ? `${icons.length} items 🟢` : `${bad}/${icons.length} items not 🟢`;
 }
 
-// Row-anchored on purpose (review of 032, F7): a row STARTS with its status — sync-claude
+// Row-anchored on purpose: a row STARTS with its status, sync-claude
 // prints "🔴 …" / "STALE symlink", sync-codex prints "missing  <path>". The bare word
 // "missing" inside a detail sentence must not turn the doctor red.
 export function statusFromSyncOutput(output: string, exitCode = 0): Status {
@@ -58,14 +53,13 @@ export function statusFromSyncOutput(output: string, exitCode = 0): Status {
     const line = raw.trim();
     if (/^(🔴|❌|missing\b|stale\b|conflict\b|local\b)/.test(line) || /REJECTED|STALE symlink/.test(line) || /^⚪ .*: does not exist$/.test(line)) return "🔴";
     // 🔵 is sync-claude's "local folder/file": the entry exists but is NOT linked, so the
-    // layer is not what the repository says it is. Unknown to this parser until H66
-    // (quality review 2026-09-11), which let a stale local copy read as green.
+    // layer is not what the repository says it is. An unlinked local copy must not read as green.
     if (/^(🟡|🔵|⚪)/.test(line)) worst = "🟡";
   }
   return worst;
 }
 
-// A green suite needs three things (review of 032, E13/E17): exit code 0, the runner's own
+// A green suite needs three things: exit code 0, the runner's own
 // "Ran N tests" line (a run that aborted early prints no total), and zero failures.
 export function summarizeTests(output: string, exitCode = 0): { status: Status; detail: string } {
   // Parse the runner's contiguous footer, not test names or an earlier run.
@@ -73,9 +67,9 @@ export function summarizeTests(output: string, exitCode = 0): { status: Status; 
   const pass = Number(footer?.[1] ?? NaN);
   const fail = Number(footer?.[3] ?? NaN);
   const ran = Number(footer?.[4] ?? NaN);
-  if (exitCode !== 0) return { status: "🔴", detail: `bun test exited ${exitCode}${fail > 0 ? ` — ${fail} fail / ${pass} pass` : ""}` };
+  if (exitCode !== 0) return { status: "🔴", detail: `bun test exited ${exitCode}${fail > 0 ? `, ${fail} fail / ${pass} pass` : ""}` };
   const lastRun = [...output.matchAll(/^Ran \d+ tests?\b[^\r\n]*/gm)].at(-1);
-  if (!lastRun) return { status: "🔴", detail: "no 'Ran N tests' line — the run did not complete" };
+  if (!lastRun) return { status: "🔴", detail: "no 'Ran N tests' line, the run did not complete" };
   const skipped = [...(footer?.[2] ?? "").matchAll(/(\d+) (?:skip|todo)/g)].reduce((n, m) => n + Number(m[1]), 0);
   if (!footer || footer.index! + footer[0].lastIndexOf("Ran ") !== lastRun.index || !ran || pass + fail + skipped !== ran) return { status: "🔴", detail: "invalid or inconsistent test summary" };
   if (fail > 0) return { status: "🔴", detail: `${fail} fail / ${pass} pass (${ran} tests)` };
@@ -100,9 +94,9 @@ export function summarizeConfig(report: Report): { status: Status; detail: strin
 }
 
 // Sessions started today under this project, grouped by the first model seen in each
-// transcript (plan 033, D3). 82 in one day — 44 Opus + 29 Fable — is what this row exists
+// transcript. 82 in one day, 44 Opus + 29 Fable, is what this row exists
 // to make visible before the quota does.
-export const SESSIONS_PER_DAY_WARN = 20;
+const SESSIONS_PER_DAY_WARN = 20;
 export function summarizeSessions(models: string[], warnAt = SESSIONS_PER_DAY_WARN): { status: Status; detail: string } {
   const counts = new Map<string, number>();
   for (const m of models) counts.set(m, (counts.get(m) ?? 0) + 1);
@@ -110,14 +104,14 @@ export function summarizeSessions(models: string[], warnAt = SESSIONS_PER_DAY_WA
   const parts = [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([m, n]) => `${m.replace(/^claude-/, "").replace(/-\d{8}$/, "")} ${n}`);
   const detail = `${models.length} sessions today${parts.length ? ` (${parts.join(" · ")})` : ""}`;
   const status: Status = models.length > warnAt || (expensive > 0 && models.length > 5) ? "🟡" : "🟢";
-  return { status, detail: status === "🟡" ? `${detail} — headless runs are spawns: cheap tier + permission (lessons G13)` : detail };
+  return { status, detail: status === "🟡" ? `${detail}, headless runs are spawns: explicit cheap tier, permission for the top tier (lessons G13)` : detail };
 }
 
-// This used to be a check row with a hardcoded 🟡 (H47): a status that can never change is
+// Not a check row with a hardcoded 🟡: a status that can never change is
 // not a check, it just teaches the eye to skip the one colour the other rows warn with. The
-// caveat is true and stays printed — as a note under the table, carrying no semaphore.
+// caveat is true and stays printed, as a note under the table, carrying no semaphore.
 export const NATIVE_EVIDENCE_NOTE =
-  "Note: these are configuration checks. They do not establish Codex hook trust, model activation, or MCP connectivity — inspect the native UI and report those gates separately.";
+  "Note: these are configuration checks. They do not establish Codex hook trust, model activation, or MCP connectivity, inspect the native UI and report those gates separately.";
 
 export function renderChecks(checks: Check[]): string {
   return ["| Check | Estado | Detalle |", "|---|---|---|", ...checks.map((c) => `| ${c.name} | ${c.status} | ${c.detail} |`)].join("\n");
@@ -132,7 +126,7 @@ function readEstate(dir: string): { status: Status; detail: string } {
     const index = names.includes("MEMORY.md");
     if (!index) {
       return names.length
-        ? { status: "🔴", detail: `${names.length} memory file(s) and no MEMORY.md — nothing is reachable from the index` }
+        ? { status: "🔴", detail: `${names.length} memory file(s) and no MEMORY.md, nothing is reachable from the index` }
         : { status: "🟡", detail: "memory directory is empty" };
     }
     const files = names.filter((f) => f !== "MEMORY.md").map((f) => ({ name: f, text: readFileSync(join(dir, f), "utf8") }));
@@ -169,7 +163,7 @@ async function main(): Promise<void> {
 
   // Same detector as /sync-poneglyph: a host that is not installed is skipped, not red.
   const hosts = new Map(detectHosts(realProbe()).map((h) => [h.name, h]));
-  const skipped = (name: string): Check => ({ name, status: "🟡", detail: "not installed on this machine — skipped" });
+  const skipped = (name: string): Check => ({ name, status: "🟡", detail: "not installed on this machine, skipped" });
   if (!ci) {
     if (hosts.get("claude")!.installed) {
       const sc = await run(["bun", ".claude/scripts/sync-claude.ts", "--status"]);
@@ -187,34 +181,36 @@ async function main(): Promise<void> {
       const gx = await run(["bun", ".claude/scripts/sync-grok.ts", "--status"]);
       checks.push({ name: "Grok adapter (configuration)", status: statusFromSyncOutput(gx.out, gx.code), detail: "Style, native hook configuration, and Claude compatibility; no model or MCP connection." });
     } else checks.push(skipped("Grok adapter (configuration)"));
-    const orca = checkOrca();
-    checks.push({ name: "Orca style append (sync-orca)", status: orca.status, detail: orca.detail });
   }
 
   if (hosts.get("claude")!.cli) {
     const v = await run(["claude", "plugin", "validate", ".claude"]);
     checks.push({ name: "Structure (claude plugin validate)", ...summarizeValidate(v.out, v.code) });
-  } else checks.push({ name: "Structure (claude plugin validate)", status: "🟡", detail: "claude CLI not on PATH — structural validation skipped" });
+  } else checks.push({ name: "Structure (claude plugin validate)", status: "🟡", detail: "claude CLI not on PATH, structural validation skipped" });
 
   if (!fast) {
     const t = await run(["bun", "test", "./.claude/"]);
     checks.push({ name: "Suite (bun test ./.claude/)", ...summarizeTests(t.out, t.code) });
+    const tc = await run(["bun", "run", "typecheck"]);
+    const tcErrors = (tc.out.match(/error TS\d+/g) ?? []).length;
+    checks.push({ name: "Types (bun run typecheck)", status: tc.code === 0 ? "🟢" : "🔴", detail: tc.code === 0 ? "no type errors" : tcErrors ? `${tcErrors} type errors` : `tsc exited ${tc.code}` });
   } else {
     checks.push({ name: "Suite (bun test ./.claude/)", status: "🟡", detail: "skipped (--fast)" });
+    checks.push({ name: "Types (bun run typecheck)", status: "🟡", detail: "skipped (--fast)" });
   }
 
   const snapshot = loadSnapshot(join(here, "lib"));
   const m = measure(REPO);
   if (!snapshot) {
-    checks.push({ name: "Always-loaded budget", status: "🟡", detail: `${total(m.alwaysLoaded)} B, no snapshot — bun .claude/scripts/budget.ts --update` });
+    checks.push({ name: "Always-loaded budget", status: "🟡", detail: `${total(m.alwaysLoaded)} B, no snapshot, bun .claude/scripts/budget.ts --update` });
   } else {
     const viol = compare(m, snapshot);
     const unlocked = slack(m, snapshot).reduce((sum, x) => sum + x.snapshot - x.current, 0);
-    const within = `${total(m.alwaysLoaded)} B ≤ snapshot ${ratchetedSnapshotTotal(m, snapshot)} B (ratchet 0 %, plan 037)`;
+    const within = `${total(m.alwaysLoaded)} B ≤ snapshot ${ratchetedSnapshotTotal(m, snapshot)} B (ratchet 0 %)`;
     checks.push({
       name: "Always-loaded budget",
       status: viol.length ? "🔴" : unlocked ? "🟡" : "🟢",
-      detail: viol.length ? viol.map((x) => `${x.key} ${x.snapshot}→${x.current}`).join("; ") : unlocked ? `${unlocked} B unlocked — bun .claude/scripts/budget.ts --tighten` : within,
+      detail: viol.length ? viol.map((x) => `${x.key} ${x.snapshot}→${x.current}`).join("; ") : unlocked ? `${unlocked} B unlocked, bun .claude/scripts/budget.ts --tighten` : within,
     });
   }
 
@@ -227,15 +223,15 @@ async function main(): Promise<void> {
   if (!ci) {
     // ~/.claude/projects/<slug>/ where slug = a path with separators and ':' as '-'.
     // The two things under that directory do NOT share a root:
-    //   transcripts are per WORKING DIRECTORY — a linked worktree gets its own project dir;
-    //   auto memory is per GIT REPOSITORY — every worktree of a repo shares one estate.
+    //   transcripts are per WORKING DIRECTORY, a linked worktree gets its own project dir;
+    //   auto memory is per GIT REPOSITORY, every worktree of a repo shares one estate.
     // Deriving both from the checkout finds no memory inside a worktree; deriving both from
     // the repository makes "sessions today" report the main checkout's transcripts instead.
     const slugOf = (p: string) => p.replace(/[\\/:]/g, "-");
-    const projDir = join(homedir(), ".claude", "projects", slugOf(REPO));
+    const projDir = join(claudeConfigDir(), "projects", slugOf(REPO));
     const common = await run(["git", "-C", REPO, "rev-parse", "--path-format=absolute", "--git-common-dir"]);
     const repoRoot = common.code === 0 && common.out.trim() ? dirname(common.out.trim()) : REPO;
-    const memoryDir = join(homedir(), ".claude", "projects", slugOf(repoRoot), "memory");
+    const memoryDir = join(claudeConfigDir(), "projects", slugOf(repoRoot), "memory");
     const models: string[] = [];
     if (existsSync(projDir)) {
       const today = new Date();
@@ -249,12 +245,15 @@ async function main(): Promise<void> {
       }
     }
     checks.push({ name: "Sessions today (this project)", ...summarizeSessions(models) });
-    // Shape of the spend across every project on this machine (plan 037): the ceiling is 300k by
+    // Shape of the spend across every project on this machine: the ceiling is 300k by
     // default (`autoCompactWindow`), so messages above it are the sessions that cost.
-    const weekFiles = collectTranscripts(join(homedir(), ".claude", "projects"), 7);
+    const weekFiles = collectTranscripts(join(claudeConfigDir(), "projects"), 7);
     checks.push({ name: "Context (7d, this machine)", ...contextRow(summarizeContext(loadTranscripts(weekFiles))) });
-    // Whether hints get followed and which skills the user still has to name (skill-usage.ts).
-    checks.push({ name: "Skills (7d, this machine)", ...skillsRow(summarizeSkills(loadSkillTurns(weekFiles), knownSkills(defaultSkillDirs()))) });
+    // Whether router candidates get followed and which skills the user still has to name (skill-usage.ts).
+    checks.push({ name: "Skills (7d, this machine)", ...skillsRow(summarizeSkills(loadSkillTurns(weekFiles, windowStart(7)), knownSkills(defaultSkillDirs()))) });
+    // How often the doctrine and the style are followed, by deterministic rule checks (compliance.ts).
+    const ruleTurns = loadComplianceTurns(weekFiles, windowStart(7));
+    checks.push({ name: "Rule compliance (7d, this machine)", ...complianceRow(summarizeCompliance(ruleTurns), ruleTurns.length) });
 
     // The index is the only part of the estate loaded into every session, so its size is
     // reported here rather than by budget.ts, which measures the repo and never sees it.
@@ -267,7 +266,7 @@ async function main(): Promise<void> {
   console.log(table);
   console.log(`\n${NATIVE_EVIDENCE_NOTE}`);
   if (mdFile) {
-    writeFileSync(mdFile, `# poneglyph doctor — ${new Date().toISOString().slice(0, 10)}\n\n${table}\n\n${NATIVE_EVIDENCE_NOTE}\n`);
+    writeFileSync(mdFile, `# poneglyph doctor, ${new Date().toISOString().slice(0, 10)}\n\n${table}\n\n${NATIVE_EVIDENCE_NOTE}\n`);
     console.log(`\nmarkdown → ${mdFile}`);
   }
   process.exit(exitCodeFor(checks));

@@ -5,12 +5,19 @@
     "moduleResolution": "bundler",
     "types": ["bun"],
     "strict": true,
+    "noUnusedLocals": true,
     "noEmit": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowImportingTsExtensions": true,
     "moduleDetection": "force"
   },
-  "include": [".claude/hooks/**/*.ts"],
-  "exclude": ["node_modules", "**/__test_temp__/**", "**/__test_temp_ast__/**"]
+  "include": [
+    ".claude/hooks/**/*.ts",
+    ".claude/scripts/**/*.ts",
+    ".claude/evals/**/*.ts",
+    ".claude/commands/**/*.ts",
+    ".claude/skills/**/*.ts"
+  ],
+  "exclude": ["node_modules", "**/__test_temp__/**", "**/__test_temp_ast__/**", ".claude/skills/synced/**", ".claude/skills/.trash/**"]
 }

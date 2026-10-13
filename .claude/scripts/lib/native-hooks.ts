@@ -27,8 +27,11 @@ export function nativeHookConfig(host: NativeHost, coreRoot: string): RecordValu
     hooks: [{ type: "command", command: `bun "${script}" --host ${host} --event ${event}`, timeout: 10 }],
   });
   return { hooks: {
-    PreToolUse: [entry("PreToolUse", "Bash"), ...(host === "codex" ? [entry("PreToolUse", "apply_patch")] : [])],
-    ...(host === "codex" ? { UserPromptSubmit: [entry("UserPromptSubmit")], Stop: [entry("Stop")] } : {}),
+    // Every tool: the shell judge and the design note pick their tools; the router note
+    // (started on UserPromptSubmit) rides the first tool call of the turn.
+    PreToolUse: [entry("PreToolUse")],
+    UserPromptSubmit: [entry("UserPromptSubmit")],
+    ...(host === "codex" ? { Stop: [entry("Stop")] } : {}),
   } };
 }
 

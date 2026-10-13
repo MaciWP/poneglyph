@@ -6,8 +6,8 @@ import { classifyReview } from "../../scripts/lib/flow-contract";
 // A Workflow script is not an importable module: the runtime injects its globals
 // (args/agent/parallel/pipeline/phase/log) and wraps the body in an async
 // function, which is why top-level `return` is legal there. Compiling the source
-// with AsyncFunction reproduces that contract exactly — and doubles as a parse
-// check — so the deterministic half (arg validation, DAG waves, file-collision
+// with AsyncFunction reproduces that contract exactly, and doubles as a parse
+// check, so the deterministic half (arg validation, DAG waves, file-collision
 // serialization, retry budget, verdict) is testable without spawning agents.
 const SOURCE = readFileSync(join(import.meta.dir, "..", "flow-build-review.js"), "utf8");
 const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor as new (
@@ -103,7 +103,7 @@ function stub({ ready = true, us: stories = [], hu, checks, findings = {}, missi
 
 const run = (args: unknown, s: ReturnType<typeof stub>) => runScript(args, s.agent, parallel, pipeline, phase, () => {});
 
-describe("flow-build-review — guardas de entrada", () => {
+describe("flow-build-review: guardas de entrada", () => {
   test("prosa en vez de slug aborta con una razón accionable", async () => {
     const r = await run("Intenta mejorar este workflow", stub({}));
     expect(r.aborted).toBe(true);
@@ -124,7 +124,7 @@ describe("flow-build-review — guardas de entrada", () => {
   });
 });
 
-describe("flow-build-review — build por waves", () => {
+describe("flow-build-review: build por waves", () => {
   test("HUs con ficheros colisionando se serializan y quedan etiquetadas", async () => {
     const stories = [us("US1", 1, ["a.ts"]), us("US2", 1, ["a.ts"]), us("US3", 2, ["b.ts"], { deps: ["US1"] })];
     const s = stub({ us: stories, hu: (l) => doneHU(l.replace("build:", "").replace("(seq)", "")) });
@@ -160,7 +160,7 @@ describe("flow-build-review — build por waves", () => {
   });
 });
 
-describe("flow-build-review — fase 4 y veredicto", () => {
+describe("flow-build-review: fase 4 y veredicto", () => {
   test("todo verde → APPROVED, review.md escrito y boundary checks devueltos", async () => {
     const s = stub({ us: [us("US1", 1, ["a.ts"])], hu: () => doneHU("US1") });
     const r = await run({ slug: "032-x" }, s);

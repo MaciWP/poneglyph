@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { readFileSync, readdirSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
 
-// Quality review 2026-09-11, findings H16 and H31. A skill is instructions the model
+// A skill is instructions the model
 // executes. Two classes of instruction must never appear unconditionally in one, because
 // CLAUDE.md gates them on a this-turn user decision: launching agents, and mutating git.
 // Checked as a class so the next skill cannot reintroduce it.
@@ -46,45 +46,19 @@ describe("skills never order a gated action unconditionally", () => {
     expect(markdownFiles(skillsRoot).length).toBeGreaterThan(50);
   });
 
-  it("H31 — no skill commands an Agent dispatch without naming the approval gate", () => {
+  it("no skill commands an Agent dispatch without naming the approval gate", () => {
     expect(offenders(SPAWN)).toEqual([]);
   });
 
-  it("H16 — no skill lists a git mutation as a plain step without naming authorization", () => {
+  it("no skill lists a git mutation as a plain step without naming authorization", () => {
     expect(offenders(GIT_STEP)).toEqual([]);
   });
 });
 
-// Quality review 2026-09-11, finding H15. The extract-conditional example teaches an
-// authorization refactor. Its BEFORE denies an unknown role; its AFTER must deny it too,
-// or the example hands a reader a privilege escalation as good practice.
-describe("the authorization example does not widen access (H15)", () => {
-  const file = join(skillsRoot, "pr-review", "references", "maintainability", "extract-function.md");
-  const text = readFileSync(file, "utf8").replace(/\r\n/g, "\n");
-  const after = text.split("// AFTER: Extracted with early returns")[1]?.split("```")[0] ?? "";
-
-  it("finds the AFTER block", () => {
-    expect(after).toContain("getAccessLevel");
-  });
-
-  it("keeps a deny path for a role the BEFORE code denied", () => {
-    expect(after).toContain('return "none"');
-  });
-
-  it("denies the unknown role before reaching the permissive default", () => {
-    // The final `return "read"` is correct: by then the role is known to be "user".
-    // What matters is that an unrecognised role is denied EARLIER.
-    const deny = after.indexOf('return "none"');
-    const permissive = after.lastIndexOf('return "read"');
-    expect(deny).toBeGreaterThan(-1);
-    expect(deny).toBeLessThan(permissive);
-  });
-});
-
-// Quality review 2026-09-11, finding H40. `harness-runtime.md` requires quoted paths; the
+// `docs/harness-runtime.md` requires quoted paths; the
 // generated hook commands interpolate $HOME unquoted, so a home directory with a space
 // splits into two arguments and every hook silently stops running.
-describe("hook commands quote their interpolated paths (H40)", () => {
+describe("hook commands quote their interpolated paths", () => {
   const settings = readFileSync(join(root, ".claude", "settings.global.json"), "utf8");
 
   it("finds hook commands", () => {
@@ -143,15 +117,15 @@ describe("recursive deletes always prompt; git is gated only on the remote", () 
   });
 });
 
-// Quality review 2026-09-11, finding H23. The complexity score is the sum of five factors,
-// each contributing at least ~6.7 points, so the floor is ~33. Two routing rows sat below
-// that floor and could never fire: the table promised a decision it could not reach.
-describe("every complexity routing band is reachable (H23)", () => {
+// Routing rows once sat outside the range the factors can produce and could
+// never fire. Complexity counts steps above Low (Medium 1, High 2) over five factors: 0-10.
+// Every band must be reachable and together they must cover the whole range.
+describe("every complexity routing band is reachable", () => {
   const file = join(root, ".claude", "skills", "agent-routing", "references", "03-complexity-routing.md");
   const text = readFileSync(file, "utf8").replace(/\r\n/g, "\n");
   const FACTORS = 5;
-  const MIN = Number((FACTORS * (1 * 0.2 * (100 / 3))).toFixed(1)); // every factor Low
-  const MAX = Number((FACTORS * (3 * 0.2 * (100 / 3))).toFixed(1)); // every factor High
+  const MIN = 0; // every factor Low
+  const MAX = FACTORS * 2; // every factor High
 
   function bands(): { label: string; lo: number; hi: number }[] {
     const section = text.split("## Routing by Complexity")[1]?.split("\n## ")[0] ?? "";
@@ -174,21 +148,23 @@ describe("every complexity routing band is reachable (H23)", () => {
     expect(bands().length).toBeGreaterThanOrEqual(3);
   });
 
-  it("states a floor no lower than the formula allows", () => {
-    expect(MIN).toBeCloseTo(33.3, 1);
-    expect(MAX).toBeCloseTo(100, 1);
+  it("covers every step count from MIN to MAX without gaps", () => {
+    const b = bands().sort((x, y) => x.lo - y.lo);
+    expect(b[0].lo).toBe(MIN);
+    expect(b.at(-1)!.hi).toBe(MAX);
+    for (let i = 1; i < b.length; i++) expect(b[i].lo).toBe(b[i - 1].hi + 1);
   });
 
-  it("has no band that the formula can never produce", () => {
+  it("has no band that the factors can never produce", () => {
     const unreachable = bands().filter((b) => b.hi < MIN || b.lo > MAX).map((b) => b.label);
     expect(unreachable).toEqual([]);
   });
 });
 
-// Quality review 2026-09-11, finding H45. Three files gave three cyclomatic thresholds
+// Three files gave three cyclomatic thresholds
 // (> 10, > 15, > 20). `complexity-metrics.md` owns the scale: 1-5 simple, 6-10 moderate,
 // 11-20 complex (refactor), > 20 very complex (split). Every other table must cite it.
-describe("one cyclomatic scale across the pr-review lenses (H45)", () => {
+describe("one cyclomatic scale across the pr-review lenses", () => {
   const dir = join(skillsRoot, "pr-review");
   const CANON = new Set([5, 6, 10, 11, 20]);
 

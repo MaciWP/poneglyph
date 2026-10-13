@@ -6,7 +6,7 @@ import { CLAUDE_DESIRED, CONTEXT_POLICY, codexConfigPlan, codexDesired, grokConf
 
 const REPO = join(import.meta.dir, "..", "..", "..");
 
-describe("tomlPlan (plan 037 — one context policy for every host)", () => {
+describe("tomlPlan (one context policy for every host)", () => {
   it("merges only the desired keys and preserves foreign scalars, arrays, tables and array tables", () => {
     const original = 'model = "x"\nnotify = ["a", "b"]\n\n[mcp_servers.ctx]\nurl = "https://e"\n\n[[hooks.Stop]]\nmatcher = ""\n';
     const r = tomlPlan(original, { model_reasoning_effort: "high", session: { pct: 40 } });
@@ -34,9 +34,11 @@ describe("tomlPlan (plan 037 — one context policy for every host)", () => {
 });
 
 describe("host plans", () => {
-  it("codex: effort high, plan mode xhigh, compaction at the default ceiling; the model key is untouched", () => {
-    expect(codexDesired()).toEqual({ model_reasoning_effort: "high", plan_mode_reasoning_effort: "xhigh", model_auto_compact_token_limit: 300_000 });
-    const out = parse(codexConfigPlan('model = "gpt-6-astra"\nmodel_reasoning_effort = "xhigh"\nmodel_context_window = 872000\nmodel_auto_compact_token_limit = 800000\n').content) as any;
+  it("codex: effort high, plan mode xhigh, compaction at the default ceiling, a names-sized skill catalog; the model key is untouched", () => {
+    expect(codexDesired()).toEqual({ model_reasoning_effort: "high", plan_mode_reasoning_effort: "xhigh", model_auto_compact_token_limit: 300_000, skills: { max_context_tokens: 800 } });
+    const out = parse(codexConfigPlan('model = "gpt-6-astra"\nmodel_reasoning_effort = "xhigh"\nmodel_context_window = 872000\nmodel_auto_compact_token_limit = 800000\n[[skills.config]]\npath = "/x"\nenabled = false\n').content) as any;
+    expect(out.skills.max_context_tokens).toBe(800);
+    expect(out.skills.config).toEqual([{ path: "/x", enabled: false }]);
     expect(out.model).toBe("gpt-6-astra");
     expect(out.model_context_window).toBe(872000);
     expect(out.model_reasoning_effort).toBe("high");
@@ -48,7 +50,7 @@ describe("host plans", () => {
     expect(percentOfWindow(300_000, 500_000)).toBe(60);
     expect(percentOfWindow(400_000, 500_000)).toBe(80);
     expect(percentOfWindow(1, 500_000)).toBe(1);
-    expect(grokDesired()).toEqual({ compat: { claude: { hooks: false } }, models: { default_reasoning_effort: "high" }, model: { "grok-4.6": { context_window: 500_000 } }, session: { auto_compact_threshold_percent: 60 } });
+    expect(grokDesired()).toEqual({ compat: { claude: { hooks: false } }, models: { default_reasoning_effort: "high" }, model: { "grok-4.6": { context_window: 500_000 } }, session: { auto_compact_threshold_percent: 60 }, subagents: { toggle: { "prompt-router": false } } });
     const original = '[permissions]\nmode = "ask"\n[compat.claude]\nskills = true\nhooks = true\n[models]\ndefault = "grok-4.6"\ndefault_reasoning_effort = "xhigh"\n';
     const out = parse(grokConfigPlan(original).content) as any;
     expect(out.permissions.mode).toBe("ask");
@@ -64,14 +66,15 @@ describe("the repo carries the same policy for every host (single source)", () =
     const s = JSON.parse(readFileSync(join(REPO, ".claude", "settings.global.json"), "utf8"));
     expect(s.autoCompactWindow).toBe(CLAUDE_DESIRED.autoCompactWindow);
     expect(s.effortLevel).toBe(CLAUDE_DESIRED.effortLevel);
-    // Opus 5.5+ ignore the top-level key in user settings and default to medium.
+    // Opus 5.5+ ignore the top-level key in user settings; their effort and Haiku's window are per model.
     expect(s.modelSettings).toEqual(CLAUDE_DESIRED.modelSettings);
-    expect(s.modelSettings["claude-opus-5-5"].effortLevel).toBe(CONTEXT_POLICY.effort);
+    expect(s.modelSettings["claude-opus-5-5"].effortLevel).toBe(CONTEXT_POLICY.claudeOpusEffort);
+    expect(s.modelSettings["claude-haiku-5-5"].autoCompactWindow).toBe(CONTEXT_POLICY.claudeHaikuTokens);
     expect(CLAUDE_DESIRED.autoCompactWindow).toBe(CONTEXT_POLICY.defaultTokens);
   });
 
   // Claude Code 2.1.275 validates the settings key as an integer (100k-1M) and drops an
-  // invalid value with `.catch(undefined)`: the "200k" string shipped since plan 037 never
+  // invalid value with `.catch(undefined)`: the "200k" string shipped earlier never
   // took effect and sessions compacted at the [1m] default (~967k; measured 2026-09-18).
   it("writes the Claude ceiling as an integer, the only form the settings schema accepts", () => {
     const s = JSON.parse(readFileSync(join(REPO, ".claude", "settings.global.json"), "utf8"));

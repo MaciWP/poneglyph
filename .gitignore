@@ -40,11 +40,11 @@ npm-debug.log*
 # Claude Code local settings
 .claude/settings.local.json
 
-# Per-machine settings overlay (env.PATH etc.) — sync-claude deep-merges it into the
+# Per-machine settings overlay (env.PATH etc.): sync-claude deep-merges it into the
 # generated ~/.claude/settings.json. Each machine keeps its own; never committed.
 .claude/settings.machine.json
 
-# Doctor privacy terms ({ "privacyTerms": [...] }) — the company names the public repo
+# Doctor privacy terms ({ "privacyTerms": [...] }): the company names the public repo
 # must never contain live only on the machines that grep for them (032/WP6).
 .claude/doctor.local.json
 
@@ -68,12 +68,10 @@ tmpclaude-*-cwd
 # Context registry (runtime data)
 .claude/.context-registry.json
 
-# Archived plans (closed/abandoned features — out of accidental read reach)
-.claude/plans/_archive/
 # Local skill explorer previews and their generated inventory
 .claude/plans/_skill-explorer-*/
 
-# Learning inbox + load-layer log (may contain transcript snippets — never commit).
+# Learning inbox + load-layer log (may contain transcript snippets; never commit).
 # Exception: best-of-n-log.md is versioned pilot evidence (feature 019).
 .claude/learned/*
 
@@ -103,14 +101,13 @@ poneglyph-analysis.md
 # Specs (design documents, not part of distributed config)
 .specs/
 
-# ccstatusline scratch files (settings.json is intentionally tracked)
-.claude/ccstatusline/*.bak
-.claude/ccstatusline/settings.bak
-
-# Machine-local symlink into ~/.agents (Orca-managed skill) — absolute path, never portable
-.claude/skills/orca-cli
-.claude/ccstatusline/*.tmp
-
 # Claude Code runtime via the ~/.claude/skills junction: claude.ai skill sync and its trash (not source)
 .claude/skills/.trash/
 .claude/skills/synced/
+
+# Router held-out cases: real prompts from local transcripts
+.claude/evals/private/
+# Router memory and personal glossary: per person, per machine (~/.claude). Guard in case
+# a config dir ever lands inside a clone.
+router-memory.jsonl*
+/.claude/router-glossary.json

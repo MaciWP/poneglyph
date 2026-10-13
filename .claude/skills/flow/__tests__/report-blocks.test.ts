@@ -2,9 +2,9 @@ import { describe, expect, it } from "bun:test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-// Quality review 2026-09-11, H50. build and critic each stated their closing report
+// build and critic each stated their closing report
 // twice: once in the numbered step that produces it, once again in a trailing
-// "Output format reminder". Two copies of one contract drift apart -- critic's copies
+// "Output format reminder". Two copies of one contract drift apart: critic's copies
 // already had: the reminder listed the quality-catalog modes and `drillme-clarify`, the step did
 // not. The step that produces the report is the single source; the reminder is gone.
 const root = resolve(import.meta.dir, "..", "..", "..", "..");

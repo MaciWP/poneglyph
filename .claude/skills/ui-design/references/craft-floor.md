@@ -1,7 +1,7 @@
 # Craft floor
 
 <!-- Adapted from Impeccable (Apache 2.0, pbakaus/impeccable), 2026-08-05. The
-     original's design-hook machinery is not ported — apply these checks manually
+     original's design-hook machinery is not ported; apply these checks manually
      in the batched inspection round. -->
 
 Load this after the direction is settled, and build without announcing the checklist. A pinned brief or the committed visual world overrides anything here; your own habit does not.

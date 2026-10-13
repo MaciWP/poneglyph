@@ -1,10 +1,10 @@
 ---
 parent: flow
 name: discovery
-description: Discovery Protocol — static and dynamic sources, anti-duplicate verification before "create X".
+description: Discovery Protocol, static and dynamic sources, anti-duplicate verification before "create X".
 ---
 
-# Discovery — references/01
+# Discovery: references/01
 
 Before generating any plan, consult these sources. **Assume nothing.**
 

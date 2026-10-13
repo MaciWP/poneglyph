@@ -47,7 +47,7 @@ Reconstruct the **strongest possible case** for the decision before attacking it
 ### Cross-perspective angle
 A steel-man assembled from multiple lenses is stronger than a steel-man from one lens. Look for pros that come from **different lenses pointing the same direction** (those are highest signal).
 
-### Worked example — "Redis vs Memcached" (post-debate)
+### Worked example: "Redis vs Memcached" (post-debate)
 > Steel-man for Redis: Maintainer cites mature TS clients; Operator confirms Redis is already operated; Product flags pub/sub as a roadmap item arriving in Q3; Performance confirms throughput is well within Redis's envelope. Together: Redis is the lower-marginal-cost choice given existing ops and a future feature that requires it.
 
 If that steel-man cannot be built (because the pros don't survive debate), the decision is not defensible.
@@ -64,13 +64,13 @@ If that steel-man cannot be built (because the pros don't survive debate), the d
 ## 2. Assumption Audit
 
 ### Definition
-Surface every assumption — explicit AND implicit — that the decision rests on. Score by likelihood (how likely it's true) × impact (cost if false).
+Surface every assumption (explicit AND implicit) that the decision rests on. Score by likelihood (how likely it's true) × impact (cost if false).
 
 ### Procedure
 1. Collect assumptions from each perspective's "Context I needed" and "Invisible assumptions" sections
 2. Add assumptions implicit in the proposal text itself (often the most dangerous)
 3. Score each: Likelihood (Low/Medium/High true), Impact (Low/Medium/High if wrong)
-4. **Flag shared assumptions as suspect** — if every perspective takes the same thing for granted, it might be groupthink
+4. **Flag shared assumptions as suspect**: if every perspective takes the same thing for granted, it might be groupthink
 5. Output as a table
 
 ### Cross-perspective angle
@@ -103,7 +103,7 @@ Assumptions appearing in **only one perspective** are usually the most surfacing
 2. Pull failure modes already proposed by perspectives
 3. **Triangulation**: if ≥2 perspectives predicted the same failure mode, that mode gets HIGH confidence automatically
 4. For each surviving mode, name: trigger condition, early warning sign, blast radius
-5. Filter out vague doom — every mode must have a specific trigger
+5. Filter out vague doom: every mode must have a specific trigger
 
 ### Cross-perspective angle
 This is where triangulation does its work. The output of pre-mortem is a list of failure modes, each annotated with how many perspectives predicted it. ≥2 = HIGH; 1 = MEDIUM unless the lens is clearly authoritative for that mode.
@@ -134,11 +134,11 @@ Munger / Jacobi: invert the question. Instead of "how do we succeed?", ask "what
 3. Check the proposal against each condition: does it have it? does it prevent it?
 4. Anything in column 1 that's also in the proposal is an immediate red flag
 
-### Worked example — "Redis vs Memcached"
+### Worked example: "Redis vs Memcached"
 | Worst-outcome condition | Present in proposal? |
 |---|---|
 | Choose without measurement | Yes (no numbers cited) |
-| Enable persistence without need | Unknown — not specified |
+| Enable persistence without need | Unknown: not specified |
 | No rollback plan | Yes (not mentioned) |
 | New ops burden unowned | Yes (no on-call story) |
 
@@ -161,7 +161,7 @@ Beyond the direct outcome, what does this decision **enable** or **prevent** tha
 3. For HIGH stakes only: do the same for 3rd order
 4. Watch for compounding effects (where 2nd order amplifies 1st)
 
-### Worked example — choosing Redis
+### Worked example: choosing Redis
 - 2nd-order positive: pub/sub becomes available without a new component → enables notification redesign
 - 2nd-order negative: team starts using Redis as a queue → introduces durability assumptions Redis was not chosen for
 - 3rd-order (HIGH stakes only): Redis-as-queue creates an outage during fsync stall, on-call burden grows, eventually a real queue (SQS/Kafka) is added anyway → all the cost, none of the avoidance

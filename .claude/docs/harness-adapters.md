@@ -16,68 +16,48 @@ guarantee identical model decisions or permission systems.
 | Permissions and authentication | Native profile plus ignored overlay | Native Codex configuration | Native Grok configuration and enabled compatibility sources |
 
 The adapter discovers core skill directories from source, excluding links into
-optional addons. The 2026-09-07 source review found 30 skills and five commands;
-commit-message and pr-description later moved to the private work plugin as skills,
-leaving three core commands (`flow-lifecycle`, `expert-role`, `sync-poneglyph`).
+optional addons. The core has three commands (`flow-lifecycle`, `expert-role`,
+`sync-poneglyph`); commit-message and pr-description live in the private work plugin as skills.
 References and scripts stay with their skill. Generated wrappers contain
 invocation glue, not independently maintained command bodies.
 
-`rules/harness-runtime.md` resolves resources from the installation. Project
+`docs/harness-runtime.md` resolves resources from the installation. Project
 plans and source changes stay in the current project. A Claude tool name does
 not provide another host with that API. If a vendor plugin is unavailable,
 report the gap and use an available equivalent only where it fulfills the
 operation. File search must not be described as semantic LSP inspection.
 Claude settings recipes still configure Claude when read from another host.
 
-## Consultations, native sessions, and supervised teams
+## Consultations
 
-Use the [shared routing contract](../rules/skill-routing.md) to select the operation.
-`consult-model` returns an opinion for the Lead to verify; `orca-cli` operates an independent
-native session; `orca-team` supervises tasks. The route depends on the user's
-action, including same-provider sessions, not on the current host.
+A bounded, read-only opinion from another model (“Consulta a Codex”) loads
+`consult-model`, which returns an opinion for the Lead to verify. The route
+depends on the user's action, not on the current host.
 
 For consultations, Claude Code uses the official Codex/Grok plugin bridges; other
 hosts use the [CLI adapters](../skills/consult-model/references/adapters.md).
-An explicitly requested plugin must be available before that route can proceed.
-`orca-cli` operates sessions; `orchestration` supplies task dispatch and traced
-messages; `orca-team` adds Poneglyph's supervision and acceptance rules.
+An explicitly requested plugin must be available before that route can proceed;
+if it is unavailable, ask before substituting a CLI. Explanations, quoted examples
+and hook hints authorize no launch.
 
-Session edge cases:
-
-- “Abre un Codex” means another native session, even from Codex.
-- “Otra sesión” without a provider → ask which provider.
-- Opening a session creates no team and no new worktree by default.
-- Resolve an unclear target before resuming or handing off.
-- A requested plugin that is unavailable → ask before substituting a CLI.
-- Missing Orca support is not permission to substitute a consultation or subagent.
-- Explanations, quoted examples and hook hints authorize no launch.
-
-`orca-team` is a core skill distributed by the existing catalog adapters.
-It composes the installed Orca `orca-cli` and `orchestration` guides; those guides
-remain owned by Orca. One shared worktree hosts the team's terminals. CLAUDE.md
-owns team authorization; the skill owns reservations, role contracts and recovery.
-Flow state stays coordinator-owned. Native Workflow tools are not required.
-`orca-swarm` is a layer on an orca-team workflow: same authorization, record
-and reservations, plus a bid board, a time budget and a leaderboard.
-
-Static adapter success proves discovery, not cooperation. Validate Claude and
-Codex through the [live pilot](../skills/orca-team/references/pilot.md). Grok
-requires equivalent lifecycle evidence and may need its explicit terminal launch
-path. Do not replace active global profiles with a development worktree to test
+Do not replace active global profiles with a development worktree to test
 installation; use disposable homes and the existing adapter integration tests.
 
 ## Hook contracts and limits
 
 The Claude registrations stay in `settings.global.json`. Native adapters
-reuse command judgement, skill matching, the design-file note and secret detection.
+reuse command judgement, skill matching, the prompt router, the design-file note and
+secret detection.
 
 | Shared operation | Claude Code | Codex | Grok Build |
 |---|---|---|---|
 | Headless command guard | PreToolUse | Native PreToolUse response | Native PreToolUse response |
-| Skill hints | UserPromptSubmit context | Native UserPromptSubmit context | Explicit shared routing; passive stdout is ignored |
+| Skill hints | UserPromptSubmit context | Native UserPromptSubmit context | Explicit shared routing; UserPromptSubmit takes no context |
+| Prompt router (dictation fixes, ≤3 skills) | Async UserPromptSubmit context, mid-turn | UserPromptSubmit starts it detached; the first PreToolUse after it finishes delivers the note once (`$skill`) | Same as Codex (`/skill`); the note arrives with that tool's result |
 | Modified-file secret heuristic | Stop warning and explicit review command | Stop user warning and explicit review command | Explicit review command |
 | Instruction-load telemetry | InstructionsLoaded | No equivalent installed | No equivalent installed |
-| Design-file note | PreToolUse context on the first UI-file contact per session (edit tools, or a UI path in a Bash command); never blocks | Native PreToolUse context on `apply_patch` (paths from `*** Add File:` / `*** Update File:`); needs `/hooks` trust | No equivalent; passive stdout is ignored |
+| Design-file note | PreToolUse context on the first UI-file contact per session (edit tools, or a UI path in a Bash command); never blocks | Native PreToolUse context on `apply_patch` (paths from `*** Add File:` / `*** Update File:`); needs `/hooks` trust | Not wired |
+| Turn reminders (router answer, es-ES note, `harness-config`, question tool) | PostToolUse and UserPromptSubmit context from `turn-nudges.ts`; never blocks | Not wired; duties stay in the doctrine | Not wired; duties stay in the doctrine |
 | Git-intent transcript warning | Existing Claude parser | No guessed transcript parser; shared approval doctrine | No guessed transcript parser; shared approval doctrine |
 
 The headless guard covers its existing command patterns. It does not prove
@@ -88,9 +68,20 @@ Codex requires review and trust of changed hooks through `/hooks`. Its transcrip
 format is not stable. This adapter neither grants trust nor forces continuation
 to simulate a warning. [Codex hooks](https://learn.chatgpt.com/docs/hooks).
 
-Grok uses camelCase input and a different denial response. Only PreToolUse blocks;
-passive stdout is ignored. Keep `[compat.claude] hooks = false` and install the
-native hook once. Other integrations remain independent.
+Grok uses camelCase input and a different denial response; its shell tool is
+`run_terminal_command`. Only PreToolUse blocks, and only its `additionalContext`
+reaches the model, after the tool has run; UserPromptSubmit and Stop output is
+dropped. Keep `[compat.claude] hooks = false` and install the native hook once.
+Other integrations remain independent.
+
+The router child is the same `prompt-router.ts --host codex|grok` with the same
+model through `claude -p`. Its note waits in `<tmp>/poneglyph-router/<session>.note`
+for ten minutes; a new prompt drops it. It skips runs launched from a Claude session
+(`CLAUDECODE` set), because neither host marks a headless run. A reply that uses no
+tool never sees the note. The catalog holds the project's and the core's skills;
+memory reuses the Claude index, and only a Claude transcript filters loaded skills.
+With the router in place, Codex keeps its skill catalog near names-only
+(`[skills] max_context_tokens`, set by sync-codex); Grok keeps its descriptions.
 [Grok hooks](https://docs.x.ai/build/features/hooks).
 
 ## Install and verify
@@ -99,18 +90,11 @@ Preview before execution. Preserve matching links, native settings and other
 hooks. Recovery copies stay outside skill discovery roots in the user's Poneglyph
 installation-backups directory. Backups are not auto-deleted.
 
-`/sync-poneglyph` is the single entrypoint. A host counts as installed when its CLI
-resolves on PATH or its config home exists (`~/.claude`; `$CODEX_HOME` and `~/.codex`;
-`~/.grok`). It shows the detected set, asks once, and runs the engines in dependency
-order — `sync-claude`, then `sync-codex` once per existing Codex profile (`~/.codex`
-first, then `$CODEX_HOME`; generated wrappers of removed commands are pruned), then
-`sync-grok`. `--hosts claude,codex,grok|all` overrides detection; selecting Grok always
-syncs Claude first because Grok reuses `~/.claude`. Engine-only flags (`--check`,
-`--unlink`, `--validate-hooks`, `--method`, `--home-dir`) stay on the engines.
+`/sync-poneglyph` is the single entrypoint; detection, engine order, flags and
+engine-only options are owned by `.claude/commands/sync-poneglyph.md`. Per-host status
+and verification:
 
 ```bash
-bun .claude/commands/sync-poneglyph.ts --status
-bun .claude/commands/sync-poneglyph.ts --execute --backup --force
 bun .claude/scripts/sync-claude.ts --status      # one host at a time
 bun .claude/scripts/sync-codex.ts --status
 bun .claude/scripts/sync-grok.ts --status
@@ -128,13 +112,13 @@ tier one command away. Source of truth: `.claude/scripts/lib/host-config.ts`.
 
 | Host | Keys written | Default | Raise for one session |
 |---|---|---|---|
-| Claude | `autoCompactWindow`, `effortLevel` + `modelSettings["claude-opus-5-5"].effortLevel` (settings.global.json; Opus 5.5+ ignore the top-level key in user settings). Also `switchModelsOnFlag: false`, taken from the Opus 5.5 playbook; the official settings reference does not list it (checked 2026-09-23), so its effect is unverified | 300000 (integer; a suffixed string is dropped silently) · high | `/autocompact 400k` · `/effort xhigh` |
+| Claude | `autoCompactWindow`, `effortLevel` + `modelSettings["claude-opus-5-5"].effortLevel` (settings.global.json; Opus 5.5+ ignore the top-level key in user settings; Opus runs `medium` as a cost experiment) + `modelSettings["claude-haiku-5-5"].autoCompactWindow` 100k, which also reaches Haiku subagents. Also `switchModelsOnFlag: false`, taken from the Opus 5.5 playbook; the official settings reference does not list it (checked 2026-09-23), so its effect is unverified | 300000 (integer; a suffixed string is dropped silently) · high | `/autocompact 400k` · `/effort xhigh` |
 | Codex | `model_auto_compact_token_limit`, `model_reasoning_effort`, `plan_mode_reasoning_effort` (config.toml, via `sync-codex`) | 300k · high · plan xhigh | `codex -c model_auto_compact_token_limit=400000 -c model_reasoning_effort=xhigh` |
 | Grok | `session.auto_compact_threshold_percent`, `models.default_reasoning_effort`, `model."grok-4.6".context_window` (config.toml, via `sync-grok`) | 60 % of a pinned 500k = 300k · high | `grok --effort xhigh` (per session) |
 
 Grok has no absolute compaction limit, only a percent of the model window, and
 left implicit it "assumes 200,000 tokens and mis-times auto-compaction" (its
-config guide) — so the percent would silently mean 80k. `sync-grok` pins
+config guide), so the percent would silently mean 80k. `sync-grok` pins
 `model."grok-4.6".context_window = 500000` so `60 %` is a stated 300k; grok-4.6's
 window is `[Probable — vendor pages, 2026-09-09]`, and `grok inspect` accepts the
 block. Codex and Claude take an absolute token limit directly, so they need no pin.
@@ -145,9 +129,9 @@ same values for uniformity across checkouts, but a project file only applies in 
 trusted project and does not override the profile's own compaction/effort keys.
 
 The sync scripts merge only these keys, preserving every other setting; they
-back up `config.toml` before writing (`--backup` — `sync-codex --execute` now
+back up `config.toml` before writing (`--backup`, `sync-codex --execute` now
 requires `--backup` whenever the policy differs). TOML comments are not preserved
-by the round-trip — both live configs on this machine carry none.
+by the round-trip, both live configs on this machine carry none.
 `ponytail: comment loss on config.toml rewrite; upgrade trigger = a host config
 that needs inline comments preserved.`
 
@@ -171,7 +155,7 @@ Codex `exec_command` output, PowerShell-native output, or Grok tool results.
 Registration and shared source do not establish cross-host output shaping.
 
 Keep an IDE-observed checkout and its `.git` directory in place during updates.
-Orca uses Git metadata to identify its workspaces. Prepare source changes in a
+IDEs use Git metadata to identify their workspaces. Prepare source changes in a
 separate review checkout, then use ordinary Git integration after checking for
 overlap with local work. A failed directory move can leave a partially moved
 repository; never assume that a nonzero exit left the source unchanged.
@@ -217,5 +201,15 @@ Do not silently introduce a paid plan or require a new account.
 [Context7 anonymous access](https://context7.com/docs/resources/all-clients),
 [Codex native MCP configuration](https://learn.chatgpt.com/docs/extend/mcp).
 
-Model choice and agent authorization remain governed by CLAUDE.md. Resolve
-capabilities from the active host. No adapter starts or evaluates a model.
+## Model tiers
+
+Agent authorization and the tier per unit are governed by CLAUDE.md §Agents and
+skills. No adapter starts or evaluates a model. Doctrine names capability tiers (cheapest, mid, top), never a model. Resolve the
+names from the active host at runtime, never from memory:
+
+- **Claude Code**: the `Agent` tool's own model options list the live tiers. Pick
+  one explicitly on every spawn; never let a spawn inherit the session model silently.
+- **Codex**: the CLI's configured model is the baseline (run without `-m`). Pass
+  `-m` only for a tier the user named, and never name a tier the host does not expose.
+- **Grok Build**: inspect `grok models` / `grok --help` and use an approved model
+  with a supported effort. On a single-model host, model choice is N/A; say so.

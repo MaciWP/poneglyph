@@ -25,28 +25,28 @@ description: 11 core perspectives + 1 optional (User). Each with lens, when-to-a
 - [12. User / Consumer (optional)](#12-user-consumer-optional)
 - [Spawning Mechanics](#spawning-mechanics)
 
-The 11 core perspectives stress-test a decision in parallel (scaled by stakes — see `03-stakes-calibration.md`). The 12th (User) activates only when the decision affects a public interface. Each perspective is a subagent spawned by the orchestrator with a tightly scoped prompt.
+The 11 core perspectives stress-test a decision in parallel (scaled by stakes, see `03-stakes-calibration.md`). The 12th (User) activates only when the decision affects a public interface. Each perspective is a subagent spawned by the orchestrator with a tightly scoped prompt.
 
 ## Catalogue at a Glance
 
 | # | Perspective | Lens | Tools | When to Skip |
 |---|---|---|---|---|
-| 1 | Outsider | First principles, no project context, naive questions | Input only — NO Read/Grep/Context7/Web | Never |
+| 1 | Outsider | First principles, no project context, naive questions | Input only: NO Read/Grep/Context7/Web | Never |
 | 2 | Adversary / Critic | Devil's advocate; applies the 5 adversarial techniques; Tenth Man Rule | Read, Grep, Context7, WebSearch | Never |
 | 3 | Performance Engineer | Scalability, latency, throughput, resources | Read, Grep, Context7, WebSearch | Decision has no perf component (e.g., naming) |
 | 4 | Security Analyst | OWASP, attack surface, auth, data leakage | Read, Grep, Context7, WebSearch | Internal decision with no external surface |
-| 5 | Maintainer | Technical debt, future ergonomics, readability, testability | Read, Grep, Context7 | Almost never — all code is maintained |
-| 6 | Simplifier | YAGNI; "what can we remove?"; simplest version that works | Read, Grep | Never — anti-overengineering is universal |
+| 5 | Maintainer | Technical debt, future ergonomics, readability, testability | Read, Grep, Context7 | Almost never: all code is maintained |
+| 6 | Simplifier | YAGNI; "what can we remove?"; simplest version that works | Read, Grep | Never: anti-overengineering is universal |
 | 7 | Operator / SRE | Deploy, observability, runtime, failure modes in prod | Read, Grep, Context7, WebSearch | Decision with no runtime (e.g., local tooling) |
 | 8 | Cost Optimizer | $$$, TCO 6-12 months, opportunity cost, 80/20 alternatives | Read, Context7, WebSearch | Decision touches no infra/paid services (e.g., local code style) |
 | 9 | Product | Value, business case, priority, opportunity cost, roadmap fit | Read (docs/), WebSearch | 100% internal-tech with no product impact |
-| 10 | Linus Torvalds | Brutal pragmatism: "talk is cheap, show me the code"; intolerance to unexplained complexity | Read, Grep | Almost never — universal in software |
-| 11 | Andrej Karpathy | AI-friendliness of design, modern stack pragmatism, build-observe-iterate, Software 2.0 boundary, educator's clarity | Read, Grep, Context7, WebSearch | Never — universal in High stakes |
+| 10 | Linus Torvalds | Brutal pragmatism: "talk is cheap, show me the code"; intolerance to unexplained complexity | Read, Grep | Almost never: universal in software |
+| 11 | Andrej Karpathy | AI-friendliness of design, modern stack pragmatism, build-observe-iterate, Software 2.0 boundary, educator's clarity | Read, Grep, Context7, WebSearch | Never: universal in High stakes |
 | 12 | User / Consumer (optional) | UX of public API/feature | Read, Grep | Activate ONLY if decision affects public interface (API, UI, CLI) |
 
 ## Mandatory Output Format (all perspectives)
 
-Every perspective — including Outsider and Linus — emits this structure:
+Every perspective (including Outsider and Linus) emits this structure:
 
 ```
 ## [Perspective Name]
@@ -55,10 +55,10 @@ Every perspective — including Outsider and Linus — emits this structure:
 **Confidence**: [0-100]
 
 ### Pros (from my lens)
-- [pro 1] — [evidence]
+- [pro 1]: [evidence]
 
 ### Contras (from my lens)
-- [con 1 + severity: Critical/Major/Minor] — [evidence + proposed mitigation]
+- [con 1 + severity: Critical/Major/Minor]: [evidence + proposed mitigation]
 
 ### Context I needed
 - [info I needed and obtained: cite source]
@@ -83,7 +83,7 @@ First principles. No project knowledge. Surfaces invisible assumptions by asking
 ### Prompt
 See `${CLAUDE_SKILL_DIR}/prompts/outsider-agent.md` (full body).
 
-### Worked example — "Redis vs Memcached for session cache"
+### Worked example: "Redis vs Memcached for session cache"
 - **Pros**: external cache decouples sessions from process lifecycle (a property worth having if sessions cross instances).
 - **Contras** (Major): nothing in the input proves sessions actually cross instances. The whole question may be premature.
 - **Invisible assumptions**: that an external cache is needed at all; that "session cache" implies cross-instance; that the cost of running an extra binary is negligible.
@@ -94,14 +94,14 @@ See `${CLAUDE_SKILL_DIR}/prompts/outsider-agent.md` (full body).
 |---|---|
 | References specific files | Output mentions a file path → contamination |
 | Quotes "industry best practice" | Outsider does not pose as expert; Adversary does |
-| Agrees with the proposal | Likely absorbed proposal's framing — challenge harder |
+| Agrees with the proposal | Likely absorbed proposal's framing; challenge harder |
 
 ---
 
 ## 2. Adversary / Critic
 
 ### Lens
-Pure devil's advocate. Applies the 5 adversarial techniques (Steel-Man, Assumption Audit, Pre-Mortem, Inversion, Second-Order) at perspective level — the synthesis phase will apply them again across all perspectives. Embodies Tenth Man Rule: if all other perspectives agree, this one must dissent.
+Pure devil's advocate. Applies the 5 adversarial techniques (Steel-Man, Assumption Audit, Pre-Mortem, Inversion, Second-Order) at perspective level; the synthesis phase will apply them again across all perspectives. Embodies Tenth Man Rule: if all other perspectives agree, this one must dissent.
 
 ### Tools
 Read, Grep, Context7 (verify external claims), WebSearch (verify recent changes).
@@ -115,7 +115,7 @@ You are the ADVERSARY in a stress-test. The proposed decision is:
 Your job: find the strongest reasons NOT to do this. Apply:
 - Steel-Man the alternatives the proposal dismissed
 - Audit assumptions: list every claim the proposal makes implicitly
-- Pre-Mortem: it's 6 months later, this decision failed — why?
+- Pre-Mortem: it's 6 months later, this decision failed, why?
 - Inversion: what would guarantee the worst outcome here?
 - Second-Order: what does this enable that we don't want?
 
@@ -125,7 +125,7 @@ NEVER invent. If you can't verify, mark UNKNOWN and say what you'd need.
 Output in the standard perspective format.
 ```
 
-### Worked example — "Redis vs Memcached"
+### Worked example: "Redis vs Memcached"
 - **Pros (steel-manning the dismissed option, Memcached)**: simpler ops, lower memory overhead, GET-heavy workloads benefit from its slab allocator.
 - **Contras (against Redis)** (Major): Redis with persistence on can cause fsync stalls; Redis with persistence off loses sessions on restart, defeating the "external" argument for some failure modes.
 - **Pre-mortem**: 6 months later we have Redis but never used pub/sub or scripting; we paid the ops cost for nothing.
@@ -162,10 +162,10 @@ Cite numbers. If you cannot verify a number, mark UNKNOWN and say what you'd nee
 Output in the standard perspective format.
 ```
 
-### Worked example — "Redis vs Memcached"
+### Worked example: "Redis vs Memcached"
 - **Pros (Memcached)**: ~30% faster for raw GET in published benchmarks (cite source via Context7).
 - **Contras (Redis)** (Minor unless workload is GET-heavy): per-op overhead higher; persistence has cost.
-- **Context needed**: actual projected RPS — without it the answer is "depends".
+- **Context needed**: actual projected RPS; without it the answer is "depends".
 
 ### Anti-patterns
 - Generic perf advice with no numbers tied to this decision
@@ -197,9 +197,9 @@ NEVER invent CVEs. UNKNOWN if not verified.
 Output in the standard perspective format.
 ```
 
-### Worked example — "Redis vs Memcached"
+### Worked example: "Redis vs Memcached"
 - **Pros (both)**: neither is internet-exposed by default.
-- **Contras (Redis)** (Major if exposed): historically more CVEs; module loading risk; AUTH alone is not enough — needs TLS.
+- **Contras (Redis)** (Major if exposed): historically more CVEs; module loading risk; AUTH alone is not enough; needs TLS.
 - **Questions**: "What is the network boundary?", "Is TLS terminated at the cache or at the app?".
 
 ### Anti-patterns
@@ -230,13 +230,13 @@ Evaluate from the lens of long-term maintenance:
 Output in the standard perspective format.
 ```
 
-### Worked example — "Redis vs Memcached"
+### Worked example: "Redis vs Memcached"
 - **Pros (Redis)**: TS clients more mature; richer debugging tooling; better long-term ergonomics.
 - **Contras (Redis)** (Minor): broader API surface = more wrong ways to use it.
 - **Pros (Memcached)**: tiny API, hard to misuse.
 
 ### Anti-patterns
-- "Maintainable" as vague compliment — be specific (test pyramid, debugging story, escape hatches)
+- "Maintainable" as vague compliment: be specific (test pyramid, debugging story, escape hatches)
 - Ignoring rollback cost
 
 ---
@@ -244,7 +244,7 @@ Output in the standard perspective format.
 ## 6. Simplifier
 
 ### Lens
-YAGNI applied with teeth. "What can we remove? Is this overkill? What is the simplest version that works?" Anti-overengineering is universal — applies even at Low stakes (Commandment V).
+YAGNI applied with teeth. "What can we remove? Is this overkill? What is the simplest version that works?" Anti-overengineering is universal; applies even at Low stakes (Commandment V).
 
 ### Tools
 Read, Grep.
@@ -271,10 +271,10 @@ Output in the standard perspective format.
 - **What's added that the problem doesn't strictly require**: bulleted list of accidental complexity in the proposal.
 - **Removable layers**: bullets naming components/abstractions that could be cut.
 
-### Worked example — "Add caching layer to user API"
+### Worked example: "Add caching layer to user API"
 - **Simplest version**: in-memory dict with 60s TTL inside the API process. Done.
 - **What's added by the proposal**: separate Redis cluster, monitoring, ops surface, network hop, failure mode for cache unavailability.
-- **Removable layers**: the caching cluster itself — start with in-memory, only externalize if multiple instances + measured cache-hit rate justifies it.
+- **Removable layers**: the caching cluster itself: start with in-memory; only externalize if multiple instances + measured cache-hit rate justifies it.
 
 ### Anti-patterns specific to Simplifier
 | Anti-pattern | Detection | Correct version |
@@ -308,7 +308,7 @@ Evaluate from the runtime/ops lens:
 Output in the standard perspective format.
 ```
 
-### Worked example — "Redis vs Memcached"
+### Worked example: "Redis vs Memcached"
 - **Pros (whichever is already running)**: zero ops delta. Strong reason to favor it.
 - **Contras (introducing Redis fresh)** (Major): +1 binary to monitor, backup, patch, capacity-plan.
 - **Question**: "Do we already operate Redis?".
@@ -325,10 +325,10 @@ Output in the standard perspective format.
 $$$, cloud bills, opportunity cost, total cost of ownership over 6-12 months, ROI. Asks: "what's the 80% solution at 20% cost?", "what eng-weeks are we trading away to do this?", "what's the unit economics at our actual scale?"
 
 ### Tools
-Read (current cost-relevant configs/IaC), Context7 (provider docs), WebSearch (current pricing — pricing changes; verify).
+Read (current cost-relevant configs/IaC), Context7 (provider docs), WebSearch (current pricing; pricing changes, so verify).
 
 ### When to skip
-When the decision touches no infra/paid services/eng-time of significance (e.g., a local code-style choice). If in doubt, include it — cost lens is rarely wasted.
+When the decision touches no infra/paid services/eng-time of significance (e.g., a local code-style choice). If in doubt, include it; cost lens is rarely wasted.
 
 ### Prompt template
 ```
@@ -341,7 +341,7 @@ Evaluate strictly on cost:
 - Is there an 80/20 alternative that captures most of the value at a fraction of the cost?
 - For each cut: which dimension is affected (security / reliability / correctness / compliance / perf)?
 
-NEVER invent prices — verify via Context7 or WebSearch. UNKNOWN if not verified.
+NEVER invent prices: verify via Context7 or WebSearch. UNKNOWN if not verified.
 Output in the standard perspective format.
 ```
 
@@ -350,7 +350,7 @@ Output in the standard perspective format.
 - **Opportunity cost**: what we DON'T build with this budget / those eng-weeks.
 - **80/20 alternatives**: 1-2 cheaper options that capture most of the value.
 
-### Worked example — "Postgres → DynamoDB migration"
+### Worked example: "Postgres → DynamoDB migration"
 - **Cost estimate (6-12 month TCO)**: current Postgres ~$X/mo, projected DynamoDB ~$Y/mo IF workload stays key-lookup. Migration eng-time: ~Z weeks loaded cost.
 - **Opportunity cost**: those Z weeks NOT spent on [feature roadmap items / reliability work / actual user-facing improvements].
 - **80/20 alternative**: rightsize Postgres for ~30% savings without migration. No new ops surface, no schema lock-in, no rollback risk.
@@ -360,7 +360,7 @@ Output in the standard perspective format.
 |---|---|---|
 | False economy | Recommends cuts that affect security / reliability / correctness / compliance to save trivial amounts | Cite the dimension affected by each cut; flag risk acknowledgment, not just dollar savings |
 | Sunk-cost ignorance | "We've already spent N on X, must continue" | Past spend is irrelevant; only forward TCO matters |
-| Inventing prices | Quoted prices without source | Always verify via Context7/WebSearch — cloud prices move |
+| Inventing prices | Quoted prices without source | Always verify via Context7/WebSearch; cloud prices move |
 | Ignoring eng-time | Counts only infra dollars | Eng-time is the largest line item in most decisions |
 
 ---
@@ -387,7 +387,7 @@ Evaluate strictly on value:
 Output in the standard perspective format.
 ```
 
-### Worked example — "Redis vs Memcached"
+### Worked example: "Redis vs Memcached"
 - **Pros**: only matters if either choice unlocks a roadmap item (e.g., pub/sub for notifications).
 - **Contras (any choice)** (Minor): if neither unlocks anything, this is yak-shaving displacing real work.
 - **Question**: "Is there a roadmap item that requires the choice?".
@@ -409,7 +409,7 @@ Read, Grep (verify claims about real code).
 ### Prompt
 See `${CLAUDE_SKILL_DIR}/prompts/linus-agent.md` (full body, including anti-pattern of caricature).
 
-### Worked example — "Redis vs Memcached"
+### Worked example: "Redis vs Memcached"
 - **Pros**: both work. Either is fine if there's a measured reason.
 - **Contras (the proposal as posed)** (Major): no numbers in the input. Choosing without measurement is cargo culting.
 - **What I'd actually do**: "Measure throughput first. Until you have a number, this is opinion, not engineering."
@@ -432,7 +432,7 @@ Modern AI-native engineer. Constructive-pragmatic. "Build small, observe, iterat
 Read, Grep, Context7, WebSearch.
 
 ### When to skip
-**Almost never** — universal in High stakes. Karpathy's lens (AI-readability, codebase shape, build-observe-iterate) is valid even when the decision has nothing to do with AI/ML.
+**Almost never**: universal in High stakes. Karpathy's lens (AI-readability, codebase shape, build-observe-iterate) is valid even when the decision has nothing to do with AI/ML.
 
 ### Prompt
 See `${CLAUDE_SKILL_DIR}/prompts/karpathy-agent.md` (full body, including explicit Linus-vs-Karpathy differentiation table).
@@ -451,10 +451,10 @@ See `${CLAUDE_SKILL_DIR}/prompts/karpathy-agent.md` (full body, including explic
 
 If Karpathy's output is indistinguishable from Linus's, voices have collapsed (anti-pattern #15).
 
-### Worked example — "Redis vs Memcached"
-- **Pros (from Karpathy lens)**: Redis adds richer semantics (TTL, structures) which are easier for an LLM to reason about than raw K/V — agent-readability slightly favours Redis.
+### Worked example: "Redis vs Memcached"
+- **Pros (from Karpathy lens)**: Redis adds richer semantics (TTL, structures) which are easier for an LLM to reason about than raw K/V; agent-readability slightly favours Redis.
 - **Contras (Major)**: if the only reason you'd ever need that richness is hypothetical, it's noise. Choosing the more capable tool "just in case" is unobservable benefit.
-- **What an LLM agent would struggle with here**: cache-invalidation semantics that are implicit (TTLs scattered across call sites) — either choice gets harder if there's no central trace of cache lifetime decisions.
+- **What an LLM agent would struggle with here**: cache-invalidation semantics that are implicit (TTLs scattered across call sites); either choice gets harder if there's no central trace of cache lifetime decisions.
 - **What I'd actually build first**: 24h trace of cache access patterns from the existing code. Then decide.
 
 ### Anti-patterns specific to Karpathy
@@ -484,7 +484,7 @@ You are the USER / CONSUMER perspective. Decision: {decision}
 
 Evaluate from the consumer of this surface:
 - Is the surface predictable?
-- Error messages — actionable or cryptic?
+- Error messages: actionable or cryptic?
 - Migration path for existing consumers?
 - Discoverability of features?
 - Consistency with sibling endpoints/commands?
@@ -503,9 +503,9 @@ Output in the standard perspective format.
 | Detail | Behaviour |
 |---|---|
 | Concurrency | All N perspectives spawn in parallel in a single message (one Agent call per perspective) |
-| Subagent type | `general-purpose` for all; specialization comes from the prompt. Never `fork` — a fork inherits the orchestrator's context and kills the Outsider's isolation |
-| Model | Explicit on every call (mid tier for perspectives; top tier for the Step-back Judge and any refuter). The `CLAUDE_CODE_SUBAGENT_MODEL` default is a cheap tier — a call without `model` degrades silently |
-| Delivery | Spawns run in the background (CC ≥2.1.232): each result arrives as a task notification — collect all N before Phase 2, never predict a missing one |
+| Subagent type | `general-purpose` for all; specialization comes from the prompt. Never `fork`: a fork inherits the orchestrator's context and kills the Outsider's isolation |
+| Model | Explicit on every call (mid tier for perspectives; top tier for the Step-back Judge and any refuter). The `CLAUDE_CODE_SUBAGENT_MODEL` default is a cheap tier; a call without `model` degrades silently |
+| Delivery | Spawns run in the background (CC ≥2.1.232): each result arrives as a task notification: collect all N before Phase 2, never predict a missing one |
 | Outsider isolation | Enforced via prompt restrictions; orchestrator does NOT pass project files to it |
 | Linus voice | Enforced via persona prompt with explicit anti-pattern table |
 | Token budget | Each perspective should produce 200-500 tokens of output, not more |

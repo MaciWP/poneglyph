@@ -1,10 +1,9 @@
 /**
- * charts.ts — html-report DYNAMIC mode (feature 010, US5).
+ * charts.ts: html-report DYNAMIC mode.
  * Hand-rolled inline SVG charts (grammar-of-graphics defaults, palette via
  * theme tokens) with hover tooltip + no-JS fallback (aria-label + visible values).
- * Self-contained: zero runtime deps in the artefact. Hand-only by design — the
- * Observable Plot opt-in (`plotInline`) was removed at feature 010 close; the
- * hand-rolled path is canonical (see US5.AC3 re-frame in review.md).
+ * Self-contained: zero runtime deps in the artefact. Hand-only by design: the
+ * hand-rolled path is canonical (no Observable Plot opt-in).
  */
 import type { Chart, ChartPoint } from "./contract.ts";
 
@@ -16,7 +15,7 @@ export function scale(domain: [number, number], range: [number, number]) {
   return (v: number): number => r0 + ((v - d0) / dd) * (r1 - r0);
 }
 
-/** Chart CSS — injected ONCE into the document's single <style> (not per-SVG). */
+/** Chart CSS, injected ONCE into the document's single <style> (not per-SVG). */
 export const chartCss = `
 .c-lbl{fill:var(--ink-2);font:500 12px var(--mono)}.c-val{fill:var(--ink);font:600 12px var(--mono)}.c-track{fill:var(--track)}
 .chart-svg .bar{transition:opacity .15s}.chart-svg .bar:hover{opacity:.82}
@@ -112,6 +111,5 @@ export function chart(ch: Chart): string {
   return bar(ch.series, { max: ch.max, unit: ch.unit, title: ch.title });
 }
 
-// plotInline (Observable Plot opt-in hook) removed at close (feature 010, hand-only
-// decision): hand-rolled SVG charts are the contract — self-contained, zero gen-time
-// deps. If a real Plot path is wanted later, reintroduce as a separate feature.
+// No Observable Plot opt-in hook: hand-rolled SVG charts are the contract:
+// self-contained, zero gen-time deps. A real Plot path would be a separate feature.

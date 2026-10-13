@@ -1,21 +1,17 @@
 ---
 name: harness-config
-description: |
-  Punto de entrada para la configuración nativa de Claude Code, Codex y Grok Build: consultar la documentación oficial, crear, modificar, desactivar o borrar skills, commands, agents, rules, hooks, MCP, plugins, workflows, memoria de proyecto, settings, permisos, env, output styles, statusline y gitignore. Incluye el impacto antes de mutar y el gate check:config.
-  Úsala cuando: introduces o cambias config de un arnés, "crea una skill", "añade un hook", "nueva regla", "crea un agente", "MCP", "plugin", "permisos", "settings.json", "output style", "borra esta skill", "desactiva un hook", "qué ha cambiado en Codex".
-metadata:
-  keywords: >
-    Keywords - harness-config, crea una skill, new skill, añade un hook, nueva regla, crea un agente,
-    create agent, MCP server, plugin, configura CLAUDE.md, permisos, settings.json, output style,
-    env vars, borra esta skill, desactiva un hook, consulta docs oficiales, harness config
+description: >-
+  Crea, cambia o borra la configuración del asistente en Claude Code, Codex y Grok:
+  skills, commands, agentes, rules, hooks, MCP, plugins, settings, permisos, CLAUDE.md y
+  output styles, mirando la doc oficial y el impacto. Aplica cuando hay que cambiar lo
+  que hace una skill o un comando existente, mejorar la configuración tras una sesión o
+  saber si algo se puede hacer desde el arnés. Úsala para "crea una skill", "añade un
+  hook que…", "haz que este comando también…", "dale permiso a…", "¿esto se puede hacer
+  desde Claude Code?". No es para escribir un prompt suelto (prompt-design).
 disable-model-invocation: false
-when_to_use: |
-  "crea una skill", "añade un hook", "nueva regla", "crea un agente", "configura CLAUDE.md",
-  "permisos", "settings.json", "output style", "env vars", "borra esta skill",
-  "desactiva un hook", "consulta docs oficiales", "qué ha cambiado en Codex/Grok"
 ---
 
-# harness-config — native harness configuration
+# harness-config: native harness configuration
 
 Single entry for **any** native-config job on Claude Code, OpenAI Codex, and Grok Build.
 Native creators draft. This skill owns lookup, impact, `check:config`, and the Poneglyph layer.
@@ -117,6 +113,7 @@ Full contract: [native-creators.md](references/native-creators.md). Codex `$skil
 | Host disable matrix + gate | [lifecycle.md](references/lifecycle.md) | Turning a skill off on a host, or checking the create gate |
 | Native creators | [native-creators.md](references/native-creators.md) | After a host tool drafts files |
 | Doctrine sweep | [doctrine-sweep.md](references/doctrine-sweep.md) | Rename, delete, or change a fact other files assert |
-| Type packs T2–T15 | catalog links above | That type is in play — load **one** pack |
+| Rule of use, edit and sync | [poneglyph-layer.md](references/poneglyph-layer.md) | Adding or changing any Poneglyph component |
+| Type packs T2–T15 | catalog links above | That type is in play, load **one** pack |
 
-Related: `bun run check:config` (quality floor). Predecessor directories stay as AC28 stubs until prune.
+Related: `bun run check:config` (quality floor).

@@ -1,12 +1,12 @@
-# Existence checks — proving a file, symbol or endpoint is really there
+# Existence checks: proving a file, symbol or endpoint is really there
 
 Read this when a claim depends on something existing: a file, a function, an export,
 a route. The always-loaded rule already says what to do (verify before asserting, and
-tag with `[Seguro]` / `[Probable]` / `[Suposición]` what you did not verify). This
+tag with `[Suposición]` what you did not verify). This
 reference holds the part that is not obvious: how the tools lie to you.
 
 Provenance: kept from the retired `anti-hallucination` skill. Its invented confidence
-percentages were dropped — a model does not compute a calibrated confidence, and
+percentages were dropped: a model does not compute a calibrated confidence, and
 `docs/config-quality.md` AC19 forbids promoting a number without evidence.
 
 ## What the tools do NOT prove

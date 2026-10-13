@@ -1,18 +1,18 @@
 # Poneglyph Repository Addendum
 
-The user-level Poneglyph doctrine is loaded by Codex from `$CODEX_HOME/AGENTS.md`.
-This file intentionally contains only repository-specific instructions so the same
-doctrine is not injected twice when developing Poneglyph itself.
+Repo-specific only: the global doctrine reaches Codex via `$CODEX_HOME/AGENTS.md` and Claude via
+root `CLAUDE.md`; Claude reads this file through `.claude/CLAUDE.md`.
 
-- Global Claude configuration belongs in `.claude/settings.global.json`; the
-  project `.claude/settings.json` must stay hook-free.
-- Run `bun run doctor` (suite, `claude plugin validate .claude`, sync status, budget ratchet, privacy grep) after behavioral
-  configuration changes.
-- Use `bun .claude/commands/sync-poneglyph.ts --status` to inspect every installed
-  harness; per host, `bun .claude/scripts/sync-claude.ts --status` (Claude) and
-  `bun .claude/scripts/sync-codex.ts --status` (Codex).
-- Codex links the shared core skill catalog and generates entrypoints for shared
-  commands. Native hook adapters reuse shared logic; host permissions stay native.
-- Inspect Grok with `bun .claude/scripts/sync-grok.ts --status`. Registration is
-  not execution evidence: Codex hooks need native trust, and Grok ignores passive
-  hook stdout. Follow `.claude/rules/harness-runtime.md` for shared resource paths.
+- The repo `.claude/` is the source of the global layer, linked from `~/.claude/` (Windows: junctions,
+  file copies). Codex `AGENTS.md` = root `CLAUDE.md` + `.claude/system-prompts/poneglyph-sp.md` +
+  `.claude/docs/harness-runtime.md`.
+- Generated files (`settings.json`, Codex `AGENTS.md`, the style twin, the router agent) and Windows
+  copies change only through a sync; never edit them by hand.
+- Global Claude config goes in `.claude/settings.global.json`; the project `.claude/settings.json` stays hook-free.
+- After behavioral config changes, run `bun run doctor`.
+- Sync status: `bun .claude/commands/sync-poneglyph.ts --status`; per host `bun .claude/scripts/sync-claude.ts --status`,
+  `sync-codex.ts --status`, `sync-grok.ts --status`.
+- Codex links the shared skill catalog and generates entrypoints for shared commands; hook adapters reuse
+  shared logic; host permissions stay native.
+- Registration is not execution evidence: Codex hooks need native trust, and Grok ignores passive hook
+  stdout. Shared resource paths: `.claude/docs/harness-runtime.md`.

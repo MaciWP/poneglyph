@@ -19,7 +19,7 @@ The cost of stress-testing is real (subagent spawns + adaptive debate cycles gat
 
 ### Why these escalation steps
 
-- **Simplifier in Low**: anti-overengineering is universal (Commandment V). Simplification pressure applies even to trivial decisions — choosing the default over the elaborate option costs nothing and catches accidental complexity early.
+- **Simplifier in Low**: anti-overengineering is universal (Commandment V). Simplification pressure applies even to trivial decisions; choosing the default over the elaborate option costs nothing and catches accidental complexity early.
 - **Cost Optimizer in Medium**: cost matters when there is real impact on production / infra / eng-time. Not relevant in purely local decisions (covered by Low stakes' lens already), but the moment a decision involves paid services, third-party deps, or non-trivial eng-weeks, cost is a first-class lens.
 - **Karpathy in High**: pairs with Linus as a second persona with a complementary voice (constructive vs destructive, build-observe-iterate vs talk-is-cheap). The cost of an extra persona is justified only on architectural decisions where AI-readability, modern stack pragmatism, and Software 2.0 boundary all matter.
 
@@ -43,7 +43,7 @@ The orchestrator classifies stakes using the following rules. **If any High crit
 ## Edge Cases
 
 ### Irreversible-but-small
-A small decision that creates a public commitment (e.g., a new endpoint name in v1 of an external API). Treat as **High** even if the surface is tiny — the irreversibility dominates.
+A small decision that creates a public commitment (e.g., a new endpoint name in v1 of an external API). Treat as **High** even if the surface is tiny: the irreversibility dominates.
 
 ### Reversible-but-expensive
 A reversible choice whose unwind cost is significant (e.g., a 2-week migration to undo). Treat as **Medium minimum**, escalate to High if unwind > 1 sprint.
@@ -52,7 +52,7 @@ A reversible choice whose unwind cost is significant (e.g., a 2-week migration t
 A pattern decision (e.g., naming convention) that will be applied 100 times. Each application is Low, but the aggregate is Medium-High. Stress-test the pattern itself at Medium, not each instance.
 
 ### Stakes uncertain from input
-If the orchestrator cannot classify confidently from the input, the **Initial Triage** asks the user. Default-on-uncertainty is **Medium**, not High — High has a real cost and we don't pay it on speculation.
+If the orchestrator cannot classify confidently from the input, the **Initial Triage** asks the user. Default-on-uncertainty is **Medium**, not High. High has a real cost and we don't pay it on speculation.
 
 ## 6 Worked Examples
 

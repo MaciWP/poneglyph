@@ -19,7 +19,6 @@ file modes. The old source checkouts and protected backups remain unchanged.
 Historical audit documents may link to commits or PRs in the private reference
 repository. Those links need owner access. Do not replace them with invented
 new-repository commit links or present historical measurements as current tests.
-The existing [PR #3 review](pr3-review.md) records accepted and deferred advice.
 
 The pre-publication restart replaces the previous four-commit core because a
 private lessons blob remained in those commits. The private addon preserves the

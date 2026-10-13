@@ -1,27 +1,12 @@
 ---
 name: pr-comments
-description: |
-  Comentarios de review de PR en formato Conventional Comments — feedback
-  estructurado y accionable con label + decorator (blocking/non-blocking),
-  praise fundamentado, issue siempre emparejado con suggestion y tono
-  profesional en español informal, con repaso de natural-writing. Los muestra en
-  el chat y los deja como una review pendiente en GitHub, sin publicar, para
-  editarlos antes de enviarlos. Aplica a cualquier repo; las convenciones de un
-  equipo concreto llegan por su plugin.
-  Úsala cuando: vayas a redactar comentarios de review de una PR o feedback de
-  code review, "comenta esta PR", "prepara los comentarios de la review",
-  "conventional comments", "déjame los comentarios listos para pegar",
-  "déjalos sin publicar", "review pendiente".
-metadata:
-  keywords: >
-    Keywords - conventional comments, comentarios de pr, comenta la pr, review comment, pr
-    comment, blocking, non-blocking, nitpick, praise, code review feedback, comentarios
-    listos para pegar, review pendiente, sin publicar, pending review
+description: >-
+  Redacta comentarios de review de PR en formato Conventional Comments, los muestra en el
+  chat y los deja como una review pendiente en GitHub, sin publicar, para editarlos. Úsala
+  para "comenta esta PR", "genera los comentarios sin publicar", "prepara el feedback de
+  la review", "crea esos comentarios en borrador". No es para el veredicto de la revisión
+  (pr-review).
 disable-model-invocation: false
-when_to_use: |
-  "comenta esta PR", "prepara los comentarios de la review", "déjame los
-  comentarios listos para copiar y pegar", "conventional comments", "déjalos sin
-  publicar", al redactar cualquier feedback de code review dirigido a un compañero
 ---
 
 # PR Conventional Comments
@@ -45,7 +30,7 @@ when_to_use: |
 
 ## Core principle: structured actionable feedback
 
-**THE #1 RULE: every comment MUST have a label and a decorator (blocking/non-blocking).**
+Every comment has a label; labels that take a decorator (table below) carry `(blocking)` or `(non-blocking)`.
 
 ```
 <label> (decorator): <subject>
@@ -53,7 +38,7 @@ when_to_use: |
 <discussion>
 ```
 
-`label`, `(decorator)` and `subject` are required; `discussion` is optional.
+`label` and `subject` are required, `(decorator)` where the label takes one; `discussion` is optional.
 
 Multi-line example:
 
@@ -68,7 +53,7 @@ Así pasamos de N queries a 1.
 |---|---|---|
 | `praise:` | A grounded positive observation; zero is valid | N/A |
 | `suggestion:` | Concrete improvement proposal | `(blocking)`/`(non-blocking)` |
-| `issue:` | Specific problem — ALWAYS pair with suggestion | `(blocking)` |
+| `issue:` | Specific problem: ALWAYS pair with suggestion | `(blocking)` |
 | `question:` | Doubt or clarification | `(non-blocking)` |
 | `thought:` | Idea for the future | `(non-blocking)` |
 | `nitpick:` | Minor style preference | `(non-blocking)` |
@@ -98,7 +83,7 @@ thought (non-blocking): Para más adelante, ¿y si {idea}?
 nitpick (non-blocking): ¿Lo dejamos como {alternativa}, igual que en el resto?
 ```
 
-## Tone rules (Google Eng Practices · Graphite · Dr. McKayla · team review 2026-10-01)
+## Tone rules
 
 Spanish, informal "yo", professional:
 
@@ -157,7 +142,7 @@ text and skip steps 4-7.
    take the thread id (`PRRT_…`) from `pullRequest.reviewThreads`, then
    `addPullRequestReviewThreadReply(input:{pullRequestReviewThreadId, pullRequestReviewId, body})`.
    `pullRequestReviewId` is what ties the reply to the pending review: never omit it, and check
-   that the returned `comment.state` is `PENDING` (PR #356, 2026-10-01).
+   that the returned `comment.state` is `PENDING`.
 
 No `gh` auth, no PR (local branch) or a failed POST → steps 1-3 only; quote the error and
 say why the draft was not written. Submitting (`event` = `APPROVE` / `COMMENT` /

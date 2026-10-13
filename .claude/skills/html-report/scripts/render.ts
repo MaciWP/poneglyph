@@ -1,9 +1,9 @@
 /**
- * render.ts — html-report DYNAMIC mode generator (feature 010, US3).
- * `render(data: ReportData) -> string` : ONE self-contained interactive HTML.
+ * render.ts: html-report DYNAMIC mode generator.
+ * `render(data: ReportData) -> string`: ONE self-contained interactive HTML.
  * Shell + nav(sticky/scrollspy) + collapsible sections + theme toggle + footer.
- * Rich blocks (table/chart/sidenote) get a functional baseline here; US4/US5
- * upgrade them and US6 wires the dedicated modules in.
+ * Rich blocks (table/chart/sidenote) get a functional baseline here;
+ * components.ts and charts.ts provide the dedicated modules.
  *
  * Self-contained: 1 <style>, inline <script> (no src=http), 1 optional Fonts link.
  * No-JS fallback: <details open> sections, anchor nav, content in static markup.
@@ -41,7 +41,7 @@ function callout(c: Callout): string {
   }<span>${c.body}</span></aside>`;
 }
 
-// Baseline table/chart removed in US6 — now delegated to components.ts (tableFilterable) / charts.ts (chart).
+// Table and chart rendering is delegated to components.ts (tableFilterable) and charts.ts (chart).
 
 function sectionHtml(s: Section): string {
   const blocks = (s.blocks || [])
@@ -90,7 +90,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1
 a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
 code{font-family:var(--mono);font-size:.88em;background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:.04em .34em}
 .num{font-variant-numeric:tabular-nums}
-/* header spans both cols — no card, type carries it */
+/* header spans both cols: no card, type carries it */
 .masthead{grid-column:1/-1;position:relative;padding-top:1.4rem;border-bottom:1px solid var(--line);padding-bottom:1.4rem;margin-bottom:1.8rem}
 .masthead::before{content:'';position:absolute;top:0;left:0;width:128px;height:3px;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--accent-2) 55%,transparent)}
 .eyebrow{font-family:var(--mono);font-size:var(--t-xs);letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
@@ -171,7 +171,7 @@ footer{grid-column:1/-1;margin-top:2.5rem;padding-top:1.2rem;border-top:1px soli
 </div>
 <script>
 (function(){
-  // theme toggle (persisted) — fallback: prefers-color-scheme handles no-JS
+  // theme toggle (persisted); fallback: prefers-color-scheme handles no-JS
   var KEY="poneglyph-theme",root=document.documentElement,btn=document.getElementById("themeBtn");
   var saved=null;try{saved=localStorage.getItem(KEY)}catch(e){}
   if(saved)root.setAttribute("data-theme",saved);

@@ -4,13 +4,11 @@ argument-hint: "<task> | --resume <slug>"
 allowed-tools: Read, Edit, Write, Bash, Glob, Grep, Skill, Agent, AskUserQuestion
 ---
 
-# /flow-lifecycle — a reliable feature lifecycle
+# /flow-lifecycle: a reliable feature lifecycle
 
-Use the six phases of the `flow` skill below: `Skill(flow, "<phase>")` loads the shared
-body plus that phase's reference. Keep the feature in the current project's
-`.claude/plans/{NNN}-{slug}/`. `state.json` records progress and decisions;
-the [flow contract](../docs/flow-contract.md) defines the helper and recovery.
-`dev-workflow` owns the development loop; `flow-lifecycle` coordinates it across a whole feature.
+Run the six phases of the `flow` skill below with `Skill(flow, "<phase>")`; ownership of
+state, helper and loop is split as in `skills/flow/SKILL.md`. Keep the feature in the current
+project's `.claude/plans/{NNN}-{slug}/`.
 
 ## Start or resume
 
@@ -27,30 +25,30 @@ the [flow contract](../docs/flow-contract.md) defines the helper and recovery.
 
 ## Six steps
 
-1. **Scope — `Skill(flow, "scope")`.** Define the problem, required outcomes, boundaries and risks
+1. **Scope: `Skill(flow, "scope")`.** Define the problem, required outcomes, boundaries and risks
    in `spec.md`. Resolve consequential questions. Record phase 1 complete, then
    the user's scope approval at gate 1→2. Without approval, keep scope open.
-2. **Research and plan — `Skill(flow, "plan")`.** Inspect existing code and relevant primary
+2. **Research and plan: `Skill(flow, "plan")`.** Inspect existing code and relevant primary
    documentation. Reuse existing mechanisms. Split the work into verifiable HUs,
    with acceptance criteria and real dependencies. Create draft tasks and record
    phase 2 complete. A sequential DAG is valid; never invent parallel work.
-3. **Design checks — `Skill(flow, "test-plan")`.** Define expected behavior before implementation.
+3. **Design checks: `Skill(flow, "test-plan")`.** Define expected behavior before implementation.
    Behavior changes use TDD by default; documentation uses validation checks.
    Justify exceptions before execution. Record phase 2.5 complete and present
    tasks plus oracle together. Gate 2→3 records one actual user decision and
    updates their approval status. A rejected package returns to planning.
-4. **Build — `Skill(flow, "build")`.** Select a pending HU whose dependencies are complete.
+4. **Build: `Skill(flow, "build")`.** Select a pending HU whose dependencies are complete.
    For TDD: observe the relevant test fail, implement, then observe it pass.
    Include documentation updates before final verification. Run `changes-verify` and
    close the HU only with its verification record. Failures leave it pending.
-5. **Critique — `Skill(flow, "review")`.** Check the assembled result against every requirement:
+5. **Critique: `Skill(flow, "review")`.** Check the assembled result against every requirement:
    requirement → executed check → observed outcome. Exercise the real flow when
    runtime exists. Passing unit tests alone does not establish the feature's
    success. Record the supported verdict. For an in-scope defect, reopen the
    affected HUs, fix them and repeat verification and critique. Respect existing
    retry limits. Escalate changed scope, unresolved questions or a real blocker;
    `BLOCKED` requires an authorized reopen.
-6. **Retro and close — `Skill(flow, "retro")`.** Capture useful lessons and propose any promotions
+6. **Retro and close: `Skill(flow, "retro")`.** Capture useful lessons and propose any promotions
    or scope deltas for ratification. Record the resolved retro, or an announced
    justified skip. Close the feature only after verified HUs and an approving
    review. Repair stale documents from state; never mark unfinished work complete.
@@ -60,7 +58,7 @@ the [flow contract](../docs/flow-contract.md) defines the helper and recovery.
 Record the phase used, the previous artifact/check, and the transition with
 the helper's `boundary-check` command. Confirm the human decision at gates 1→2
 and 2→3. Check the time budget from `tasks/index.md` with `date`; spent → report and ask
-before the next phase. At planning/build entry, apply `choose-skills` and the `drillme-clarify` gap sweep;
+before the next phase. At planning/build entry, launch the `prompt-router` agent when no router note covers the phase, and run the `drillme-clarify` gap sweep;
 zero unresolved gaps means zero questions. Invoke `flow` with the phase explicitly;
 do not rely on automatic activation or reconstruct its instructions from memory.
 
@@ -71,31 +69,21 @@ record formats. Do not close work with failed or unexecuted required checks.
 
 ## Hosts and optional workflows
 
-Resolve shared resources through the installed `rules/harness-runtime.md`.
+Resolve shared resources through the installed `docs/harness-runtime.md`.
 `Skill(x)` means invoke the skill or read its installed instructions. Use the
 host's real search and question tools. Codex's generated `$flow-lifecycle` reads this same
 source. Claude metadata does not provide another host with Claude APIs.
 
 Build runs inline by default. This command's `allowed-tools` is a harness permission
-list, not a spawn approval: built-in agents need none, while custom agents,
-Workflow/Team and Orca keep the per-task gate in CLAUDE.md. For a user-authorized supervised Orca team, invoke
-`orca-team`: one shared worktree, coordinator-owned reservations and explicit
-worker roles. CLAUDE.md's Agent spawn section owns team approval and its validity
-on resume. Task decomposition never grants permission.
-
-Workers apply the supervised-worker branch of `flow`'s build phase and return evidence. Only the
-coordinator records transitions with flow-state. Orca's completed/ready status
-does not satisfy a HU dependency until the coordinator verifies and closes it.
-Quiesce affected writers before acceptance checks and all writers before final
-critique. If an independent reviewer cannot run, critique inline and disclose it.
+list, not a spawn approval: agents need none, while
+Workflow/Team keep the per-task gate in CLAUDE.md. Task decomposition never grants
+permission. If an independent reviewer cannot run, critique inline and disclose it.
 
 With explicit opt-in, at least four independent HUs may use Claude's saved
 `flow-build-review` workflow, which runs the build and, at its full level, a proposed
 review. It takes `slug`, `only` and `level`. Serialize file collisions. Validate returned evidence before recording any closure or verdict.
-Use these only where the real Claude Workflow contract exists. Orca teams use
-`orca-team`; other hosts keep the same phases inline. These are distinct
-execution paths, not an agent-count requirement for Orca. Workflows never approve
-state or authorize publication.
+Use these only where the real Claude Workflow contract exists; other hosts keep the
+same phases inline. Workflows never approve state or authorize publication.
 
 ## Report and retain
 
@@ -103,8 +91,7 @@ Report phase, completed/pending HUs, verdict, verification, blockers and next
 action. Use `status` to find incomplete lifecycles. A report or retro document
 alone does not mean completion. Keep promotions and justified skips visible.
 Git publication follows its own authorization; closure does not imply a commit.
-On an authorized close, keep `spec.md` and `retro.md` in the plan directory and
-move the working set (`tasks/`, `tests.md`, `validations.md`, `state.json`,
-`review.md`, evidence files) to `_archive/{NNN}-{slug}/`, which git ignores.
-Abandoned plans move whole. Never move without the user's authorization; keep
-templates and live references available. Rule: `plans/README.md` §Closed features.
+On an authorized close, the retro's promotions carry what the feature taught and
+the plan directory leaves the tree with `git rm -r`; git history keeps it. Abandoned
+plans leave the same way. Never remove without the user's authorization. Rule:
+`plans/README.md` §Closed features.

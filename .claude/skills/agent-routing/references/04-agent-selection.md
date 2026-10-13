@@ -18,12 +18,12 @@ description: Signal→agent selection matrix, multi-agent patterns, anti-pattern
 
 ## Exploration Decision Matrix (Volume × Complexity)
 
-Before any exploration, decide HOW to read the codebase. **The exploration primitive is `Explore`** (built-in; empirical score 83) with an explicit `model`: unnamed, it inherits the Lead's Opus. The custom `scout` agent was **cut in feature 008**. Independent areas → one `Explore` per area in the same message; `Workflow` only on opt-in.
+Before any exploration, decide HOW to read the codebase. **The exploration primitive is `Explore`** (built-in; empirical score 83) with an explicit `model`: unnamed, it inherits the Lead's model. Tier classes and runtime name resolution: `docs/harness-adapters.md` §Model tiers. Independent areas → one `Explore` per area in the same message; `Workflow` only on opt-in.
 
 | | LOW complexity (direct read) | HIGH complexity (relationships, architecture) |
 |---|---|---|
-| **LOW volume** (1-2 files) | Lead `Read` directly — no delegation | Lead `Read`/Grep inline, or `Explore` |
-| **HIGH volume** (≥3 files, long logs or outputs) | `Explore` on `haiku` — best fit | `Explore` on `haiku`, or `sonnet` when it must synthesise; one per area |
+| **LOW volume** (1-2 files) | Lead `Read` directly: no delegation | Lead `Read`/Grep inline, or `Explore` |
+| **HIGH volume** (≥3 files, long logs or outputs) | `Explore` on the cheapest tier: best fit | `Explore` on the cheapest tier, one per area; mid tier only for security work |
 
 Plus: design-doc audits, cross-file consistency checks, and full-file reads → `Explore` (≥4 independent units → `Workflow`). WebSearch/WebFetch is **not** a discriminator (both have those tools).
 
@@ -32,24 +32,24 @@ Plus: design-doc audits, cross-file consistency checks, and full-file reads → 
 | Rule | Reason |
 |-------|-------|
 | The Lead reads 1-2 files inline | For bulk read-only exploration, use `Explore` (not a work-spawn). |
-| LOW Volume + LOW Complexity = direct Read | A scout adds a hand-off and seconds for nothing; money is not the reason (a Haiku scout costs about $0.003, eval 2026-10-08). |
+| LOW Volume + LOW Complexity = direct Read | A scout adds a hand-off and seconds for nothing; money is not the reason (a cheapest-tier scout costs about $0.003, eval 2026-10-08). |
 | Files the Lead will edit, the Lead reads | The KNOW step is never delegated: a scout's summary is not the code. |
-| Exploration primitive = `Explore` with an explicit model | Empirical score 83; the custom `scout` was cut in feature 008. |
-| Deeper synthesis past Explore's window | `Explore` on `sonnet`, or inline when the Lead needs the text itself. |
+| Exploration primitive = `Explore` with an explicit model | Empirical score 83; there is no custom `scout` agent. |
+| Deeper synthesis past Explore's window | Narrower cheapest-tier scouts, or inline when the Lead needs the text itself. |
 | Parallel axis: "change difficulty" | If after exploring you must implement a difficult change, invoke `flow` skill (plan phase) (independent of the exploration axis). |
 
 ### Primitive by context need (CC ≥2.1.232)
 
 | Need | Primitive | Model |
 |------|-----------|-------|
-| Fresh context (critic reviewer, adversarial check) | `general-purpose` | explicit — top tier for a verify/judge (`CLAUDE_CODE_SUBAGENT_MODEL` would silently give it the cheap tier) |
+| Fresh context (critic reviewer, adversarial check) | `general-purpose` | explicit: top tier for a verify/judge (`CLAUDE_CODE_SUBAGENT_MODEL` would silently give it the cheap tier) |
 | Read-only sweep over the session's own thread | `subagent_type: "fork"` (inherits conversation + prompt cache) | parent's model, override ignored |
-| Read-only codebase exploration, thread not needed | `Explore` | explicit `haiku` (locate, inventory, summarise) or `sonnet` (synthesis, web) |
-| Quick read-only question | `Explore` | explicit `haiku` or `sonnet`, `effort: "medium"` (`03-complexity-routing.md` §Model Routing) |
+| Read-only codebase exploration, thread not needed | `Explore` | explicit cheapest tier (locate, inventory, summarise, web); mid tier only for security work |
+| Quick read-only question | `Explore` | explicit cheapest tier, `effort: "medium"` (`03-complexity-routing.md` §Model Routing) |
 
-All three run in the background by default — the result arrives as a task notification; never predict it. All three are built-in agents: no approval needed (CLAUDE.md §Agent spawn).
+All three run in the background by default, the result arrives as a task notification; never predict it. All three are built-in agents: no approval needed (CLAUDE.md §Agents and skills).
 
-### Parallel axis — Change difficulty
+### Parallel axis: Change difficulty
 
 The matrix above decides **exploration**. The difficulty of the **change that follows** is an independent axis:
 
@@ -57,7 +57,7 @@ The matrix above decides **exploration**. The difficulty of the **change that fo
 |--------|-------------------------|
 | Trivial (1 line, rename) | Lead inline |
 | Standard (1 file, clear pattern) | Lead inline (`Skill('build')` in a /flow-lifecycle) |
-| Multi-file / architectural (one unit) | Lead inline (`Skill(flow, "plan")` first if complexity >60); ≥4 independent HUs → `Workflow` |
+| Multi-file / architectural (one unit) | Lead inline (`Skill(flow, "plan")` first at high complexity); ≥4 independent HUs → `Workflow` |
 
 A task can be **HIGH Volume exploration + trivial change** (lots to read, little to change) or **LOW Volume + complex change** (little to read, lots to think). Decide each axis separately.
 
@@ -65,22 +65,22 @@ A task can be **HIGH Volume exploration + trivial change** (lots to read, little
 
 ## Selection Matrix
 
-The "Suggested skills to Read (for delegation)" column lists `.claude/skills/<name>/SKILL.md` paths the Lead should include in the delegation prompt's `[RELEVANT SKILLS FOR THIS TASK]` block (Arch H). Max 3 per delegation. Pick the ones whose paths actually match the task context; skip the column if none apply. **Domain-specific skills (Django, React, OpenAPI, etc.) now live as project skills** under each repo's `./.claude/skills/` — check the project's path rules or skill conventions to discover them. The global skills listed below are cross-project patterns only.
+The "Suggested skills to Read (for delegation)" column lists `.claude/skills/<name>/SKILL.md` paths the Lead should include in the delegation prompt's `[RELEVANT SKILLS FOR THIS TASK]` block (Arch H). Max 3 per delegation. Pick the ones whose paths actually match the task context; skip the column if none apply. **Domain-specific skills (Django, React, OpenAPI, etc.) now live as project skills** under each repo's `./.claude/skills/`, check the project's path rules or skill conventions to discover them. The global skills listed below are cross-project patterns only.
 
 | Signal | Execution | Skill/Mode | Suggested skills to Read (Arch H) | Fallback |
 |--------|-----------|------------|-------------------------------------------|----------|
-| implement, create, fix, build | `flow` (build phase) inline by default; authorized Orca teams use its supervised-worker branch | (by prompt) | (match domain via skill-matching) | — |
-| refactor, extract, simplify, restructure | inline | pr-review (maintainability lens) | pr-review | — |
-| merge conflict, git conflict | inline | (prompt context) | — | — |
-| docs, sync, documentation | inline | (doc task) | — | — |
-| bug documentation, knowledge base | inline | troubleshooting | troubleshooting | — |
-| review, validate, check (generic) | `Skill(flow, "review")` inline + ONE fresh-context read-only reviewer (P1 exception, 019) | standard mode | pr-review | — |
-| security, audit, vulnerability, owasp | `Skill(flow, "review")` + `Skill('security-audit')` | security-audit | security-audit | — |
-| code quality, smells, SOLID, complexity | `Skill(flow, "review")` / pr-review (maintainability lens) | pr-review (maintainability lens) | pr-review | — |
-| performance, slow, bottleneck, N+1 | `Skill(flow, "review")` / pr-review (performance lens) | pr-review (performance lens) | pr-review | — |
-| plan, design, decompose, RFC, architecture, contract | Lead via `Skill(flow, "plan")` | (no dedicated agent) | decide (heavy tier) (for design risk), pr-review | — |
-| >3 subtasks, breakdown, dependencies | Lead via `Skill(flow, "plan")` | (decomposition in skill) | — | — |
-| find, explore, search codebase | `Explore` (built-in); ≥4 sweeps → `Workflow` | — | — | Lead `Read` inline |
+| implement, create, fix, build | `flow` (build phase) inline by default | (by prompt) | (match domain via skill-matching) | none |
+| refactor, extract, simplify, restructure | inline | pr-review (maintainability lens) | pr-review | none |
+| merge conflict, git conflict | inline | (prompt context) | none | none |
+| docs, sync, documentation | inline | (doc task) | none | none |
+| bug documentation, knowledge base | inline | troubleshooting | troubleshooting | none |
+| review, validate, check (generic) | `Skill(flow, "review")` inline + ONE fresh-context read-only reviewer (P1 exception) | standard mode | pr-review | none |
+| security, audit, vulnerability, owasp | `Skill(flow, "review")` + `Skill('security-audit')` | security-audit | security-audit | none |
+| code quality, smells, SOLID, complexity | `Skill(flow, "review")` / pr-review (maintainability lens) | pr-review (maintainability lens) | pr-review | none |
+| performance, slow, bottleneck, N+1 | `Skill(flow, "review")` / pr-review (performance lens) | pr-review (performance lens) | pr-review | none |
+| plan, design, decompose, RFC, architecture, contract | Lead via `Skill(flow, "plan")` | (no dedicated agent) | decide (heavy tier) (for design risk), pr-review | none |
+| >3 subtasks, breakdown, dependencies | Lead via `Skill(flow, "plan")` | (decomposition in skill) | none | none |
+| find, explore, search codebase | `Explore` (built-in); ≥4 sweeps → `Workflow` | none | none | Lead `Read` inline |
 | error, failing, debug, diagnose | Lead via `Skill('troubleshooting')` | (no dedicated agent) | troubleshooting | fix inline (obvious fix) |
 
 ## Multi-Agent Patterns
@@ -91,32 +91,27 @@ The "Suggested skills to Read (for delegation)" column lists `.claude/skills/<na
 | **Plan then Build** | Lead `Skill(flow, "plan")` → inline build (sequential; write fan-out = opt-in) | complexity >60 |
 | **Build then Review** | inline build → `Skill(flow, "review")` | mandatory for multi-file changes |
 | **Diagnose then Fix** | Lead `Skill('troubleshooting')` → fix inline | diagnosis before fix |
-| **Worktree Parallel** | ≥4 `Workflow` WRITE units with `isolation: 'worktree'` — explicit user opt-in only | user opted in (ultracode) AND files may overlap |
+| **Worktree Parallel** | ≥4 `Workflow` WRITE units with `isolation: 'worktree'`, explicit user opt-in only | user opted in (ultracode) AND files may overlap |
 | **Security Review** | `Skill(flow, "review")` + `Skill('security-audit')` | auth/security changes |
-| **Tiered Build** | Lead `Skill(flow, "plan")` Mode B contracts → inline sequential | complexity 45-60, 2-3 domains with shared interfaces |
+| **Tiered Build** | Lead `Skill(flow, "plan")` Mode B contracts → inline sequential | medium complexity, 2-3 domains with shared interfaces |
 | **Team Parallel** | Team mode (experimental) | 3+ independent domains negotiating interfaces, complexity >60 |
 
 ### Workflow wiring
 
-First resolve explicit consultation, native-session, or team requests with the
-[shared routing contract](../../../rules/skill-routing.md). The native delegation
+First resolve explicit consultations with the
+[consultation route](../../../docs/harness-adapters.md#consultations). The native delegation
 recipes below do not override those routes or their authorization requirements.
 
-For a supervised Orca team, use `orca-team` instead of the native Workflow/Team
-recipes below. Its approved roster and real dependencies determine concurrency;
-its shared-worktree reservations serialize collisions. The default thresholds
-and per-worker isolation examples here do not apply to that route.
-
-How the capabilities of the custom agents (cut in feature 008) map onto the current model, and where `Workflow` fan-out is the right primitive:
+How the capabilities of the former custom agents map onto the current model, and where `Workflow` fan-out is the right primitive:
 
 | Capability (historical agent) | Now | Fan-out trigger |
 |---|---|---|
-| implement (was `builder`) | `flow` (build phase) inline by default; supervised-worker branch for an approved Orca team | Native Workflow uses explicit opt-in; Orca uses its shared-worktree contract |
-| validate (was `reviewer`) | `flow` skill (review phase) inline | standard/full code review → **ONE fresh-context read-only reviewer** (correctness/requirements only — P1 exception, 018 W1 D1/D3); decision review → panel via `compare-and-decide` (heavy tier) |
+| implement (was `builder`) | `flow` (build phase) inline by default | Native Workflow uses explicit opt-in |
+| validate (was `reviewer`) | `flow` skill (review phase) inline | standard/full code review → **ONE fresh-context read-only reviewer** (correctness/requirements only, P1 exception); decision review → panel via `compare-and-decide` (heavy tier) |
 | explore (was `scout`) | `Explore` (built-in) | ≥4 independent exploration sweeps → `Workflow` (read-only) |
-| generator→validator | `pipeline(items, find, verify)` inside one `Workflow` | intra-workflow Four-Eyes — NOT a new spawn decision (spawn-tree P7) |
+| generator→validator | `pipeline(items, find, verify)` inside one `Workflow` | intra-workflow Four-Eyes: NOT a new spawn decision (spawn-tree P7) |
 
-For CODE review the dispatch target is **ONE fresh-context read-only reviewer** (feature 019 — panels measured as the weak form for code: verifier gap, LLM-judge ensembles ~80% FP; 018 W1 D1/D3 + W2 D1). The author≠evaluator lesson (feature 002) is preserved via fresh context, not lens count. Panels (≥4 perspectives) remain the form for DECISION review (`compare-and-decide` (heavy tier)) and read-only research fan-out — worked example: the retired ultracode-audit workflow (find→verify pipeline + cross-debate panel over a shared digest; removed 2026-09-11).
+For CODE review the dispatch target is **ONE fresh-context read-only reviewer** (panels measured as the weak form for code: verifier gap, LLM-judge ensembles ~80% FP). The author≠evaluator lesson is preserved via fresh context, not lens count. Panels (≥4 perspectives) remain the form for DECISION review (`compare-and-decide` (heavy tier)) and read-only research fan-out, worked example: the retired ultracode-audit workflow (find→verify pipeline + cross-debate panel over a shared digest; since removed).
 
 ## Parallelization & Batch Operations
 
@@ -134,7 +129,7 @@ When delegating or reading, decide PARALLEL vs SEQUENTIAL per call, not per sess
 
 **Anti-pattern**: reading files one by one or spawning agents sequentially when independent → batch in one message.
 
-### Cascading Cancel — the parallelization risk
+### Cascading Cancel: the parallelization risk
 
 When a message contains N parallel tool-calls and **one fails**, the others in the same message are cancelled. To avoid losing batch work:
 
@@ -145,23 +140,20 @@ When a message contains N parallel tool-calls and **one fails**, the others in t
 | No parallel `Bash(cd <subdir>)` | `cwd` does not persist between Bash calls. Always use absolute paths. |
 | When in doubt, sequential | Cost of an extra message < cost of reverting a cancelled batch. |
 
-**Safe example**: `Read(a.ts) + Read(b.ts) + Grep("foo") + Glob("**/*.test.ts")` in one message — read-only, independent, disjoint paths.
+**Safe example**: `Read(a.ts) + Read(b.ts) + Grep("foo") + Glob("**/*.test.ts")` in one message: read-only, independent, disjoint paths.
 
-**Risky example**: `Edit(file.ts) + WebFetch(url) + Bash("git push")` — if `WebFetch` fails, the `Edit` is cancelled and `git push` does not run. Split into 3 sequential messages.
+**Risky example**: `Edit(file.ts) + WebFetch(url) + Bash("git push")`: if `WebFetch` fails, the `Edit` is cancelled and `git push` does not run. Split into 3 sequential messages.
 
 ---
 
 ## Anti-Patterns
 
-The agent-count examples below describe default native delegation. They do not
-prohibit the explicitly authorized `orca-team` route.
-
 | Anti-Pattern | Problem | Use Instead |
 |--------------|---------|-------------|
 | Spawning an agent for exploration | misses context, wastes tokens | `Explore` (read) or Lead `Read` inline |
-| `flow` skill (plan phase) for complexity 33-45 or an obviously trivial task | overkill, slows execution | act inline |
+| `flow` skill (plan phase) at low complexity or for an obviously trivial task | overkill, slows execution | act inline |
 | skipping `flow` (review phase) after multi-file changes | quality risk | `Skill(flow, "review")` checkpoint |
-| no `flow` (plan phase) for >60 complexity | uncoordinated, error-prone | Lead `Skill(flow, "plan")` → inline (≥4 HUs → `Workflow`) |
+| no `flow` (plan phase) at high complexity | uncoordinated, error-prone | Lead `Skill(flow, "plan")` → inline (≥4 HUs → `Workflow`) |
 | ≥4 `Workflow` units without worktree on overlapping files | Write conflicts | `isolation: "worktree"` per unit |
 | team mode for <3 domains | 3-7x cost with no real benefit | inline, or `Workflow` at ≥4 independent units |
 | team mode for dependent domains | file conflicts between teammates | sequential inline / a `Workflow` |

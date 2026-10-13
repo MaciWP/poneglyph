@@ -46,10 +46,10 @@ The following anti-patterns degrade the value of the stress-test. Each has a det
 
 ### 8. Groupthink across perspectives
 **Detection**: The N spawned perspectives produce nearly identical outputs; no real diversity; everyone shares the same blind spots.
-**Correction**: The Outsider perspective is the canary here — if Outsider also agrees with everyone, the framing is probably contaminated. Spawn Phase 1.5 with a deliberately orthogonal perspective if this happens. The Self-Meta Check verifies real diversity.
+**Correction**: The Outsider perspective is the canary here: if Outsider also agrees with everyone, the framing is probably contaminated. Spawn Phase 1.5 with a deliberately orthogonal perspective if this happens. The Self-Meta Check verifies real diversity.
 
 ### 9. Outsider contamination
-**Detection**: The Outsider perspective references specific files, functions, classes, project history, or "best practices" the user mentioned — meaning it absorbed context it should not have.
+**Detection**: The Outsider perspective references specific files, functions, classes, project history, or "best practices" the user mentioned, meaning it absorbed context it should not have.
 **Correction**: Outsider's prompt restricts tools to NONE (no Read/Grep/Glob/Context7/WebSearch). The orchestrator does not pass project files to it. If Outsider's output contaminates, discard and re-spawn with the explicit restriction reinforced.
 
 ### 10. Linus caricature
@@ -69,11 +69,11 @@ The following anti-patterns degrade the value of the stress-test. Each has a det
 **Correction**: Phase 5 votes must be transcribed exactly as the perspective produced them. CONDITIONAL and OPPOSE reasons appear verbatim in the Dissenting Reasons block. Consensus level is computed mechanically from the tally, not editorialized. If a perspective's earlier output contradicts its Phase 5 vote, the orchestrator must surface the contradiction in the report and ask the perspective to reconcile (one extra round if stakes High; otherwise flag and lower confidence). Suppressing dissent to manufacture consensus violates Commandment III (radical honesty).
 
 ### 14. Step-back capture
-**Detection**: The Step-back Judge's output starts arguing for or against the decision instead of evaluating debate quality. Symptoms: "I think Option A is better", recommendations on the decision, evidence quoted in support of a position. The judge is no longer at meta level — it has been absorbed by the framing.
+**Detection**: The Step-back Judge's output starts arguing for or against the decision instead of evaluating debate quality. Symptoms: "I think Option A is better", recommendations on the decision, evidence quoted in support of a position. The judge is no longer at meta level: it has been absorbed by the framing.
 **Correction**: Persona prompt forbids it explicitly with stop-and-reset instructions. Orchestrator discards captured verdicts and re-prompts the judge with the constraint reminder. If a 2nd capture occurs in the same Phase 2, mark Phase 2 as `JUDGE_CAPTURED` and downgrade confidence in Phase 4.
 
 ### 15. Karpathy/Linus voice collapse
-**Detection**: Karpathy's output and Linus's output sound the same — both brutal, both destructive, both reaching the same conclusion via the same argument. The distinct voices have collapsed into one. Symptom: removing the names from both outputs yields indistinguishable text.
+**Detection**: Karpathy's output and Linus's output sound the same: both brutal, both destructive, both reaching the same conclusion via the same argument. The distinct voices have collapsed into one. Symptom: removing the names from both outputs yields indistinguishable text.
 **Correction**: Karpathy's output must include both addenda ("What an LLM agent would struggle with here", "What I'd actually build first") and lean constructive. Linus's output stays brutal-pragmatic. If they sound the same, re-spawn Karpathy with the persona's anti-pattern reminder.
 
 ### 16. Simplifier nihilism

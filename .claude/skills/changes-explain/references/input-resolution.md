@@ -1,7 +1,7 @@
 ---
 parent: changes-explain
 name: input-resolution
-description: Argument resolution algorithm — maps the user-provided argument to a concrete target (file/commit/branch/working-tree) with edge-case handling
+description: Argument resolution algorithm, maps the user-provided argument to a concrete target (file/commit/branch/working-tree) with edge-case handling
 ---
 
 # Input Resolution
@@ -14,7 +14,7 @@ description: Argument resolution algorithm — maps the user-provided argument t
 - [Resumen ejecutivo](#resumen-ejecutivo)
 - [Confidence Calibration](#confidence-calibration)
 
-Maps the argument received to a concrete target. The skill never proceeds with an ambiguous input — it always asks if it cannot decide.
+Maps the argument received to a concrete target. The skill never proceeds with an ambiguous input, it always asks if it cannot decide.
 
 ## Resolution Order
 
@@ -28,7 +28,7 @@ The algorithm tries each rule in order and stops at the first match.
 | 4 | matches `PR #<N>` or `pr/<N>` | `gh pr view <N>` then diff | f"PR #{N}" |
 | 5 | exists as path (Glob exact) | Read file + `git log --follow -- <arg>` for blame summary | f"contenido + historia de `{arg}`" |
 | 6 | path with wildcard via Glob, single match | as rule 5 with resolved path | as rule 5 |
-| 7 | none of the above | STOP, AskUserQuestion | — |
+| 7 | none of the above | STOP, AskUserQuestion | none |
 
 ## Exact Git Commands
 
@@ -71,7 +71,7 @@ If `git branch --list <name>` returns empty but `git branch --list -r origin/<na
 La rama `<name>` solo existe en remoto. Quieres que haga `git fetch origin <name>` primero?
 ```
 
-Do NOT auto-fetch — branches can be large; ask first.
+Do NOT auto-fetch: branches can be large; ask first.
 
 ### Path matches multiple files via Glob
 
@@ -105,8 +105,8 @@ Treat tags as commits (rule 2). `git show <tag>` works the same.
 
 | Resolution path | Confidence |
 |---|---|
-| Exact match on rule 1-4 with no ambiguity | High — proceed |
-| Single Glob match on rule 5-6 | High — proceed |
-| Multiple Glob matches | Low — ask |
-| Argument starts with `-` but is not `--pending` | Low — ask (user may have typed a flag wrong) |
-| Hash with 4-6 chars (under safe minimum) | Medium — ask user to extend hash |
+| Exact match on rule 1-4 with no ambiguity | High: proceed |
+| Single Glob match on rule 5-6 | High: proceed |
+| Multiple Glob matches | Low: ask |
+| Argument starts with `-` but is not `--pending` | Low: ask (user may have typed a flag wrong) |
+| Hash with 4-6 chars (under safe minimum) | Medium: ask user to extend hash |

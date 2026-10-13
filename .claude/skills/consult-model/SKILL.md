@@ -1,32 +1,23 @@
 ---
 name: consult-model
 description: >-
-  Ask Codex, Grok, or a fresh Claude context for a bounded read-only opinion,
-  critique, or cross-check. The Lead verifies the answer before using it.
-  Use for "consulta a Codex", "pregúntale a Grok", or "second opinion".
-  Opening or resuming a native harness session belongs to orca-cli.
-  Supervising a team belongs to orca-team.
-metadata:
-  keywords: >
-    Keywords - consulta a codex, consulta a grok, consulta a claude,
-    pregúntale a codex, pregúntale a grok, pregúntale a claude,
-    segunda opinión, second opinion, contrasta con otro modelo,
-    refuta con codex, refuta con grok, qué opina codex, qué opina grok,
-    ask codex, ask grok, ask claude
+  Consulta a otro modelo (Codex, Grok o un Claude con contexto limpio) para una opinión
+  acotada y de solo lectura: crítica, contraste o refutación, que se verifica antes de
+  usarla. Aplica cuando una decisión gana con una segunda mirada independiente o el
+  usuario sugiere apoyarse en otro modelo o validar algo con él. Úsala para "consulta a
+  Codex", "pregúntale a Grok qué opina", "dame una segunda opinión", "contrasta esto con
+  otro modelo", "que otro modelo refute el plan". No es para delegar una implementación
+  (agent-routing) ni para investigar un tema (deep-research).
 disable-model-invocation: false
-when_to_use: |
-  A bounded read-only opinion from another model or fresh context.
-  Not provider documentation, an independent session, a handoff, or a supervised team.
 ---
 
-# Consult — ask for an opinion
+# Consult: ask for an opinion
 
 Return an answer to the Lead. The consulted model never writes to the repository.
 Its answer is a hypothesis that the Lead must verify.
 
-The [shared routing contract](../../rules/skill-routing.md) distinguishes
-consultations, native sessions, and supervised teams. Provider names alone do not
-select this skill. “Abre un Codex” selects a native session, even from Codex itself.
+The [consultation route](../../docs/harness-adapters.md#consultations) selects this
+skill for a bounded, read-only opinion. Provider names alone do not select it.
 
 ## Definition of Done
 
@@ -41,9 +32,8 @@ select this skill. “Abre un Codex” selects a native session, even from Codex
 
 ## Procedure
 
-1. Confirm the bounded question and apply CLAUDE.md §Agent spawn.
-   “Pregúntale a Codex” authorizes one consultation; preserve the model-choice gate.
-   Reading this skill or explaining a plugin does not authorize a launch.
+1. Confirm the bounded question. A consultation needs no extra ask
+   (CLAUDE.md §Agents and skills); preserve the model-choice gate.
 2. Load [adapters](references/adapters.md) before calling a provider.
    On Claude Code, use the installed official plugin bridge inline.
    On other hosts, use the documented CLI route. Honor an explicitly requested
@@ -62,7 +52,7 @@ selection for every call, including plugin wrappers and background runs.
 
 - Codex uses the configured model unless Oriol names another. Set effort explicitly:
   `low` for lookups, `medium` for second opinions, `xhigh` only when requested.
-  An inherited `xhigh` exhausted the weekly quota on 2026-09-10.
+  An inherited `xhigh` once exhausted the weekly quota.
 - For Grok, inspect `grok models` / `grok --help`. Do not assume a fixed model.
   Use the approved available model; the plugin bridge accepts `low|medium|high` effort.
 - Claude needs an explicit `--model` from the installed host's capabilities.
@@ -110,5 +100,3 @@ Use local read/search tools when they answer the question directly.
 Implementation belongs to the Lead or an explicitly authorized session/team.
 
 Commandments: II (evidence), VIII (prompt quality), IX (one responsibility), X (bounded cost).
-
-**Version**: 3.2.0 (2026-09-21: intent-based routing; adapter details moved to a linked reference).

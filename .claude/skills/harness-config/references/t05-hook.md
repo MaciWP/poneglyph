@@ -1,10 +1,10 @@
 ---
 parent: harness-config
 name: t05-hook
-description: T5 hook pack — enforcement, not a request. Delete is not disable. Project Claude settings stay hook-free.
+description: T5 hook pack, enforcement, not a request. Delete is not disable. Project Claude settings stay hook-free.
 ---
 
-# T5 — Hook
+# T5: Hook
 
 Shared: [lookup.md](lookup.md) · [lifecycle.md](lifecycle.md) · [native-creators.md](native-creators.md).
 Do not edit `sync-claude` / `sync-codex` / `sync-grok`. Packs **name** the install step.
@@ -37,16 +37,21 @@ E2: hook = guarantee. T1: Grok/Codex pages 2026-09-10. **sin evidencia A/B** for
 
 ## 6. Poneglyph grain
 
-Impact before mutate (grep who depends on the event). After delete, name leftover overlay/session. H8: widening authority on delete/scope-change — say so.
+Impact before mutate (grep who depends on the event). After delete, name leftover overlay/session. H8: widening authority on delete/scope-change; say so.
 
-Claude input gotchas (plan 041 review):
+Claude input gotchas:
 - Payload `cwd` follows the agent's `cd`. The project root is `CLAUDE_PROJECT_DIR`.
 - A hook that detects edits covers `Bash` too: headless agents edit with `sed -i` or a heredoc. Leaving it out needs a stated reason.
+- PreToolUse/PostToolUse may silently not fire (issue #6305): never the sole gate for a critical check. Stop, UserPromptSubmit and SessionStart fire reliably.
+- Prefer `.ts` run with bun. A `.sh` uses `#!/bin/bash`; `#!/usr/bin/env bash` fails on Windows and reduced PATHs.
+- Stdout that starts with `{` and ends with `}` must be valid JSON (CC ≥2.1.248), or it is reported as a hook error.
+
+Poneglyph's own hook inventory and per-event detail: `.claude/rules/paths/hooks.md` (loads only inside the Poneglyph repo).
 
 ## 7. Absences
 
 | Cell | Status |
 |---|---|
 | Project Claude `settings.json` hooks | **ausente** in this repo |
-| Codex hooks “disabled on Windows” | **ausente** as of 2026-09-10 docs — use `command_windows` |
+| Codex hooks “disabled on Windows” | **ausente** in the official docs; use `command_windows` |
 | Changing sync scripts | **ausente** (D12) |

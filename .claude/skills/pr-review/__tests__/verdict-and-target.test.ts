@@ -18,7 +18,7 @@ const trace = read("references", "02-ticket-trace.md");
 
 // H55(a). `02-ticket-trace.md` says a required AC at ✗ forbids a plain APPROVE. Both the
 // body and the criteria reference stated APPROVE as "0 critical, ≤2 major", and one
-// unimplemented required AC is exactly one Major — so the same review had two verdicts.
+// unimplemented required AC is exactly one Major, so the same review had two verdicts.
 describe("the APPROVE rule honours the required-AC floor (H55a)", () => {
   it("finds the ticket-trace floor", () => {
     expect(trace).toMatch(/cannot be plain APPROVE/i);

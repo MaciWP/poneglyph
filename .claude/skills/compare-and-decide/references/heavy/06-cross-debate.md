@@ -1,7 +1,7 @@
 ---
 parent: compare-and-decide
 name: cross-debate
-description: Phase 2 protocol — perspectives debate with cited agreement/disagreement; step-back judge decides CONVERGED / PARTIAL / FULL after each round, max 3 cycles
+description: "Phase 2 protocol: perspectives debate with cited agreement/disagreement; step-back judge decides CONVERGED / PARTIAL / FULL after each round, max 3 cycles"
 ---
 
 # Cross-Debate Protocol (Phase 2)
@@ -13,8 +13,8 @@ description: Phase 2 protocol — perspectives debate with cited agreement/disag
 - [Cycle Loop](#cycle-loop)
 - [Why Step-back Adapts Better Than Fixed Rounds](#why-step-back-adapts-better-than-fixed-rounds)
 - [Updated Position Output Format (per perspective, per round)](#updated-position-output-format-per-perspective-per-round)
-- [[Perspective Name] — Updated Position (Cycle N)](#perspective-name-updated-position-cycle-n)
-- [Phase 1.5 — Late Perspective](#phase-15-late-perspective)
+- [[Perspective Name]: Updated Position (Cycle N)](#perspective-name-updated-position-cycle-n)
+- [Phase 1.5: Late Perspective](#phase-15-late-perspective)
 - [Anti-patterns Specific to Phase 2](#anti-patterns-specific-to-phase-2)
 - [Output Section in Final Report](#output-section-in-final-report)
 - [Debate Summary](#debate-summary)
@@ -58,7 +58,7 @@ Fixed rounds either over-deliberate (waste tokens when CONVERGED already) or und
 ## Updated Position Output Format (per perspective, per round)
 
 ```
-## [Perspective Name] — Updated Position (Cycle N)
+## [Perspective Name]: Updated Position (Cycle N)
 
 **Agreement**: cite ≥1 specific point from another perspective and explain WHY you agree
   - "I agree with [Perspective X] that [point]: [reasoning]"
@@ -73,9 +73,9 @@ Fixed rounds either over-deliberate (waste tokens when CONVERGED already) or und
   - [pro/con discovered only after reading others]
 ```
 
-## Phase 1.5 — Late Perspective
+## Phase 1.5: Late Perspective
 
-If the debate (or the Step-back Judge) surfaces a fundamental angle that wasn't covered in Phase 1, the orchestrator may spawn **one** late perspective.
+If the debate (or the Step-back Judge) surfaces an important angle that wasn't covered in Phase 1, the orchestrator may spawn **one** late perspective.
 
 | Condition | Required |
 |---|---|

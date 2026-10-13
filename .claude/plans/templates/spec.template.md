@@ -1,7 +1,7 @@
 ---
-id: {NNN}-{slug}
-created: {ISO-date}
-approved: <ISO-date cuando el hard gate 1→2 se cierra; omitir mientras draft>
+id: "{NNN}-{slug}"
+created: "{ISO-date}"
+approved: "<ISO-date cuando el hard gate 1→2 se cierra; omitir mientras draft>"
 mode: full
 phase: 1
 status: draft
@@ -9,13 +9,13 @@ status: draft
 
 # Problema
 
-<Una frase clara. ¿Qué duele realmente? Síntoma vs problema raíz — escribe el raíz. ≤3 líneas.>
+<Una frase clara. ¿Qué duele realmente? Síntoma vs problema raíz: escribe el raíz. ≤3 líneas.>
 
 # Resultado esperado
 
-- <Outcome medible 1 — qué cambia para el usuario / sistema>
+- <Outcome medible 1: qué cambia para el usuario / sistema>
 - <Outcome medible 2>
-- <Outcome medible 3 — máx 4 bullets; outcomes, no features>
+- <Outcome medible 3: máx 4 bullets; outcomes, no features>
 
 # Success criteria (medibles, Given/When/Then)
 
@@ -27,7 +27,7 @@ status: draft
 
 # Out of scope (explícito)
 
-- <Lo que NO se implementa en este feature — cierra la puerta a scope creep>
+- <Lo que NO se implementa en este feature: cierra la puerta a scope creep>
 - <Decisión diferida o entregable de otro sprint>
 
 # Constraints
@@ -42,13 +42,13 @@ status: draft
 
 > Omitir sección si solo hay un stakeholder obvio. Incluir cuando hay >1 perspectiva o el dueño de la decisión no es el ejecutor.
 
-- **<rol>** — <sufre el problema / decide el gate / valida el outcome>
+- **<rol>**: <sufre el problema / decide el gate / valida el outcome>
 
 # Open questions
 
 > Mantener sección incluso vacía: visibiliza los gaps en lugar de ocultarlos. Cerrar gaps con decisiones explícitas antes del hard gate 1→2.
 
-- <Gap 1 — preferible documentarlo a inventar respuesta>
+- <Gap 1: preferible documentarlo a inventar respuesta>
 - <Gap 2>
 
 # Modelo conceptual / Detalle técnico

@@ -53,7 +53,7 @@
       "id": "reco", "num": "03", "title": "Recomendaciones",
       "blocks": [
         { "type": "callout", "data": { "kind": "note", "title": "Por valor / esfuerzo", "body": "1) Completar 008 (8 HUs). 2) Validar 006 en uso + decidir AC5. 3) Cerrar loop 001 (ratificar 6 promos). 4) Quick win 81/81→100. 5) Higiene checkboxes + version-claims." } },
-        { "type": "sidenote", "data": { "marker": "★", "body": "Este informe se generó con el <b>modo dynamic</b> (feature 010) vía <code>render.ts</code> — datos JSON → 1 HTML self-contained." } },
+        { "type": "sidenote", "data": { "marker": "★", "body": "Este informe se generó con el <b>modo dynamic</b> vía <code>render.ts</code>: datos JSON → 1 HTML self-contained." } },
         { "type": "prose", "html": "<p>Sistema sano y operativo. La deuda es de <strong>cierre de loops y validación diferida</strong>, no de defectos en ejecución.</p>" }
       ]
     }

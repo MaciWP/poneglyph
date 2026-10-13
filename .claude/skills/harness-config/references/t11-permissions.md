@@ -1,10 +1,10 @@
 ---
 parent: harness-config
 name: t11-permissions
-description: T11 permissions pack — Claude allow/deny/ask, Codex sandbox/approvals, Grok modes and rules. Disable is not delete. Widening authority on delete is H8.
+description: T11 permissions pack, Claude allow/deny/ask, Codex sandbox/approvals, Grok modes and rules. Disable is not delete. Widening authority on delete is H8.
 ---
 
-# T11 — Permissions
+# T11: Permissions
 
 Shared: [lookup.md](lookup.md) · [lifecycle.md](lifecycle.md) · [t10-settings.md](t10-settings.md) · [t05-hook.md](t05-hook.md).
 Absorbs cookbook `05-permissions.md` (D27).
@@ -21,13 +21,13 @@ Claude permissions docs. Codex sandbox + approval policy (`config-reference`). G
 
 | | Claude Code | Codex | Grok Build |
 |---|---|---|---|
-| Keys | `permissions.allow` / `ask` / `deny` + `defaultMode`. Pattern `Tool` or `Tool(specifier)` | `sandbox_mode` + approval policy in `config.toml`. CLI `--yolo` / sandbox flags | Native `[ui] permission_mode` (user-only): `default`/`ask`, `auto`, `always-approve`. Project: `[permission]` rules. Claude-compat aliases in `.claude/settings.json` (`acceptEdits`, `dontAsk`, `plan`, `bypassPermissions`) — not the TOML enum |
+| Keys | `permissions.allow` / `ask` / `deny` + `defaultMode`. Pattern `Tool` or `Tool(specifier)` | `sandbox_mode` + approval policy in `config.toml`. CLI `--yolo` / sandbox flags | Native `[ui] permission_mode` (user-only): `default`/`ask`, `auto`, `always-approve`. Project: `[permission]` rules. Claude-compat aliases in `.claude/settings.json` (`acceptEdits`, `dontAsk`, `plan`, `bypassPermissions`), not the TOML enum |
 | Eval order | deny → ask → allow → defaultMode | Sandbox then approvals; deny/hooks still apply under yolo | Modes set baseline; allow/ask/deny still apply. Always-approve does **not** skip deny or hooks |
 | Scope | User/managed vs project: `defaultMode: "bypassPermissions"` **ignored** in project/local since 2.1.257 | User vs project TOML | Project `.grok/config.toml` may set `[permission]`; `permission_mode` is user/UI |
 | Disable | Remove the rule from the **settings that are loaded**; leftover overlay still binds | Don't set / tighter sandbox | `/always-approve` off; or deny rules |
 | Reload | Session / settings pick-up | Restart | Session; Shift+Tab / `/settings` for mode |
 
-H8: deleting or narrowing a deny **widens authority**. Say so in impact before mutate. AC25: source vs overlay vs session — delete of a repo file does not prove the host stopped.
+H8: deleting or narrowing a deny **widens authority**. Say so in impact before mutate. AC25: source vs overlay vs session: delete of a repo file does not prove the host stopped.
 
 ## 4. Min template
 
@@ -51,11 +51,11 @@ T1 + B: Grok 22, Claude permissions, Codex sandbox pages 2026-09-10. **sin evide
 
 ## 6. Poneglyph grain
 
-This repo keeps deny on `.env` / `secrets/`. `settings.global.json` `ask` covers recursive delete, destructive git (reset --hard, clean, branch -D, stash drop/clear, worktree remove, checkout/restore, merge, rebase), `git push` and `gh pr create/merge`, in Bash and PowerShell; `git commit` is not asked (a local commit is reversible). Rules are prefix matches: a rewritten form such as `git -C <dir> push` escapes them — a net, not a boundary. `sync-claude` unions an overlay's `ask`/`deny` with the base. Impact before widening.
+This repo keeps deny on `.env` / `secrets/`. `settings.global.json` `ask` covers recursive delete, destructive git (reset --hard, clean, branch -D, stash drop/clear, worktree remove, checkout/restore, merge, rebase), `git push` and `gh pr create/merge`, in Bash and PowerShell; `git commit` is not asked (a local commit is reversible). Rules are prefix matches: a rewritten form such as `git -C <dir> push` escapes them: a net, not a boundary. `sync-claude` unions an overlay's `ask`/`deny` with the base. Impact before widening.
 
 ## 7. Absences
 
 | Cell | Status |
 |---|---|
-| Claude `permissions` JSON in Codex/Grok | **ausente** — native keys only |
+| Claude `permissions` JSON in Codex/Grok | **ausente**, native keys only |
 | Weakening deny to match a template | **ausente** |

@@ -1,10 +1,10 @@
 ---
 parent: flow
 name: retro
-description: Phase 5 — capture lessons, propose promotions, close the living-spec loop, audit the commandments and close the feature lifecycle.
+description: Phase 5, capture lessons, propose promotions, close the living-spec loop, audit the commandments and close the feature lifecycle.
 ---
 
-# Phase 5 — Retro
+# Phase 5: Retro
 
 Measure the **process** that produced the deliverable and turn it into structural
 improvements: lessons, promotions, the living-spec delta, the commandments audit. Honesty is
@@ -27,15 +27,14 @@ recorded: `bun .claude/scripts/flow-state.ts retro-status "skipped — <reason �
 
 - Favor reusable lessons and accurate scope closure. Zero lessons or promotions is valid; invented friction and forced entries do not earn credit.
 
-## Step 1 — Read inputs
+## Step 1: Read inputs
 
 `spec.md`, `tasks/index.md` and `tasks/US{N}.md`, `tests.md` / `validations.md`,
 `review.md` (`verdict`, `spec_drift`, findings), `state.json`, `retro.template.md` (project
 templates, then global; both missing → `retro-fallback.md`), `CLAUDE.md` §The 10
-Commandments, and `.claude/learned/inbox.md` when present (legacy candidates; the file no
-longer grows).
+Commandments.
 
-## Step 2 — Retro level
+## Step 2: Retro level
 
 | Level | When | Scope |
 |---|---|---|
@@ -45,12 +44,12 @@ longer grows).
 
 Override with `--light` / `--standard` / `--full`; declare `retro_level` and its reason.
 
-## Step 3 — Executive summary
+## Step 3: Executive summary
 
 Original problem (one sentence quoting `spec.md`), what was delivered (one sentence on the
 real diff scope), how it went (smooth / friction / pivoted).
 
-## Step 4 — Technical lessons
+## Step 4: Technical lessons
 
 ```markdown
 ### ✅ Patterns that worked
@@ -62,7 +61,7 @@ real diff scope), how it went (smooth / friction / pivoted).
 
 An empty ❌ list is a smell; force the question "what slowed us down?".
 
-## Step 5 — Process audit
+## Step 5: Process audit
 
 | Phase | Effort (S/M/L/XL) | Friction observed | Improvement candidate |
 |---|---|---|---|
@@ -71,13 +70,13 @@ An empty ❌ list is a smell; force the question "what slowed us down?".
 Name the heaviest phase and diagnose why: it usually reveals a missing tool or a poorly
 tuned phase.
 
-## Step 6 — Drillme, phase 5
+## Step 6: Drillme, phase 5
 
 Sweep the Phase 5 bank of `../../drillme-clarify/references/03-phase-questions.md` (single
 source) and any new gap. If `drillme-clarify` does not fire, invoke
 `/drillme-clarify "Phase 5 retro of <NNN-slug>"` before closing the feature.
 
-## Step 7 — Promotion candidates
+## Step 7: Promotion candidates
 
 One row per reusable pattern from Steps 4-6 and per inbox entry (weigh by confidence,
 discard noise honestly):
@@ -99,20 +98,20 @@ golden-prompt case for `.claude/evals/cases.jsonl` (one new case per real failur
 deterministic grader, `source` cites this retro). Zero candidates → say so with reasons;
 three retros in a row with zero is a smell about the retro itself.
 
-## Step 8 — Living-spec loop
+## Step 8: Living-spec loop
 
 | `review.md.spec_drift` | Action |
 |---|---|
-| `none` | "Spec drift: none — delivered matches spec.md" |
-| `legitimate` | Propose a `spec.md` diff in §Living-spec deltas. **Never auto-edit.** After approval the patch lands with "v2 — delta from retro {NNN}-{slug} (reason)" |
+| `none` | "Spec drift: none: delivered matches spec.md" |
+| `legitimate` | Propose a `spec.md` diff in §Living-spec deltas. **Never auto-edit.** After approval the patch lands with "v2, delta from retro {NNN}-{slug} (reason)" |
 | `scope_creep` | ❌ lesson "feature extended beyond spec.md without ratification"; revert the extra scope or reopen scope to ratify |
-| `skipped_ac` | ❌ lesson "AC X not delivered — <reason>"; schedule a follow-up or downscope the spec explicitly |
+| `skipped_ac` | ❌ lesson "AC X not delivered, <reason>"; schedule a follow-up or downscope the spec explicitly |
 
 A delta is legitimate only when all three hold: a real edge case discovered in build or
 review (not a change of mind), no contradiction with the spec's intent, and a documented
 why with the finding that motivated it. Otherwise route it to `scope_creep`.
 
-## Step 9 — Commandments audit (mandatory at full, optional at standard)
+## Step 9: Commandments audit (mandatory at full, optional at standard)
 
 | # | Commandment | ✅/⚠️/❌ | Evidence or violation |
 |---|---|---|---|
@@ -121,7 +120,7 @@ why with the finding that motivated it. Otherwise route it to `scope_creep`.
 Any ⚠️ or ❌ gets a forensics subsection: when it happened, the alternative path, the action
 item that prevents recurrence.
 
-## Step 10 — Action items
+## Step 10: Action items
 
 | Action | Owner (user / Lead / next session / new HU) | Trigger | Due |
 |---|---|---|---|
@@ -129,14 +128,14 @@ item that prevents recurrence.
 Typical items: apply approved promotions, ratify a living-spec delta, address a violation,
 split a component that grew too large.
 
-## Step 11 — Write `retro.md`
+## Step 11: Write `retro.md`
 
 From `retro.template.md`. Frontmatter: `spec`, `phase: 5`, `retro_level`,
 `verdict_phase4`, `spec_drift`, `promotions_proposed`, `promotions_approved: 0`,
 `commandment_violations`, `living_spec_delta`, `action_items`, `created`, `status: open`.
 Body: summary, lessons, process, drillme, promotions, living-spec, commandments, action items.
 
-## Step 12 — Close the feature lifecycle
+## Step 12: Close the feature lifecycle
 
 **a. Verify recorded closure.** Read `state.json` and the per-HU verification history.
 Pending HUs, missing evidence or an unapproved review keep the feature open. Stale HU
@@ -150,22 +149,22 @@ inline. Approved living-spec diff → patch `spec.md` with the v2 note.
 then `flow-state.ts close-feature`. Only after success project closure into spec and tasks
 frontmatter. Update `promotions_approved`; clear the inbox and record the discard count.
 
-**d. Archive the working set (authorized move, only after `close-feature` succeeded).** Ask
-first. With authorization: create `.claude/plans/_archive/{NNN}-{slug}/`, move everything
-except `spec.md` and `retro.md` (a file a tracked script or skill still reads stays, named
-in the README row), then `git rm --cached -r` the moved paths and add the plan's row to
-`plans/README.md` §Closed features. Without authorization: action item "archive working
-set". Under a company plans policy nothing is tracked; report where the durable outcome went.
+**d. Remove the plan directory (authorized, only after `close-feature` succeeded).** Ask
+first. With authorization: `git rm -r .claude/plans/{NNN}-{slug}`; git history keeps it
+(`plans/README.md` §Closed features). A file a tracked script or skill still reads blocks
+the removal: move its content to its reader first. Without authorization: action item
+"remove plan directory". Under a company plans policy nothing is tracked; report where the
+durable outcome went.
 
 | `retro_status` | Meaning | Owner |
 |---|---|---|
 | `pending` | `retro.md` produced, awaiting human ratification; `feature_closed` stays `false` and the plan still appears in `flow-state.ts status` | The user ratifies; the Lead never self-approves |
 | `approved` | Ratified; promotions and deltas applied; `close-feature` succeeded | The Lead, after the user's explicit decision |
 
-A retro left `pending` is the documented back-half abandonment mode (audit 2026-06-30): it
+A retro left `pending` is the documented back-half abandonment mode: it
 is "awaiting you", not "done".
 
-## Step 13 — Report and request ratification
+## Step 13: Report and request ratification
 
 ```text
 🟢 Retro produced for {NNN}-{slug}.

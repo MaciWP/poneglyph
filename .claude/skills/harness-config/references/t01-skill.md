@@ -1,10 +1,10 @@
 ---
 parent: harness-config
 name: t01-skill
-description: Golden T1 pack — portable skill contract for Claude Code, Codex, and Grok Build. Later type packs copy this 7-point shape.
+description: Golden T1 pack, portable skill contract for Claude Code, Codex, and Grok Build. Later type packs copy this 7-point shape.
 ---
 
-# T1 — Skill
+# T1: Skill
 
 Shared refs: [lookup.md](lookup.md) · [evidence.md](evidence.md) · [lifecycle.md](lifecycle.md) · [native-creators.md](native-creators.md).
 Templates: [reference.md](../templates/skill/reference.md) · [research.md](../templates/skill/research.md) · [workflow.md](../templates/skill/workflow.md).
@@ -39,6 +39,7 @@ Fetch now. Recipe and last-fetch table: [lookup.md](lookup.md).
 | `name` | 1–64 kebab, no `--`, no leading/trailing `-`, **matches directory** | Directory is the `/` command; `name` is display (project/personal) | Required in YAML | 1–64; spaces/underscores normalized to hyphens |
 | `description` | **1–1024** Unicode (not 500) | Listing truncates `description`+`when_to_use` at **1536** | Listing budget **2% / 8000 chars**; listing truncates (~1024). Load parser does not cap length | Used for auto-invoke; omit → first body paragraph |
 | Trigger extra | **ausente** | `when_to_use` | Keep scope in `description`; `$name` explicit | `when-to-use` (extra hyphen) |
+| Scope / context | **ausente** | `paths` (glob list: the skill applies only to matching files), `context: fork` (isolated context), `effort` | **ausente** | `effort` |
 | Reload | **ausente** | `SKILL.md` live in session | Auto-detect; else restart | Disk change; `grok inspect` |
 | Disable | **ausente** | `skillOverrides.<name>: "off"` (not a delete) or frontmatter `disable-model-invocation: true`, which also drops the description from the listing. `disableBundledSkills` is bundled-only | `[[skills.config]]` with `path` + `enabled = false` (restart) | `[skills] disabled = ["name"]` |
 | Native creator | **ausente** | **ausente** (`plugin init` scaffolds only) | `$skill-creator` drafts | `/create-skill` drafts |
@@ -57,9 +58,8 @@ Instantiation rules:
 
 - `{{SKILL_NAME}}` = kebab 1–64, **equals** the directory name.
 - Keep `{{DESCRIPTION}}` **one line**. It sits in an indented `\|` block; a multiline fill that is not re-indented ends the scalar (`metadata.parse`). Budget the **whole decoded description** (including the `Use for` / `Not for` sentences) against 1024.
-- `description` 1–1024 after YAML decode. This repo: English, third person, what + when, the user's literal es-ES trigger phrases in quotes and a `Not for` clause. Foreign repo: portable English (or that repo's language).
-- `metadata.keywords` is a **string** (this-repo hook). Empty string disables the description fallback.
-- `when_to_use` is a **string**. `argument-hint` is a **string**, not a YAML list.
+- `description` 1–1024 after YAML decode. This repo follows the description contract below. Foreign repo: portable English (or that repo's language).
+- `when_to_use` is a **string**; this repo leaves it out (triggers live in `description`). `argument-hint` is a **string**, not a YAML list.
 - Body: when-NOT, content map, ≥3 eval scenarios, anti-patterns. Core skills also require `## Definition of Done` and `## Quality Bar` before the procedure.
 - Omit Claude-only `context: fork` / `agent:` from the portable default.
 
@@ -67,6 +67,34 @@ Completion authoring: [completion-contract.md](completion-contract.md). Write co
 criteria for stable procedures. For variable tasks, require reuse of agreed criteria
 or resolution of missing outcomes and evidence before execution. Keep mode-specific
 details in the selected reference. Preserve existing activation settings when migrating.
+
+### Description contract (this repo)
+
+The reader is the prompt router: the main Claude session lists skills by name only, and
+Codex ignores `when_to_use`. One `description`, no `when_to_use`, so every host reads the
+measured text.
+
+1. Spanish, third person ("Aplica…", "Revisa…"), never "yo" or "tú".
+2. The first ~25 characters state the action and its object; Codex shows little more.
+   Main case first.
+3. Say what the user wants to achieve, not the skill's internal steps.
+4. Name the situations where it applies even when the user does not name its domain
+   ([agentskills.io](https://agentskills.io/skill-creation/optimizing-descriptions):
+   "err on the side of being pushy").
+5. `Úsala cuando` / `Úsala para`: 3–5 requests the way the user says them, quoted, with
+   the English terms the user mixes in ("revisa la PR", "sigue con el plan").
+6. `No es para`: one clause naming a true alternative, a skill that does the job instead.
+   Never name a companion that loads alongside it; write a companion as "junto a `<skill>`".
+7. 300–600 characters. Nouns specific to the skill; a shared verb (revisar, planear,
+   verificar) always carries a qualifier.
+8. No dictation errors (misheard terms go to the router glossary) and no XML tags.
+
+Change a description only with the held-out eval: tune on the odd half, score the even
+half with `--catalog` and ≥2 runs per arm (one run varies by about ±6 of 64 cases). A
+skill whose own hits drop keeps its previous text. Never copy words from failed eval
+prompts; generalize to the category they represent. After 2 rewrites without gain,
+change the sentence structure instead of tweaking words. Keep the best measured variant,
+not the last one.
 
 ## 5. Evidence
 
@@ -78,21 +106,21 @@ Labels and E1–E6: [evidence.md](evidence.md). Compact curated default is **A**
 |---|---|
 | Quality | Eval-first (≥3 scenarios) on **new** skills in this repo. When-NOT. Description = routing code, not docs. |
 | Tokens | SKILL.md short; refs one level; do not load other type packs. Compact beats exhaustive (E1). |
-| This repo (AC13) | English `description` + one-line `when_to_use`, with literal es-ES trigger phrases; `metadata.keywords` for the activation hook; evals. |
-| Foreign repo | Portable nucleus only. No es-ES triggers, no keywords requirement. |
+| This repo (AC13) | Description contract (§4); evals. |
+| Foreign repo | Portable nucleus only. No es-ES triggers. |
 | Gate | `check:config` errors block. Core DoD and Quality Bar sections must contain prose outside examples. Description 1–1024. Body ≥500 lines = warning, not failure. No second validator. |
 
 Do not rewrite the catalog without an explicitly agreed migration scope. The
-2026-09-22 migration adds this contract to the 24 core skills; it does not reset
-their procedures to a generic template. See the completion contract's decision history.
+completion contract applies to the core skills without resetting their procedures
+to a generic template. See the completion contract's decision history.
 
 ## 7. Declared absences
 
 | Cell | Status |
 |---|---|
-| Codex `when_to_use` | **ausente** — put triggers in `description`. Optional `agents/openai.yaml` `allow_implicit_invocation: false` instead of Claude `disable-model-invocation` |
-| Grok `when_to_use` (underscore) | **ausente** — Grok field is `when-to-use`. This repo still writes `when_to_use` for Claude/gate; Grok reads `description` |
-| Claude per-skill disable via Codex/Grok TOML | **ausente** — use `skillOverrides` |
+| Codex `when_to_use` | **ausente**: put triggers in `description`. Optional `agents/openai.yaml` `allow_implicit_invocation: false` instead of Claude `disable-model-invocation` |
+| Grok `when_to_use` (underscore) | **ausente**: Grok field is `when-to-use`. This repo keeps triggers in `description`, which every host reads |
+| Claude per-skill disable via Codex/Grok TOML | **ausente**, use `skillOverrides` |
 | `type:` frontmatter | **ausente** from portable spec |
 | Fetcher script | **ausente** (D22) |
 | Companion `/harness-config` command | **ausente** (D7) |

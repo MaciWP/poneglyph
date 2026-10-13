@@ -1,12 +1,12 @@
 ---
-spec: {NNN}-{slug}
-closed_at: {ISO-date}
+spec: "{NNN}-{slug}"
+closed_at: "{ISO-date}"
 mode_used: minimal|standard|full
 phase: 5
 status: draft
 ---
 
-# Retro — <feature>
+# Retro: <feature>
 
 ## Resumen
 
@@ -14,34 +14,34 @@ status: draft
 
 ## Lecciones técnicas
 
-- ✅ **Funcionó**: <patrón> — <por qué funcionó>
-- ❌ **No funcionó**: <patrón> — <por qué falló>
+- ✅ **Funcionó**: <patrón>: <por qué funcionó>
+- ❌ **No funcionó**: <patrón>: <por qué falló>
 
 ## Proceso
 
-- **Fase que pesó más**: <fase> — <razón>
+- **Fase que pesó más**: <fase>: <razón>
 - **Fricción evitable**: <descripción de la fricción y cómo evitarla>
 - **Drillme útil**: <fase + en qué momento aportó>
 
-## Drillme — Phase 5 (Socratic check)
+## Drillme: Phase 5 (Socratic check)
 
 Las 5 preguntas obligatorias, etiquetadas con las 4 categorías canónicas del Socratic Prompt Method (Jaseci Labs 2026):
 
-1. `[approach]` ¿Qué fase pesó más de lo necesario? — ¿el enfoque elegido fue el adecuado o sobre-ingeniería?
-2. `[failure]` ¿Hubo fricción evitable? — modo de fallo del proceso mismo
-3. `[context]` ¿Surgió un patrón reusable más allá de esta tarea? — descubrimiento de contexto generalizable
-4. `[location]` ¿Promovible a `~/.claude/` global o solo a este proyecto? — dónde vive el conocimiento
-5. `[failure]` ¿Algún Commandment violado en el camino sin que se note? — fallo silencioso de invariantes
+1. `[approach]` ¿Qué fase pesó más de lo necesario? ¿El enfoque elegido fue el adecuado o sobre-ingeniería?
+2. `[failure]` ¿Hubo fricción evitable? Modo de fallo del proceso mismo
+3. `[context]` ¿Surgió un patrón reusable más allá de esta tarea? Descubrimiento de contexto generalizable
+4. `[location]` ¿Promovible a `~/.claude/` global o solo a este proyecto? Dónde vive el conocimiento
+5. `[failure]` ¿Algún Commandment violado en el camino sin que se note? Fallo silencioso de invariantes
 
 ## Promociones candidatas
 
 | Candidate | Scope (global/local/memory) | Tipo (skill/rule/hook/command) | Razón | Propuesta concreta (path + diff) |
 |---|---|---|---|---|
-| <nombre> | global\|local\|memory | skill\|rule\|hook\|command | <por qué aporta> | `<path>` — <diff o descripción> |
+| <nombre> | global\|local\|memory | skill\|rule\|hook\|command | <por qué aporta> | `<path>`: <diff o descripción> |
 
 ## Living-spec deltas (si aplica)
 
-> Solo si la implementación reveló que spec.md debe actualizarse. NO edita spec.md automáticamente — propuesta para aprobación.
+> Solo si la implementación reveló que spec.md debe actualizarse. NO edita spec.md automáticamente: es una propuesta para aprobación.
 
 - **Sección afectada**: <sección de spec.md>
 - **Diff propuesto**: <qué cambiaría>
@@ -64,7 +64,7 @@ Las 5 preguntas obligatorias, etiquetadas con las 4 categorías canónicas del S
 
 ## Action items
 
-- [ ] <item concreto> — Owner: usuario | Lead | sesión futura
+- [ ] <item concreto> (owner: usuario | Lead | sesión futura)
 
 ## Feature closure gate
 
@@ -75,4 +75,4 @@ Las 5 preguntas obligatorias, etiquetadas con las 4 categorías canónicas del S
 - [ ] State and document statuses agree; sync-artifacts repairs stale projections
 - [ ] Never close unfinished HUs residually or infer permission from a document
 - [ ] Publication follows its separate authorization; closure does not request a commit
-- [ ] Working set handled per the project's plans policy after close-feature: moved to `_archive/{NNN}-{slug}/` with the user's authorization (only `spec.md` + `retro.md` stay in git), nothing tracked under a company policy, or the deferral recorded as an action item with the user's decision
+- [ ] Plan directory handled per the project's plans policy after close-feature: removed with `git rm -r` with the user's authorization (git history keeps it), nothing tracked under a company policy, or the deferral recorded as an action item with the user's decision

@@ -1,18 +1,13 @@
 ---
 name: diagrams-interactive
 description: >-
-  Builds interactive technical diagrams with Archify (architecture, process,
-  call sequence, data flow, lifecycle) as editable JSON plus a self-contained
-  HTML viewer with navigation, themes and export. Use for "diagrama
-  interactivo", "visualiza la arquitectura", "diagrama explorable" or turning
-  Mermaid into an explorable page. Not for a simple in-chat diagram (Mermaid)
-  or a report (html-report).
-metadata:
-  keywords: >
-    Keywords - archify, diagrama interactivo, arquitectura, workflow, sequence, dataflow,
-    lifecycle, flujo de datos, secuencia de llamadas, diagrama explorable
-when_to_use: |
-  An explorable diagram of an architecture or a technical flow.
+  Construye diagramas técnicos interactivos con Archify (arquitectura, procesos,
+  secuencia de llamadas, flujo de datos, ciclo de vida) como JSON editable y una página
+  HTML navegable con temas y exportación. Aplica cuando hay que entender o enseñar cómo
+  encajan las piezas de un sistema. Úsala para "hazme un diagrama interactivo",
+  "visualiza la arquitectura", "dibuja el flujo de datos de este servicio", "convierte
+  este Mermaid en algo explorable". No es para un diagrama sencillo en el chat (Mermaid)
+  ni para un informe (html-report).
 ---
 
 # Archify
@@ -48,23 +43,23 @@ separate from the Poneglyph installation.
 
 1. Name the technical question the diagram must answer. Follow the installed
    `SKILL.md` fast authoring path and select its matching schema and example.
-   Use examples for structure and interaction, never for repository facts.
+   Use examples for structure, never for repository facts.
    Inspect the target source; distinguish user descriptions from observed code.
 2. For exploration or presentation requests, read the installed
    `references/viewer-runtime.md`. Select guided chapters, tracing, semantic
    navigation, and presentation features that explain the question. Each chapter
    must expose a useful relationship or decision; more nodes are not a quality
    target. Use the official scenario guide and examples instead of building UI.
-3. Read `references/authoring-contract.md` when source evidence or advanced
+3. Read the installed `references/authoring-contract.md` when source evidence or advanced
    composition is needed. Use supported source references for verified repository
    facts. Never claim that references or a snapshot track future code changes.
    Preserve the original viewer and its defaults unless the request selects a
    presentation style or motion. Follow the installed language contract and
    disclose unsupported viewer translations; preserve technical identifiers.
 4. Keep editable JSON and HTML together in the target project's artifact location.
-   Follow `references/delivery-contract.md` for validation, delivery, visual review,
+   Follow the installed `references/delivery-contract.md` for validation, delivery, visual review,
    and exports. Inspect the screenshots and exercise the selected reader features.
-   Require both upstream acceptance and an understandable, readable composition.
+   Require upstream acceptance and a readable composition.
    Report unavailable checks and unresolved findings. Revisions edit JSON and
    rerun the official CLI; never patch generated HTML or engine files.
 5. Follow the installed `SKILL.md` update awareness at its prescribed point.

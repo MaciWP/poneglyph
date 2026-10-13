@@ -1,10 +1,10 @@
-# Anti-slop — bans + tells
+# Anti-slop: bans + tells
 
-The single highest-leverage lever for non-generic output is a **negative vocabulary**: concrete bans + a catalog of "AI tells". This reference is the **canonical home** for those — `SKILL.md` points here instead of restating (Cmd IX).
+The single highest-leverage lever for non-generic output is a **negative vocabulary**: concrete bans + a catalog of "AI tells". This reference is the **canonical home** for those; `SKILL.md` points here instead of restating (Cmd IX).
 
 ## Why AI design is generic (root cause)
 
-LLMs emit the **statistical median** of their training corpus. The purple/indigo signature traces to Tailwind's `bg-indigo-500` demo default cascading across thousands of tutorials into training data. Escaping the median requires explicit prohibition — bans override priors better than positive guidance. Sources: prg.sh "Why Your AI Keeps Building the Same Purple Gradient Website"; dev.to/alanwest; pbakaus/impeccable.
+LLMs emit the **statistical median** of their training corpus. The purple/indigo signature traces to Tailwind's `bg-indigo-500` demo default cascading across thousands of tutorials into training data. Escaping the median requires explicit prohibition: bans override priors better than positive guidance. Sources: prg.sh "Why Your AI Keeps Building the Same Purple Gradient Website"; dev.to/alanwest; pbakaus/impeccable.
 
 ## Absolute Bans (NEVER)
 
@@ -56,8 +56,8 @@ One instance can be polish; the same motion repeated across the page is the tell
 | Uniform fade-in | ≥4 components share an identical opacity + translateY enter | vary by element role, or show it without motion |
 | Motion on static content | an entrance on a heading, paragraph or nav whose only purpose is the entrance | render it at once; motion only where it orients |
 
-## Note for integration (US5)
-`SKILL.md` currently has an inline "anti-generic AI look" row. On integration, that row is **replaced by a pointer to this file** — single source of truth, no duplication.
+## Relation to SKILL.md
+`SKILL.md` points to this file for the anti-generic AI look instead of restating it: single source of truth, no duplication.
 
 ## Sources
-github.com/pbakaus/impeccable · github.com/leonxlnx/taste-skill (Production-Test Tells) · prg.sh · dev.to/alanwest · Anthropic frontend-design (anti-pattern list) · github.com/kylezantos/design-motion-principles (MIT, motion tells adapted from `references/anti-checklist.md`). Full provenance: `.claude/plans/_research-skill-evolution-2026-05-29.md` Part B.
+github.com/pbakaus/impeccable · github.com/leonxlnx/taste-skill (Production-Test Tells) · prg.sh · dev.to/alanwest · Anthropic frontend-design (anti-pattern list) · github.com/kylezantos/design-motion-principles (MIT, motion tells adapted from `references/anti-checklist.md`).

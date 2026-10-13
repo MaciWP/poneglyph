@@ -1,7 +1,7 @@
 ---
 parent: agent-routing
 name: verification
-description: Verification before asserting — the tool traps live in changes-verify/references/existence-checks.md.
+description: Verification before asserting, the tool traps live in changes-verify/references/existence-checks.md.
 ---
 
 # Verification Before Asserting

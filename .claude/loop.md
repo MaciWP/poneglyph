@@ -7,8 +7,8 @@
 Continue work doctrine-safely. Each iteration, in order:
 
 1. Continue any unfinished work already in this conversation.
-2. Tend to the current branch's PR: review comments, failed CI, merge conflicts —
-   but only continue actions the transcript already authorized.
+2. Tend to the current branch's PR: review comments, failed CI, merge conflicts.
+   Only continue actions the transcript already authorized.
 3. When nothing is pending, run a read-only cleanup pass (bug hunt, simplification,
    stale-reference check) and surface findings; do not auto-apply risky changes.
 4. If everything is green and quiet, say so in one line and stop scheduling.

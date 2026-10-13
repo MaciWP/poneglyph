@@ -23,7 +23,7 @@ Citing matters. A wrong URL or a non-canonical source destroys the educational v
 | Stack | Canonical domain | Notes |
 |---|---|---|
 | Django | `docs.djangoproject.com` | Always pin to a version: `/en/5.0/`, `/en/5.1/`, `/en/stable/` is acceptable when the topic is version-stable |
-| DRF | `www.django-rest-framework.org` | No version in path — site is single-version |
+| DRF | `www.django-rest-framework.org` | No version in path: site is single-version |
 | Python | `docs.python.org/3/` | Pin minor: `/3.13/` for project-current Python |
 | Postgres | `www.postgresql.org/docs/` | Pin major: `/16/`, `/17/` |
 | TypeScript | `www.typescriptlang.org/docs/` | Single version |
@@ -65,9 +65,9 @@ Examples:
 
 Rules:
 
-- Quote must be VERBATIM — do not paraphrase.
+- Quote must be VERBATIM: do not paraphrase.
 - URL must include the anchor (`#fragment`) when the citation refers to a sub-section.
-- Title in `[...]` matches the page title or the section heading — not invented.
+- Title in `[...]` matches the page title or the section heading, not invented.
 
 ## Verification Procedure
 

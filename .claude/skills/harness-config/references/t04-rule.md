@@ -1,10 +1,10 @@
 ---
 parent: harness-config
 name: t04-rule
-description: T4 rule pack — always-loaded request files. Out of check-config (D15).
+description: T4 rule pack, always-loaded request files. Out of check-config (D15).
 ---
 
-# T4 — Rule
+# T4: Rule
 
 Shared: [lookup.md](lookup.md) · [lifecycle.md](lifecycle.md) · [t01-skill.md](t01-skill.md) · [t09-memory.md](t09-memory.md).
 
@@ -22,7 +22,7 @@ Claude memory/path-specific rules. Codex AGENTS.md / config. Grok `12-project-ru
 |---|---|---|---|
 | Path | `.claude/rules/*.md` (path globs in frontmatter) | `AGENTS.md` layers; not a cloned `.claude/rules` tree | `.grok/rules/*.md` + AGENTS.md/CLAUDE.md names; also scans `.claude/rules/` when compat on |
 | Gate | **Out of `check-config` (D15)** | same | same |
-| Cost | Always-loaded — budget ratchet, not a new CI line count | AGENTS.md size is request cost | same |
+| Cost | Always-loaded: budget ratchet, not a new CI line count | AGENTS.md size is request cost | same |
 | Disable | Remove or don't match path | Don't load that file | Don't ship the file; compat.claude.rules=false stops Claude-tree rules |
 | Reload | Session / path touch | Restart / new session | Session; trust required for project files |
 
@@ -42,6 +42,6 @@ Keep rules thin. Path-scope when possible. Always-loaded growth hits the budget 
 
 | Cell | Status |
 |---|---|
-| Rules in `check-config` | **ausente** (D15) — do not add |
+| Rules in `check-config` | **ausente** (D15), do not add |
 | Codex `.claude/rules` clone | **ausente** |
-| Codex `.codex/rules/*.rules` | **ausente** from T4 — experimental sandbox `prefix_rule`, not always-do markdown |
+| Codex `.codex/rules/*.rules` | **ausente** from T4, experimental sandbox `prefix_rule`, not always-do markdown |

@@ -1,25 +1,25 @@
 ---
 parent: drillme-clarify
 name: catalog-socratic
-description: 4 canonical categories of the Socratic Prompt Method — full templates, adaptation by context, anti-patterns.
+description: 4 canonical categories of the Socratic Prompt Method, full templates, adaptation by context, anti-patterns.
 ---
 
 # Canonical 4-category catalog
 
 ## Contents
 
-- [1. [location] — Challenge location](#1-location-challenge-location)
-- [2. [approach] — Challenge approach](#2-approach-challenge-approach)
-- [3. [context] — Introduce context](#3-context-introduce-context)
-- [4. [failure] — Probe failure modes](#4-failure-probe-failure-modes)
+- [1. [location]: Challenge location](#1-location-challenge-location)
+- [2. [approach]: Challenge approach](#2-approach-challenge-approach)
+- [3. [context]: Introduce context](#3-context-introduce-context)
+- [4. [failure]: Probe failure modes](#4-failure-probe-failure-modes)
 - [Coverage calibration](#coverage-calibration)
 - [Combining with complementary patterns](#combining-with-complementary-patterns)
 
-Source: [Socratic Prompt Method, Jaseci Labs 2026](https://blogs.jaseci.org/blog/2026/03/10/socratic-prompt-method/) + [Towards AI — The Socratic Prompt 2025](https://towardsai.net/p/machine-learning/the-socratic-prompt-how-to-make-a-language-model-stop-guessing-and-start-thinking).
+Source: [Socratic Prompt Method, Jaseci Labs 2026](https://blogs.jaseci.org/blog/2026/03/10/socratic-prompt-method/) + [Towards AI, The Socratic Prompt 2025](https://towardsai.net/p/machine-learning/the-socratic-prompt-how-to-make-a-language-model-stop-guessing-and-start-thinking).
 
-Each drillme-clarify should cover **at least 3 of these 4 categories**. Skipping a category is acceptable but must be declared honestly ("Skipping `[X]` — N/A in this context"). Inventing a synthetic question to pad coverage is an anti-pattern.
+Each drillme-clarify should cover **at least 3 of these 4 categories**. Skipping a category is acceptable but must be declared honestly ("Skipping `[X]`, N/A in this context"). Inventing a synthetic question to pad coverage is an anti-pattern.
 
-## 1. `[location]` — Challenge location
+## 1. `[location]`: Challenge location
 
 ### Purpose
 
@@ -37,7 +37,7 @@ Architectural awareness. Surfaces assumptions about **where** something lives, *
 ### When to skip honestly
 
 - Context is purely conceptual (no file/code yet) → location N/A.
-- Decision is "should we do X at all?" — location is downstream.
+- Decision is "should we do X at all?", location is downstream.
 
 ### Anti-patterns
 
@@ -46,7 +46,7 @@ Architectural awareness. Surfaces assumptions about **where** something lives, *
 | File-path guessing | Question references a specific path without verification | First Glob/Read, then ask |
 | Layer cargo-cult | "MVC says this goes in controller" without checking project conventions | Glob/Grep similar files first |
 
-## 2. `[approach]` — Challenge approach
+## 2. `[approach]`: Challenge approach
 
 ### Purpose
 
@@ -65,7 +65,7 @@ Pattern reasoning. Surfaces assumptions about **why this pattern over alternativ
 ### When to skip honestly
 
 - Approach is mechanical (rename, format) → no choice.
-- Approach is dictated by external constraint (security/compliance) — challenging it is performative.
+- Approach is dictated by external constraint (security/compliance), challenging it is performative.
 
 ### Anti-patterns
 
@@ -74,7 +74,7 @@ Pattern reasoning. Surfaces assumptions about **why this pattern over alternativ
 | Steel-man missing | Critique without representing the strongest case for the alternative | Steel-man before critique (anti-pattern #3 from decide (heavy tier)) |
 | Contrarian for its own sake | "Why not X?" without a reason X would be better | Disagree only with concrete reason |
 
-## 3. `[context]` — Introduce context
+## 3. `[context]`: Introduce context
 
 ### Purpose
 
@@ -101,19 +101,19 @@ Dependency discovery. Surfaces interactions, side effects, downstream consumers,
 | Generic "ensure compatibility" | No specific dependency named | Name the dependency or skip |
 | Dependency invention | Citing imports that don't exist | Grep first, then claim |
 
-## 4. `[failure]` — Probe failure modes
+## 4. `[failure]`: Probe failure modes
 
 ### Purpose
 
-Edge case robustness. Surfaces what breaks, what's worst-case, what we'd regret in 6 months.
+Edge-case resilience. Surfaces what breaks, what's worst-case, what we'd regret in 6 months.
 
 ### Canonical templates
 
 | Template | When to use |
 |---|---|
-| "What happens if `<edge case>`?" | Always — edge cases are universal |
+| "What happens if `<edge case>`?" | Always: edge cases are universal |
 | "What's the worst-case scenario?" | Severity calibration |
-| "It's 6 months later, this failed — why?" | Pre-mortem (from decide (heavy tier)) |
+| "It's 6 months later, this failed, why?" | Pre-mortem (from decide (heavy tier)) |
 | "What would guarantee the worst outcome?" | Inversion |
 | "If we deploy this Friday and break Saturday, what's the rollback?" | Operational failure modes |
 | "What's the silent failure mode?" | Errors that don't fail loudly |
@@ -131,7 +131,7 @@ Edge case robustness. Surfaces what breaks, what's worst-case, what we'd regret 
 
 ## Coverage checklist (gap-driven, not count-driven)
 
-There is no "N questions for complexity tier X" table. Coverage is driven by gaps, not by a target count: **sweep every category; for each, if a gap exists that would change the decision, ask; if it genuinely doesn't apply, declare "N/A — reason".** On trivial input no gaps surface → zero questions (the hybrid gate in SKILL.md). On an ambiguous decision many surface → ask until closed.
+There is no "N questions for complexity tier X" table. Coverage is driven by gaps, not by a target count: **sweep every category; for each, if a gap exists that would change the decision, ask; if it genuinely doesn't apply, declare "N/A, reason".** On trivial input no gaps surface → zero questions (the hybrid gate in SKILL.md). On an ambiguous decision many surface → ask until closed.
 
 Sweep these aspect categories:
 
@@ -141,7 +141,7 @@ Sweep these aspect categories:
 | **Lateral / improvement** (what the user did NOT mention) | partial failures · retries / idempotency · timeouts & downtime · input validation · authz / security surface · performance & scale · observability · migration / rollback / backward-compat · UX / DX · cost & effort · data & state lifecycle · concurrency |
 | **Phase bank** (inside /flow-lifecycle) | the detected phase's questions from `03-phase-questions.md` |
 
-The lateral group is where drillme-clarify earns its keep: it surfaces the gaps the requester didn't think to mention. Still gap-gated — a category with no real gap is declared N/A, never padded with a synthetic question.
+The lateral group is where drillme-clarify earns its keep: it surfaces the gaps the requester didn't think to mention. Still gap-gated: a category with no real gap is declared N/A, never padded with a synthetic question.
 
 ## Combining with complementary patterns
 

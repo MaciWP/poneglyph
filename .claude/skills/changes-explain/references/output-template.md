@@ -25,7 +25,7 @@ description: Literal "professor-mode" report template plus a condensed good exam
 - [Cambios punto por punto](#cambios-punto-por-punto)
 - [Que sigue](#que-sigue)
 
-Format every report with this structure. Sections are FIXED — do not rename, reorder, or omit. If a section is empty, write "No aplica" rather than removing it.
+Format every report with this structure. Sections are FIXED: do not rename, reorder, or omit. If a section is empty, write "No aplica" rather than removing it.
 
 ## Literal Template
 
@@ -94,7 +94,7 @@ Test de coexistencia (Cambio 3)
 ### 1. UniqueConstraint condicional
 - **Que hace**: reemplaza `unique=True` por `UniqueConstraint(fields=["company","code"], condition=Q(deleted__isnull=True))`.
 - **Por que es necesario**: SoftDeleteModel deja filas en BD; el unique global colisiona al re-crear.
-- **Como funciona**: Postgres soporta indices parciales — la constraint solo aplica cuando deleted es NULL.
+- **Como funciona**: Postgres soporta indices parciales: la constraint solo aplica cuando deleted es NULL.
 - **Verificacion**:
   > [Django Model Meta options](https://docs.djangoproject.com/en/5.0/ref/models/options/#django.db.models.Options.constraints): "UniqueConstraint... A condition limits the constraint to a subset of rows."
 - **Caveats**: requiere migracion data-aware si ya hay duplicados con deleted-not-null.
@@ -102,9 +102,9 @@ Test de coexistencia (Cambio 3)
 ### 2. Migracion 0042
 - **Que hace**: drop del unique simple, add del UniqueConstraint condicional.
 - **Por que es necesario**: el cambio en Meta requiere migracion explicita.
-- **Como funciona**: dos operaciones en la misma migracion — orden importa.
+- **Como funciona**: dos operaciones en la misma migracion, orden importa.
 - **Verificacion**: ver test 3, que cubre la coexistencia post-migracion.
-- **Caveats**: en bases con duplicados existentes, esta migracion fallara — anadir `RunPython` previo si aplica.
+- **Caveats**: en bases con duplicados existentes, esta migracion fallara, anadir `RunPython` previo si aplica.
 
 ### 3. Test de coexistencia
 - **Que hace**: crea fila A, soft-delete, crea fila B con mismo code → debe pasar.
@@ -116,7 +116,7 @@ Test de coexistencia (Cambio 3)
 - **Q**: por que no `unique_together`?
   **A**: `unique_together` no acepta `condition`. UniqueConstraint con condition es la unica via.
 - **Q**: funciona en MySQL?
-  **A**: no — indices parciales son Postgres-specific en Django ORM. Verificable en doc oficial.
+  **A**: no: indices parciales son Postgres-specific en Django ORM. Verificable en doc oficial.
 
 ## Que sigue
 - Profundizo en la migracion 0042?

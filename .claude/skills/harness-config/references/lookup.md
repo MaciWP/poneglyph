@@ -4,7 +4,7 @@ name: lookup
 description: Live official-docs recipe per host. Fetch now. Local pack text is snapshot plus gotchas, not the live law.
 ---
 
-# Lookup — live official docs
+# Lookup: live official docs
 
 No fetcher script (D22). Date-stamp every fetch. Unreachable → use the pack snapshot and say so.
 
@@ -17,7 +17,7 @@ No fetcher script (D22). Date-stamp every fetch. Unreachable → use the pack sn
 | Codex | https://developers.openai.com/codex · https://learn.chatgpt.com/llms.txt | https://learn.chatgpt.com/codex/build-skills.md | `$skill-creator`; `~/.codex/config.toml` |
 | Grok Build | https://docs.x.ai/build | Installed `~/.grok/docs/user-guide/08-skills.md` | `grok inspect` |
 
-Conflict: portable Agent Skills wins for the nucleus (`name`, `description`, body, `references/`). Host extensions stay in that host's column. A conflict between live doc, pack snapshot, and installed CLI is reported with provenance — never updated in silence.
+Conflict: portable Agent Skills wins for the nucleus (`name`, `description`, body, `references/`). Host extensions stay in that host's column. A conflict between live doc, pack snapshot, and installed CLI is reported with provenance; never updated in silence.
 
 ## How to record a fetch
 

@@ -20,7 +20,7 @@ async function scan(dir: string): Promise<{ stdout: string; code: number }> {
 }
 
 describe("scan-secrets CLI", () => {
-  it("H54 — scans a .env file, which is where real secrets live", async () => {
+  it("H54: scans a .env file, which is where real secrets live", async () => {
     const dir = join(root, "env-case");
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, ".env"), `API_KEY=${VALUE}\n`, "utf8");
@@ -28,7 +28,7 @@ describe("scan-secrets CLI", () => {
     expect(stdout).toContain(".env");
   });
 
-  it("H54 — scans a dotted .env variant (.env.local)", async () => {
+  it("H54: scans a dotted .env variant (.env.local)", async () => {
     const dir = join(root, "env-local-case");
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, ".env.local"), `API_KEY=${VALUE}\n`, "utf8");
@@ -36,7 +36,7 @@ describe("scan-secrets CLI", () => {
     expect(stdout).toContain(".env.local");
   });
 
-  it("H17 — never prints the matched secret value", async () => {
+  it("H17: never prints the matched secret value", async () => {
     const dir = join(root, "redaction-case");
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, "config.ts"), `const API_KEY = "${VALUE}";\n`, "utf8");
@@ -45,7 +45,7 @@ describe("scan-secrets CLI", () => {
     expect(stdout).not.toContain(VALUE);
   });
 
-  it("H17 — still reports the finding type and location after redaction", async () => {
+  it("H17: still reports the finding type and location after redaction", async () => {
     const dir = join(root, "shape-case");
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, "config.ts"), `\nconst API_KEY = "${VALUE}";\n`, "utf8");

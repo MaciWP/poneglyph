@@ -2,7 +2,7 @@
 
 Expert-vetted design rules consumed by `html-report` during generation (and available to any visual surface). **HARD** = measurable/checkable; **TASTE** = expert consensus. Every rule carries its source.
 
-> Scope: this reference ADDS measurable rules. It does NOT restate html-report's own doctrine (single deep-teal accent, serif display, tabular numerals) — that lives in `SKILL.md`. No overlap by design (Cmd IX).
+> Scope: this reference ADDS measurable rules. It does NOT restate html-report's own doctrine (single deep-teal accent, serif display, tabular numerals); that lives in `SKILL.md`. No overlap by design (Cmd IX).
 
 ## Spacing
 
@@ -64,7 +64,7 @@ Expert-vetted design rules consumed by `html-report` during generation (and avai
 | GPU-only | animate only `transform` + `opacity` (never width/height/top/left) | HARD | web.dev; Comeau |
 | Theme switch | switching theme must NOT trigger transitions | HARD | Rauno Freiberg |
 
-## Accessibility (WCAG — hard, measurable)
+## Accessibility (WCAG: hard, measurable)
 
 | Rule | Value | Type | Source |
 |---|---|---|---|
@@ -74,4 +74,4 @@ Expert-vetted design rules consumed by `html-report` during generation (and avai
 | Not color-alone | convey state via text/label, not color alone | HARD | WCAG |
 
 ## Sources
-Refactoring UI (Wathan/Schoger) · github.com/raunofreiberg/interfaces · joshwcomeau.com (shadows, color-formats) · emilkowal.ski + animations.dev · m3.material.io · nngroup.com/articles/animation-duration · web.dev/animations-guide · tailwindcss.com · ui.shadcn.com · WCAG 2.1/2.2. Full provenance: `.claude/plans/_research-skill-evolution-2026-05-29.md` Part B.
+Refactoring UI (Wathan/Schoger) · github.com/raunofreiberg/interfaces · joshwcomeau.com (shadows, color-formats) · emilkowal.ski + animations.dev · m3.material.io · nngroup.com/articles/animation-duration · web.dev/animations-guide · tailwindcss.com · ui.shadcn.com · WCAG 2.1/2.2.

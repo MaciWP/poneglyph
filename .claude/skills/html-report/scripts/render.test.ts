@@ -13,7 +13,7 @@ const data: ReportData = {
   ],
 };
 
-test("T3.1 — self-contained: one <style>, no external script", () => {
+test("T3.1: self-contained: one <style>, no external script", () => {
   const html = render(data);
   expect((html.match(/<style/g) || []).length).toBe(1);
   expect(html.includes("<!DOCTYPE html>")).toBe(true);
@@ -22,7 +22,7 @@ test("T3.1 — self-contained: one <style>, no external script", () => {
   expect(html.includes('id="b"')).toBe(true);
 });
 
-test("T3.2 — fallback: content + anchor nav present in static markup", () => {
+test("T3.2: fallback: content + anchor nav present in static markup", () => {
   const html = render(data);
   const noScript = html.replace(/<script[\s\S]*?<\/script>/g, "");
   expect(noScript.includes("hello alpha")).toBe(true);
@@ -31,13 +31,13 @@ test("T3.2 — fallback: content + anchor nav present in static markup", () => {
   expect(noScript.includes('href="#b"')).toBe(true);
 });
 
-test("T3.3 — edge: empty sections does not throw", () => {
+test("T3.3: edge: empty sections does not throw", () => {
   const html = render({ meta: { title: "Empty", date: "2026-06-08" }, sections: [] });
   expect(html.includes("<!DOCTYPE html>")).toBe(true);
   expect(html.includes("<section")).toBe(false);
 });
 
-test("T3.4 — prose md: Markdown field renders + fenced code is copyable", () => {
+test("T3.4: prose md: Markdown field renders + fenced code is copyable", () => {
   const html = render({
     meta: { title: "T", date: "2026-06-08" },
     sections: [{ id: "m", title: "Md", blocks: [{ type: "prose", md: "**bold** and\n\n```ts\nconst x=1;\n```" }] }],
@@ -47,7 +47,7 @@ test("T3.4 — prose md: Markdown field renders + fenced code is copyable", () =
   expect(html).toContain("const x=1;");
 });
 
-test("T3.5 — comment block with copy: raw md kept for clipboard", () => {
+test("T3.5: comment block with copy: raw md kept for clipboard", () => {
   const html = render({
     meta: { title: "T", date: "2026-06-08" },
     sections: [{ id: "c", title: "C", blocks: [{ type: "comment", data: { md: "review **note**", title: "file.ts:10", copy: true } }] }],
@@ -57,22 +57,21 @@ test("T3.5 — comment block with copy: raw md kept for clipboard", () => {
   expect(html).toContain("file.ts:10");       // label
 });
 
-// ---- 039 US3 — theme.ts serves the canonical tokens ----
-// Named "US3/T3.x" because T3.1–T3.5 above predate feature 039.
+// ---- US3: theme.ts serves the canonical tokens ----
 const tokensCss = readFileSync(join(import.meta.dir, "..", "templates", "tokens.css"), "utf8");
 
-test("US3/T3.1 — themeCss() is the canonical file", () => {
+test("US3/T3.1: themeCss() is the canonical file", () => {
   expect(themeCss()).toBe(tokensCss);
 });
 
-test("US3/T3.2 — render() inlines tokens.css once and keeps its layout width", () => {
+test("US3/T3.2: render() inlines tokens.css once and keeps its layout width", () => {
   const html = render(data);
   const style = html.match(/<style>([\s\S]*?)<\/style>/)![1];
   expect(style.split(tokensCss).length - 1).toBe(1);
   expect(style).toContain("--maxw:1180px");
 });
 
-test("US3/T3.3 — guard: no data-theme without a defaultTheme", () => {
+test("US3/T3.3: guard: no data-theme without a defaultTheme", () => {
   const html = render({ ...data, defaultTheme: undefined });
   expect(html).toContain('<html lang="es">');
   expect(/<html[^>]*data-theme/.test(html)).toBe(false);

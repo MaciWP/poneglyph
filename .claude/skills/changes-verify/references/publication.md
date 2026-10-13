@@ -82,7 +82,7 @@ candidate checks (SHA and PR/run links), and actual integration (merge SHA and
 destination ancestry). A pushed branch or an open PR is not a completed merge.
 Source checks do not establish native hook trust or model activation.
 
-Incident, 2026-09-08: a direct `main` push of the Codex and Archify commits was
+Incident: a direct `main` push of the Codex and Archify commits was
 rejected because protection required a PR and remote checks, including for admins.
 Local validation had passed but the candidate had no Actions runs. Remote preflight
 belongs in KNOW, before choosing the publication path, rather than after rejection.

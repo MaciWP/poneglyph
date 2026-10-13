@@ -1,13 +1,12 @@
 ---
 name: changes-explain
-description: |
-  Explica cambios de código con su contexto, motivo y validación: ficheros, commits, ramas o diff pendiente. Úsala para entender un cambio o aprender de una PR; la revisión con veredicto usa pr-review.
-metadata:
-  keywords: explícame este cambio, qué hace este diff, explain this change, why this change, enséñame qué cambió
+description: >-
+  Explica cambios de código con su contexto, motivo y validación: ficheros, commits, ramas
+  o un diff pendiente. Úsala para "explícame este cambio", "qué hace este diff", "enséñame
+  cómo funciona", "walk me through", o un comentario de review pegado para entenderlo. No
+  es para el veredicto de una revisión (pr-review).
 disable-model-invocation: false
 argument-hint: "[file | commit-hash | branch | --pending (default)]"
-when_to_use: |
-  "explícame este cambio", "qué hace este diff", "enséñame", "explain this change", "walk me through", "onboarding"
 ---
 
 # changes-explain
@@ -28,7 +27,7 @@ Educational walkthrough of code changes. Reads the target, investigates the surr
 
 > The user learns by being walked through the code, not by being given the answer.
 
-Every claim is grounded — in the codebase via Read/Grep, or in canonical documentation via WebFetch. Vague summaries are forbidden; each numbered point links back to the logical chain that justifies it.
+Every claim is grounded: in the codebase via Read/Grep, or in canonical documentation via WebFetch. Vague summaries are forbidden; each numbered point links back to the logical chain that justifies it.
 
 ## When to Use
 
@@ -36,7 +35,7 @@ Every claim is grounded — in the codebase via Read/Grep, or in canonical docum
 |---|---|
 | "explicame los cambios pendientes" | Resolve target = working tree, run full workflow |
 | "que hace este commit" + hash | Resolve target = `git show <hash>` |
-| "ensename esta rama" | Resolve target = diff vs merge-base with `dev-workflow`/`main` |
+| "ensename esta rama" | Resolve target = diff vs merge-base with the default branch |
 | "que cambio en `apps/foo/models.py`" | Resolve target = file + git blame |
 | "onboarding al modulo X" | Resolve target = file/dir, full workflow with deeper context |
 
@@ -48,7 +47,7 @@ Every claim is grounded — in the codebase via Read/Grep, or in canonical docum
 | User wants quality assessment of the change | `pr-review` skill |
 | User wants to decide between approaches | `compare-and-decide` skill |
 | Pure debugging of a runtime error | `Skill('troubleshooting')` invoked by the Lead |
-| User wants to MODIFY the code | `flow` skill (build phase) — this skill is read-only |
+| User wants to MODIFY the code | `flow` skill (build phase): this skill is read-only |
 
 ## Input Resolution
 
@@ -76,7 +75,7 @@ graph TD
     A[Input received] --> B[Resolve scope]
     B --> C[Identify logical changes]
     C --> D[Investigate context: codebase reads + greps]
-    D --> E{Confidence in non-obvious behavior >= 70%?}
+    D --> E{Sure of the non-obvious behavior?}
     E -->|No| F[WebFetch reputable source]
     E -->|Yes| G[Compose report]
     F --> G
@@ -88,11 +87,11 @@ graph TD
 
 Before writing the report:
 
-1. **Read the target completely** — never skim. If the target is a diff, read both pre and post versions of each touched hunk.
+1. **Read the target completely**: never skim. If the target is a diff, read both pre and post versions of each touched hunk.
 2. **For each logical change**, batch in parallel: Grep for symbol usages, Read associated tests (tests reveal intent).
 3. **Get the commit message** when applicable (`git log -1 <hash>` or `git log -- <file>`). The message often holds the WHY.
 4. **Compare with project pattern**: Grep similar code elsewhere in the repo to confirm whether this change is canonical or novel.
-5. **Confidence gate**: if uncertainty about library/framework behavior is >= 30% (i.e. confidence < 70%), WebFetch the official doc.
+5. **Confidence gate**: when you are not sure how a library or framework behaves, WebFetch the official doc.
 
 Detailed checklist with batching rules and stack-specific guidance: `${CLAUDE_SKILL_DIR}/references/investigation-checklist.md`.
 
@@ -103,27 +102,22 @@ Detailed checklist with batching rules and stack-specific guidance: `${CLAUDE_SK
 - 3-5 bullets: WHAT changed and WHY.
 - Mention the logical chain if changes depend on each other.
 
-## Cadena logica
+## Cadena lógica
 Diagram (text or mermaid) showing how each change depends on the previous one.
 
 ## Cambios punto por punto
 ### 1. {nombre del cambio}
-- **Que hace**: 1-2 frases.
-- **Por que es necesario**: razon (link a cambio previo si depende).
-- **Como funciona** (si no obvio): explicacion + cita `path/file.py:line`.
-- **Verificacion** (si aplica): cita literal de doc oficial con URL completa.
-- **Caveats / opinion**: notas honestas, anti-patterns, mejoras posibles.
+- **Qué hace**: 1-2 frases.
+- **Por qué es necesario**: razón (link a cambio previo si depende).
+- **Cómo funciona** (si no es obvio): explicación + cita `path/file.py:line`.
+- **Verificación** (si aplica): cita literal de doc oficial con URL completa.
+- **Caveats / opinión**: notas honestas, anti-patterns, mejoras posibles.
 
 ### 2. ...
 
 ## Preguntas frecuentes pre-anticipadas
 - **Q**: pregunta probable (3-5).
   **A**: respuesta directa.
-
-## Que sigue
-- Profundizo en algun punto?
-- Aplico el patron a otro fichero / explico cambio relacionado?
-- Verifico contra otra fuente?
 ```
 
 Full template, good vs bad examples, and the "professor-mode" rationale: `${CLAUDE_SKILL_DIR}/references/output-template.md`.
@@ -146,7 +140,7 @@ Reputable sources by stack, citation format, override rules ("100% certeza" forc
 
 Closing every report:
 
-1. End with explicit follow-up offer: "Profundizo en X / sigo con Y / aplico el patron a Z?"
+1. End when the questions are answered; a real choice of next target goes through `AskUserQuestion`.
 2. If user asks a focused question → respond in-place with same rigor (verify + cite). DO NOT regenerate the full report.
 3. If user says "no entiendo X" → reformulate with analogy + concrete example.
 4. If question moves outside the original scope → offer to re-scope: "Esto pertenece a [otro target]. Cambio el target?"
@@ -163,7 +157,7 @@ Detail per pattern (focused Q&A, re-scope, cancel, reformulation): `${CLAUDE_SKI
 | Citar StackOverflow / blog post como autoritativo | Only canonical sources (see verification-rules.md) |
 | Inventar URLs de documentacion | Verify URL via WebFetch before citing |
 | Reporte exhaustivo cuando el cambio es trivial | Calibrate depth to change complexity |
-| Modificar codigo "para arreglar lo que no entiende" | This skill is read-only — use the `flow` skill (build phase) to make changes |
+| Modificar codigo "para arreglar lo que no entiende" | This skill is read-only: use the `flow` skill (build phase) to make changes |
 | Regenerar el reporte completo en cada follow-up | Focused Q&A only re-runs the relevant verification |
 | Inventar el commit message si no esta disponible | Say "no commit message available" explicitly |
 
@@ -181,14 +175,14 @@ Detail per pattern (focused Q&A, re-scope, cancel, reformulation): `${CLAUDE_SKI
 
 | # | Cómo |
 |---|---|
-| III | Honest about gaps — "no commit message available" instead of inventing one |
+| III | Honest about gaps: "no commit message available" instead of inventing one |
 | II | Verifies framework behavior against reputable sources (WebFetch) before explaining it |
-| I | Read-only by design — understands the change, never modifies code (that is `flow` build phase) |
+| I | Read-only by design: understands the change, never modifies code (that is `flow` build phase) |
 | VII | Teaching mode turns a diff into transferable understanding (onboarding, self-improvement) |
 
 ## Related
 
-- `flow` skill (build phase) — the write path; this skill explains, it never edits.
+- `flow` skill (build phase): the write path; this skill explains, it never edits.
 - Verify file/symbol claims during investigation (`changes-verify` → existence checks).
 
 ---

@@ -4,7 +4,7 @@ Specific corrections for each scoring criterion.
 
 ## By Criterion
 
-### Clarity (0 → 20)
+### Clarity
 
 | If missing | Add |
 |----------|--------|
@@ -12,7 +12,7 @@ Specific corrections for each scoring criterion.
 | Target | Specific file, function, endpoint |
 | Action | What should happen exactly |
 
-### Context (0 → 20)
+### Context
 
 | If missing | Add |
 |----------|--------|
@@ -20,7 +20,7 @@ Specific corrections for each scoring criterion.
 | Technology | "using Elysia", "with Drizzle ORM" |
 | Dependencies | "requires bcrypt for hashing" |
 
-### Structure (0 → 20)
+### Structure
 
 | If missing | Add |
 |----------|--------|
@@ -28,7 +28,7 @@ Specific corrections for each scoring criterion.
 | Separation | Headers for sections |
 | Clarity | Inline code for identifiers |
 
-### Success (0 → 20)
+### Success
 
 | If missing | Add |
 |----------|--------|
@@ -36,7 +36,7 @@ Specific corrections for each scoring criterion.
 | Output | "returns 201 with {id, email}" |
 | Verification | "test X must pass" |
 
-### Actionable (0 → 20)
+### Actionable
 
 | If missing | Add |
 |----------|--------|
@@ -44,14 +44,10 @@ Specific corrections for each scoring criterion.
 | Ambiguity | Remove "maybe", "perhaps" |
 | Completeness | All required info present |
 
-## Quick Fix Table
+## Fix Order
 
-| Current Score | Priority Correction |
-|--------------|------------------------|
-| < 20 | Add verb + target |
-| 20-40 | Add technical context |
-| 40-60 | Structure with bullets |
-| 60-70 | Add success criterion |
+When several criteria fail, fix them in this order: Clarity (verb + target), Context,
+Success, Structure.
 
 ## Quick Improvement Template
 
@@ -60,12 +56,11 @@ Specific corrections for each scoring criterion.
 [pegar prompt del usuario]
 
 ## Análisis
-- Clarity: X/20 - [razón]
-- Context: X/20 - [razón]
-- Structure: X/20 - [razón]
-- Success: X/20 - [razón]
-- Actionable: X/20 - [razón]
-- **Total: XX/100**
+- Clarity: pasa/falla - [qué falta]
+- Context: pasa/falla - [qué falta]
+- Structure: pasa/falla - [qué falta]
+- Success: pasa/falla - [qué falta]
+- Actionable: pasa/falla - [qué falta]
 
 ## Prompt Mejorado
 [versión mejorada]

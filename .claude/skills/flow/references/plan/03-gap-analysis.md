@@ -1,10 +1,10 @@
 ---
 parent: flow
 name: gap-analysis
-description: Gap Analysis + Ground Truth — files to touch/create/delete with verifications, environment feedback per change.
+description: Gap Analysis + Ground Truth, files to touch/create/delete with verifications, environment feedback per change.
 ---
 
-# Gap Analysis + Ground Truth — references/03
+# Gap Analysis + Ground Truth: references/03
 
 ## Gap Analysis
 

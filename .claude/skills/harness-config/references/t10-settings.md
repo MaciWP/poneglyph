@@ -1,10 +1,10 @@
 ---
 parent: harness-config
 name: t10-settings
-description: T10 host settings pack — Claude settings.json, Codex config.toml, Grok config.toml. Extra keys a host ignores stay ignored.
+description: T10 host settings pack, Claude settings.json, Codex config.toml, Grok config.toml. Extra keys a host ignores stay ignored.
 ---
 
-# T10 — Host settings
+# T10: Host settings
 
 Shared: [lookup.md](lookup.md) · [lifecycle.md](lifecycle.md) · [t11-permissions.md](t11-permissions.md) · [t12-env.md](t12-env.md).
 Absorbs cookbook `02-settings-json.md` (D27). Do not edit `sync-claude` / `sync-codex` / `sync-grok`.
@@ -23,7 +23,7 @@ Claude settings-reference (`code.claude.com/docs/en/settings-reference`). Codex 
 |---|---|---|---|
 | Files | Managed → CLI → `.claude/settings.local.json` → project `.claude/settings.json` → `~/.claude/settings.json`. Arrays merge+dedupe | `~/.codex/config.toml`; repo `.codex/config.toml`; profiles | `~/.grok/config.toml` (host). `~/.grok/pager.toml` = TUI appearance only, not Claude settings. Project `.grok/config.toml` **only** `[mcp_servers]`, `[plugins]`, `[permission]`, `[mcp] max_output_bytes` |
 | This repo | **Project `.claude/settings.json` stays hook-free**: `$schema` + `respectGitignore` only. Global via `settings.global.json` → sync | Host-native TOML | Host-native TOML; `grok inspect` shows who won |
-| Extra keys | Invalid key can **skip the whole file** (attribution boolean vs string). Unknown keys: confirm live schema | Extra keys ignored or fail parse — confirm live | Unknown keys: `grok inspect` reports; do not copy Claude JSON keys into TOML |
+| Extra keys | Invalid key can **skip the whole file** (attribution boolean vs string). Unknown keys: confirm live schema | Extra keys ignored or fail parse, confirm live | Unknown keys: `grok inspect` reports; do not copy Claude JSON keys into TOML |
 | Reload | New session for most keys | Restart | Restart (`grok inspect`) |
 
 MCP is **not** Claude `settings.json` (T6: `.mcp.json`).

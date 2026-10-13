@@ -4,10 +4,10 @@ name: t12-env
 description: T12 environment-variable pack. Secrets stay in env / key files, never in git. Claude does not read .env.
 ---
 
-# T12 — Environment variables
+# T12: Environment variables
 
 Shared: [lookup.md](lookup.md) · [lifecycle.md](lifecycle.md) · [t10-settings.md](t10-settings.md).
-Absorbs cookbook `04-env-vars.md` (D27). `.env` edits still need `sensitive: <reason ≥8 chars>`.
+Absorbs cookbook `04-env-vars.md` (D27). `.env` edits follow CLAUDE.md §Hard rules (sensitive files).
 
 ## 1. What / when
 
@@ -22,7 +22,7 @@ Claude env-vars page + settings `env`. Codex `learn.chatgpt.com/docs/config-file
 | | Claude Code | Codex | Grok Build |
 |---|---|---|---|
 | Surfaces | `settings.json` `env` (per scope); shell export; **does not read `.env` files** | `CODEX_HOME` and the public env list; `config.toml` for durable settings | `GROK_*` overrides; `[session] load_envrc`; process env. `GROK_CONFIG` is a config overlay, not a secret dump |
-| Secrets | Env / key files. Never commit tokens | same (`env_key` names a var; do not paste the value) | same. MCP `env = { KEY = "sk-…" }` in docs is an example — interpolate |
+| Secrets | Env / key files. Never commit tokens | same (`env_key` names a var; do not paste the value) | same. MCP `env = { KEY = "sk-…" }` in docs is an example; interpolate |
 | Precedence | Env var often wins the matching setting (e.g. `CLAUDE_CODE_EFFORT_LEVEL` vs `effortLevel`) | Env for overrides; TOML for durable | Env > `config.toml` > default (per key; `grok inspect`) |
 | `.env` | Not loaded by Claude Code | Not this pack's Claude recipe | `[session] load_envrc` is opt-in `.envrc`, not a committed `.env` with tokens |
 | Reload | New session / new shell | New process | New process |
@@ -47,4 +47,4 @@ No committed token examples. `.env` / `*.lock` / `package.json` / `settings*.jso
 |---|---|
 | Claude reading `.env` | **ausente** |
 | Token literals in templates | **ausente** |
-| Copying `CLAUDE_CODE_*` names into Grok | **ausente** — use `GROK_*` / TOML |
+| Copying `CLAUDE_CODE_*` names into Grok | **ausente**, use `GROK_*` / TOML |

@@ -4,20 +4,20 @@ name: native-creators
 description: Host skill/workflow creators draft files only. harness-config owns lookup, impact, check:config, and the Poneglyph layer (AC26).
 ---
 
-# Native creators — draft only (AC26)
+# Native creators: draft only (AC26)
 
 | Host | Tool | Owns |
 |---|---|---|
-| Claude Code | **ausente** — `claude plugin init <name>` scaffolds a directory only | Nothing. Author by hand under this skill |
+| Claude Code | **ausente**: `claude plugin init <name>` scaffolds a directory only | Nothing. Author by hand under this skill |
 | Codex | `$skill-creator` (ChatGPT Work: `@skill-creator`) | Draft files |
 | Grok Build | `/create-skill` · `/create-workflow` | Draft files |
 
 A green native tool is **not** the gate. After the draft, this skill still owns:
 
-1. **Lookup** — live official docs for the type and host ([lookup.md](lookup.md)).
-2. **Impact** — grep consumers before modify / disable / delete (§Impact in [SKILL.md](../SKILL.md)).
-3. **`bun run check:config`** — source floor in this repo.
-4. **Poneglyph layer** — this-repo activation copy (English `description` / `when_to_use` with literal es-ES trigger phrases, `metadata.keywords`, ≥3 evals). Portable nucleus only when authoring for a foreign repo (AC13).
+1. **Lookup**: live official docs for the type and host ([lookup.md](lookup.md)).
+2. **Impact**: grep consumers before modify / disable / delete (§Impact in [SKILL.md](../SKILL.md)).
+3. **`bun run check:config`**: source floor in this repo.
+4. **Poneglyph layer**: this-repo activation copy (the description contract in [t01-skill.md](t01-skill.md), ≥3 evals). Portable nucleus only when authoring for a foreign repo (AC13).
 
 ## Do not
 

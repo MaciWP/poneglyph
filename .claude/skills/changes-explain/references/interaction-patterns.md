@@ -1,7 +1,7 @@
 ---
 parent: changes-explain
 name: interaction-patterns
-description: Follow-up patterns after the first report — focused Q&A, re-scope, apply pattern, cancel, reformulation with analogies
+description: Follow-up patterns after the first report, focused Q&A, re-scope, apply pattern, cancel, reformulation with analogies
 ---
 
 # Interaction Patterns
@@ -32,7 +32,7 @@ End every report with one of these (pick the most relevant 2-3):
 - "Aplico el patron a [otro caso plausible]?"
 - "Verifico contra otra fuente?"
 
-Never close with a generic "si quieres te explico mas" — be specific.
+Never close with a generic "si quieres te explico mas", be specific.
 
 ## Pattern Catalog
 
@@ -40,7 +40,7 @@ Never close with a generic "si quieres te explico mas" — be specific.
 |---|---|---|
 | "profundiza en N" / "expande punto N" | Focused deep-dive | Re-run investigation only on point N; output JUST the expanded point, no other sections |
 | "y por que X?" | Focused Q&A | Answer the single question, with verification + cite if applicable |
-| "no entiendo X" | Reformulation | Use analogy + concrete example — see Reformulation section |
+| "no entiendo X" | Reformulation | Use analogy + concrete example, see Reformulation section |
 | "sigue con [otro fichero/commit]" | Re-scope | Treat as new input, run full workflow on the new target |
 | "aplica el patron a [otro caso]" | Apply | Read the new target, identify if same pattern fits, walk through. If it does NOT fit, say so explicitly |
 | "ya entiendo" / "vale" / "gracias" | Stop | Stop. No closing summary. One-line acknowledgment max |
@@ -83,9 +83,9 @@ Example:
 ```markdown
 "UniqueConstraint con condition" en simple:
 
-**Analogia**: como una alfombrilla con la regla "solo una taza encima — pero las tazas vacias no cuentan". Si la taza esta soft-deleted (vacia), no impide poner otra encima.
+**Analogia**: como una alfombrilla con la regla "solo una taza encima, pero las tazas vacias no cuentan". Si la taza esta soft-deleted (vacia), no impide poner otra encima.
 
-**Ejemplo concreto en el repo**: ver test_can_create_after_soft_delete en apps/library/tests/models_tests.py:42 — crea, borra, vuelve a crear. Pasa.
+**Ejemplo concreto en el repo**: ver test_can_create_after_soft_delete en apps/library/tests/models_tests.py:42: crea, borra, vuelve a crear. Pasa.
 
 **Reformulado**: la unicidad se aplica solo a las filas vivas (deleted IS NULL), no a las muertas.
 ```
@@ -95,7 +95,7 @@ Example:
 When the question moves outside the current target:
 
 ```markdown
-La pregunta sale del scope actual ([target original]) — pertenece a [otro target].
+La pregunta sale del scope actual ([target original]), pertenece a [otro target].
 
 Cambio el target a [nuevo target]?
 - Si: re-ejecuto el workflow completo sobre el nuevo target.

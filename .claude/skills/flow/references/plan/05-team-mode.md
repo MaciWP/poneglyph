@@ -1,19 +1,19 @@
 ---
 parent: flow
 name: team-mode
-description: Team Mode Planning + Cross-Validation (Four-Eyes principle) — domain boundaries, teammate prompts, recovery plan.
+description: Team Mode Planning + Cross-Validation (Four-Eyes principle), domain boundaries, teammate prompts, recovery plan.
 ---
 
-# Team Mode + Cross-Validation — references/07
+# Team Mode + Cross-Validation: references/07
 
 ## Contents
 
 - [Cross-Validation (Four-Eyes Principle)](#cross-validation-four-eyes-principle)
 - [Team Mode Planning](#team-mode-planning)
 
-> **Post-feature-008 mapping** — the named agents in this doc (`planner`/`builder`/`reviewer`/`scout`) were **cut**. Team mode now uses generic **scoped teammates** (experimental, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`); map `builder` → `flow` (build phase) / impl unit, `reviewer` → `flow` (review phase) / review panel (≥4), `scout` → `Explore` (built-in), `planner` → `flow` (plan phase). The patterns (Four-Eyes generator→validator, domain boundaries, recovery loop) **remain valid** — only the agent names died. The generator→validator pattern is exactly what a `Workflow` `pipeline(items, find, verify)` encodes.
+> **Agent names in this doc**: `planner`/`builder`/`reviewer`/`scout` are roles, not agents. Team mode uses generic **scoped teammates** (experimental, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`); map `builder` → `flow` (build phase) / impl unit, `reviewer` → `flow` (review phase) / review panel (≥4), `scout` → `Explore` (built-in), `planner` → `flow` (plan phase). The patterns (Four-Eyes generator→validator, domain boundaries, recovery loop) **remain valid**, only the agent names died. The generator→validator pattern is exactly what a `Workflow` `pipeline(items, find, verify)` encodes.
 >
-> **Spawn model (CC 2.1.178)** — there is **no setup step**: `TeamCreate`/`TeamDelete` were removed; with the flag set, every session has one **implicit team**. Spawn a teammate directly via the `Agent` tool's `name` parameter (the old `team_name` param is accepted but ignored). Permission rules can scope spawns with `Tool(param:value)` syntax, e.g. `Agent(model:opus)`.
+> **Spawn model (CC 2.1.178)**: there is **no setup step**: `TeamCreate`/`TeamDelete` were removed; with the flag set, every session has one **implicit team**. Spawn a teammate directly via the `Agent` tool's `name` parameter (the old `team_name` param is accepted but ignored). Permission rules can scope spawns with `Tool(param:value)` syntax, e.g. `Agent(model:opus)`.
 
 ## Cross-Validation (Four-Eyes Principle)
 
@@ -53,7 +53,7 @@ sequenceDiagram
 
 ### Agent Combinations
 
-> Generator/Validator below are **roles**, not custom agents (those were cut — see L14). Map: generator = impl teammate / `flow` (build phase); validator = review teammate / `flow` (review phase). The pattern = a `Workflow` `pipeline(items, find, verify)`.
+> Generator/Validator below are **roles**, not custom agents. Map: generator = impl teammate / `flow` (build phase); validator = review teammate / `flow` (review phase). The pattern = a `Workflow` `pipeline(items, find, verify)`.
 
 | Task | Generator (role) | Validator (role) |
 |------|-----------|-----------|
@@ -66,7 +66,7 @@ sequenceDiagram
 
 ## Team Mode Planning
 
-When the Lead requests a plan with `execution_mode = team` (complexity > 60, 3+ independent domains), extend the standard plan with these additional sections.
+When the Lead requests a plan with `execution_mode = team` (high complexity, 3+ independent domains), extend the standard plan with these additional sections.
 
 ### Team Assembly
 
@@ -77,7 +77,7 @@ Select agents based on task analysis:
 | `Explore` (exploration) | Codebase exploration | ALWAYS |
 | build (implementation) | Code implementation | ALWAYS |
 | review (validation) | Quality validation | ALWAYS |
-| plan (Mode B) | Complexity > 40 OR cross-domain interfaces — emits RFC + contracts inline | CONDITIONAL |
+| plan (Mode B) | Complexity > 40 OR cross-domain interfaces, emits RFC + contracts inline | CONDITIONAL |
 | `security-audit` | Keywords: auth, token, password, jwt, encryption | CONDITIONAL |
 
 ### Domain Boundary Definition

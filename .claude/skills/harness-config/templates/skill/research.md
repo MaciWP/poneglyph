@@ -3,19 +3,14 @@ name: {{SKILL_NAME}}
 description: |
   {{DESCRIPTION}}
   Use for "{{TRIGGER_PHRASE_1}}", "{{TRIGGER_PHRASE_2}}". Not for {{NOT_FOR}}.
-metadata:
-  keywords: >
-    Keywords - {{KEYWORD_1}}, {{KEYWORD_2}}, {{KEYWORD_3}}
 disable-model-invocation: false
-when_to_use: |
-  {{TRIGGER_CONDITION}}
 ---
 
 # {{SKILL_TITLE}}
 
 Research {{TOPIC}} thoroughly and provide well-sourced findings.
 
-Instantiate: `{{SKILL_NAME}}` kebab 1–64 matching the directory; `description` 1–1024; `when_to_use` and `metadata.keywords` strings. Portable default omits Claude-only `context: fork`. This-repo activation copy is English with the user's literal es-ES trigger phrases.
+Instantiate: `{{SKILL_NAME}}` kebab 1–64 matching the directory; `description` 1–1024. Portable default omits Claude-only `context: fork`. This repo: follow the description contract in `references/t01-skill.md` (Spanish, `Úsala para` / `No es para`, no `when_to_use`).
 
 ## Definition of Done
 
@@ -34,7 +29,7 @@ Instantiate: `{{SKILL_NAME}}` kebab 1–64 matching the directory; `description`
 
 - The answer is already in the repo and a Grep closes it.
 - The user asked for a change, not an investigation (use the matching build skill).
-- A single official page is enough — fetch that page; do not fan out.
+- A single official page is enough: fetch that page; do not fan out.
 
 ## Methodology
 
@@ -74,9 +69,9 @@ Instantiate: `{{SKILL_NAME}}` kebab 1–64 matching the directory; `description`
 
 ## Eval scenarios (≥3)
 
-1. {{Codebase-only question — no web}}
+1. {{Codebase-only question: no web}}
 2. {{Official-doc conflict with a local snapshot}}
-3. {{Nothing found — must say so, not invent}}
+3. {{Nothing found: must say so, not invent}}
 
 ## Anti-patterns
 

@@ -1,12 +1,12 @@
 /**
- * comments.ts — markdown interpretation + copy-to-clipboard for the html-report
+ * comments.ts: markdown interpretation + copy-to-clipboard for the html-report
  * DYNAMIC mode. Lets a report author write **Markdown** (instead of hand-rolled
  * inline HTML) in `prose`/`comment` content, and makes fenced code blocks (and
  * comment blocks) copy-pasteable with one click.
  *
  * Self-contained: no dependencies. mdToHtml is a deliberately SMALL CommonMark
  * subset (bold/italic/code/links/lists/headings/paragraphs + fenced code).
- * Untrusted source is HTML-escaped first, link schemes are sanitized — the
+ * Untrusted source is HTML-escaped first, link schemes are sanitized; the
  * output is inlined verbatim into a self-contained report, so it must be safe.
  */
 
@@ -25,21 +25,21 @@ function safeUrl(u: string): string {
 
 /** Inline formatting on an already-escaped string; code spans stay literal. */
 function inline(escaped: string): string {
-  // split on `code` spans — odd indices are literal code, never re-formatted
+  // split on `code` spans: odd indices are literal code, never re-formatted
   return escaped
     .split(/(`[^`]+`)/g)
     .map((part, i) => {
       if (i % 2 === 1) return `<code>${part.slice(1, -1)}</code>`;
       return (
         part
-          // bold: ** only. Underscore-bold is dropped on purpose — `__str__`,
+          // bold: ** only. Underscore-bold is dropped on purpose: `__str__`,
           // `__init__` and other dunders are code, not emphasis.
           .replace(/\*\*(\S(?:[^*]*\S)?)\*\*/g, "<strong>$1</strong>")
           // italic: * with word-boundary flanking so `*args`, `**kwargs`, `a*b`
           // stay literal (only a fully-delimited `*word*` italicizes).
           .replace(/(^|[^*\w])\*([^*\s](?:[^*]*[^*\s])?)\*(?![*\w])/g, "$1<em>$2</em>")
           // NOTE: underscore emphasis (`_x_` / `__x__`) intentionally NOT
-          // supported — snake_case and dunders must survive verbatim. Use ` ` ` ` `
+          // supported: snake_case and dunders must survive verbatim. Use ` ` ` ` `
           // for code identifiers and `**`/`*` for emphasis.
           .replace(
             /\[([^\]]+)\]\(([^)]+)\)/g,
@@ -91,7 +91,7 @@ function pushTextBlocks(out: string[], text: string): void {
  * become copy-pasteable `<pre>` panels.
  *
  * No placeholder/sentinel: we scan fences directly and alternate text/code
- * segments — robust against any whitespace reformatting.
+ * segments, safe against any whitespace reformatting.
  */
 export function mdToHtml(src: string): string {
   const out: string[] = [];
@@ -109,7 +109,7 @@ export function mdToHtml(src: string): string {
 
 /**
  * Wrap rendered `body` with a copy-to-clipboard button. The raw `source` is
- * kept in a hidden `<pre>` — that text is what the button copies (so a reader
+ * kept in a hidden `<pre>`; that text is what the button copies (so a reader
  * pastes the source, not the rendered HTML). No-JS fallback: body stays
  * visible/selectable; the button is an inert enhancement.
  */

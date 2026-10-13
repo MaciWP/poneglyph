@@ -22,7 +22,7 @@ A host counts as **installed** when its CLI resolves on PATH **or** its config h
 | Host | CLI | Config home(s) | Engine |
 |------|-----|----------------|--------|
 | Claude Code | `claude` | `~/.claude` | `.claude/scripts/sync-claude.ts` |
-| Codex | `codex` | `~/.codex`, then `$CODEX_HOME` — one run per existing profile (the shared default first: an account profile may link its `AGENTS.md` to it) | `.claude/scripts/sync-codex.ts` |
+| Codex | `codex` | `~/.codex`, then `$CODEX_HOME`; one run per existing profile (the shared default first: an account profile may link its `AGENTS.md` to it) | `.claude/scripts/sync-codex.ts` |
 | Grok Build | `grok` | `~/.grok` | `.claude/scripts/sync-grok.ts` |
 
 The command prints the detected set as a table (host · CLI · targets · action) before doing
@@ -33,13 +33,13 @@ detected → it says so and exits without changes.
 
 Engines run sequentially, fail-fast, always in this order:
 
-1. **Claude** — links `~/.claude/*`, generates `~/.claude/settings.json` (base + machine
+1. **Claude**: links `~/.claude/*`, generates `~/.claude/settings.json` (base + machine
    overlay, validated by `claude doctor`) and regenerates the style twin
    `.claude/system-prompts/poneglyph-sp.md`.
-2. **Codex** — generates `AGENTS.md` (doctrine + twin), links the core skills, generates
+2. **Codex**: generates `AGENTS.md` (doctrine + twin), links the core skills, generates
    `$name` command entrypoints and the native hooks; removes generated wrappers whose
-   command no longer exists. Once per profile.
-3. **Grok** — links the style twin and installs its native hook. Grok reuses `~/.claude`, so
+   command does not exist. Once per profile.
+3. **Grok**: links the style twin and installs its native hook. Grok reuses `~/.claude`, so
    selecting Grok always syncs Claude first (the command tells you).
 
 A failing engine stops the run; the summary shows 🟢 ran / 🔴 failed (exit code) / ⚪ not run.
@@ -51,7 +51,7 @@ A failing engine stops the run; the summary shows 🟢 ran / 🔴 failed (exit c
 | *(none)* | Preview: each engine shows what it would change |
 | `--status` | Current state of every detected host |
 | `--execute` | Apply changes; asks once for the whole set |
-| `--backup` | Save existing content before replacing — Codex and Grok **require** it when a target already exists |
+| `--backup` | Save existing content before replacing; Codex and Grok **require** it when a target already exists |
 | `--force` | Skip the confirmation; **required** without an interactive terminal (exit 2 otherwise) |
 | `--hosts LIST` | Override detection: `claude,codex,grok` in any combination, or `all` |
 | `--no-validate` | Skip the `claude doctor` acceptance check of the generated settings.json (Claude only) |
@@ -76,12 +76,11 @@ Each engine prints its help with `--help`.
 |------|----------|
 | `skills/` `commands/` `hooks/` `workflows/` `output-styles/` `scripts/` | Whole-folder links (junctions on Windows, symlinks elsewhere) |
 | `rules/` `docs/` | Per-entry links; project-only entries (`test-policy.md`, `docs/local-model/`) stay out of the global layer |
-| `plans/templates/` | `/flow-lifecycle` document templates — global fallback outside poneglyph |
+| `plans/templates/` | `/flow-lifecycle` document templates, global fallback outside poneglyph |
 | `CLAUDE.md` `loop.md` | Global instructions and the default `/loop` prompt |
 | `settings.json` | **Generated** real file: `.claude/settings.global.json` deep-merged with the ignored `.claude/settings.machine.json` |
-| `~/.config/ccstatusline/` | ccstatusline widget config (external link) |
 
-Not synced: `agent_docs/`, `experts/`, `plans/` (except `templates/`), `metrics/`, `evals/`.
+Not synced: `plans/` (except `templates/`), `evals/`.
 
 ## Multi-OS
 
@@ -107,7 +106,3 @@ be created, with recommendations. Codex profiles on Windows install skills as ju
 
 Registration is not activation: Codex hooks need trust in its `/hooks`, and Grok ignores
 passive hook output. After a sync, `bun run doctor` reports the state of every installed host.
-
----
-
-**Version**: 3.0.0 (2026-09-10 — replaces `/sync-claude`; one command for the three harnesses, Codex once per profile)

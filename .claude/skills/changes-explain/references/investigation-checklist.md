@@ -1,7 +1,7 @@
 ---
 parent: changes-explain
 name: investigation-checklist
-description: Step-by-step investigation protocol — reads, greps, tests, commit message, project pattern comparison, WebFetch triggers
+description: Step-by-step investigation protocol, reads, greps, tests, commit message, project pattern comparison, WebFetch triggers
 ---
 
 # Investigation Checklist
@@ -29,9 +29,9 @@ When investigating, BATCH parallel-safe operations in one message:
 | 3+ Reads on independent files | Read after Glob (depends on result) |
 | Grep the same symbol in source and tests | Edit after Read on the same file |
 | WebFetch + local Grep | Second WebFetch that depends on first's result |
-| `git show <hash>` + Read of related test file | — |
+| `git show <hash>` + Read of related test file | none |
 
-**Anti-pattern**: serial Reads of test, source, and config when all three are independent — always batch.
+**Anti-pattern**: serial Reads of test, source, and config when all three are independent, always batch.
 
 ## When to WebFetch
 
@@ -64,9 +64,9 @@ When a single change spans multiple stacks (e.g., a Django migration that adds a
 
 ## Read-the-Test Pattern
 
-Tests are the highest-leverage read because they encode intent in <30 lines. Pattern:
+Tests are the highest-value read because they encode intent in <30 lines. Pattern:
 
-1. From the changed source file, derive the test file path (project convention — e.g. a Django monorepo: `apps/<app>/tests/<area>_tests.py`).
+1. From the changed source file, derive the test file path (project convention, e.g. a Django monorepo: `apps/<app>/tests/<area>_tests.py`).
 2. Read it with Glob if the path is uncertain.
 3. The test's name tells you the WHAT, the AAA body tells you the WHY.
 4. If no test exists for the change, FLAG it in "Caveats" of the report.
@@ -76,15 +76,15 @@ Tests are the highest-leverage read because they encode intent in <30 lines. Pat
 | Commit message says | Implication |
 |---|---|
 | "fix" / "bugfix" + ticket | Look for the bug in the previous version of the file |
-| "refactor" / "rename" | Behavior preserved — focus the explanation on structure |
-| "feat" / "add" | New behavior — focus on the contract of the new symbol |
-| "WIP" / "wip" / no message | Treat as low-trust intent — rely more on tests + code |
+| "refactor" / "rename" | Behavior preserved: focus the explanation on structure |
+| "feat" / "add" | New behavior: focus on the contract of the new symbol |
+| "WIP" / "wip" / no message | Treat as low-trust intent: rely more on tests + code |
 | "Merge branch" | Skip the merge commit; explain the branch instead |
 
 ## Sanity Checks Before Composing
 
 - [ ] All claims about file/symbol existence backed by Read or Grep.
 - [ ] All claims about library behavior backed by test, project pattern, or WebFetch.
-- [ ] Logical chain identified — every numbered point links to its predecessor.
+- [ ] Logical chain identified, every numbered point links to its predecessor.
 - [ ] At least one citation per non-obvious change.
 - [ ] No invented URLs.

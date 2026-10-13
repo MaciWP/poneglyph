@@ -17,11 +17,11 @@ are described by the sources below.
 
 | Guide | Inspected source | Meaning retained |
 |---|---|---|
-| Poneglyph | [Doctrine](../../CLAUDE.md), [host adapters](../../.claude/docs/harness-adapters.md), [routing](../../.claude/rules/skill-routing.md), [doctor](../../.claude/scripts/doctor.ts), [lessons](../../.claude/skills/lessons-learned/SKILL.md) | Shared guidance, native execution, optional skill hints, evidence, and limits |
+| Poneglyph | [Doctrine](../../CLAUDE.md), [host adapters](../../.claude/docs/harness-adapters.md), [routing](../../.claude/hooks/prompt-router.ts), [doctor](../../.claude/scripts/doctor.ts), [lessons](../../.claude/skills/lessons-learned/SKILL.md) | Shared guidance, native execution, optional skill hints, evidence, and limits |
 | Flow | [Command](../../.claude/commands/flow-lifecycle.md), [state helper](../../.claude/scripts/flow-state.ts), [verification contract](../../.claude/docs/flow-contract.md), [contract implementation](../../.claude/scripts/lib/flow-contract.ts) | Six phase skills, two human decisions, dependent tasks, review repair, state, and verified closure |
 | Dev | [Skill](../../.claude/skills/dev-workflow/SKILL.md), [verification](../../.claude/skills/changes-verify/SKILL.md) | Five stages, proportional depth, approval by impact, real checks, and return to the failed premise |
 
-## Current local validation — 2026-09-13
+## Current local validation: 2026-09-13
 
 The integrated S1–S6 remediation candidate uses the approved public skill names.
 Architecture source links retain their original paths at `baf1fb8`; renamed paths
@@ -66,7 +66,7 @@ README image. The PNG is the complete canonical diagram; benefits and limits are
 in the HTML cards and the README comparison table. The generated viewer retains
 the upstream [MIT license](LICENSE.archify.txt). Viewing needs only a browser.
 
-## Historical validation — 2026-09-08
+## Historical validation: 2026-09-08
 
 All three deliveries passed 9/9 showcase artifact checks with zero composition
 errors and warnings. Each passed containment at 1440×900, 1600×1000, 1920×1080,

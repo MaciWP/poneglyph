@@ -22,7 +22,7 @@
     {
       "id": "precio", "num": "01", "title": "Precio",
       "blocks": [
-        { "type": "chart", "data": { "kind": "bar", "title": "Precio aprox. en USD — verde = más barato", "series": [
+        { "type": "chart", "data": { "kind": "bar", "title": "Precio aprox. en USD (verde = más barato)", "series": [
           { "label": "Pulsar", "value": 70, "health": "good" },
           { "label": "Wallhack", "value": 80, "health": "mid" },
           { "label": "LGG Venus", "value": 90, "health": "mid" },
@@ -35,7 +35,7 @@
     {
       "id": "stats", "num": "02", "title": "Estadísticas (síntesis de reviews)",
       "blocks": [
-        { "type": "callout", "data": { "kind": "note", "title": "Cómo leer esto", "body": "Scoring 1–10 derivado del <b>consenso de reviews</b> (gamerhardware, Tom's Hardware, Pangoly) — NO son cifras del fabricante. Glass <i>micro-etched</i> da más control; <i>smooth</i> da más velocidad." } },
+        { "type": "callout", "data": { "kind": "note", "title": "Cómo leer esto", "body": "Scoring 1–10 derivado del <b>consenso de reviews</b> (gamerhardware, Tom's Hardware, Pangoly); NO son cifras del fabricante. Glass <i>micro-etched</i> da más control; <i>smooth</i> da más velocidad." } },
         { "type": "chart", "data": { "kind": "bar", "title": "Velocidad / glide", "series": [
           { "label": "Skypad 3.0", "value": 9, "health": "good" },
           { "label": "Pulsar", "value": 9, "health": "good" },

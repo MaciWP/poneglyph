@@ -25,14 +25,14 @@ description: Literal output template, scaled by stakes, with 2 worked examples (
 - [Phase 5: Final Recommendation with Per-Perspective Vote](#phase-5-final-recommendation-with-per-perspective-vote)
 - [Outstanding Questions for the User](#outstanding-questions-for-the-user)
 - [Scaling by Stakes](#scaling-by-stakes)
-- [Worked Example A — Low Stakes (5 perspectives, no debate)](#worked-example-a-low-stakes-5-perspectives-no-debate)
+- [Worked Example A: Low Stakes (5 perspectives, no debate)](#worked-example-a-low-stakes-5-perspectives-no-debate)
 - [Stakes Tier](#stakes-tier)
 - [Phase 1: Perspectives](#phase-1-perspectives)
 - [Phase 3: Synthesis](#phase-3-synthesis)
 - [Verdict](#verdict)
 - [Phase 4: Validation Report](#phase-4-validation-report)
 - [Phase 5: Final Recommendation with Per-Perspective Vote](#phase-5-final-recommendation-with-per-perspective-vote)
-- [Worked Example B — High Stakes](#worked-example-b--high-stakes) (removed 031 — scale Example A per `03-stakes-calibration.md`)
+- [Worked Example B: High Stakes](#worked-example-b-high-stakes)
 - [Stakes Tier](#stakes-tier)
 - [Initial Triage](#initial-triage)
 - [Framing Check](#framing-check)
@@ -62,7 +62,7 @@ The final stress-test output follows this structure. Sections marked `[High only
 **Debate cycles**: [0 / 1 / 2 / 3 / max-reached]
 
 ## Initial Triage
-<questions asked + answers received, OR "Skipped — input was sufficient">
+<questions asked + answers received, OR "Skipped: input was sufficient">
 
 ## Framing Check
 <answer to "are we solving the right problem?", "is there an Option C?">
@@ -97,7 +97,7 @@ The final stress-test output follows this structure. Sections marked `[High only
 ## Phase 3: Synthesis
 
 ### Steel-Man (post-debate)
-<coherent paragraph; if cannot be built → "STEEL-MAN FAILED — decision is not defensible">
+<coherent paragraph; if cannot be built → "STEEL-MAN FAILED: decision is not defensible">
 
 ### Assumption Audit
 | Assumption | Likelihood true | Impact if false | Flag |
@@ -135,7 +135,7 @@ The final stress-test output follows this structure. Sections marked `[High only
 
 ## Core Tension
 <the single unresolved disagreement, if any. THIS IS THE INSIGHT.>
-<If debate failed: explicitly note "no core tension surfaced — debate was entrenched/failed">
+<If debate failed: explicitly note "no core tension surfaced: debate was entrenched/failed">
 
 ## Decision Guide
 | If <condition> → | Then <recommendation> |
@@ -159,9 +159,9 @@ The final stress-test output follows this structure. Sections marked `[High only
 - ...
 
 ## Phase 4: Validation Report
-**4.1 Findings Validation**: [PASS / FAIL — reason]
-**4.2 Debate Validation**: [PASS / FAIL — reason / N/A if Low stakes]
-**4.3 Verdict Validation**: [PASS / FAIL — reason]
+**4.1 Findings Validation**: [PASS / FAIL: reason]
+**4.2 Debate Validation**: [PASS / FAIL: reason / N/A if Low stakes]
+**4.3 Verdict Validation**: [PASS / FAIL: reason]
 **4.4 Self-Meta Check** (5-question audit):
 - [ ] Steel-Man genuinely strong
 - [ ] No vague doom
@@ -237,7 +237,7 @@ The final stress-test output follows this structure. Sections marked `[High only
 
 ---
 
-## Worked Example A — Low Stakes (5 perspectives, no debate)
+## Worked Example A: Low Stakes (5 perspectives, no debate)
 
 **Input**: "Should the new pytest fixture have scope=`session` or scope=`function`?"
 
@@ -248,7 +248,7 @@ The final stress-test output follows this structure. Sections marked `[High only
 **Tier**: Low
 **Reasoning**: Reversible per fixture, no public surface, isolated change.
 **Perspectives spawned**: 5 (Outsider, Adversary, Maintainer, Simplifier, Linus)
-**Debate cycles**: 0 (Low stakes — Phase 2 skipped)
+**Debate cycles**: 0 (Low stakes; Phase 2 skipped)
 
 ## Phase 1: Perspectives
 
@@ -266,7 +266,7 @@ The final stress-test output follows this structure. Sections marked `[High only
 #### Pros
 - scope=session is faster
 #### Contras (Major if mutable state)
-- Test contamination — most painful failure mode in test suites
+- Test contamination: most painful failure mode in test suites
 #### Mitigation
 - Use scope=function unless the fixture is read-only
 
@@ -280,7 +280,7 @@ The final stress-test output follows this structure. Sections marked `[High only
 ### Simplifier
 **Position**: scope=function / **Confidence**: 80
 #### What's added that the problem doesn't strictly require
-- The decision itself: pytest's default IS function-scope. Choosing scope=function is choosing the default — not adding anything. Choosing session is adding a non-default behavior plus an implicit read-only contract.
+- The decision itself: pytest's default IS function-scope. Choosing scope=function is choosing the default, not adding anything. Choosing session is adding a non-default behavior plus an implicit read-only contract.
 #### Simplest version that could work
 - Use the default. Document the reason inline if non-obvious. Promote to session only if a measurement justifies it.
 
@@ -305,8 +305,8 @@ The fixture is read-only and tests are slow enough that session scope is measura
 
 ## Phase 4: Validation Report
 **4.1 Findings Validation**: PASS
-**4.2 Debate Validation**: N/A (Low stakes — no debate)
-**4.3 Verdict Validation**: PASS — verdict is actionable; "scope=function unless read-only AND speedup measured"
+**4.2 Debate Validation**: N/A (Low stakes; no debate)
+**4.3 Verdict Validation**: PASS: verdict is actionable; "scope=function unless read-only AND speedup measured"
 **4.4 Self-Meta Check**:
 - [x] Steel-Man strong
 - [x] No vague doom
@@ -338,7 +338,7 @@ None.
 **Level**: Strong consensus (5/5 SUPPORT)
 
 ### Decision Confidence Score
-N/A for Low stakes — no debate cycles, no step-back judge. Confidence derived from Phase 4 Validation result and Phase 5 unanimity.
+N/A for Low stakes: no debate cycles, no step-back judge. Confidence derived from Phase 4 Validation result and Phase 5 unanimity.
 **Final Decision Confidence**: 92% (5/5 SUPPORT, all HIGH-confidence findings, Phase 4 PASS)
 
 ### Final verdict (after consensus interaction)
@@ -347,6 +347,6 @@ Proceed with `scope=function`. Confidence remains HIGH.
 
 ---
 
-## Worked Example B — High Stakes
+## Worked Example B: High Stakes
 
-Removed (031 content cut): scale Example A up per the Phase tables and `03-stakes-calibration.md` for Medium/High — the structure is identical, only perspective count, debate rounds and technique coverage grow.
+Not included: scale Example A up per the Phase tables and `03-stakes-calibration.md` for Medium/High; the structure is identical, only perspective count, debate rounds and technique coverage grow.

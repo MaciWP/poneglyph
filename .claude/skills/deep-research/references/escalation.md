@@ -1,4 +1,4 @@
-# Escalation — when and how to spend the ≤10 agent budget
+# Escalation: when and how to spend the ≤10 agent budget
 
 Load only when the viability gate is **PARTIAL** or **INSUFFICIENT**.
 
@@ -25,8 +25,8 @@ diverge (e.g. in-repo T1 vs external vendor docs).
 Before any `Agent()` / fan-out:
 
 1. Draft each prompt from the template below (SEED + gap + exclusion).
-2. **`Skill(prompt-design)`** — Context 3 (review delegation prompt). Score/fix until
-   Arch H blocks and rubric are solid (≥80). One batch review of all drafts is OK.
+2. **`Skill(prompt-design)`**: Context 3 (review delegation prompt). Score/fix until
+   Arch H blocks are present and all five criteria pass. One batch review of all drafts is OK.
 3. Only then spawn. Never ship a raw template paste without this gate.
 
 `prompt-design` does **not** count toward the ≤10 research-agent cap (it runs in the
@@ -41,9 +41,9 @@ text. Every agent is **read-only**.
 You are a research finder (read-only). Cold-start forbidden: respect SEED and EXCLUSION.
 
 OBJECTIVE
-<one gap or cluster only — not the whole original question>
+<one gap or cluster only, not the whole original question>
 
-SEED (already verified or strongly evidenced by the Lead — EXTEND, do not repeat)
+SEED (already verified or strongly evidenced by the Lead: EXTEND, do not repeat)
 <paste SEED pack: claims, sources, tiers, confidence>
 
 EXCLUSION (do not re-grep / re-fetch unless you must refute a specific dispute)
@@ -58,7 +58,7 @@ TASKS
 
 CONSTRAINTS
 - Evidence tiers: A/B/C/D/T1 per research-rigor.
-- Numeric claims: verbatim quote anchor OR mark [Probable]/UNVERIFIED.
+- Numeric claims: verbatim quote anchor OR mark [Suposición]/UNVERIFIED.
 - Cap tool thrash: prefer ≤8 tool calls; stop on diminishing returns.
 - No product code edits. No user-facing prose essay.
 
@@ -99,5 +99,5 @@ CLAIMS:
 
 - Second wave “cleanup” agents without a new user ask.
 - Spawn Explore agents with empty objective (“look around”).
-- Spend the full 10 by default — the cap is a ceiling, not a target.
+- Spend the full 10 by default: the cap is a ceiling, not a target.
 - Invoke agents without `Skill(prompt-design)` on their prompts.

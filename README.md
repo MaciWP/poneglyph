@@ -58,7 +58,7 @@ The state helper records evidence; it does not run or authenticate the checks.
 **Flow organizes the feature; Dev guides each coding task.** A small fix can use
 Dev directly. Ceremony scales with the task: a typo gets one line of evidence,
 high-blast-radius work shows every stage and waits.
-REVIEW runs the checks and the affected behavior; LEARN retains non-obvious lessons.
+The five stages are defined in [`CLAUDE.md`](CLAUDE.md) §How to work.
 Closing a task or a Flow lifecycle does not authorize a commit, push, or merge.
 
 **Explore locally:** open an HTML link, use GitHub's **Download raw file**, and
@@ -76,17 +76,16 @@ for the checked architecture and Flow revisions, and how to regenerate the diagr
 | Tool | Why | Required? |
 |------|-----|-----------|
 | **Bun** ≥ 1.3 | Runs every hook (`.ts`) and the test suite (`bun test`) | **Yes** |
-| **Git** (PortableGit) | Version control; the `git-branch` statusline widget | **Yes** |
-| **ccstatusline** | Status bar: cost + quota reset + usage | Optional |
-| **Node.js** | — | **No** (project is bun-only; node is not installed and not needed) |
+| **Git** (PortableGit) | Version control | **Yes** |
+| **Node.js** | none | **No** (project is bun-only; node is not installed and not needed) |
 
 Historical bootstrap baseline: **Bun 1.3.6**, **MinGit 2.51.2**,
-**ccstatusline 2.2.10**, test suite **81 pass / 0 fail**. These are not the current
+test suite **81 pass / 0 fail**. These are not the current
 verification results; use `bun run doctor` for the current checkout and machine.
 
 ---
 
-## Install — step by step
+## Install: step by step
 
 ### 1. Bun (portable, no admin)
 
@@ -107,10 +106,10 @@ if ($userPath -notlike "*$binDir*") { [Environment]::SetEnvironmentVariable("Pat
 & "$binDir\bun.exe" --version   # -> 1.3.6
 ```
 
-> **Do NOT** use `irm bun.sh/install.ps1 | iex` — remote-script execution is the
+> **Do NOT** use `irm bun.sh/install.ps1 | iex`: remote-script execution is the
 > exact risk class the repo blocks in `permissions.deny` (`curl * | sh`).
 
-Full detail + uninstall: [`docs/statusline-setup.md`](./docs/statusline-setup.md) §Step 1-2.
+Uninstall: remove `%USERPROFILE%\.bun` and strip `…\.bun\bin` from the user PATH.
 
 ### 2. Git (PortableGit, no admin)
 
@@ -132,8 +131,6 @@ git config --global init.defaultBranch main
 git config --global pull.rebase false
 ```
 
-Full detail: [`docs/git-setup.md`](./docs/git-setup.md).
-
 ### 3. Clone + install deps
 
 ```powershell
@@ -142,7 +139,7 @@ cd poneglyph
 bun install --frozen-lockfile
 ```
 
-### 4. ⚠️ settings.json PATH — the critical Windows gotcha
+### 4. ⚠️ settings.json PATH: the critical Windows gotcha
 
 Claude Code **does not expand** `${HOME}` / `${PATH}` inside `settings.json`
 `env` (GitHub issue [#4276](https://github.com/anthropics/claude-code/issues/4276)),
@@ -162,19 +159,10 @@ $real = "$bun;$git;" + [Environment]::GetEnvironmentVariable("PATH","Machine") +
 # Put $real (backslashes escaped as \\) into .claude/settings.machine.json -> env.PATH
 ```
 
-> **Restart Claude Code after editing `settings.json`** — `env` is injected at
+> **Restart Claude Code after editing `settings.json`**: `env` is injected at
 > startup; a running session keeps the old PATH.
 
-### 5. ccstatusline (optional)
-
-```powershell
-& "$env:USERPROFILE\.bun\bin\bun.exe" install -g ccstatusline@2.2.19
-```
-
-Then add the `statusLine` block + widget config — full steps in
-[`docs/statusline-setup.md`](./docs/statusline-setup.md).
-
-### 6. Verify
+### 5. Verify
 
 ```powershell
 bun --version            # 1.3.6
@@ -201,13 +189,7 @@ The Poneglyph repository itself intentionally declares no hooks in its project
 `settings.json`; Claude loads user and project settings together, so duplicating
 the registrations there would execute each hook twice.
 
-| Event | Hook | Purpose |
-|-------|------|---------|
-| `PreToolUse` (Bash) | `headless-model-gate.ts` | Deny a headless `claude -p` without a cheap `--model` (Fable/Opus need `--allow-expensive`) |
-| `PreToolUse` (Bash) | `bash-output-shaper.ts` | Deny whole-file `cat`/`sed` dumps (>12 KB), bound unbounded `git log`/`ls -R`/`find` (`# raw` bypasses) |
-| `UserPromptSubmit` | `skill-activation.ts` | Precise `Skill()` hints on keyword match |
-| `Stop` | `security-gate.ts` | Secret warn + git-discipline warn (session repo only) |
-| `InstructionsLoaded` | `instructions-loaded.ts` | Log every instruction-layer load |
+Which hook runs on which event, and what each one does: [`.claude/rules/paths/hooks.md`](.claude/rules/paths/hooks.md).
 
 ---
 
@@ -238,7 +220,7 @@ execution in this repository. Codex links the core skill catalog, generates
 entrypoints for shared commands, and preserves other handlers when adding native
 hooks. Review new hooks in Codex `/hooks` before they can run. Grok's adapter
 installs the style twin and native PreToolUse handler. Repo doctor after a configuration
-change: `bun run doctor` — one table covering all three adapters, `claude
+change: `bun run doctor`: one table covering all three adapters, `claude
 plugin validate`, the full suite, the always-loaded budget ratchet
 (`bun run budget`) and a privacy grep (terms in the gitignored
 `.claude/doctor.local.json`); `bun run doctor:fast` skips the suite. Feed its `--md`
@@ -261,7 +243,7 @@ The current bridge topology and verification commands live in
 | `.claude/hooks/` | Shared hook logic, native event adapters and tests |
 | `.claude/commands/` | `/flow-lifecycle`, `/expert-role`, `/sync-poneglyph` |
 | `.claude/plans/` | `/flow-lifecycle` feature lifecycles (`{NNN}-{slug}/`) |
-| `docs/` | Machine bootstrap records (git, statusline) |
+| `docs/` | Machine bootstrap records (git) |
 
 ---
 

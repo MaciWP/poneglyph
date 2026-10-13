@@ -1,24 +1,46 @@
-# Error Recovery — Procedural Reference
+# Error Recovery: Procedural Reference
 
-For supervised Orca workers, load `orca-team`'s execution reference and the
-live Orca guide. Do not translate native SendMessage recipes into terminal input
-or treat an idle/uncertain worker as stopped. Preserve shared-worktree reservations
-until ownership is resolved. The native Workflow/Team recipes below are separate.
+On-demand detail behind CLAUDE.md §How to work (failure line). Load this when actually recovering from a failure.
 
-On-demand detail behind `.claude/rules/error-recovery.md` (which keeps only the always-loaded behavioral triggers: retry budget, identical-error override, stuck detection, escalation rung). Load this when actually recovering from a failure.
+## Retry Budget
+
+The Lead diagnoses failures inline with `troubleshooting` when needed, then retries, replans or escalates. Retry only proven failures within the allowance.
+
+| Error Type | Max Retries | Then |
+|------------|-------------|------|
+| Inline build: test failure | 2 | Lead diagnoses with `troubleshooting` → fix inline |
+| Inline build: Edit conflict | 1 | Re-read file, re-issue the edit |
+| Workflow unit failure | 1 | Lead diagnoses → re-run the unit (or fold inline) |
+| Workflow unit timeout | 1 | Double timeout → escalate to user |
+| Critic BLOCKED | 0 | Re-plan with `flow` (plan phase) |
+| Critic NEEDS_CHANGES | 2 | Apply feedback → escalate to user |
+| Worktree / Team failure | 1 | Re-run unit or fold the domain back inline |
+
+**Identical-error override**: the counts assume each attempt yields a different or progressing error. A retry that reproduces the exact same error stops at once (Stuck Detection).
+
+## Stuck Detection
+
+| Condition | Action |
+|-----------|--------|
+| 3+ retries on the same task | STOP → AskUserQuestion |
+| 2+ diagnoses without a working fix | STOP → AskUserQuestion |
+| Same exact error 2 times | STOP → AskUserQuestion |
+
+**Escalation rung**: before STOP, run `Skill(troubleshooting)` §Stuck for ONE change-of-technique pass that attacks the class with a method not yet tried. Still failing → STOP and ask about (1) missing context, (2) an approach change, (3) a task split. Hook reliability (which events are safe to gate on): `harness-config` references/t05-hook.md.
 
 ## SendMessage Recovery (Workflow / Team agents only)
 
-`SendMessage({to: agentId})` continues a still-running **Workflow or Team agent** — preserves context, saves ~2K-5K tokens vs re-spawn. It does NOT apply to inline work (1-3 units): there is no agent to message — the Lead simply re-runs the step in its own session.
+`SendMessage({to: agentId})` continues a still-running **Workflow or Team agent**, preserves context, saves ~2K-5K tokens vs re-spawn. It does NOT apply to inline work (1-3 units): there is no agent to message, the Lead simply re-runs the step in its own session.
 
 | Situation | Method | Reason |
 |-----------|--------|--------|
-| Inline build failed a test | Re-run inline | The Lead already holds the code context — no agent to message |
+| Inline build failed a test | Re-run inline | The Lead already holds the code context, no agent to message |
 | Workflow unit failed a test | SendMessage to that unit | The unit already has its code context |
 | Workflow unit failed on a stale edit | SendMessage | Re-read and retry in the same context |
 | Lead diagnosed a fix for a live unit | SendMessage to that unit | Avoids re-exploring the codebase |
-| Unit's one retry also failed | Fold inline or escalate | Retry budget spent (`rules/error-recovery.md`); its context may be contaminated |
+| Unit's one retry also failed | Fold inline or escalate | Retry budget spent (§Retry Budget); its context may be contaminated |
 | Error in a different agent | New unit / inline | SendMessage does not cross agents |
+| Haiku scout answer opens with `INCOMPLETE: context budget reached.` (a Read denied near 90k by `haiku-context-brake.ts`) | New scout on its "Left unchecked:" list only, seeded with what it found; 1-2 items inline | SendMessage resumes the same near-full context |
 
 ```
 SendMessage({
@@ -35,7 +57,7 @@ When a build step or Workflow unit fails, the Lead:
 
 1. Read the error from the failure report (full message + stack).
 2. Invoke `Skill('troubleshooting')` if the error type is non-obvious (cascading failures, retry storms, timeouts, transient errors).
-3. Apply a recovery strategy from the skill (5 Whys, stack-trace analysis, classification) using `Read`/`Grep` directly — no separate diagnosis subagent.
+3. Apply a recovery strategy from the skill (5 Whys, stack-trace analysis, classification) using `Read`/`Grep` directly, no separate diagnosis subagent.
 4. Decide: fix inline, SendMessage to the live Workflow unit with the fix, re-run with full diagnosis, or escalate to user.
 
 ## Recovery Prompt Template

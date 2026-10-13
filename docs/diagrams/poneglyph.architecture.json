@@ -155,7 +155,7 @@
       ],
       "sources": [
         {
-          "path": ".claude/rules/skill-routing.md"
+          "path": ".claude/hooks/prompt-router.ts"
         }
       ]
     },

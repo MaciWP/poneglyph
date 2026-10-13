@@ -1,5 +1,5 @@
 /**
- * Tests for comments.ts — markdown interpretation + copy-to-clipboard
+ * Tests for comments.ts: markdown interpretation + copy-to-clipboard
  * (dynamic-mode content authoring without hand-written HTML).
  */
 import { test, expect } from "bun:test";
@@ -31,7 +31,7 @@ test("code-safe: dunders / snake_case / *args / **kwargs survive verbatim", () =
   expect(mdToHtml("_i_")).not.toContain("<em>");
 });
 
-test("links — safe schemes only", () => {
+test("links: safe schemes only", () => {
   expect(mdToHtml("[t](https://x.io)")).toContain('<a href="https://x.io">t</a>');
   expect(mdToHtml("[rel](#sec)")).toContain('<a href="#sec">rel</a>');
   // javascript: and other dangerous schemes are neutralized (no href injection)

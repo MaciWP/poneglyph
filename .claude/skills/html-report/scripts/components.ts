@@ -1,7 +1,7 @@
 /**
- * components.ts — html-report DYNAMIC mode (feature 010, US4).
+ * components.ts: html-report DYNAMIC mode.
  * Live-filterable table (search box + per-row data-text) with a static fallback:
- * without JS every row stays in the markup and visible. Wired into render.ts in US6.
+ * without JS every row stays in the markup and visible.
  */
 import type { Table } from "./contract.ts";
 

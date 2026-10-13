@@ -7,8 +7,8 @@ import { parseTokens, contrast, checkTemplate, inline, exportDesignSystem } from
 const CSS_PATH = join(import.meta.dir, "..", "templates", "tokens.css");
 const css = () => readFileSync(CSS_PATH, "utf8");
 
-// V2 fixture: literal copy of the palette in scripts/theme.ts (feature 010, v2)
-// taken before feature 039 rewires theme.ts onto tokens.css. Do not import it.
+// V2 fixture: literal copy of the palette that theme.ts held before it was
+// rewired onto tokens.css. Do not import it.
 const V2 = {
   light: {
     bg: "#f3f5f9", surface: "#ffffff", "surface-2": "#e9eef5",
@@ -58,7 +58,7 @@ const luminance = (hex: string): number => {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 };
 
-test("T1.1 — v2 surfaces, lines, ink and every dark value are kept", () => {
+test("T1.1: v2 surfaces, lines, ink and every dark value are kept", () => {
   const p = parseTokens(css());
   for (const k of SURFACE_INK) expect(p.light[k], `light ${k}`).toBe(V2.light[k]);
   for (const [k, v] of Object.entries(V2.dark)) {
@@ -77,7 +77,7 @@ test("T1.1 — v2 surfaces, lines, ink and every dark value are kept", () => {
   expect(p.light["maxw"], "--maxw stays per template").toBeUndefined();
 });
 
-test("T1.2 — every text token reaches AA on every ground, both schemes", () => {
+test("T1.2: every text token reaches AA on every ground, both schemes", () => {
   const p = parseTokens(css());
   const fails: string[] = [];
   for (const [name, scheme] of [["light", p.light], ["dark", p.dark]] as const) {
@@ -95,7 +95,7 @@ test("T1.2 — every text token reaches AA on every ground, both schemes", () =>
 // Foreground → the tint it is read on: each severity on its own -bg, the info callout's link on --info-bg.
 const TINTS: [string, string][] = [...SEVERITIES.map((s): [string, string] => [s, `${s}-bg`]), ["link", "info-bg"]];
 
-test("T1.3 — each tinted foreground reaches AA on its own tint", () => {
+test("T1.3: each tinted foreground reaches AA on its own tint", () => {
   const p = parseTokens(css());
   const fails: string[] = [];
   for (const [name, scheme] of [["light", p.light], ["dark", p.dark]] as const) {
@@ -109,7 +109,7 @@ test("T1.3 — each tinted foreground reaches AA on its own tint", () => {
   expect(fails.join(", ")).toBe("");
 });
 
-test("T1.4 — duplicated blocks cannot drift", () => {
+test("T1.4: duplicated blocks cannot drift", () => {
   const p = parseTokens(css());
   expect(Object.keys(p.dark).length).toBeGreaterThan(0);
   expect(p.darkMedia).toEqual(p.dark);
@@ -121,13 +121,13 @@ test("T1.4 — duplicated blocks cannot drift", () => {
   expect(p.order[p.order.length - 1]).toBe("print");
 });
 
-test("T1.5 — header names the source and no dead reference", () => {
+test("T1.5: header names the source and no dead reference", () => {
   const header = css().match(/\/\*[\s\S]*?\*\//)?.[0] ?? "";
   expect(header).toContain("single source");
   expect(header).not.toContain("memo.html");
 });
 
-test("T1.6 — contrast() matches known WCAG values", () => {
+test("T1.6: contrast() matches known WCAG values", () => {
   expect(contrast("#000000", "#ffffff")).toBeCloseTo(21, 2);
   expect(contrast("#767676", "#ffffff")).toBeCloseTo(4.54, 2);
   expect(contrast("#fff", "#fff")).toBe(1);
@@ -148,7 +148,7 @@ const END = "/* tokens:end */";
 const page = (block: string, extra = "") =>
   `<!doctype html><html lang="en" data-theme="dark"><head><style>\n${BEGIN}\n${block}\n${END}\n${extra}\n</style></head><body></body></html>`;
 
-test("T2.1 — one changed value in the block fails the check", () => {
+test("T2.1: one changed value in the block fails the check", () => {
   const source = css();
   expect(checkTemplate("ok.html", page(source.trimEnd()), source)).toEqual([]);
   const mutated = source.replace("--bg:#f3f5f9", "--bg:#f3f5fa");
@@ -159,7 +159,7 @@ test("T2.1 — one changed value in the block fails the check", () => {
   expect(problems[0].problem).toContain("block differs");
 });
 
-test("T2.2 — canonical token redeclared outside the block fails, print included", () => {
+test("T2.2: canonical token redeclared outside the block fails, print included", () => {
   const source = css();
   const block = source.trimEnd();
   const print = checkTemplate("p.html", page(block, "@media print { :root { --bg:#fff } }"), source);
@@ -172,7 +172,7 @@ test("T2.2 — canonical token redeclared outside the block fails, print include
   expect(local).toEqual([]);
 });
 
-test("T2.3 — missing markers fail", () => {
+test("T2.3: missing markers fail", () => {
   const source = css();
   const bare = `<html><head><style>${source}</style></head></html>`;
   expect(checkTemplate("n.html", bare, source)).toEqual([{ file: "n.html", problem: "missing tokens block" }]);
@@ -182,12 +182,12 @@ test("T2.3 — missing markers fail", () => {
 
 const TEMPLATE_FILES = readdirSync(TEMPLATES_DIR).filter((f) => f.endsWith(".html")).sort();
 
-test.each(TEMPLATE_FILES)("T2.4 — %s carries the block verbatim", (name) => {
+test.each(TEMPLATE_FILES)("T2.4: %s carries the block verbatim", (name) => {
   const html = readFileSync(join(TEMPLATES_DIR, name), "utf8");
   expect(checkTemplate(name, html, css())).toEqual([]);
 });
 
-test("T2.5 — write is idempotent", () => {
+test("T2.5: write is idempotent", () => {
   const source = css();
   const stale = page("--bg:#000;\n/* stale */", "body{margin:0}\n$& $1 keep");
   const once = inline(stale, source);
@@ -220,7 +220,7 @@ function exported(source?: string) {
 
 const DS_NAME = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/;
 
-test("T8.1 — export equals the source", () => {
+test("T8.1: export equals the source", () => {
   const p = parseTokens(css());
   const { tokens } = exported();
 
@@ -256,7 +256,7 @@ test("T8.1 — export equals the source", () => {
   });
 });
 
-test("T8.2 — export obeys the Design System type contract", () => {
+test("T8.2: export obeys the Design System type contract", () => {
   const { tokens, readme, index, cover } = exported();
 
   expect(JSON.stringify(tokens)).not.toMatch(/var\(|color-mix\(/);

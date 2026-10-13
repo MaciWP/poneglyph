@@ -65,6 +65,6 @@ If two skills compete for the same slot and one is more specific, discard the ge
 
 > There are no custom `builder`/`reviewer`/`scout` agents with skill baselines: work runs inline (delegation doctrine in SKILL.md).
 
-Today the only preload surface is a custom Workflow `agentType` with `skills:` frontmatter, declare there the 1-2 skills EVERY unit of that type needs (e.g. `changes-verify` for any unit asserting facts about code). Preloaded skills do NOT count against the 3-skill Arch H limit.
+Today the only preload surface is a custom Team `agentType` with `skills:` frontmatter, declare there the 1-2 skills EVERY unit of that type needs (e.g. `changes-verify` for any unit asserting facts about code). Preloaded skills do NOT count against the 3-skill Arch H limit.
 
 > The Lead loads `troubleshooting` itself when diagnosing failures, and `flow` (plan phase) when planning, no dedicated agents.

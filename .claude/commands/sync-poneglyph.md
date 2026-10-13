@@ -74,7 +74,7 @@ Each engine prints its help with `--help`.
 
 | Item | Contents |
 |------|----------|
-| `skills/` `commands/` `hooks/` `workflows/` `output-styles/` `scripts/` | Whole-folder links (junctions on Windows, symlinks elsewhere) |
+| `skills/` `commands/` `hooks/` `output-styles/` `scripts/` | Whole-folder links (junctions on Windows, symlinks elsewhere) |
 | `rules/` `docs/` | Per-entry links; project-only entries (`test-policy.md`, `docs/local-model/`) stay out of the global layer |
 | `plans/templates/` | `/flow-lifecycle` document templates, global fallback outside poneglyph |
 | `CLAUDE.md` `loop.md` | Global instructions and the default `/loop` prompt |

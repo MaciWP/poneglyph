@@ -68,7 +68,7 @@ failure type: `agent-routing` references/07-error-recovery.md.
 
 | # | Cómo |
 |---|---|
-| II | Root cause from evidence (5 Whys, stack-trace classification), not a guessed fix |
+| II | Root cause from evidence (5 Whys, originating stack frame), not a guessed fix |
 | I | Understand the failure before changing code |
 
 ## Related

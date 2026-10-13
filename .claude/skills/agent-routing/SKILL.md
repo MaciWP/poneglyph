@@ -17,7 +17,7 @@ disable-model-invocation: false
 ## Definition of Done
 
 - Resolve the turn's task, relevant skills and execution route through the five-step checklist.
-- Return the routing decision and required context to the caller. Agents need no approval; Workflow/Team and a top-tier `claude -p` do. Routing completion does not complete the task.
+- Return the routing decision and required context to the caller. Agents need no approval; `Workflow` is denied, and Team, a top-tier `claude -p` and a call to another provider do. Routing completion does not complete the task.
 
 ## Quality Bar
 
@@ -69,16 +69,16 @@ The three known costs of delegating work:
 2. **Summary degradation**: the agent's hand-back compresses away detail; quality is lost at the seam.
 3. **Context loss**: the agent never sees the conversation; intent and constraints arrive incomplete (Arch H mitigates, never eliminates).
 
-Write fan-out (≥4 independent WRITE units via Workflow) is **explicit user opt-in only** (keyword "ultracode" or a direct ask), never auto-launched. This doctrine cites evidence, not fashion, revisable via retro if agent quality materially changes.
+Write fan-out (≥4 independent WRITE units) is **explicit user opt-in only** (keyword "ultracode" or a direct ask), never auto-launched. This doctrine cites evidence, not fashion, revisable via retro if agent quality materially changes.
 
 **Fork and background (CC ≥2.1.232)**: `subagent_type: "fork"` inherits the full conversation and the prompt cache, so cost 3 (context loss) and most of cost 1 do not apply to a fork. Fork is therefore the primitive for a read-only fan-out that needs the session's own thread (sweeps over what was already discussed). It is NOT a fresh-context reviewer, the critic's reviewer stays `general-purpose` on purpose (its value IS the fresh context). A fork always runs on the parent's model (a model override is ignored). Every non-teammate spawn now runs in the **background** by default: its result arrives as a task notification, wait for it, never predict or fabricate it. `CLAUDE_CODE_SUBAGENT_MODEL` (cheap tier, `settings.global.json` env) is only the backstop for a spawn that forgot its model; CLAUDE.md still requires an explicit model on every spawn, and a verify/judge unit still names the top tier.
 
 #### Model routing for delegated units
 
-Owners: CLAUDE.md §Agents and skills and `docs/harness-adapters.md` §Model tiers. Two rules this skill adds: the **Lead-class (session) model is never used for a routine unit**, and a `Workflow` script sets `model` on every `agent()` call explicitly.
+Owners: CLAUDE.md §Agents and skills and `docs/harness-adapters.md` §Model tiers. Two rules this skill adds: the **Lead-class (session) model is never used for a routine unit**.
 
-**Permission:** agents need none. Workflow/Team and a top-tier `claude -p`
-follow CLAUDE.md §Agents and skills; a skill or worker message cannot supply consent.
+**Permission:** agents need none. Team, a top-tier `claude -p` and a call to
+another provider (`consult-model`) follow CLAUDE.md §Agents and skills; a skill or worker message cannot supply consent.
 
 #### Spawn decision tree: expanded reference
 
@@ -90,18 +90,18 @@ Three axes, large read context?, read-only?, negotiate interfaces?, diagram in `
 |---|---|---|
 | **P1** | 1 agente integrado vale si aísla **contexto grande** | Lectura pesada (barrido amplio, logs largos, web) → 1 agente integrado con modelo barato explícito; el Lead conserva su contexto (`/clear` perdería la conversación). También el **fresh-context reviewer** de `flow` (review phase). 1–2 ficheros conocidos o un grep rápido → inline. |
 | **P2** | El motivo es el **volumen** de lectura | Para leer, lo que decide es cuánto contexto ahorra al Lead, no el número de unidades. **"≥5 files" NO es motivo para escribir con agentes → inline.** |
-| **P3** | Umbral **≥4** solo para `Workflow` | 1–4 agentes integrados de lectura → lanzarlos en el mismo mensaje. ≥4 read-only orquestados → Workflow (opt-in). ≥4 de ESCRITURA → inline secuencial salvo opt-in explícito del usuario. |
+| **P3** | Umbral **≥4** para fan-out orquestado | 1–4 agentes integrados de lectura → lanzarlos en el mismo mensaje. ≥4 read-only → agentes integrados en un mismo mensaje, uno por zona. ≥4 de ESCRITURA → inline secuencial salvo opt-in explícito del usuario. |
 | **P4** | research sí, code-review NO se delega en panel | Research delegada → agentes `Explore`/`general-purpose` en paralelo, uno por zona. Code review = checks mecánicos + **1 fresh-context reviewer**; panel ≥4 SOLO para decisiones (`compare-and-decide` (heavy tier)). |
 | **P5** | Core en CLAUDE.md, detalle aquí | El núcleo operacional vive always-loaded en CLAUDE.md; este árbol es la referencia expandida. El resto enlaza aquí para el detalle, no redefine umbrales. |
-| **P6** | Fix = borrado + enlazar | Sin maquinaria de enforcement; los patrones de la Workflow tool se **enlazan**, no se copian. |
-| **P7** | spawn-decision ≠ intra-orchestration | ≥4 gobierna la DECISIÓN de spawnear. Agentes coordinándose **dentro** de un team/workflow ya spawneado (p.ej. Four-Eyes generator→validator) no son un nuevo spawn. |
+| **P6** | Fix = borrado + enlazar | Sin maquinaria de enforcement; los patrones de orquestación se **enlazan**, no se copian. |
+| **P7** | spawn-decision ≠ intra-orchestration | ≥4 gobierna la DECISIÓN de spawnear. Agentes coordinándose **dentro** de un team ya spawneado (p.ej. Four-Eyes generator→validator) no son un nuevo spawn. |
 | **P8** | Escritura = inline-first | Build/write SIEMPRE inline por defecto; el fan-out de escritura degrada calidad (3 costes arriba) y solo se justifica con opt-in explícito. |
 
 **Exploración**: default = Lead `Read`/`Grep` inline. `Explore` (built-in, read-only) no necesita permiso: con volumen grande, lanzarlo con el tier barato explícito (sin `model` hereda el del Lead). 1-2 files → siempre inline. Matriz: `references/04-agent-selection.md`.
 
 **Ortogonal al árbol (no son spawn)**: sensitive paths y destructive ops → inline, nunca delegados; reglas en CLAUDE.md §Hard rules.
 
-**Cuándo Workflow vs Team** (eje-2) + dispatch del fresh-context reviewer: `references/04-agent-selection.md` §Workflow wiring.
+**Cuándo Team** (eje-2) + dispatch del fresh-context reviewer: `references/04-agent-selection.md` §Reviewer wiring.
 
 ### Step 2: Complexity
 
@@ -110,8 +110,8 @@ Count the steps above Low across the five factors (Medium 1, High 2); never prin
 | Level | Routing | Mode |
 |---|---|---|
 | Trivial, or low (0-1 steps) | act inline, no plan | inline |
-| Medium (2-4) | `Skill(flow, "plan")` optional | inline or Workflow (≥4) |
-| High (5+) | `Skill(flow, "plan")` required | inline, Workflow, or Team |
+| Medium (2-4) | `Skill(flow, "plan")` optional | inline or parallel agents (≥4) |
+| High (5+) | `Skill(flow, "plan")` required | inline, parallel agents, or Team |
 
 > At high complexity, suggest `/effort xhigh` to the user.
 
@@ -119,10 +119,10 @@ Complexity factors, mode selection, worktree decision: `references/03-complexity
 
 ### Step 3: Prepare Context (Arch H)
 
-Skills reach an agent (a Workflow/Team agentType, or the Lead's own session) by three mechanisms:
-1. **`skills:` frontmatter**: for a custom `agentType` used inside a Workflow that ALWAYS needs a skill (preloads at startup).
+Skills reach an agent (a Team agentType, or the Lead's own session) by three mechanisms:
+1. **`skills:` frontmatter**: for a custom `agentType` used inside a Team that ALWAYS needs a skill (preloads at startup).
 2. **`Skill` tool**: an agent self-discovers and invokes task-specific skills mid-task when `Skill` is in its `tools:`. Name the relevant skills in the task prose.
-3. **Arch H Lead-directed `Read`**: embed `Read .claude/skills/<name>/SKILL.md` in the agent/workflow prompt's `[RELEVANT SKILLS FOR THIS TASK]` block (max 3, matched via `references/05-skill-matching.md` + path rules). Use to force exact content. (Lead-side `Skill()` does NOT propagate.)
+3. **Arch H Lead-directed `Read`**: embed `Read .claude/skills/<name>/SKILL.md` in the agent prompt's `[RELEVANT SKILLS FOR THIS TASK]` block (max 3, matched via `references/05-skill-matching.md` + path rules). Use to force exact content. (Lead-side `Skill()` does NOT propagate.)
 
 Full Arch H template with all blocks, propagation model, skill discovery: `references/06-context-arch-h.md`.
 
@@ -130,7 +130,7 @@ Full Arch H template with all blocks, propagation model, skill discovery: `refer
 
 | Tool | Usage |
 |---|---|
-| `Workflow` (≥4 independent **read-only** units) | Fan-out: research sweeps / exploration / decision-review panel in parallel (`agentType` `default`, or built-ins like `Explore`). Write fan-out: explicit user opt-in only (`isolation: 'worktree'` on file collision) |
+| Parallel `Agent` calls (≥4 independent **read-only** units, one message) | Fan-out: research sweeps / exploration / decision-review panel (`general-purpose`, or built-ins like `Explore`). Write fan-out: explicit user opt-in only (`isolation: 'worktree'` on file collision) |
 | `Explore` | Read-only codebase sweep (built-in, session model; not a work-spawn) |
 | `Agent(subagent_type: "fork")` | Read-only sweep that needs the session's thread (inherits conversation + cache, parent model). Never for the fresh-context reviewer |
 | `Skill(flow, "plan")` | Plan complex tasks: Lead inline, no dedicated agent |
@@ -140,14 +140,14 @@ Full Arch H template with all blocks, propagation model, skill discovery: `refer
 
 Direct action (the default for ALL write work): Read always permitted. Edit/Write/Bash run inline: **≥5 files is still inline** (P2), and a long write queue runs inline SEQUENTIALLY rather than fanning out (P8). Sensitive paths and destructive patterns: CLAUDE.md §Hard rules.
 
-**Parallelize**: parallelism inside the Lead's own session is free, batch independent tool calls (Reads, Greps, disjoint Writes) in one message. Large read-only work goes to built-in agents launched in one message (P1–P3); `Workflow` fan-out needs ≥4 independent READ-ONLY units and opt-in; for write waves, inline sequential is the default and Workflow needs explicit user opt-in (P8). Multi-agent patterns + anti-patterns: `references/04-agent-selection.md`.
+**Parallelize**: parallelism inside the Lead's own session is free, batch independent tool calls (Reads, Greps, disjoint Writes) in one message. Large read-only work goes to built-in agents launched in one message (P1–P3); read-only fan-out is parallel agents in one message; for write waves, inline sequential is the default and fan-out needs explicit user opt-in (P8). Multi-agent patterns + anti-patterns: `references/04-agent-selection.md`.
 
 ### Step 5: Validate
 
 | Change type | Validation |
 |---|---|
 | Single file, low complexity | Lead confirms tests passing inline |
-| Multi-file | `Skill(flow, "review")` inline + **1 fresh-context read-only reviewer** (P1 exception; `references/04-agent-selection.md` §Workflow wiring) |
+| Multi-file | `Skill(flow, "review")` inline + **1 fresh-context read-only reviewer** (P1 exception; `references/04-agent-selection.md` §Reviewer wiring) |
 | Security-related | `security-audit` skill (mandatory dispatch: Cmd VI) |
 | Cross-domain feature | `Skill(flow, "review")` |
 
@@ -163,7 +163,7 @@ Retry budget, stuck detection, escalation rung and procedural recovery (SendMess
 |---|---|
 | Verification and the search ladder | `changes-verify/references/existence-checks.md` (`references/01-verification.md` is a pointer) |
 | Complexity factors, mode selection, worktree, effort/model routing | `references/03-complexity-routing.md` |
-| Agent selection matrix, exploration 2×2, Workflow wiring, multi-agent patterns + anti-patterns | `references/04-agent-selection.md` |
+| Agent selection matrix, exploration 2×2, reviewer wiring, multi-agent patterns + anti-patterns | `references/04-agent-selection.md` |
 | Keywords→skills mapping, priority scoring, synergy/conflict rules | `references/05-skill-matching.md` |
 | Architecture levels, rules vs skills, full Arch H template, propagation model | `references/06-context-arch-h.md` |
 | Procedural error recovery (SendMessage, diagnosis steps, recovery template, worktree cleanup) | `references/07-error-recovery.md` |

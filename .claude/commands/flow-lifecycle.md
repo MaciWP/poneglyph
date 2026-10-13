@@ -67,23 +67,18 @@ and retro status. `sync-artifacts` repairs document projections without granting
 permission. The [contract](../docs/flow-contract.md) contains the commands and
 record formats. Do not close work with failed or unexecuted required checks.
 
-## Hosts and optional workflows
+## Hosts
 
 Resolve shared resources through the installed `docs/harness-runtime.md`.
 `Skill(x)` means invoke the skill or read its installed instructions. Use the
 host's real search and question tools. Codex's generated `$flow-lifecycle` reads this same
 source. Claude metadata does not provide another host with Claude APIs.
 
-Build runs inline by default. This command's `allowed-tools` is a harness permission
-list, not a spawn approval: agents need none, while
-Workflow/Team keep the per-task gate in CLAUDE.md. Task decomposition never grants
+Build and review run inline; `Workflow` is denied and no saved workflow exists. This
+command's `allowed-tools` is a harness permission list, not a spawn approval: agents need
+none, while Team keeps the per-task gate in CLAUDE.md. Task decomposition never grants
 permission. If an independent reviewer cannot run, critique inline and disclose it.
-
-With explicit opt-in, at least four independent HUs may use Claude's saved
-`flow-build-review` workflow, which runs the build and, at its full level, a proposed
-review. It takes `slug`, `only` and `level`. Serialize file collisions. Validate returned evidence before recording any closure or verdict.
-Use these only where the real Claude Workflow contract exists; other hosts keep the
-same phases inline. Workflows never approve state or authorize publication.
+Serialize file collisions. Validate returned evidence before recording any closure or verdict.
 
 ## Report and retain
 

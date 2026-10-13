@@ -95,6 +95,6 @@ Watchpoints where smaller models historically relapse in this setup; each maps t
 
 ## 5. Load & verify
 
-- The always-loaded routing core is CLAUDE.md §Agents and skills. This playbook stays on-demand. Verify CLAUDE.md loads: `grep CLAUDE.md .claude/learned/instructions-loaded.log` in any session (verify the load layer from the log; never assume it loaded).
+- The always-loaded routing core is CLAUDE.md §Agents and skills. This playbook stays on-demand. Verify CLAUDE.md loads: `grep CLAUDE.md` on `instructions-loaded.log` (in the project or `~/.claude` `learned/` folder) in any session (verify the load layer from the log; never assume it loaded).
 - Behavioral validation happens in the first real sessions on a smaller model: judge against §2: is it refuting itself, running before claiming, keeping status bookkeeping? Refine via `flow` (retro phase).
 - Lifecycle: when the model era changes again, update §4 first (it decays fastest), re-verify §2 still reads as deltas, and prune what the new model does natively.

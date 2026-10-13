@@ -55,9 +55,9 @@ Stop working only at the finish line, a hard gate, a blocking question or a spen
 
 - Use the host's built-in agents (on Claude: Explore, Plan, general-purpose, fork) freely for large reads you will not reuse, web research and parallel work, but not for 1-2 known files or a quick grep. Keep writes inline unless splitting clearly pays. Give each agent one narrow question and verify the facts that decide.
 - Name the model on every spawn: the mid tier only for code or security, not research; the top tier only for a high-risk verification, with the reason stated; otherwise the cheapest (X). Tier names per host: `.claude/docs/harness-adapters.md` §Model tiers.
-- Ask the user first only for Workflow/Team, a headless top-tier `claude -p` and a call to another provider (`consult-model`).
+- `Workflow` is denied; ask the user first only for Team, a headless top-tier `claude -p` and a call to another provider (`consult-model`).
 - You see skills by name only; a `<prompt-router>` note names the fitting ones. Answer every candidate in one `Router:` line before going on, sí or no with the reason: sí only when the skill changes how you do the task, then load it. Plan mode or the §How to work summary never justifies no to `dev-workflow` or `drillme-clarify`.
-- A new work phase mid-task with no router note: launch the `prompt-router` agent with the task in one or two sentences.
+- A new work phase mid-task with no router note: on Claude, launch the `prompt-router` agent with the task in one or two sentences (Claude only; Codex and Grok use hooks).
 
 ## Your configuration
 

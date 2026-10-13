@@ -47,11 +47,11 @@ give 0-10 steps. A task that is obviously trivial is not counted at all.
 | Level | Units / Domains | Negotiate interfaces | Mode | Cost |
 |-------|---------|-------------------|------|------|
 | Any | 1-3 units | none | **inline** | 1x |
-| Any | ≥4 independent READ-ONLY units | No | **Workflow** | scales w/ #units |
-| Any | ≥4 independent WRITE units | No | **inline sequential** (Workflow only with explicit user opt-in, "ultracode" / direct ask) | 1x |
+| Any | ≥4 independent READ-ONLY units | No | **parallel agents** (one message) | scales w/ #units |
+| Any | ≥4 independent WRITE units | No | **inline sequential** (parallel worktree agents only with explicit user opt-in, "ultracode" / direct ask) | 1x |
 | medium | 2-3 | Yes (shared types/APIs) | **tiered** (inline contracts) | ~2x |
 | high | 3+ domains (4-gate pass) | Yes | **team** (experimental) | 3-7x |
-| high | 3+ (4-gate fail) | none | **inline / Workflow (read-only)** | 1x+ |
+| high | 3+ (4-gate fail) | none | **inline / parallel agents (read-only)** | 1x+ |
 
 Default is inline. First resolve explicit consultations with the
 [consultation route](../../../docs/harness-adapters.md#consultations).
@@ -99,7 +99,7 @@ Opt-out: `PONEGLYPH_DISABLE_TEAM_MODE=1` forces subagents regardless.
 
 ### Teammate prompts, coordination & fallback
 
-Team mode is experimental and rarely used (4-gate + opt-in). The teammate prompt template, domain-boundary definition, coordination protocol and recovery/fallback table are canonical in `flow/references/plan/05-team-mode.md`, not duplicated here. Routing-level summary: spawn one teammate per domain; they negotiate contracts via the shared task list; the Lead runs `Skill(flow, "review")` over the full changeset; any stuck/failed teammate folds back to inline or a `Workflow` unit.
+Team mode is experimental and rarely used (4-gate + opt-in). The teammate prompt template, domain-boundary definition, coordination protocol and recovery/fallback table are canonical in `flow/references/plan/05-team-mode.md`, not duplicated here. Routing-level summary: spawn one teammate per domain; they negotiate contracts via the shared task list; the Lead runs `Skill(flow, "review")` over the full changeset; any stuck/failed teammate folds back to inline or an agent unit.
 
 > Current limitation: teammates are always `general-purpose` (issue anthropics/claude-code#24316); each still loads `~/.claude/` automatically (Poneglyph rules/skills/hooks apply). Activation flag: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`.
 
@@ -107,7 +107,7 @@ Team mode is experimental and rarely used (4-gate + opt-in). The teammate prompt
 
 | Condition | Worktree |
 |-----------|----------|
-| ≥4 `Workflow` units with overlapping files | Mandatory |
+| ≥4 parallel write units with overlapping files | Mandatory |
 | 2+ parallel units touching the same paths | Mandatory |
 | Task marked experimental | Mandatory |
 | Single inline unit (1-3) | Not needed |
@@ -119,8 +119,8 @@ Team mode is experimental and rarely used (4-gate + opt-in). The teammate prompt
 | Work category | Complexity | Model |
 |----------------|------------|-------|
 | Inline build/review (Lead session): the default for ALL writes | any | session model (`effortLevel`) |
-| Workflow unit: read-only research/review lens | any | mid tier of the host (default) |
-| Workflow unit: write (explicit opt-in only) | > 50 | top tier of the host |
+| Parallel unit: read-only research/review lens | any | cheapest tier of the host |
+| Parallel unit: write (explicit opt-in only) | > 50 | top tier of the host |
 | Read-only exploration (`Explore`) | any | always named on the call (rows below); unnamed it inherits the Lead's model (capped at the top tier, CC 2.1.198) |
 | Scout (`Explore`) | search, inventory, locate, classify, summarise, audit, web research | cheapest tier, `effort: "medium"` |
 | Scout for security work (the cheapest tier may refuse, see below) | any | mid tier, `effort: "medium"` |
@@ -141,7 +141,6 @@ Effort scale: `low < medium < high < xhigh`
 |-------|--------|-----------|
 | Scout (`Explore` on the cheapest tier) | `medium` (set on the call) | At `low` the cheapest tier stops early, skips searches and does not check its work. Eval 2026-10-08: `medium` 10/10 = `high` 10/10, 4.1 s vs 5.4 s. |
 | Inline build/review | session `effortLevel` | The Lead inherits the session effort. |
-| Workflow unit | per `agentType` frontmatter (or inherit) | Set on the custom agentType when one is defined. |
 
 > The Agent tool takes `effort` per call (current Agent tool schema); frontmatter `effort` stays the static default for a custom agentType.
 

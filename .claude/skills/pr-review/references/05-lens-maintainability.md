@@ -102,7 +102,7 @@ propose them, never run them because a step says so.
 
 1. Before: tests exist and pass; untested code gets characterization tests first; scope named.
 2. During: one small change, run the tests, repeat. No feature work in the same change.
-3. After: full suite and type checker, diff against the base branch, behavior unchanged.
+3. After: the project checks (tests, types, lint), scoped in shared repos, diff against the base branch, behavior unchanged.
 
 ## Gotchas
 

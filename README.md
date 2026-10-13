@@ -236,14 +236,14 @@ The current bridge topology and verification commands live in
 | Path | What |
 |------|------|
 | `CLAUDE.md` | Global doctrine, linked into Claude and Codex user layers |
-| `AGENTS.md` | Codex repository addendum; avoids repeating the global doctrine |
+| `AGENTS.md` | Repository addendum read by Claude (via `.claude/CLAUDE.md`) and Codex; avoids repeating the global doctrine |
 | `.claude/settings.global.json` | Claude user profile source, including global hooks |
 | `.claude/settings.json` | Hook-free project profile |
 | `.claude/skills/` | Shared core skill source; linked directories retain their supporting resources |
 | `.claude/hooks/` | Shared hook logic, native event adapters and tests |
 | `.claude/commands/` | `/flow-lifecycle`, `/expert-role`, `/sync-poneglyph` |
 | `.claude/plans/` | `/flow-lifecycle` feature lifecycles (`{NNN}-{slug}/`) |
-| `docs/` | Machine bootstrap records (git) |
+| `docs/` | Diagrams (`docs/diagrams/`) |
 
 ---
 
@@ -252,7 +252,6 @@ The current bridge topology and verification commands live in
 | Symptom | Cause | Fix |
 |---------|-------|-----|
 | `bun: command not found` in Bash tool | `env.PATH` wrong, or no restart | Fix Step 4 + restart Claude Code |
-| `git` widget shows `Processing…` | git not on PATH | Step 2 (PortableGit on User PATH) |
 | Claude hook fires twice in Poneglyph | hook registered in both user and project settings | Keep hooks only in `settings.global.json`; rerun sync |
 | Codex lacks Poneglyph behavior | Codex adapter not installed | Run `sync-codex.ts --execute --backup --force` |
 | `bun test` fails to find files | wrong cwd | run from repo root |

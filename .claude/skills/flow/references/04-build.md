@@ -16,7 +16,7 @@ dependencies are complete. Draft tasks, a missing oracle or all HUs closed → S
 ## Definition of Done
 
 - Reuse the assigned HU's accepted DoD and oracle. Implement its scope and collect required checks on the final inputs.
-- Closure requires the verification record. A Workflow unit returns evidence; only the Lead closes state.
+- Closure requires the verification record. A delegated unit returns evidence; only the Lead closes state.
 
 ## Quality Bar
 
@@ -41,7 +41,7 @@ Read the chosen `tasks/US{N}.md` fully with its `T{N}.X` tests or validation blo
 
 The HU is one unit of work in the main session. One agent for "context isolation" is
 forbidden (`agent-routing` P1/P2); `/clear` between HUs if context grows. Fan-out is a
-wave-level, user opt-in decision at ≥4 independent HUs with disjoint files (`Workflow`). A sensitive path follows CLAUDE.md §Hard rules (inline `sensitive: <reason>` before the edit). A new skill, hook, rule, MCP or plugin → consult `harness-config` first.
+wave-level, user opt-in decision at ≥4 independent HUs with disjoint files (parallel worktree agents). A sensitive path follows CLAUDE.md §Hard rules (inline `sensitive: <reason>` before the edit). A new skill, hook, rule, MCP or plugin → consult `harness-config` first.
 
 ## Step 4: Style anchors
 
@@ -109,7 +109,7 @@ Missing state is recovered from recorded decisions, never invented.
 🟢 HU US{N} closed.
 - Files: <list>
 - Tests: <pass>/<total>; red→green honored | tdd-skip: <reason> | validation closure
-- Execution: inline | Workflow unit (Lead records closure)
+- Execution: inline | delegated unit (Lead records closure)
 - AskUserQuestion fired: <count>
 - verification-US{N}.json recorded; state.json updated
 

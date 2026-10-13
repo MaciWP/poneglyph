@@ -18,14 +18,14 @@ description: Signal→agent selection matrix, multi-agent patterns, anti-pattern
 
 ## Exploration Decision Matrix (Volume × Complexity)
 
-Before any exploration, decide HOW to read the codebase. **The exploration primitive is `Explore`** (built-in; empirical score 83) with an explicit `model`: unnamed, it inherits the Lead's model. Tier classes and runtime name resolution: `docs/harness-adapters.md` §Model tiers. Independent areas → one `Explore` per area in the same message; `Workflow` only on opt-in.
+Before any exploration, decide HOW to read the codebase. **The exploration primitive is `Explore`** (built-in; empirical score 83) with an explicit `model`: unnamed, it inherits the Lead's model. Tier classes and runtime name resolution: `docs/harness-adapters.md` §Model tiers. Independent areas → one `Explore` per area in the same message.
 
 | | LOW complexity (direct read) | HIGH complexity (relationships, architecture) |
 |---|---|---|
 | **LOW volume** (1-2 files) | Lead `Read` directly: no delegation | Lead `Read`/Grep inline, or `Explore` |
 | **HIGH volume** (≥3 files, long logs or outputs) | `Explore` on the cheapest tier: best fit | `Explore` on the cheapest tier, one per area; mid tier only for security work |
 
-Plus: design-doc audits, cross-file consistency checks, and full-file reads → `Explore` (≥4 independent units → `Workflow`). WebSearch/WebFetch is **not** a discriminator (both have those tools).
+Plus: design-doc audits, cross-file consistency checks, and full-file reads → `Explore` (≥4 independent units → one `Explore` per unit in one message). WebSearch/WebFetch is **not** a discriminator (both have those tools).
 
 ### Derived rules
 
@@ -57,7 +57,7 @@ The matrix above decides **exploration**. The difficulty of the **change that fo
 |--------|-------------------------|
 | Trivial (1 line, rename) | Lead inline |
 | Standard (1 file, clear pattern) | Lead inline (`Skill('build')` in a /flow-lifecycle) |
-| Multi-file / architectural (one unit) | Lead inline (`Skill(flow, "plan")` first at high complexity); ≥4 independent HUs → `Workflow` |
+| Multi-file / architectural (one unit) | Lead inline (`Skill(flow, "plan")` first at high complexity) (≥4 independent HUs: inline sequential unless the user opts in to parallel worktree agents) |
 
 A task can be **HIGH Volume exploration + trivial change** (lots to read, little to change) or **LOW Volume + complex change** (little to read, lots to think). Decide each axis separately.
 
@@ -80,7 +80,7 @@ The "Suggested skills to Read (for delegation)" column lists `.claude/skills/<na
 | performance, slow, bottleneck, N+1 | `Skill(flow, "review")` / pr-review (performance lens) | pr-review (performance lens) | pr-review | none |
 | plan, design, decompose, RFC, architecture, contract | Lead via `Skill(flow, "plan")` | (no dedicated agent) | decide (heavy tier) (for design risk), pr-review | none |
 | >3 subtasks, breakdown, dependencies | Lead via `Skill(flow, "plan")` | (decomposition in skill) | none | none |
-| find, explore, search codebase | `Explore` (built-in); ≥4 sweeps → `Workflow` | none | none | Lead `Read` inline |
+| find, explore, search codebase | `Explore` (built-in); ≥4 sweeps → one `Explore` each, one message | none | none | Lead `Read` inline |
 | error, failing, debug, diagnose | Lead via `Skill('troubleshooting')` | (no dedicated agent) | troubleshooting | fix inline (obvious fix) |
 
 ## Multi-Agent Patterns
@@ -91,27 +91,27 @@ The "Suggested skills to Read (for delegation)" column lists `.claude/skills/<na
 | **Plan then Build** | Lead `Skill(flow, "plan")` → inline build (sequential; write fan-out = opt-in) | complexity >60 |
 | **Build then Review** | inline build → `Skill(flow, "review")` | mandatory for multi-file changes |
 | **Diagnose then Fix** | Lead `Skill('troubleshooting')` → fix inline | diagnosis before fix |
-| **Worktree Parallel** | ≥4 `Workflow` WRITE units with `isolation: 'worktree'`, explicit user opt-in only | user opted in (ultracode) AND files may overlap |
+| **Worktree Parallel** | ≥4 parallel WRITE agents with `isolation: 'worktree'`, explicit user opt-in only | user opted in (ultracode) AND files may overlap |
 | **Security Review** | `Skill(flow, "review")` + `Skill('security-audit')` | auth/security changes |
 | **Tiered Build** | Lead `Skill(flow, "plan")` Mode B contracts → inline sequential | medium complexity, 2-3 domains with shared interfaces |
 | **Team Parallel** | Team mode (experimental) | 3+ independent domains negotiating interfaces, complexity >60 |
 
-### Workflow wiring
+### Reviewer wiring
 
 First resolve explicit consultations with the
 [consultation route](../../../docs/harness-adapters.md#consultations). The native delegation
 recipes below do not override those routes or their authorization requirements.
 
-How the capabilities of the former custom agents map onto the current model, and where `Workflow` fan-out is the right primitive:
+How the capabilities of the former custom agents map onto the current model (`Workflow` is denied):
 
 | Capability (historical agent) | Now | Fan-out trigger |
 |---|---|---|
-| implement (was `builder`) | `flow` (build phase) inline by default | Native Workflow uses explicit opt-in |
+| implement (was `builder`) | `flow` (build phase) inline by default | Parallel write agents need explicit opt-in |
 | validate (was `reviewer`) | `flow` skill (review phase) inline | standard/full code review → **ONE fresh-context read-only reviewer** (correctness/requirements only, P1 exception); decision review → panel via `compare-and-decide` (heavy tier) |
-| explore (was `scout`) | `Explore` (built-in) | ≥4 independent exploration sweeps → `Workflow` (read-only) |
-| generator→validator | `pipeline(items, find, verify)` inside one `Workflow` | intra-workflow Four-Eyes: NOT a new spawn decision (spawn-tree P7) |
+| explore (was `scout`) | `Explore` (built-in) | ≥4 independent exploration sweeps → parallel `Explore`, one message |
+| generator→validator | generator inline, validator = ONE fresh-context reviewer | Four-Eyes inside a team: NOT a new spawn decision (spawn-tree P7) |
 
-For CODE review the dispatch target is **ONE fresh-context read-only reviewer** (panels measured as the weak form for code: verifier gap, LLM-judge ensembles ~80% FP). The author≠evaluator lesson is preserved via fresh context, not lens count. Panels (≥4 perspectives) remain the form for DECISION review (`compare-and-decide` (heavy tier)) and read-only research fan-out, worked example: the retired ultracode-audit workflow (find→verify pipeline + cross-debate panel over a shared digest; since removed).
+For CODE review the dispatch target is **ONE fresh-context read-only reviewer** (panels measured as the weak form for code: verifier gap, LLM-judge ensembles ~80% FP). The author≠evaluator lesson is preserved via fresh context, not lens count. Panels (≥4 perspectives) remain the form for DECISION review (`compare-and-decide` (heavy tier)) and read-only research fan-out.
 
 ## Parallelization & Batch Operations
 
@@ -153,13 +153,12 @@ When a message contains N parallel tool-calls and **one fails**, the others in t
 | Spawning an agent for exploration | misses context, wastes tokens | `Explore` (read) or Lead `Read` inline |
 | `flow` skill (plan phase) at low complexity or for an obviously trivial task | overkill, slows execution | act inline |
 | skipping `flow` (review phase) after multi-file changes | quality risk | `Skill(flow, "review")` checkpoint |
-| no `flow` (plan phase) at high complexity | uncoordinated, error-prone | Lead `Skill(flow, "plan")` → inline (≥4 HUs → `Workflow`) |
-| ≥4 `Workflow` units without worktree on overlapping files | Write conflicts | `isolation: "worktree"` per unit |
-| team mode for <3 domains | 3-7x cost with no real benefit | inline, or `Workflow` at ≥4 independent units |
-| team mode for dependent domains | file conflicts between teammates | sequential inline / a `Workflow` |
+| no `flow` (plan phase) at high complexity | uncoordinated, error-prone | Lead `Skill(flow, "plan")` → inline (≥4 HUs → inline sequential) |
+| ≥4 parallel write agents without worktree on overlapping files | Write conflicts | `isolation: "worktree"` per unit |
+| team mode for <3 domains | 3-7x cost with no real benefit | inline, or parallel agents at ≥4 independent units |
+| team mode for dependent domains | file conflicts between teammates | sequential inline |
 | Reading files one by one | Latency + context overhead | Batch 3+ Reads in one message |
 | Sequential agents with no dependency | Wasted parallelism | Spawn in one message |
 | Glob → Read → Grep when Glob+Grep would suffice | Round-trips add up | Glob + Grep in same message |
 | Edit without prior Read | risk of stale content | Read first, then Edit sequentially |
 | Spawning 1-3 subagents when the Lead could act inline | wasted cost+latency, no parallelism return | Main session for ≤3 units; spawn only at ≥4 (Commandment X) |
-| ≥4 parallel agents run ad-hoc instead of a workflow | no orchestration, hard to track | At ≥4 independent units → workflow |

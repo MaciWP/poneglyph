@@ -48,7 +48,7 @@ Resolve installed skill paths explicitly.
 | Surface | Preload (free) | Max via Arch H Read | Notes |
 |-------|--------------------|----------------|-----------|
 | Lead session | everything always-loaded | n/a: `Skill()` on demand | The default executor for all write work |
-| Workflow `agentType` (read-only fan-out) | `skills:` frontmatter (1-2) | 3 | Preload does not count against the Arch H max |
+| Team `agentType` | `skills:` frontmatter (1-2) | 3 | Preload does not count against the Arch H max |
 | Built-in `Explore` | none | 0-1 | Minimal context by design (skips CLAUDE.md/git status, restate constraints in the prompt) |
 
 > Planning and error diagnosis are handled by the Lead invoking `Skill(flow, "plan")` / `Skill('troubleshooting')` directly, no dedicated subagent.
@@ -81,7 +81,7 @@ Ground-truth rules for what reaches subagents. Verified via direct testing on 20
 | Mechanism | Why not |
 |---|---|
 | Lead invokes `Skill()` before delegating | Loaded content stays in the Lead's context. Subagents spawn fresh. (Still true.) |
-| Subagent calls `Skill()` **without** `Skill` in its `tools:` | If the agent's `tools:` omits `Skill` (or `disallowedTools` includes it), the tool is unavailable. Per-agent config choice, NOT a harness limit. The mechanism stands for any Workflow `agentType` whose `tools:` include `Skill` (CC ≥2.1.133). |
+| Subagent calls `Skill()` **without** `Skill` in its `tools:` | If the agent's `tools:` omits `Skill` (or `disallowedTools` includes it), the tool is unavailable. Per-agent config choice, NOT a harness limit. The mechanism stands for any Team `agentType` whose `tools:` include `Skill` (CC ≥2.1.133). |
 
 ## Arch H Delegation Template
 
@@ -197,7 +197,7 @@ Any skill that has a `references/` subdirectory **MUST** include a canonical Con
 ## Orchestration Consequences
 
 - **Rules + CLAUDE.md are the real context carriers.** Invest in them. A well-written project rule reaches every subagent automatically.
-- **Three skill-loading mechanisms **: (1) `skills:` frontmatter preload on a custom Workflow `agentType`, for skills EVERY unit of that type needs; (2) `Skill` tool self-invoke, any agentType whose `tools:` include `Skill` loads task-specific skills mid-task; (3) Arch H Lead-directed `Read`, fallback to force exact content. `Read` is always in the allowlist so Arch H always works.
+- **Three skill-loading mechanisms **: (1) `skills:` frontmatter preload on a custom Team `agentType`, for skills EVERY unit of that type needs; (2) `Skill` tool self-invoke, any agentType whose `tools:` include `Skill` loads task-specific skills mid-task; (3) Arch H Lead-directed `Read`, fallback to force exact content. `Read` is always in the allowlist so Arch H always works.
 - **Project skills are a valid on-demand knowledge layer.** They work identically to global skills via Arch H Read, the subagent doesn't distinguish between global and project skills at Read time.
 - **Rule of thumb at project level: constraint = rule, knowledge = skill.**
 - **Path-scoped loader quirk**: in `.claude/rules/paths/*.md`, globs starting with `**` require at least one leading path segment. A raw `apps/...` pattern will NOT match `apps/foo.py`; use `**/apps/...` explicitly.

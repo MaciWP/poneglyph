@@ -504,7 +504,7 @@ Output in the standard perspective format.
 |---|---|
 | Concurrency | All N perspectives spawn in parallel in a single message (one Agent call per perspective) |
 | Subagent type | `general-purpose` for all; specialization comes from the prompt. Never `fork`: a fork inherits the orchestrator's context and kills the Outsider's isolation |
-| Model | Explicit on every call (mid tier for perspectives; top tier for the Step-back Judge and any refuter). The `CLAUDE_CODE_SUBAGENT_MODEL` default is a cheap tier; a call without `model` degrades silently |
+| Model | Explicit on every call (cheapest tier for perspectives (research and analysis, never the mid tier); top tier for the Step-back Judge and any refuter). The `CLAUDE_CODE_SUBAGENT_MODEL` default is a cheap tier; a call without `model` degrades silently |
 | Delivery | Spawns run in the background (CC ≥2.1.232): each result arrives as a task notification: collect all N before Phase 2, never predict a missing one |
 | Outsider isolation | Enforced via prompt restrictions; orchestrator does NOT pass project files to it |
 | Linus voice | Enforced via persona prompt with explicit anti-pattern table |

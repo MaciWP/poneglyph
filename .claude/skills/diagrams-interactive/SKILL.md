@@ -76,7 +76,7 @@ model-token savings, or platform compatibility from a successful render alone.
 Use Mermaid for a simple inline diagram that fully answers the request. Use Archify
 when technical graph exploration or a standalone interactive diagram helps, or when
 explicitly requested. Use html-report for reports and dashboards, including dynamic
-reports. Use graphify for persistent knowledge graphs and repository indexing.
+reports.
 
 ## Content map
 

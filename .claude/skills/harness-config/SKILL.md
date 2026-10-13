@@ -49,7 +49,7 @@ Name the verb **before** acting. Impact is a step, not a sixth verb (D16).
 2. Load **one** pack: `references/tNN-<type>.md` when that file exists. Do not load sibling packs.
 3. Lookup live official docs ([lookup.md](references/lookup.md); indexes below). Local pack text is snapshot + gotchas, not the live law.
 4. A native creator may draft; §Native creators keeps the ownership split.
-5. Write **inline**. Fan-out via Workflow only for ≥4 independent units.
+5. Write **inline**; `Workflow` is denied.
 6. Packs name the install/sync step. Do not change `sync-claude` / `sync-codex` / `sync-grok` here.
 
 Do not invent a host recipe. Markdown-link a pack only when the file exists.

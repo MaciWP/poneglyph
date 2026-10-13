@@ -73,7 +73,7 @@ Phase 2.5 is the most focused phase: only 2 auxiliaries truly apply. Other auxil
 | Auxiliary skill | When this skill invokes it | Fallback if skill->skill fails |
 |---|---|---|
 | `drillme-clarify` | Intra-HU before declaring done (Step 7, 4 `[approach]` questions) | Lead invokes `/drillme-clarify "Phase 3 HU US{N}"` manually before closing the HU |
-| `troubleshooting` | When tests fail in Step 8 verification (5-whys, retry budget, stack-trace analysis) | Lead reads error output manually + applies the retry policy (agent-routing ref 07) |
+| `troubleshooting` | When tests fail in Step 8 verification (reproduce, 5 Whys; retry budgets in agent-routing ref 07) | Lead reads error output manually + applies the retry policy (agent-routing ref 07) |
 | `pr-review` lenses | ⚠️ Optional: during impl if quality concern emerges (SOLID violation suspected, performance bottleneck) | The review phase runs the catalog anyway; intra-impl invocation is opportunistic |
 | `harness-config` | When HU's `files` field includes new `.claude/skills/`, `.claude/hooks/`, `.claude/rules/`, `.claude/plugins/`, `.mcp.json`, or touches `CLAUDE.md` / settings / output styles / permissions / env | Lead reads `harness-config/SKILL.md` (and the matching type pack when present) before designing the change (Commandment IX, meta-system maintainability) |
 
@@ -85,7 +85,7 @@ For Phase 3, `drillme-clarify` runs on every HU and `troubleshooting` runs when 
 |---|---|---|
 | verify existence | Before reporting any finding, verify file/line/symbol actually exists in the diff (no invented findings) | Lead Reads/Greps the file before the finding is finalized |
 | `drillme-clarify` | Before declaring the verdict (Step 9, unresolved gaps across `[context]`/`[failure]`/`[approach]`) | Lead invokes `/drillme-clarify "Phase 4 review of <NNN-slug>"` manually before the verdict |
-| `troubleshooting` | When Step 4 base checks fail, 5-whys, stack-trace analysis, retry budget per agent-routing ref 07 | Lead reads the error output manually and applies the retry policy |
+| `troubleshooting` | When Step 4 base checks fail, reproduce, 5 Whys; retry budget per agent-routing ref 07 | Lead reads the error output manually and applies the retry policy |
 | `pr-review` lenses | Step 6: MANDATORY catalog in standard/full (maintainability or performance lens per diff content) | Lead Reads `pr-review/references/05-lens-maintainability.md` or `06-lens-performance.md` manually |
 | `security-audit` | Step 7: MANDATORY dispatch when the diff touches auth/payments/secrets/credentials/crypto (gate, not advisory; Cmd VI) | Lead invokes `/security-audit` manually before the verdict |
 | `changes-verify` | Step 5 Correctness: drive the assembled happy path when a runtime exists | Lead walks the flow manually and records what was observed |

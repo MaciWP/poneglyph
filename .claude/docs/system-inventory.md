@@ -10,7 +10,7 @@ The intended normal case is working in **another** project while poneglyph runs 
 bun .claude/commands/sync-poneglyph.ts --execute --backup --force
 ```
 
-- Links `skills/commands/rules/docs/hooks/output-styles/workflows/scripts` into `~/.claude/` (authoritative folder list = `LINK_FOLDERS` in `scripts/sync-claude.ts`; rules link per-entry, with `test-policy.md` excluded from the global layer) (junctions on Windows, no admin; symlinks on macOS/Linux) and regenerates `~/.claude/settings.json` from `settings.global.json` deep-merged with `settings.machine.json` (gitignored, per-machine; hook groups are unioned per event and de-duplicated by matcher and command, so the overlay only adds machine-specific handlers), then validates the result with `claude doctor` ("Invalid settings" section); a rejected file fails the sync and the backup is restored.
+- Links `skills/commands/rules/docs/hooks/output-styles/scripts` into `~/.claude/` (authoritative folder list = `LINK_FOLDERS` in `scripts/sync-claude.ts`; rules link per-entry, with `test-policy.md` excluded from the global layer) (junctions on Windows, no admin; symlinks on macOS/Linux) and regenerates `~/.claude/settings.json` from `settings.global.json` deep-merged with `settings.machine.json` (gitignored, per-machine; hook groups are unioned per event and de-duplicated by matcher and command, so the overlay only adds machine-specific handlers), then validates the result with `claude doctor` ("Invalid settings" section); a rejected file fails the sync and the backup is restored.
 - **macOS**: also create `.claude/settings.machine.json` carrying that machine's `env.PATH`: the GUI app launches with a minimal PATH, so linking alone leaves hooks/statusline broken; the PATH overlay fixes it (separate cause from linking).
 - **Scope boundary**: the global (`~/.claude/skills`, link → repo) and project (`./.claude/skills`, real) paths expose the same skills, which Claude deduplicates by name. Only the user profile registers hooks; `.claude/settings.json` is hook-free, so a Poneglyph maintenance session cannot double-fire them.
 - Settings load at session start → a fresh sync takes effect on the NEXT session.
@@ -47,7 +47,7 @@ function claude { & "$env:USERPROFILE\.local\bin\claude.exe" --append-system-pro
 
 ## Entry points → how each routes to the workflow & skills
 
-Poneglyph has ONE workflow (the 5 phases + Lead turn flow); what differs is how you enter it. Skill activation is **layered** and the entry point decides which layers fire:
+Poneglyph has ONE flow (the 5 phases + Lead turn flow); what differs is how you enter it. Skill activation is **layered** and the entry point decides which layers fire:
 
 | Entry point | What it is | Phase routing | Skill activation |
 |---|---|---|---|
@@ -90,8 +90,8 @@ Canonical per-turn checklist: `agent-routing` skill §1.
 | Mode | When | Cost |
 |------|------|------|
 | **Inline** (default) | Build/write by default | 1x |
-| **Workflow read-only fan-out** | ≥4 independent read-only units (research sweeps, decision-review panels) | scales w/ agent count |
-| **Workflow write fan-out** | explicit user opt-in only ("ultracode" / direct ask; the "workflow" keyword does not trigger it); per-unit `isolation: 'worktree'` on collision | scales |
+| **Parallel read-only agents** | ≥4 independent read-only units in one message (research sweeps, decision-review panels); `Workflow` is denied | scales w/ agent count |
+| **Parallel write agents** | explicit user opt-in only ("ultracode" / direct ask); per-unit `isolation: 'worktree'` on collision | scales |
 | **Tiered** | Medium complexity with 2-3 domains sharing interfaces, contracts inline via `flow` (plan phase) Mode B | ~2x |
 | **Team agents** (experimental) | High complexity, 3+ independent domains, interface negotiation, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` | 3-7x |
 
@@ -105,7 +105,7 @@ owner: `skills/flow/references/02-plan.md` §Step 1. (There are no `/flow-lifecy
 `minimal|standard|full` modes; every phase runs and a justified skip
 is announced and recorded.)
 
-## Skill loading into a Workflow agent (3 mechanisms)
+## Skill loading into a spawned agent (3 mechanisms)
 
 1. **`skills:` frontmatter** preloads full SKILL.md at spawn, for a custom `agentType` that ALWAYS needs a skill.
 2. **`Skill` tool**: an agent whose `tools:` include `Skill` self-invokes task-specific skills mid-task (CC ≥2.1.133). Name the relevant skills in the task prose.
@@ -130,7 +130,7 @@ Test: "does the agent need this in EVERY prompt?". No → skill.
 
 | Component | Current | Detail |
 |---|---|---|
-| Agents | **0 custom** | no custom agent files; work runs inline (delegation doctrine), read-only fan-out via Workflow/`Explore`. The ONE sanctioned single-agent dispatch is the review's fresh-context reviewer (P1 exception), ad-hoc, no agent file |
+| Agents | **1 generated agent (prompt-router)** | no other agent files; work runs inline (delegation doctrine), read-only fan-out via parallel `Explore`/`general-purpose` agents. The ONE sanctioned single-agent dispatch is the review's fresh-context reviewer (P1 exception), ad-hoc, no agent file |
 | Skills | `ls .claude/skills` (minus `.trash`, `synced`) | the 6 phase skills live in one `flow` skill (shared body + one reference per phase); the maintainability and performance catalog lives in the `pr-review` lenses; the unblock protocol lives in `troubleshooting` §Stuck; `compare-and-decide` has a heavy tier; `consult-model` is multi-model; every Poneglyph skill is `name-only` and the prompt router reads the full descriptions |
 | Hooks | `jq '.hooks' .claude/settings.global.json` | authoritative list = user profile source; event table with per-hook detail: `rules/paths/hooks.md` |
 | Slash commands | `ls .claude/commands/*.md` | `flow-lifecycle`, `sync-poneglyph`, `expert-role` (decide/changes-explain were thin command wrappers → pruned; they remain as skills) |
@@ -147,10 +147,9 @@ Test: "does the agent need this in EVERY prompt?". No → skill.
 |---|---|---|
 | `skills/`, `commands/`, `rules/`, `hooks/`, `output-styles/`, `plans/` | Core system (counts live in the component table above, snapshots + count commands, never trust stale numbers) | documented above |
 | `docs/` | This file + `research-rigor.md` + `auxiliary-skills-matrix.md` | on-demand references |
-| `workflows/` | Saved Workflow scripts: `flow-build-review.js` (full /flow-lifecycle back-half: build with the `flow` skill's build-phase discipline + Phase-4 review that writes `review.md`; 031) · `task-pipeline.js` (autonomous one-shot factory: plan→build→review→document with DETERMINISTIC gates from `scripts/gate.ts` instead of human ones; never commits, returns `suggested_commits` as data). Lógica determinista cubierta por `workflows/__tests__/{flow-build-review,task-pipeline}.test.ts` | live |
 | `evals/` | Golden-prompt regression harness: deterministic graders + runner + real-failure cases (count: `wc -l .claude/evals/cases.jsonl`). Tracked, NOT synced. Run per meta-config change | live |
-| `scripts/` | `doctor.ts`: one-table health check: sync status (Claude + Codex + Grok), `claude plugin validate`, suite, budget ratchet, privacy grep, sessions-today by model, **context shape 7d** (`bun run doctor`) · `usage-profile.ts` + `lib/*`: SHAPE of the token spend from `~/.claude/projects/**/*.jsonl` (context per message, share above the 200k ceiling, top-session share, tool output by tool and Bash family); `bun run usage [--days N] [--cap N]`; feeds the doctor's Context row · `lib/host-config.ts`: one context/effort policy for every host (Claude `autoCompactWindow`/`effortLevel`, Codex `model_auto_compact_token_limit`/`model_reasoning_effort`, Grok `auto_compact_threshold_percent`/`default_reasoning_effort`), consumed by `sync-codex`/`sync-grok` · `budget.ts` + `lib/budget.ts` + `lib/budget-snapshot.json`: always-loaded token budget with a **0 %** ratchet enforced by `__tests__/budget.test.ts` (`bun run budget`, `--update` after a ratified size decision) · `flow-state.ts` + `lib/flow-contract.ts`: verified lifecycle transitions, disjoint review decisions and recoverable artifact projection; contract: `docs/flow-contract.md` · `gate.ts`: deterministic validation of what an agent CLAIMS it did (artifacts, delta-vs-baseline diff cross-check, verdict self-consistency, suite, protected paths, self-integrity); ported from disler's task-pipeline `gates.py` with delta-not-absolute-state, patterns derived from the user/global/project settings union, and a self-integrity check. Tracked and **synced** (sync-trap class closed: synced components instruct `bun .claude/scripts/...`) | live |
-| `learned/` | Runtime per-machine (gitignored) | runtime |
+| `scripts/` | `doctor.ts`: one-table health check: sync status (Claude + Codex + Grok), `claude plugin validate`, suite, budget ratchet, privacy grep, sessions-today by model, **context shape 7d** (`bun run doctor`) · `usage-profile.ts` + `lib/*`: SHAPE of the token spend from `~/.claude/projects/**/*.jsonl` (context per message, share above the 200k ceiling, top-session share, tool output by tool and Bash family); `bun run usage [--days N] [--cap N]`; feeds the doctor's Context row · `lib/host-config.ts`: one context/effort policy for every host (Claude `autoCompactWindow`/`effortLevel`, Codex `model_auto_compact_token_limit`/`model_reasoning_effort`, Grok `auto_compact_threshold_percent`/`default_reasoning_effort`), consumed by `sync-codex`/`sync-grok` · `budget.ts` + `lib/budget.ts` + `lib/budget-snapshot.json`: always-loaded token budget with a **0 %** ratchet enforced by `__tests__/budget.test.ts` (`bun run budget`, `--update` after a ratified size decision) · `flow-state.ts` + `lib/flow-contract.ts`: verified lifecycle transitions, disjoint review decisions and recoverable artifact projection; contract: `docs/flow-contract.md` · `gate.ts`: deterministic validation of what an agent CLAIMS it did (artifacts, delta-vs-baseline diff cross-check, verdict self-consistency, suite, protected paths, self-integrity); delta-not-absolute-state, patterns derived from the user/global/project settings union, and a self-integrity check. Tracked and **synced** (sync-trap class closed: synced components instruct `bun .claude/scripts/...`) | live |
+| `learned/` | Runtime per-machine hook logs (gitignored; falls back to `~/.claude/learned/<project>/` when the project does not ignore it) | runtime |
 | `plans/` | Open plans, parked stubs and templates. A closed plan leaves the tree; git history keeps it (`plans/README.md` §Closed features) | live |
 
 ## MCP servers (session-connected)
@@ -159,6 +158,6 @@ Default-on (user-ratified): **claude-in-chrome** (extension), **Atlassian**, two
 
 Schema findings (checked against `settings.global.json` and the CC changelog): `minimumVersion` EXISTS and gates the version (the live value is whatever `settings.global.json` says, 2.1.228 at the last check; the floor was first set at 2.1.198, the release fixing conditional rules loaded via symlinked paths, which the whole global layer depends on, and the generated `~/.claude/settings.json` lags the repo until `sync-claude --execute` runs again); `fallbackModel` EXISTS since CC 2.1.166 and IS configured in settings.global.json (cascade of 2); `requiredMinimumVersion`/`requiredMaximumVersion` are **managed settings** for org policy (changelog 2.1.163), they do NOT supersede personal `minimumVersion` (resolved).
 
-Activation/observability hooks: `prompt-router.ts` (UserPromptSubmit, async) has a cheap model suggest skills and dictation fixes, and the main model can relaunch the same agent (`hooks/router/prompt-router.md`, written with the catalog to `~/.claude/agents/` by sync-claude) mid-task, fed by `router/agent-hooks.ts`; `skill-activation.ts` adds only the `/flow-lifecycle` and model/effort shape hints (keyword `Skill()` hints are not its job: they hit 0.07 on the held-out eval). `instructions-loaded.ts` (InstructionsLoaded, async) logs every CLAUDE.md/rules load to `.claude/learned/instructions-loaded.log`, grep it to verify load layers instead of assuming.
+Activation/observability hooks: `prompt-router.ts` (UserPromptSubmit, async) has a cheap model suggest skills and dictation fixes, and the main model can relaunch the same agent (`hooks/router/prompt-router.md`, written with the catalog to `~/.claude/agents/` by sync-claude) mid-task, fed by `router/agent-hooks.ts`; `skill-activation.ts` adds only the `/flow-lifecycle` and model/effort shape hints (keyword `Skill()` hints are not its job: they hit 0.07 on the held-out eval). `instructions-loaded.ts` (InstructionsLoaded, async) logs every CLAUDE.md/rules load to `learned/instructions-loaded.log` (resolved by `learnedLog()`), grep it to verify load layers instead of assuming.
 
 `instructions-loaded.log` shows CLAUDE.md and the always-on rules reloaded on the `compact` trigger, so no hook re-injects them. CLAUDE.md is the single owner of the git and spawn gates; skills, commands and the output style keep one-line pointers.

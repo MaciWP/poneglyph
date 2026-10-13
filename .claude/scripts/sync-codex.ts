@@ -6,6 +6,7 @@ import * as path from "node:path";
 import { parseArgs } from "node:util";
 import { frontmatter } from "./check-config";
 import { codexConfigPlan, describePolicy } from "./lib/host-config";
+import { stripLongPathPrefix } from "./lib/long-path";
 import { backupDestination, hookFilePlan, installHookFile, nativeHookConfig } from "./lib/native-hooks";
 
 export function coreSkillNames(projectRoot: string): string[] {
@@ -83,7 +84,7 @@ function targetMatches(link: CodexLink): boolean {
   try {
     if (!fs.lstatSync(link.dest).isSymbolicLink()) return false;
     // Windows junctions readlink with the \\?\ long-path prefix, strip it.
-    const target = fs.readlinkSync(link.dest).replace(/^\\\\\?\\/, "");
+    const target = stripLongPathPrefix(fs.readlinkSync(link.dest));
     const resolved = path.resolve(path.dirname(link.dest), target);
     return path.resolve(resolved) === path.resolve(link.source);
   } catch {
@@ -262,7 +263,7 @@ export function staleSkillLinks(codexHome: string, projectRoot: string): string[
     .filter((dest) => {
       try {
         if (!fs.lstatSync(dest).isSymbolicLink()) return false;
-        const target = path.resolve(path.dirname(dest), fs.readlinkSync(dest).replace(/^\\\\\?\\/, ""));
+        const target = path.resolve(path.dirname(dest), stripLongPathPrefix(fs.readlinkSync(dest)));
         return norm(target).startsWith(owned) && !fs.existsSync(target);
       } catch {
         return false;

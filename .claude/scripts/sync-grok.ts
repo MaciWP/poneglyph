@@ -26,6 +26,9 @@ function buildGrokLinks(coreRoot: string, home: string): CodexLink[] {
   ];
 }
 
+// Errors this script words for the user are shown; anything else keeps the withheld-details line.
+class Reported extends Error {}
+
 if (import.meta.main) {
   try {
     const { values } = parseArgs({ options: {
@@ -37,7 +40,7 @@ if (import.meta.main) {
       console.log("sync-grok [--status|--execute] [--backup] [--force] [--home-dir PATH]\nReuse the Claude doctrine/skills installation; install the style twin and native PreToolUse adapter.\nDisable inherited Claude hooks while preserving other native configuration. No model or MCP connection is started.");
       process.exit(0);
     }
-    if (values.execute && !values.force && !process.stdin.isTTY) throw new Error("Non-interactive installation requires --force.");
+    if (values.execute && !values.force && !process.stdin.isTTY) throw new Reported("Non-interactive installation requires --force.");
     const home = path.resolve(values["home-dir"] ?? homedir());
     const root = fs.realpathSync.native(path.resolve(import.meta.dir, "../.."));
     const links = buildGrokLinks(root, home);
@@ -47,19 +50,19 @@ if (import.meta.main) {
     const hooks = nativeHookConfig("grok", root);
     hookFilePlan(hookFile, hooks); // Validate before changing links or settings.
     const shared = path.join(home, ".claude", "CLAUDE.md");
-    if (values.execute && !fs.existsSync(shared)) throw new Error("Install the shared Claude layer first; Grok reuses its doctrine and skills.");
+    if (values.execute && !fs.existsSync(shared)) throw new Reported("Install the shared Claude layer first; Grok reuses its doctrine and skills.");
     if (values.execute) {
       for (const link of links) {
-        if (!fs.existsSync(link.source)) throw new Error(`Missing source ${link.source}; run sync-claude first.`);
-        if (["local", "conflict"].includes(linkStatus(link)) && !values.backup) throw new Error("Review the existing style; replacement requires --backup.");
+        if (!fs.existsSync(link.source)) throw new Reported(`Missing source ${link.source}; run sync-claude first.`);
+        if (["local", "conflict"].includes(linkStatus(link)) && !values.backup) throw new Reported("Review the existing style; replacement requires --backup.");
       }
-      if (configPlan.changed && fs.existsSync(configFile) && !values.backup) throw new Error("Native configuration change requires --backup.");
+      if (configPlan.changed && fs.existsSync(configFile) && !values.backup) throw new Reported("Native configuration change requires --backup.");
       for (const link of links) createLink(link, values.backup ?? false);
       if (configPlan.changed) {
         if (fs.existsSync(configFile)) {
           const backup = backupDestination(configFile);
           fs.copyFileSync(configFile, backup);
-          if (!fs.readFileSync(configFile).equals(fs.readFileSync(backup))) throw new Error("Grok recovery verification failed.");
+          if (!fs.readFileSync(configFile).equals(fs.readFileSync(backup))) throw new Reported("Grok recovery verification failed.");
           console.log(`backup: ${configFile} -> ${backup}`);
         }
         fs.mkdirSync(path.dirname(configFile), { recursive: true });
@@ -73,8 +76,9 @@ if (import.meta.main) {
     const compat = fs.existsSync(configFile) && !grokConfigPlan(fs.readFileSync(configFile, "utf8")).changed;
     console.log(`${(compat ? "linked" : "stale").padEnd(8)} ${configFile} (${describePolicy("grok")})`);
     console.log("Native inspection and a user session are required to verify effective discovery and hook execution.");
-  } catch {
-    console.error("sync-grok failed: review the source paths, collisions and configuration; private details withheld.");
+  } catch (e) {
+    if (e instanceof Reported) console.error(`sync-grok failed: ${e.message}`);
+    else console.error("sync-grok failed: review the source paths, collisions and configuration; private details withheld.");
     process.exitCode = 1;
   }
 }

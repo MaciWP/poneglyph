@@ -162,7 +162,7 @@ describe("every complexity routing band is reachable", () => {
 });
 
 // Three files gave three cyclomatic thresholds
-// (> 10, > 15, > 20). `complexity-metrics.md` owns the scale: 1-5 simple, 6-10 moderate,
+// (> 10, > 15, > 20). `05-lens-maintainability.md` §Quick Thresholds owns the scale: 1-5 simple, 6-10 moderate,
 // 11-20 complex (refactor), > 20 very complex (split). Every other table must cite it.
 describe("one cyclomatic scale across the pr-review lenses", () => {
   const dir = join(skillsRoot, "pr-review");

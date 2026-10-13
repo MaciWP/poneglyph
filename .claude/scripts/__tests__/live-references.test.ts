@@ -33,6 +33,16 @@ const RETIRED = [
   "flow-build",
   "flow-review",
   "flow-retro",
+  "choose-skills",
+  "orca-team",
+  "orca-swarm",
+  "sync-orca",
+  "skill-routing",
+  "rules/error-recovery",
+  "graphify",
+  "flow-build-review",
+  "task-pipeline",
+  ".claude/workflows",
 ];
 
 // A lessons row must keep naming what it is about, and tests name retired components on

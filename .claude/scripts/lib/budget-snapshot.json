@@ -1,30 +1,30 @@
 {
-  "takenAt": "2026-10-12",
+  "takenAt": "2026-10-13",
   "alwaysLoaded": {
-    "CLAUDE.md": 7032,
+    "CLAUDE.md": 7096,
     "output-styles/poneglyph.md": 7387,
     "skills: description + when_to_use": 263
   },
   "skillBodies": {
-    "agent-routing": 13987,
+    "agent-routing": 13968,
     "changes-explain": 9684,
     "changes-verify": 4546,
     "compare-and-decide": 6736,
     "consult-model": 5317,
     "deep-research": 8644,
     "dev-workflow": 11261,
-    "diagrams-interactive": 5098,
+    "diagrams-interactive": 5028,
     "drillme-clarify": 12169,
     "flow": 6710,
-    "harness-config": 6596,
+    "harness-config": 6564,
     "html-report": 21274,
     "lessons-learned": 14120,
     "natural-writing": 7358,
     "pr-comments": 8580,
     "pr-review": 8094,
-    "prompt-design": 7401,
+    "prompt-design": 7393,
     "security-audit": 11331,
-    "troubleshooting": 4086,
+    "troubleshooting": 4083,
     "ui-design": 4266
   },
   "informative": {

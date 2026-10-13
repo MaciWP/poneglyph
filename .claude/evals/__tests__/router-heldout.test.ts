@@ -2,7 +2,7 @@ import { describe, test, expect } from "bun:test";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { loadCases } from "../router-heldout";
+import { loadCases, score, type RouterCase } from "../router-heldout";
 
 describe("loadCases", () => {
   const dir = mkdtempSync(join(tmpdir(), "router-heldout-"));
@@ -24,5 +24,25 @@ describe("loadCases", () => {
     const [a, b] = loadCases(cases, null);
     expect(a.expected).toEqual(["x"]);
     expect(b).toMatchObject({ expected: [], source: "negative" });
+  });
+
+  test("fails loudly when the judged file does not match the cases", () => {
+    const stale = join(dir, "stale.jsonl");
+    writeFileSync(stale, JSON.stringify(["y"]) + "\n");
+    expect(() => loadCases(cases, stale)).toThrow("1 labels for 2 cases");
+  });
+});
+
+describe("score", () => {
+  const c = (expected: string[]): RouterCase => ({ prompt: "p", expected, source: expected.length ? "typed" : "negative" });
+
+  test("counts hits, label recall, precision and false positives", () => {
+    const s = score([
+      { c: c(["a", "b"]), picks: ["a", "z"] },
+      { c: c(["c"]), picks: [] },
+      { c: c([]), picks: ["a"] },
+      { c: c([]), picks: [] },
+    ]);
+    expect(s).toEqual({ cases: 2, hit: 1, labels: 3, found: 1, picks: 2, correct: 1, negatives: 2, falsePositives: 1 });
   });
 });

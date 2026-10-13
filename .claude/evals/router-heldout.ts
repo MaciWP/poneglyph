@@ -15,7 +15,7 @@
 // only this code is tracked. Output is counts and rates, never case text.
 // Scoring runs the Haiku router (live `claude -p` calls; run it outside the Bash sandbox).
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { collectTranscripts, percentile } from "../scripts/usage-profile";
 import { loadSkillTurns, windowStart } from "../scripts/skill-usage";
 import { foldText } from "../hooks/skill-activation";
@@ -83,7 +83,10 @@ function withJudge(c: RouterCase, judge: string[] | undefined): RouterCase {
 export function loadCases(casesFile: string, judgedFile: string | null): RouterCase[] {
   const lines = (f: string) => readFileSync(f, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l));
   const judged: (string[] | null)[] = judgedFile && existsSync(judgedFile) ? lines(judgedFile) : [];
-  return (lines(casesFile) as RouterCase[]).map((c, i) => (judged.length ? withJudge(c, judged[i] ?? undefined) : c));
+  const cases = lines(casesFile) as RouterCase[];
+  // A stale judged file (cases rebuilt since) would silently label the wrong prompts.
+  if (judged.length && judged.length !== cases.length) throw new Error(`${judgedFile} has ${judged.length} labels for ${cases.length} cases; rerun --judge after --build`);
+  return cases.map((c, i) => (judged.length ? withJudge(c, judged[i] ?? undefined) : c));
 }
 
 const rate = (n: number, d: number) => (d ? (n / d).toFixed(2) : "—");
@@ -107,8 +110,11 @@ if (import.meta.main) {
   const argv = process.argv.slice(2);
   const arg = (flag: string, fallback: string) => { const i = argv.indexOf(flag); return i >= 0 ? argv[i + 1] : fallback; };
   const cwd = process.cwd();
-  const file = join(cwd, ".claude", "evals", "private", "router-cases.jsonl");
-  const judgedFile = join(cwd, ".claude", "evals", "private", "router-judged.jsonl");
+  // .gitignore anchors .claude/evals/private/ at the repo root, so private files resolve from
+  // this file, never from the cwd: a run elsewhere must not write cases into a tracked path.
+  const privateDir = resolve(import.meta.dir, "private");
+  const file = join(privateDir, "router-cases.jsonl");
+  const judgedFile = join(privateDir, "router-judged.jsonl");
   // --catalog <json> ({name: description}) scores rewritten descriptions without touching SKILL.md.
   const rewrites = argv.includes("--catalog") ? JSON.parse(readFileSync(arg("--catalog", ""), "utf8")) as Record<string, string> : {};
   const catalog = loadCatalog(cwd, undefined, undefined, Number(arg("--desc", "600"))).map((c) => ({ ...c, description: rewrites[c.name] ?? c.description }));
@@ -116,7 +122,7 @@ if (import.meta.main) {
     const days = Number(arg("--days", "30"));
     const turns = loadSkillTurns(collectTranscripts(join(claudeConfigDir(), "projects"), days), windowStart(days), true);
     const cases = buildCases(turns, new Set(catalog.map((c) => c.name)));
-    mkdirSync(join(cwd, ".claude", "evals", "private"), { recursive: true });
+    mkdirSync(privateDir, { recursive: true });
     writeFileSync(file, cases.map((c) => JSON.stringify(c)).join("\n") + "\n");
     const by = (s: string) => cases.filter((c) => c.source === s).length;
     console.log(`${cases.length} cases → ${file}: typed ${by("typed")}, autonomous ${by("autonomous")}, negative ${by("negative")}`);
@@ -171,7 +177,7 @@ if (import.meta.main) {
       });
       console.log(render("stage 1 (Haiku router)", score(rows), ms) + ` · failed ${failed}` + (memory ? ` · with past ${withPast}/${cases.length}` : ""));
       // Per-case picks for error analysis; private like the cases.
-      writeFileSync(arg("--picks", join(cwd, ".claude", "evals", "private", "router-picks.jsonl")), rows.map((r) => JSON.stringify({ ...r.c, picks: r.picks })).join("\n") + "\n");
+      writeFileSync(arg("--picks", join(privateDir, "router-picks.jsonl")), rows.map((r) => JSON.stringify({ ...r.c, picks: r.picks })).join("\n") + "\n");
     }
   } else {
     console.log("usage: --build [--days 30] | --judge | --score [--half odd|even] [--limit N] [--agent file] [--desc chars] [--memory] [--catalog rewrites.json] [--picks out.jsonl] [--cases other.jsonl]");

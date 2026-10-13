@@ -46,7 +46,7 @@ export function parseComplianceTurns(lines: Iterable<string>): ComplianceTurn[] 
     const prompt = humanPrompt(r);
     if (prompt !== null) {
       if (cur) turns.push(cur);
-      cur = { at: r.timestamp ? Date.parse(r.timestamp) : undefined, model: "", texts: [], bash: [], edits: [], errors: [], asks: [], spawns: [], reviewed: null, sessionSkills };
+      cur = { at: r.timestamp ? Date.parse(r.timestamp) : undefined, model: "", texts: [], bash: [], edits: [], errors: [], asks: [], spawns: [], reviewed: null, sessionSkills: new Set(sessionSkills) }; // snapshot: a later load must not excuse this turn
       continue;
     }
     if (!cur) continue;
@@ -65,7 +65,7 @@ export function parseComplianceTurns(lines: Iterable<string>): ComplianceTurn[] 
       const i = b.input ?? {};
       if (b.name === "Agent" || b.name === "Task") cur.spawns.push({ model: i.model, type: i.subagent_type });
       if (b.name === "AskUserQuestion") cur.asks.push(i);
-      if (b.name === "Skill" && typeof i.skill === "string") sessionSkills.add(i.skill);
+      if (b.name === "Skill" && typeof i.skill === "string") { sessionSkills.add(i.skill); cur.sessionSkills.add(i.skill); }
       if (b.name === "Bash") {
         cur.bash.push(String(i.command ?? ""));
         if (cur.reviewed === false && CHECK.test(String(i.command ?? ""))) cur.reviewed = true;

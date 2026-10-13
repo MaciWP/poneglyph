@@ -28,6 +28,7 @@ import { lastRequest, tail } from "./haiku-context-brake";
 import { appendLog } from "./instructions-loaded";
 import { claudeConfigDir, learnedLog } from "./lib/paths";
 import { readHookStdin } from "./lib/hook-stdin";
+import { foldText } from "./lib/language";
 
 interface PromptPayload {
   prompt?: string;
@@ -65,11 +66,7 @@ export function isNonHumanPayload(prompt: string): boolean {
   return NON_PROMPT_PREFIXES.some((prefix) => p.startsWith(prefix));
 }
 
-// Case- and accent-insensitive form of a prompt or pattern: the user often types
-// without accents ("estas seguro"), and patterns are written with them.
-export function foldText(text: string): string {
-  return text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
-}
+export { foldText }; // moved to lib/language.ts; the held-out eval still imports it from here
 
 // Feature-shape detection: multi-word conservative patterns, a
 // feature-shaped ad-hoc prompt gets a /flow-lifecycle line, because the hook only

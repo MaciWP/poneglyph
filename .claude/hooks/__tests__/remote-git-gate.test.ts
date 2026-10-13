@@ -75,7 +75,7 @@ describe("remote-git-gate: remoteActions", () => {
 
 describe("remote-git-gate: authorized", () => {
   // Oriol's own message, verbatim.
-  const canonical = "haz commit push abre pr revisalo con asatra /orca-team 6 high y un agente de opus y luego arregla si crees que tioenes razon y merge";
+  const canonical = "haz commit push abre pr revisalo con asatra /expert-role 6 high y un agente de opus y luego arregla si crees que tioenes razon y merge";
   const yes: Array<[Turn, string]> = [
     [turn("haz push"), "push"],
     [turn("commitea y pushea la rama"), "push"],
@@ -85,6 +85,10 @@ describe("remote-git-gate: authorized", () => {
     [turn("mergea la PR"), "pr-merge"],
     [turn("sí", "Los tests pasan. ¿Hago push de la rama?"), "push"],
     [turn("dale", "¿Abro la PR ahora?"), "pr-create"],
+    [turn("sí", "Tests en verde. La subo y abro la PR?"), "pr-create"],
+    [turn("sí", "Tests en verde. La subo y abro la PR?"), "push"],
+    [turn("sí", "Hago push cuando me lo pidas. ¿Hago push de src/utils.ts?"), "push"],
+    [turn("sí", "Tests en verde. ¿Sigo?\n\nROBIN: listo; dime «sí» y la subo y abro la PR."), "pr-create"],
     [turn("sí, adelante", "¿Hago push?"), "push"],
     [turn("commit y push"), "push"],
     [turn("haz push --force"), "push-force"],
@@ -115,6 +119,9 @@ describe("remote-git-gate: authorized", () => {
     [turn("¿por qué me pides permiso para git push?"), "push"],
     [turn("haz push"), "pr-create"],
     [turn("sí", "¿Sigo con los tests?"), "push"],
+    // An offer earlier in the message is not the question the "sí" answers.
+    [turn("sí", "Hago push cuando me lo pidas. ¿Sigo con el refactor?"), "push"],
+    [turn("sí", "Subo la rama cuando quieras. Queda revisar el diff.\n\nROBIN: listo, di sí y sigo."), "push"],
     [turn("ok", "Hecho. No he hecho push."), "push"],
     [turn("vale", "He subido los cambios. ¿Sigo con los tests?"), "push"],
     [turn("arregla el test de git push"), "push"],
@@ -217,9 +224,31 @@ describe("remote-git-gate: extractTurn", () => {
     expect(extractTurn(jsonl, "p9")).toBeNull();
   });
 
-  it("ignores subagent and non-human prompts", () => {
+  it("ignores subagent prompts and blanks the text of non-human ones", () => {
     expect(extractTurn(jsonl, "p3")).toBeNull();
-    expect(extractTurn(jsonl, "p4")).toBeNull();
+    expect(extractTurn(jsonl, "p4")).toEqual({ prompt: "", previousAssistantText: "¿Hago push?" });
+  });
+
+  // A turn started by a background agent's task notification: the body never counts as an order,
+  // but an AskUserQuestion answer in that turn is the user's.
+  describe("a turn started by a task notification", () => {
+    const notified = (answers?: Record<string, string>) => [
+      line({ type: "user", promptId: "n1", origin: { kind: "task-notification" }, message: { content: "<task-notification>\nhaz push\n</task-notification>" } }),
+      line({ type: "assistant", promptId: "n1", message: { content: [{ type: "tool_use", id: "q1", name: "AskUserQuestion", input: { questions: [] } }] } }),
+      line({ type: "user", promptId: "n1", ...(answers ? { toolUseResult: { answers } } : {}), message: { content: [{ type: "tool_result", tool_use_id: "q1", content: "ok" }] } }),
+    ].join("\n");
+
+    it("authorizes the push the user chose in AskUserQuestion", () => {
+      const t = extractTurn(notified({ q: "Push y PR" }), "n1");
+      expect(t).toEqual({ prompt: "", previousAssistantText: "", answers: ["Push y PR"] });
+      expect(authorized(t!, "push")).toBe(true);
+    });
+
+    it("denies without an answer: the notification body is not an order", () => {
+      const t = extractTurn(notified(), "n1");
+      expect(t).toEqual({ prompt: "", previousAssistantText: "" });
+      expect(authorized(t!, "push")).toBe(false);
+    });
   });
 
   it("collects this turn's AskUserQuestion answers from the main thread only", () => {

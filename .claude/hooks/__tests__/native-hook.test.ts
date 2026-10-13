@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 import { handleNativeHook, patchPaths } from "../native-hook";
 import { routerNoteFile } from "../prompt-router";
 import { analyzePayload } from "../skill-activation";
+import { ignoreLearned } from "./learned-fixture";
 
 describe("native hook contracts", () => {
   it("applies one command decision through Codex and Grok payloads", async () => {
@@ -127,7 +128,7 @@ describe("native hook host-neutral hints", () => {
 
 // The design-file note on a Codex apply_patch; Grok stays silent.
 describe("native hook design-file note", () => {
-  const fresh = () => mkdtempSync(join(tmpdir(), "native-design-"));
+  const fresh = () => ignoreLearned(mkdtempSync(join(tmpdir(), "native-design-")));
   const patch = (...lines: string[]) => ["*** Begin Patch", ...lines, "*** End Patch", ""].join("\n");
   const logOf = (dir: string) => join(dir, ".claude", "learned", "design-file-hints.log");
 

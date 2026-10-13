@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { dueNudges, endsWithTextQuestion, isConfigPath, isEnglishNote, NUDGE_TEXT, noteMatches, readTail } from "../turn-nudges";
+import { ignoreLearned } from "./learned-fixture";
 
 const HOOK = resolve(import.meta.dir, "../turn-nudges.ts");
 const IMPERATIVE = /^(Read|Ask|You must|Do not|Never|Answer|Load)\b/m;
@@ -106,7 +107,7 @@ describe("turn-nudges: pure parts", () => {
 
 describe("turn-nudges: hook process", () => {
   function setup(events: object[]) {
-    const dir = mkdtempSync(join(tmpdir(), "turn-nudges-"));
+    const dir = ignoreLearned(mkdtempSync(join(tmpdir(), "turn-nudges-")));
     const transcript = join(dir, "t.jsonl");
     writeFileSync(transcript, jsonl(...events));
     return { dir, transcript };

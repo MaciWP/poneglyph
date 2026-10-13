@@ -22,11 +22,11 @@
 import { existsSync, readFileSync } from "node:fs";
 import { withBudget } from "../lib/haiku-budget";
 import { readHookStdin } from "../lib/hook-stdin";
+import { projectRoot } from "../lib/paths";
 import { CATALOG_HEADER, type CatalogEntry, enabledPluginRoots, glossaryFiles, installedRouterAgent, loadCatalog, loadGlossary, log, parseRouterOutput } from "../prompt-router";
-import { formatPast, loadMemory, type MemoryEntry, pastFor, sessionSkills } from "./memory";
+import { formatPast, loadMemory, MAX_PROMPT_CHARS, type MemoryEntry, pastFor, sessionSkills } from "./memory";
 
 export const ROUTER_AGENT = "prompt-router";
-const MAX_PROMPT_CHARS = 3000;
 const PROMPT_TAG = /<prompt>\s*([\s\S]*?)\s*<\/prompt>/;
 export const RETRY_REASON = 'Reply again with only the JSON object {"fixes": [...], "process": {...}, "skills": [...]} and nothing else.';
 
@@ -75,10 +75,10 @@ export function agentTask(transcript: string | undefined): { text: string; at: n
 
 if (import.meta.main) {
   const started = Date.now();
-  let cwd = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  let cwd = projectRoot(undefined);
   try {
     const payload = JSON.parse(await readHookStdin()) as HookPayload;
-    if (!process.env.CLAUDE_PROJECT_DIR && typeof payload.cwd === "string") cwd = payload.cwd;
+    cwd = projectRoot(payload.cwd);
     const plugins = enabledPluginRoots(cwd);
     const catalog = () => loadCatalog(cwd, undefined, plugins);
     const glossary = () => loadGlossary(glossaryFiles(cwd, undefined, plugins));

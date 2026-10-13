@@ -12,3 +12,9 @@ export function stopwordCounts(prose: string): { es: number; en: number; words: 
     words: words.length,
   };
 }
+
+// Case- and accent-insensitive form of a prompt or pattern: the user often types
+// without accents ("estas seguro"), and patterns are written with them.
+export function foldText(text: string): string {
+  return text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+}

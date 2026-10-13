@@ -8,7 +8,7 @@ import { stat } from "node:fs/promises";
 import { appendLog } from "./instructions-loaded";
 import { learnedLog } from "./lib/paths";
 import { readHookStdin } from "./lib/hook-stdin";
-import { readTranscriptTail } from "./lib/transcript";
+import { isHumanOrigin, readTranscriptTail, userPromptOf } from "./lib/transcript";
 
 // The optional quote after the key is what makes JSON and quoted YAML match: `"password":
 // "..."` puts a closing quote between the key and the separator, so without it every .json
@@ -266,7 +266,7 @@ export function buildStopResponse(hits: string[]): {
 
 // Stop can re-fire when a stop hook's additionalContext keeps the turn going;
 // without this guard the gate is stateless and re-warns the same hits in a loop
-//. stop_hook_active=true marks that continuation, skip everything.
+// stop_hook_active=true marks that continuation, skip everything.
 export function shouldSkipStopHook(payload: unknown): boolean {
   return (
     typeof payload === "object" &&
@@ -275,34 +275,23 @@ export function shouldSkipStopHook(payload: unknown): boolean {
   );
 }
 
-// The text the human typed, or null when a "user" event is not a prompt: tool results
-// come back as user events too, and meta or compaction-summary events are harness text.
-// A prompt with an image or a pasted block is an array of text/image blocks, not a string.
-export function userPromptOf(event: unknown): string | null {
-  const e = event as { type?: string; isMeta?: boolean; isCompactSummary?: boolean; message?: { content?: unknown } };
-  if (e?.type !== "user" || e.isMeta || e.isCompactSummary) return null;
-  const content = e.message?.content;
-  if (typeof content === "string") return content;
-  if (!Array.isArray(content)) return null;
-  const blocks = content as Array<{ type?: string; text?: unknown }>;
-  if (blocks.some((b) => b?.type === "tool_result")) return null;
-  const texts = blocks.filter((b) => b?.type === "text" && typeof b.text === "string").map((b) => b.text as string);
-  return texts.length ? texts.join("\n") : null;
-}
-
-// What the Stop hook needs from the turn: when its prompt arrived, and whether the turn ends
-// waiting. A task-notification turn reports one background result while others may run, and a
-// turn that launched background work (agents run async here) cannot have its result yet.
+// What the Stop hook needs from the turn: when the human's prompt arrived, and whether the turn
+// ends waiting. A task-notification turn reports one background result while others may run, and
+// a turn that launched background work (agents run async here) cannot have its result yet.
+// startedAt comes from the latest HUMAN prompt: files a background agent wrote before its
+// notification arrived belong to this turn's work, and the notification's own timestamp would
+// hide them from the secret scan.
 export interface TurnFacts {
   startedAt: number | null; // ms; null when the prompt is outside the tail
   waiting: boolean;
 }
 
-const BACKGROUND_TOOLS = new Set(["Agent", "Task", "Workflow", "Monitor", "ScheduleWakeup"]);
+const BACKGROUND_TOOLS = new Set(["Agent", "Task", "Monitor", "ScheduleWakeup"]);
 
 export function readTurnFacts(jsonl: string): TurnFacts {
   const lines = jsonl.split("\n");
   let waiting = false;
+  let lastPrompt = true; // still walking back through the latest prompt's own events
   for (let i = lines.length - 1; i >= 0; i--) {
     let event: unknown;
     try {
@@ -314,10 +303,13 @@ export function readTurnFacts(jsonl: string): TurnFacts {
     if (e.isSidechain) continue;
     const prompt = userPromptOf(event);
     if (prompt !== null) {
+      if (lastPrompt) waiting ||= /^\s*<task-notification>/.test(prompt);
+      lastPrompt = false;
+      if (!isHumanOrigin(event)) continue;
       const at = Date.parse(e.timestamp ?? "");
-      return { startedAt: Number.isNaN(at) ? null : at, waiting: waiting || /^\s*<task-notification>/.test(prompt) };
+      return { startedAt: Number.isNaN(at) ? null : at, waiting };
     }
-    if (e.type === "assistant" && Array.isArray(e.message?.content)) {
+    if (lastPrompt && e.type === "assistant" && Array.isArray(e.message?.content)) {
       for (const block of e.message.content as Array<{ type?: string; name?: string; input?: { run_in_background?: unknown } }>) {
         if (block.type === "tool_use" && (BACKGROUND_TOOLS.has(block.name ?? "") || block.input?.run_in_background === true)) waiting = true;
       }

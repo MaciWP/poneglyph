@@ -25,18 +25,18 @@
  */
 
 import { spawn } from "node:child_process";
-import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join, sep } from "node:path";
 import { readHookStdin } from "./lib/hook-stdin";
-import { claudeConfigDir } from "./lib/paths";
+import { foldText } from "./lib/language";
+import { claudeConfigDir, learnedLog, projectRoot } from "./lib/paths";
+import { appendLog } from "./instructions-loaded";
 import { frontmatter } from "../scripts/lib/skill-metadata";
-import { foldText, isNonHumanPayload, skillOverrides } from "./skill-activation";
-import { formatPast, memoryFile, memoryIsStale, pastFor, sessionSkills } from "./router/memory";
+import { isNonHumanPayload, skillOverrides } from "./skill-activation";
+import { formatPast, MAX_PROMPT_CHARS, memoryFile, MIN_WORDS, memoryIsStale, pastFor, sessionSkills } from "./router/memory";
 
 const ROUTER_TIMEOUT_MS = 15_000;
-const MIN_WORDS = 6;
-const MAX_PROMPT_CHARS = 3000;
 const MAX_SKILLS = 3;
 const DESCRIPTION_CHARS = 600;
 
@@ -356,7 +356,7 @@ export function killPrevious(pidFile: string, now = Date.now()): void {
   try {
     const fresh = now - statSync(pidFile).mtimeMs < ROUTER_TIMEOUT_MS + 5_000;
     const pid = Number(readFileSync(pidFile, "utf8"));
-    if (fresh && pid > 0) process.kill(-pid, "SIGKILL");
+    if (fresh && pid > 1) process.kill(-pid, "SIGKILL");
     else unlinkSync(pidFile);
   } catch { /* none running */ }
 }
@@ -375,11 +375,8 @@ function refreshMemory(cwd: string): void {
 const statSafe = (file: string) => { try { return statSync(file).mtimeMs; } catch { return null; } };
 
 export function log(cwd: string, fields: Record<string, string | number>): void {
-  const dir = join(cwd, ".claude", "learned");
-  if (!existsSync(join(cwd, ".claude"))) return;
   try {
-    mkdirSync(dir, { recursive: true });
-    appendFileSync(join(dir, "prompt-router.log"), `${new Date().toISOString()} ${Object.entries(fields).map(([k, v]) => `${k}=${v}`).join(" ")}\n`);
+    appendLog(`${new Date().toISOString()} ${Object.entries(fields).map(([k, v]) => `${k}=${v}`).join(" ")}`, learnedLog(cwd, "prompt-router.log"));
   } catch { /* best-effort */ }
 }
 
@@ -387,13 +384,13 @@ if (import.meta.main) {
   const started = Date.now();
   const hostArg = process.argv[process.argv.indexOf("--host") + 1];
   const host: RouterHost = hostArg === "codex" || hostArg === "grok" ? hostArg : "claude";
-  let cwd = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  let cwd = projectRoot(undefined);
   try {
     const raw = await readHookStdin();
     const prompt = routablePrompt(raw, process.env, process.platform, host);
     if (prompt !== null) {
       const payload = JSON.parse(raw) as { session_id?: string; cwd?: string; transcript_path?: string };
-      if (typeof payload.cwd === "string" && (host !== "claude" || !process.env.CLAUDE_PROJECT_DIR)) cwd = payload.cwd;
+      cwd = host === "claude" ? projectRoot(payload.cwd) : typeof payload.cwd === "string" ? payload.cwd : cwd;
       const session = typeof payload.session_id === "string" ? payload.session_id.replace(/[^\w-]/g, "") : "";
       mkdirSync(routerDir(), { recursive: true });
       const pidFile = session ? join(routerDir(), `${session}.pid`) : null;

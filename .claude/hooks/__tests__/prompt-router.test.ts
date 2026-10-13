@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -342,6 +342,21 @@ describe("prompt-router: runRouter", () => {
     expect(survivor.killed).toBe(false);
     expect(survivor.exitCode).toBeNull();
     survivor.kill();
+  });
+
+  test("never signals pid 1 or below: kill(-1) would reach every process of the user", () => {
+    const kill = spyOn(process, "kill").mockImplementation(() => true);
+    try {
+      for (const pid of ["1", "0", "-1", "abc"]) {
+        const file = join(dir, `bad-${pid}.pid`);
+        writeFileSync(file, pid);
+        killPrevious(file);
+        expect(existsSync(file)).toBe(false);
+      }
+      expect(kill).not.toHaveBeenCalled();
+    } finally {
+      kill.mockRestore();
+    }
   });
 
   test("reports a missing binary as an error", async () => {

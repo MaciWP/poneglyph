@@ -10,12 +10,13 @@
 import { readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { claudeConfigDir } from "../lib/paths";
-import { foldText } from "../skill-activation";
+import { foldText } from "../lib/language";
 
 export interface RouterCase { prompt: string; expected: string[]; source: "typed" | "autonomous" | "negative"; at?: number }
 export interface MemoryEntry { at: number; prompt: string; skills: string[] }
 
 export const MIN_WORDS = 6;
+export const MAX_PROMPT_CHARS = 3000;
 const PASTED_RE = /<pasted_content[^>]*>[\s\S]*?<\/pasted_content>/g;
 export const MEMORY_MAX_AGE_MS = 6 * 3_600_000;
 export const MEMORY_DAYS = 60;

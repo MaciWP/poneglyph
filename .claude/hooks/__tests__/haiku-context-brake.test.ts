@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { ignoreLearned } from "./learned-fixture";
 import { agentTranscript, lastRequest, narrowNote, narrowRead, pendingTokens, readEstimate, readReason } from "../haiku-context-brake";
 
 const HOOK = join(import.meta.dir, "..", "haiku-context-brake.ts");
@@ -17,7 +18,7 @@ function fixture(lines: string[]) {
   const main = join(root, "projects", "p", "sess-1234567890.jsonl");
   writeFileSync(main, "");
   writeFileSync(join(sessionDir, "agent-abc.jsonl"), lines.join("\n") + "\n");
-  const project = join(root, "project");
+  const project = ignoreLearned(join(root, "project"));
   const run = (payload: Record<string, unknown>) =>
     spawnSync(process.execPath, [HOOK], { input: JSON.stringify({ session_id: "sess-1234567890", transcript_path: main, tool_name: "Read", ...payload }), env: { ...process.env, CLAUDE_PROJECT_DIR: project, CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS: "" }, encoding: "utf8" }).stdout;
   return { run, main, log: join(project, ".claude", "learned", "haiku-brake.log") };

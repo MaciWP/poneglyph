@@ -15,7 +15,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { readHookStdin } from "./lib/hook-stdin";
 import { appendLog } from "./instructions-loaded";
-import { projectRoot } from "./lib/paths";
+import { learnedLog, projectRoot } from "./lib/paths";
 
 const UI_EXT_RE = /\.(html|css|scss|tsx|jsx|vue|svelte)$/i;
 const EDIT_TOOLS = new Set(["Edit", "Write", "MultiEdit"]);
@@ -72,7 +72,7 @@ export function alreadyNoted(logText: string, session: string): boolean {
 // subdirectory with its own design file is missed; walk up from the edited file if that bites.
 export function noteOnce({ cwd, session, paths }: { cwd: string; session: string; paths: string[] }): string | null {
   if (!paths.some(isUiFile)) return null;
-  const logPath = join(cwd, ".claude", "learned", "design-file-hints.log");
+  const logPath = learnedLog(cwd, "design-file-hints.log");
   let logText = "";
   try {
     logText = readFileSync(logPath, "utf8");

@@ -1,5 +1,5 @@
 import { afterAll, describe, test, expect } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, utimesSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -225,8 +225,8 @@ describe("readTurnFacts: when the turn started and whether it ends waiting", () 
     expect(readTurnFacts(jsonl)).toEqual({ startedAt: Date.parse("2026-10-09T10:00:00.000Z"), waiting: false });
   });
 
-  test("a turn that launched an agent, a workflow or a background command ends waiting", () => {
-    for (const c of [call("Agent"), call("Workflow"), call("Bash", { command: "bun test", run_in_background: true })]) {
+  test("a turn that launched an agent or a background command ends waiting", () => {
+    for (const c of [call("Agent"), call("Bash", { command: "bun test", run_in_background: true })]) {
       expect(readTurnFacts([user("revisa"), c].join("\n")).waiting).toBe(true);
     }
   });
@@ -235,6 +235,31 @@ describe("readTurnFacts: when the turn started and whether it ends waiting", () 
     const toolResult = JSON.stringify({ type: "user", message: { content: [{ type: "tool_result", content: "x" }] } });
     const sidechain = JSON.stringify({ type: "user", isSidechain: true, message: { content: "sub prompt" } });
     expect(readTurnFacts([user("<task-notification>\n<status>completed</status>"), toolResult, sidechain].join("\n")).waiting).toBe(true);
+  });
+
+  test("startedAt is the latest human prompt: a task-notification prompt does not move it", () => {
+    const human = (timestamp: string) => JSON.stringify({ type: "user", origin: { kind: "human" }, timestamp, message: { content: "revisa" } });
+    const notice = (timestamp: string) => JSON.stringify({ type: "user", origin: { kind: "task-notification" }, timestamp, message: { content: "<task-notification>\n<status>completed</status>" } });
+    const jsonl = [human("2026-10-09T10:00:00.000Z"), call("Agent"), notice("2026-10-09T10:05:00.000Z")].join("\n");
+    expect(readTurnFacts(jsonl)).toEqual({ startedAt: Date.parse("2026-10-09T10:00:00.000Z"), waiting: true });
+  });
+
+  test("a file a background agent wrote between the human prompt and its notification is scanned", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "poneglyph-bg-test-"));
+    try {
+      const t0 = 1_700_000_000_000;
+      const file = join(dir, "bg.ts");
+      await Bun.write(file, "x");
+      utimesSync(file, (t0 + 60_000) / 1000, (t0 + 60_000) / 1000); // t1
+      const at = (ms: number) => new Date(ms).toISOString();
+      const jsonl = [
+        JSON.stringify({ type: "user", origin: { kind: "human" }, timestamp: at(t0), message: { content: "lanza el agente" } }),
+        JSON.stringify({ type: "user", origin: { kind: "task-notification" }, timestamp: at(t0 + 120_000), message: { content: "<task-notification>done" } }),
+      ].join("\n");
+      expect(await filesChangedSince([file], readTurnFacts(jsonl).startedAt)).toEqual([file]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   test("a prompt outside the tail gives an unknown start", () => {

@@ -13,8 +13,7 @@
 // `<project>/.claude/learned/turn-nudges.log` is both the log and the marker. Claude only:
 // Codex and Grok carry the same duties in the doctrine.
 import { readFileSync } from "node:fs";
-import { userPromptOf } from "./security-gate";
-import { queuedPromptOf, readTranscriptTail } from "./lib/transcript";
+import { queuedPromptOf, readTranscriptTail, userPromptOf } from "./lib/transcript";
 import { stopwordCounts } from "./lib/language";
 import { appendLog } from "./instructions-loaded";
 import { learnedLog } from "./lib/paths";

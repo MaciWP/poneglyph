@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { formatLogLine, appendLog } from "../instructions-loaded";
 import { learnedLog } from "../lib/paths";
+import { ignoreLearned } from "./learned-fixture";
 
 describe("post-compaction language reminder", () => {
   const script = join(import.meta.dir, "..", "instructions-loaded.ts");
@@ -95,7 +96,7 @@ describe("appendLog", () => {
 });
 
 describe("log location", () => {
-  const root = mkdtempSync(join(tmpdir(), "poneglyph-root-test-"));
+  const root = ignoreLearned(mkdtempSync(join(tmpdir(), "poneglyph-root-test-")));
   const sub = join(root, "nested", "dir");
   mkdirSync(sub, { recursive: true });
   afterAll(() => rmSync(root, { recursive: true, force: true }));
@@ -110,11 +111,11 @@ describe("log location", () => {
     expect(existsSync(join(sub, ".claude"))).toBe(false);
   });
 
-  test("without CLAUDE_PROJECT_DIR (another host) the payload cwd is the root", () => {
+  test("without CLAUDE_PROJECT_DIR (another host) the payload cwd is the root, when it git-ignores its logs", () => {
     const saved = process.env.CLAUDE_PROJECT_DIR;
     delete process.env.CLAUDE_PROJECT_DIR;
     try {
-      expect(learnedLog(sub, "a.log")).toBe(join(sub, ".claude", "learned", "a.log"));
+      expect(learnedLog(root, "a.log")).toBe(join(root, ".claude", "learned", "a.log"));
     } finally {
       if (saved !== undefined) process.env.CLAUDE_PROJECT_DIR = saved;
     }

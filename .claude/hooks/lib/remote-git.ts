@@ -17,9 +17,8 @@
 // `gh api -X POST`, `gh pr close/comment`, `gh release`, `npm publish`, sessions with hooks
 // disabled (`--bare`), and any agent that types into a Claude terminal: its prompt is recorded
 // as human.
-import { foldText } from "../skill-activation";
-import { userPromptOf } from "../security-gate";
-import { readTranscriptTail } from "./transcript";
+import { foldText } from "./language";
+import { isHumanOrigin, readTranscriptTail, userPromptOf } from "./transcript";
 
 export type RemoteAction = "push" | "push-force" | "pr-create" | "pr-merge";
 
@@ -291,9 +290,10 @@ export interface Turn {
   answers?: string[];
 }
 
-// The prompt whose promptId is `promptId`, if a human typed it in the main thread, the assistant
-// text right before it, and the AskUserQuestion answers given since. Null when that prompt is not
-// (yet) in the transcript.
+// The prompt whose promptId is `promptId` in the main thread, the assistant text right before it,
+// and the AskUserQuestion answers given since. A turn started by a task notification or an agent
+// keeps its answers (a human gave them) but its prompt is "": that text never counts as an order.
+// Null when that prompt is not (yet) in the transcript.
 export function extractTurn(jsonl: string, promptId: string): Turn | null {
   const events: unknown[] = [];
   for (const line of jsonl.split("\n")) {
@@ -304,10 +304,11 @@ export function extractTurn(jsonl: string, promptId: string): Turn | null {
     }
   }
   for (let i = events.length - 1; i >= 0; i--) {
-    const e = events[i] as { promptId?: string; isSidechain?: boolean; origin?: { kind?: string } };
-    if (e?.promptId !== promptId || e.isSidechain || (e.origin && e.origin.kind !== "human")) continue;
-    const prompt = userPromptOf(events[i]);
-    if (prompt === null) continue;
+    const e = events[i] as { promptId?: string; isSidechain?: boolean };
+    if (e?.promptId !== promptId || e.isSidechain) continue;
+    const typed = userPromptOf(events[i]);
+    if (typed === null) continue;
+    const prompt = isHumanOrigin(events[i]) ? typed : "";
     let previousAssistantText = "";
     for (let j = i - 1; j >= 0 && !previousAssistantText; j--) {
       const a = events[j] as { type?: string; isSidechain?: boolean; message?: { content?: unknown } };
@@ -335,12 +336,22 @@ export function extractTurn(jsonl: string, promptId: string): Turn | null {
   return null;
 }
 
+// The question the reply answers: the last sentence that ends in «?», else the last sentence. An
+// offer earlier in the message («Hago push cuando me lo pidas. ¿Sigo con el refactor?») is not
+// what a short «sí» says yes to. The style's closing `ROBIN:` line carries the verdict and the
+// user's next step, so when there is one it is the whole message for this purpose.
+function lastQuestion(text: string): string {
+  const closing = text.match(/^\s*ROBIN:(.*)$/gm)?.at(-1) ?? text;
+  const sentences = closing.split(/(?<=[.!?])\s+|\n+/).map((x) => x.trim()).filter(Boolean);
+  return sentences.findLast((x) => /\?["'»”)*_\]]*$/.test(x)) ?? sentences.at(-1) ?? "";
+}
+
 function assents(turn: Turn, action: Exclude<RemoteAction, "push-force">): boolean {
   const prompt = foldText(turn.prompt);
   if (!ASSENT.test(prompt) || DEFERS.test(prompt)) return false;
   for (const m of prompt.matchAll(NAMES[action])) if (negated(prompt, m.index)) return false;
   // The offer often sits in quotes («responde "abre la PR"»), so quotes stay here.
-  const offer = foldText(turn.previousAssistantText);
+  const offer = foldText(lastQuestion(turn.previousAssistantText));
   return orders(offer, action) || matches(offer, OFFER[action]);
 }
 

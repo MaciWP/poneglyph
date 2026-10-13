@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { BUDGET_LINE } from "../lib/haiku-budget";
 import { agentTask, bakedSkills, RETRY_REASON, routerTaskInput } from "../router/agent-hooks";
+import { ignoreLearned } from "./learned-fixture";
 
 const HOOK = join(import.meta.dir, "..", "router", "agent-hooks.ts");
 const memory = [{ at: 1, prompt: "revisa la pr de esta rama y deja comentarios", skills: ["pr-review", "gone"] }];
@@ -12,7 +13,7 @@ const memory = [{ at: 1, prompt: "revisa la pr de esta rama y deja comentarios",
 // A project with two skills, an empty config dir, and a Lead transcript where `b` is loaded.
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), "agent-hooks-"));
-  const project = join(root, "project");
+  const project = ignoreLearned(join(root, "project"));
   const config = join(root, "config");
   for (const name of ["a", "b"]) {
     mkdirSync(join(project, ".claude", "skills", name), { recursive: true });

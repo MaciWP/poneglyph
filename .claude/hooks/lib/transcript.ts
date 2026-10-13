@@ -23,3 +23,25 @@ export function queuedPromptOf(event: unknown): string | null {
   if (a?.type !== "queued_command" || a.commandMode !== "prompt" || (a.origin?.kind ?? "human") !== "human") return null;
   return typeof a.prompt === "string" && a.prompt.trim() ? a.prompt : null;
 }
+
+// The text the human typed, or null when a "user" event is not a prompt: tool results
+// come back as user events too, and meta or compaction-summary events are harness text.
+// A prompt with an image or a pasted block is an array of text/image blocks, not a string.
+export function userPromptOf(event: unknown): string | null {
+  const e = event as { type?: string; isMeta?: boolean; isCompactSummary?: boolean; message?: { content?: unknown } };
+  if (e?.type !== "user" || e.isMeta || e.isCompactSummary) return null;
+  const content = e.message?.content;
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return null;
+  const blocks = content as Array<{ type?: string; text?: unknown }>;
+  if (blocks.some((b) => b?.type === "tool_result")) return null;
+  const texts = blocks.filter((b) => b?.type === "text" && typeof b.text === "string").map((b) => b.text as string);
+  return texts.length ? texts.join("\n") : null;
+}
+
+// A prompt a person typed: task notifications and agent prompts carry another origin. An event
+// with no origin (older transcripts) counts as human.
+export const isHumanOrigin = (event: unknown): boolean => {
+  const kind = (event as { origin?: { kind?: string } })?.origin?.kind;
+  return kind === undefined || kind === "human";
+};

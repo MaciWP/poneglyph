@@ -3,10 +3,11 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { alreadyNoted, buildNote, commandPaths, findDesignFiles, isUiFile, noteOnce } from "../design-file-hint";
+import { ignoreLearned } from "./learned-fixture";
 
 // Each test builds its own temp project with the named design files.
 function project(files: string[]): string {
-  const dir = mkdtempSync(join(tmpdir(), "design-file-hint-"));
+  const dir = ignoreLearned(mkdtempSync(join(tmpdir(), "design-file-hint-")));
   for (const f of files) {
     mkdirSync(dirname(join(dir, f)), { recursive: true });
     writeFileSync(join(dir, f), "# design\n");

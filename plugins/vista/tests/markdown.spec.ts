@@ -47,3 +47,9 @@ test("cells and inline marks", () => {
   expect(cells("a|b")).toEqual(["a", "b"]);
   expect(plain("**negrita**, *cursiva*, `code` y 2 * 3 * 4")).toBe("negrita, cursiva, code y 2 * 3 * 4");
 });
+
+test("a table inside a list item or indented as a code block stays text", () => {
+  for (const md of ["- | a | b |\n  |---|---|\n  | 1 | 2 |", "1. | a | b |\n|---|---|\n| 1 | 2 |", "    | a | b |\n    |---|---|\n    | 1 | 2 |"]) {
+    expect(hasBlocks(parse(md))).toBe(false);
+  }
+});

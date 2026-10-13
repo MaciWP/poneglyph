@@ -31,7 +31,7 @@ value disables the line. That `null` is type notation: TOML has no null literal,
 carrying it fails to load (`codex doctor` → "config could not be loaded"). Write the empty list
 instead. Omitting the key does **not** disable anything; it restores the default two items.
 
-This repo sets **no** Claude `statusLine`: the `hud` mod (`plugins/hud`) draws the footer under the prompt from `session.measure`, with no command and no API call. A machine that wants a command anyway sets it in the gitignored `settings.machine.json`; pin any third-party tool to an exact version (supply-chain #298).
+This repo sets **no** Claude `statusLine`: the `hud` mod (`plugins/hud`) draws its bar above the prompt from `session.measure`, with no command and no API call. A machine that wants a command anyway sets it in the gitignored `settings.machine.json`; pin any third-party tool to an exact version (supply-chain #298).
 
 ## 4. Min template
 

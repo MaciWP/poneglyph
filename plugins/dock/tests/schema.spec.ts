@@ -50,3 +50,18 @@ test("the target names what a press opens, for every kind", () => {
   expect(target({ kind: "terminal", label: "a", cwd: "/r", harness: "shell" })).toBe("shell en /r");
   expect(target({ kind: "terminal", label: "a", cwd: "/r", harness: "codex", prompt: "hola" })).toBe("codex en /r · «hola»");
 });
+
+test("a prompt that would reach argv as a flag is refused", () => {
+  const terminal = (extra: object) => ({ items: [{ label: "x", kind: "terminal", cwd: "/r", harness: "claude", ...extra }] });
+  expect(error(terminal({ prompt: "--dangerously-skip-permissions" }))).toBe('items[0].prompt must not start with "-"; begin with a word');
+  expect(error(terminal({ prompt: "  -p hola" }))).toBe('items[0].prompt must not start with "-"; begin with a word');
+  expect(error(terminal({ prompt: "revisa -p" }))).toBe("ok");
+});
+
+test("control and bidirectional characters are refused in prompt, cwd and href", () => {
+  const msg = "must not hold control or bidirectional characters";
+  expect(error({ items: [{ label: "x", kind: "terminal", cwd: "/r", harness: "claude", prompt: "hola‮adios" }] })).toContain(msg);
+  expect(error({ items: [{ label: "x", kind: "terminal", cwd: "/r\u001b[31m" }] })).toContain(msg);
+  expect(error({ items: [{ label: "x", kind: "url", href: "https://a.com/⁦" }] })).toContain(msg);
+  expect(error({ items: [{ label: "x", kind: "terminal", cwd: "/r", harness: "claude", prompt: "uno\ndos" }] })).toBe("ok");
+});

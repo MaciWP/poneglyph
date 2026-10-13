@@ -12,6 +12,7 @@ export type Block =
 
 const FENCE = /^ {0,3}(`{3,}|~{3,})/;
 const DELIMITER = /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/;
+const LIST_OR_CODE = /^(?: {4,}|\t|\s*(?:[-*+]|\d+[.)])\s)/;
 const CALLOUT = /^ {0,3}>\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*$/i;
 const TASK = /^[-*+] \[( |x|X)\] (.+)$/;
 
@@ -64,7 +65,8 @@ export function parse(md: string): Block[] {
       text.push(line);
       continue;
     }
-    const head = line.includes("|") ? cells(line) : [];
+    // A table inside a list item or indented 4+ spaces (a code block) stays text.
+    const head = line.includes("|") && !LIST_OR_CODE.test(line) ? cells(line) : [];
     const next = lines[i + 1] ?? "";
     if (head.length >= 2 && DELIMITER.test(next) && cells(next).length === head.length) {
       const rows: string[][] = [];

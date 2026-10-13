@@ -134,3 +134,21 @@ test("a missing path or a failing command comes back as an error, nothing run", 
   failing.h.run = async () => ({ exitCode: 1, stderr: "Unable to find application named 'PyCharm'\nmore" });
   expect(await perform(failing.h, { kind: "folder", label: "f", path: "/r" })).toEqual({ ok: false, error: "Unable to find application named 'PyCharm'" });
 });
+
+test("a 2xx reveal with no JSON body counts as done, with no local fallback", async () => {
+  const m = machine({ aos: true });
+  const fetch = m.h.fetch;
+  m.h.fetch = async (url, init) => (url.endsWith("/api/code/reveal") ? { status: 204, ok: true, text: "" } : fetch(url, init));
+  const r = await perform(m.h, { kind: "file", label: "x", path: "/r/poneglyph/a.ts" });
+  expect(r).toEqual({ ok: true, via: "Agentic OS · repo:poneglyph" });
+  expect(m.runs.some((a) => a[0] === "open" && a[1] === "-na")).toBe(false);
+});
+
+test("a stuck Agentic OS write times out and falls back to the local app", async () => {
+  const m = machine({ aos: true });
+  const fetch = m.h.fetch;
+  m.h.fetch = (url, init) => (init?.method === "POST" ? new Promise(() => {}) : fetch(url, init));
+  m.h.sleep = (ms) => (ms >= 8000 ? Promise.resolve() : new Promise(() => {}));
+  const r = await perform(m.h, { kind: "terminal", label: "x", cwd: "/r/poneglyph/x", harness: "claude" });
+  expect(r).toEqual({ ok: true, via: "Terminal (AOS timeout)" });
+});

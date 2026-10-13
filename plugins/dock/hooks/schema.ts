@@ -63,10 +63,14 @@ const fail = (msg: string): never => {
 };
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
+// Control and bidi characters hide what a button does; same set as workboard's text().
+const UNSAFE = /[\u0000-\u0008\u000b-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/u;
+
 function text(v: unknown, at: string, max: number, optional = false): string | undefined {
   if (v === undefined && optional) return undefined;
   if (typeof v !== "string" || !v.trim()) return fail(`${at} must be a non-empty string`);
   if (v.length > max) return fail(`${at} has ${v.length} characters; keep it to ${max}`);
+  if (UNSAFE.test(v)) return fail(`${at} must not hold control or bidirectional characters`);
   return v;
 }
 
@@ -107,6 +111,8 @@ function item(v: unknown, i: number): Action {
   const harness = (v.harness ?? "shell") as Harness;
   if (!HARNESSES.includes(harness)) fail(`${at}.harness must be shell, claude, codex or grok`);
   const prompt = text(v.prompt, `${at}.prompt`, LEN.prompt, true);
+  // A leading dash would reach the agent's argv as a flag.
+  if (prompt?.trimStart().startsWith("-")) fail(`${at}.prompt must not start with "-"; begin with a word`);
   if (prompt && harness === "shell") fail(`${at}.prompt needs an agent harness; a shell takes none`);
   return { kind: "terminal", label, cwd: path(v.cwd, `${at}.cwd`), harness, ...(prompt ? { prompt } : {}) };
 }

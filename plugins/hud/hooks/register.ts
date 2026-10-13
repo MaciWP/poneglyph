@@ -19,6 +19,10 @@ import { bmpCells, thumbSize } from "./raster.ts";
 const POLL_MS = 200;
 const TICK_MS = 1000;
 const THUMB = { columns: 48, rows: 12 };
+// As workboard.mjs: a stuck Agentic OS never holds the draft poll for longer.
+const POST_MS = 8000;
+// An [Image #N] whose file never shows up is given up on after this many polls of one draft.
+const MAX_MISSES = 5;
 
 type Thumb = { n: number; raster?: { columns: number; rows: number; cells: string; size: string } };
 // Inside an Agentic OS terminal: where to send the draft's images and which terminal this is.
@@ -38,6 +42,12 @@ let thumbs: Thumb[] = [];
 let draftKey = "";
 let polling = false;
 let imagesDir: string | undefined;
+let tmpDir: string | undefined;
+let misses = 0;
+let missKey = "";
+// Interactive session only; the timers are set once, on the first start.
+let active = false;
+let timers = false;
 const rasters = new Map<string, Thumb["raster"] | null>();
 let aos: Aos | undefined;
 // The draft images Agentic OS shows, by number; null when it refused or could not be reached.
@@ -51,7 +61,7 @@ async function findAos($: EngineInterface): Promise<Aos | undefined> {
   if (!url || !id) return undefined;
   try {
     const u = new URL(url);
-    const loopback = ["127.0.0.1", "localhost", "agentic-os.localhost"].includes(u.hostname);
+    const loopback = ["127.0.0.1", "localhost", "agentic-os.localhost", "[::1]"].includes(u.hostname);
     if (u.protocol !== "http:" || !loopback || u.username || u.password || u.pathname !== "/" || u.search || u.hash) return undefined;
     return { origin: u.origin, id };
   } catch {
@@ -69,12 +79,16 @@ async function sendDraft($: EngineInterface, target: Aos, dir: string | undefine
       if (!dir || !(await $.fs.exists(src))) return false;
       images.push({ n, image: { mime: "image/png", data: (await $.fs.read(src, { as: "bytes" })).base64 } });
     }
-    const response = await $.http.fetch(`${target.origin}/api/terminals/${encodeURIComponent(target.id)}/drafts`, {
-      method: "POST",
-      headers: { "content-type": "application/json", origin: target.origin, "x-aos-agent-id": target.id },
-      body: JSON.stringify({ images }),
-    });
-    return response.ok;
+    // The host's fetch takes no AbortSignal, so the wait is raced against a timer.
+    const response = await Promise.race([
+      $.http.fetch(`${target.origin}/api/terminals/${encodeURIComponent(target.id)}/drafts`, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: target.origin, "x-aos-agent-id": target.id },
+        body: JSON.stringify({ images }),
+      }),
+      $.clock.sleep(POST_MS).then(() => null),
+    ]);
+    return !!response?.ok;
   } catch {
     return false;
   }
@@ -116,7 +130,8 @@ function measure(e: { context: { percent?: number }; rateLimits: Limit[]; cost?:
 // folder is named after a directory that may have moved, so find it by the session id.
 async function findImages($: EngineInterface): Promise<string | undefined> {
   if (imagesDir) return imagesDir;
-  const tmp = (await $.env.get("CLAUDE_CODE_TMPDIR")) ?? `/tmp/claude-${(await $.process.run(["id", "-u"])).stdout.trim()}`;
+  tmpDir ??= (await $.env.get("CLAUDE_CODE_TMPDIR")) ?? `/tmp/claude-${(await $.process.run(["id", "-u"])).stdout.trim()}`;
+  const tmp = tmpDir;
   const session = await $.session.id();
   for (const entry of await $.fs.list(tmp).catch(() => [])) {
     const dir = `${tmp}/${entry.name}/${session}/images`;
@@ -138,9 +153,14 @@ async function rasterOf($: EngineInterface, dir: string, n: number): Promise<Thu
     const h = Number(/pixelHeight: (\d+)/.exec(dims)?.[1]);
     if (w > 0 && h > 0) {
       const { columns, rows } = thumbSize(w, h, THUMB.columns, THUMB.rows);
-      const out = `${dir}/hud-${n}.bmp`;
-      const run = await $.process.run(["sips", "-z", String(rows * 2), String(columns * 2), "-s", "format", "bmp", src, "--out", out]);
-      if (run.exitCode === 0) raster = { ...bmpCells(Uint8Array.fromBase64((await $.fs.read(out, { as: "bytes" })).base64)), size: `${w}×${h}` };
+      // In the temp folder, not Claude's images folder, and removed once read, as vista does.
+      const out = `${(await $.env.get("TMPDIR")) ?? "/tmp"}/hud-${crypto.randomUUID()}.bmp`.replace("//", "/");
+      try {
+        const run = await $.process.run(["sips", "-z", String(rows * 2), String(columns * 2), "-s", "format", "bmp", src, "--out", out]);
+        if (run.exitCode === 0) raster = { ...bmpCells(Uint8Array.fromBase64((await $.fs.read(out, { as: "bytes" })).base64)), size: `${w}×${h}` };
+      } finally {
+        await $.process.run(["rm", "-f", out]).catch(() => {});
+      }
     }
   } catch {
     raster = null;
@@ -171,8 +191,11 @@ async function poll($: EngineInterface) {
     }
     const next: Thumb[] = [];
     for (const n of numbers) next.push({ n, raster: dir ? ((await rasterOf($, dir, n)) ?? undefined) : undefined });
-    // A file still being written keeps the key open, so the next poll draws it.
-    draftKey = next.every((t) => t.raster || rasters.get(`${dir}/${t.n}.png`) === null) ? key : "";
+    // A file still being written keeps the key open, so the next poll draws it; a few misses
+    // for the same draft and it is given up on (the tag alone stays).
+    if (key !== missKey) [missKey, misses] = [key, 0];
+    const settled = next.every((t) => t.raster || rasters.get(`${dir}/${t.n}.png`) === null);
+    draftKey = settled || ++misses >= MAX_MISSES ? key : "";
     thumbs = next;
     $.ui.invalidate("ui.render");
   } finally {
@@ -189,16 +212,27 @@ async function writeUsage($: EngineInterface) {
 export const register: Register = (on) => {
   on("session.start", async ($, e, next) => {
     const r = await next(e);
+    active = e.isInteractive;
+    if (!active) return r;
+    // A new session (/clear, resume) starts from nothing.
+    imagesDir = tmpDir = undefined;
+    [shownKey, draftKey, sentKey, missKey] = ["", "", "", ""];
+    [thumbs, inAos, misses] = [[], null, 0];
+    rasters.clear();
     model = await $.session.model();
     aos = await findAos($);
     measure(await $.session.usage());
-    $.clock.every(TICK_MS, () => void tick($));
-    $.clock.every(POLL_MS, () => void poll($));
+    if (!timers) {
+      timers = true;
+      $.clock.every(TICK_MS, () => tick($).catch(() => {}));
+      $.clock.every(POLL_MS, () => poll($).catch(() => {}));
+    }
     return r;
   });
 
   on("session.measure", async ($, e, next) => {
     const r = await next(e);
+    if (!active) return r;
     measure(e);
     // Written on every reading, moved or not: Agentic OS dates the figures by the file's mtime.
     if (e.rateLimits.length) {
@@ -220,7 +254,7 @@ export const register: Register = (on) => {
 
   on("turn.complete", async ($, e, next) => {
     const r = await next(e);
-    if (e.agentId) return r;
+    if (e.agentId || !active) return r;
     lastAnswerAt = await $.clock.now();
     await tick($);
     return r;
@@ -228,7 +262,7 @@ export const register: Register = (on) => {
 
   on("ui.render", { component: "AbovePrompt" }, async ($, e, next) => {
     const theirs = await next(e);
-    if (e.props.hasSurvey) return theirs;
+    if (!active || e.props.hasSurvey) return theirs;
     const { now, left, snap } = await snapshot($);
     const runs = layout(bar(snap, now), e.props.bodyColumns);
     const propose = proposing(left);

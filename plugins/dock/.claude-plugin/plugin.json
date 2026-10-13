@@ -1,6 +1,6 @@
 {
   "name": "dock",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Action buttons in the transcript: open a file, a folder, a terminal, an agent session, a URL or Finder; through Agentic OS when it runs, macOS apps otherwise.",
   "author": { "name": "Oriol Macias" }
 }

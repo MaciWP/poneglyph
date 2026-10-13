@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, test } from "bun:test";
 import {
   extractRobin,
@@ -363,4 +364,18 @@ test("the router run of this session is the latest claude line with its session 
   });
   expect(await routerRun(dir, "11111111-x")).toBeNull();
   expect(await routerRun(`${dir}/missing`, "abcdef12")).toBeNull();
+});
+
+// A plugin installs alone, so each of these four loopback checks carries its own copy of the
+// allowlist; they must stay the same set.
+test("the loopback allowlists of hud, dock and workboard match", () => {
+  const files = ["../../hud/hooks/register.ts", "../../dock/hooks/backends.ts", "../hooks/register.ts", "../scripts/workboard.mjs"];
+  const sets = files.map((f) => {
+    const src = readFileSync(new URL(f, import.meta.url), "utf8");
+    const list = /\[((?:\s*"[^"]+",?)+\s*)\]\.includes\(\s*u(?:rl)?\.hostname/.exec(src)?.[1];
+    expect(list, f).toBeDefined();
+    return [...(list as string).matchAll(/"([^"]+)"/g)].map((m) => m[1]).sort();
+  });
+  expect(sets[0]).toEqual(["127.0.0.1", "[::1]", "agentic-os.localhost", "localhost"]);
+  for (const s of sets) expect(s).toEqual(sets[0]);
 });

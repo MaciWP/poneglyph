@@ -25,7 +25,7 @@ function toolUse(id: string, input: object, state: Partial<{ isRunning: boolean;
 }
 
 // Agentic OS down unless `aos` is set; every command exits 0 unless `fail` names it.
-function world(on: On, opts: { aos?: boolean; fail?: string } = {}) {
+function world(on: On, opts: { aos?: boolean; fail?: string; os?: string } = {}) {
   const clock = mock.clock(on, { now: Date.parse("2026-10-13T10:00:00Z") });
   mock.env(on, {});
   const runs: string[][] = [];
@@ -51,6 +51,7 @@ function world(on: On, opts: { aos?: boolean; fail?: string } = {}) {
     return { value: { status: 200, ok: true, headers: {}, text: JSON.stringify({ locations: [{ id: "repo:poneglyph", cwd: "/r/poneglyph" }] }) } };
   });
   on("process.run", (_, e) => {
+    if (e.argv[0] === "uname") return { value: { exitCode: 0, stdout: `${opts.os ?? "Darwin"}\n`, stderr: "", isStdoutTruncated: false, isStderrTruncated: false } };
     runs.push([...e.argv]);
     const failed = opts.fail !== undefined && e.argv.includes(opts.fail);
     return { value: { exitCode: failed ? 1 : 0, stdout: "", stderr: failed ? "Unable to find application" : "", isStdoutTruncated: false, isStderrTruncated: false } };
@@ -88,6 +89,12 @@ test("a desktop or headless session gets neither the tool nor the context line",
   expect(w.tools).toHaveLength(0);
   await $.prompt.submit({ text: "hola", origin: { kind: "composer" } } as never);
   expect(context.some((c) => c.includes("dock"))).toBe(false);
+});
+
+test("outside macOS the tool is not registered, since open and osascript are macOS's", async ($, on) => {
+  const w = world(on, { os: "Linux" });
+  await $.session.start(start);
+  expect(w.tools).toHaveLength(0);
 });
 
 test("a malformed call goes back to the model with the field to fix", async ($, on) => {

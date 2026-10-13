@@ -190,15 +190,20 @@ const fail = ($: EngineInterface, err: unknown) => {
   redraw($);
 };
 const api = async ($: EngineInterface, path: string, body: unknown) => {
-  const response = await $.http.fetch(`${aos}/api/workboard${path}`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      origin: aos,
-      ...(actor ? { "x-aos-agent-id": actor } : {}),
-    },
-    body: JSON.stringify(body),
-  });
+  // The host's fetch takes no AbortSignal, so the wait is raced against a timer (8 s, as
+  // workboard.mjs); refresh's `refreshing` flag is released by its finally either way.
+  const response = await Promise.race([
+    $.http.fetch(`${aos}/api/workboard${path}`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        origin: aos,
+        ...(actor ? { "x-aos-agent-id": actor } : {}),
+      },
+      body: JSON.stringify(body),
+    }),
+    $.clock.sleep(8000).then(() => Promise.reject(Error("Agentic OS: timeout"))),
+  ]);
   if (!response.ok) throw Error(`Agentic OS: ${response.status} ${clean(response.text, 200)}`);
 };
 const helper = async ($: EngineInterface, command: string, extra: string[] = []) => {
@@ -589,19 +594,30 @@ export const register: Register = (on) => {
     }
     actor = (await $.env.get("AOS_AGENT_ID")) || undefined;
     const configured = await $.env.get("AOS_URL");
+    // A malformed or non-loopback AOS_URL leaves the default origin instead of aborting the
+    // start, as hud and dock leave Agentic OS out: the tool and the board still come up.
     if (configured) {
-      const u = new URL(configured);
-      if (
-        u.protocol !== "http:" ||
-        !["127.0.0.1", "localhost", "agentic-os.localhost"].includes(u.hostname) ||
-        u.username ||
-        u.password ||
-        u.pathname !== "/" ||
-        u.search ||
-        u.hash
-      )
-        throw Error("AOS_URL must be a loopback HTTP origin");
-      aos = u.origin;
+      try {
+        const u = new URL(configured);
+        if (
+          u.protocol !== "http:" ||
+          ![
+            "127.0.0.1",
+            "localhost",
+            "agentic-os.localhost",
+            "[::1]",
+          ].includes(u.hostname) ||
+          u.username ||
+          u.password ||
+          u.pathname !== "/" ||
+          u.search ||
+          u.hash
+        )
+          throw Error("AOS_URL must be a loopback HTTP origin");
+        aos = u.origin;
+      } catch {
+        $.ui.toast("AOS_URL no es un origen HTTP local; se usa el predeterminado");
+      }
     }
     await $.command.register({
       name: "workboard",

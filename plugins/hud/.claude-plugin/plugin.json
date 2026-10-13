@@ -1,6 +1,6 @@
 {
   "name": "hud",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Stats bar above the prompt with model, effort, context, plan limits, cache countdown and cost, plus thumbnails of pasted images.",
   "author": { "name": "Oriol Macias" }
 }

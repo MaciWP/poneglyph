@@ -34,6 +34,9 @@ function press($: EngineInterface, key: string, panel: Panel, i: number) {
     states.set(key, r.ok ? `✓ ${r.via}` : `✗ ${r.error}`);
     if (!r.ok) $.ui.toast(r.error);
     $.ui.invalidate("ui.render");
+  }).catch((err) => {
+    states.set(key, `✗ ${err instanceof Error ? err.message : String(err)}`);
+    $.ui.invalidate("ui.render");
   });
 }
 
@@ -59,8 +62,8 @@ export const register: Register = (on) => {
   on("session.start", async ($, e, next) => {
     const r = await next(e);
     // The actions run on this machine, from the CLI's own process: a desktop or headless
-    // session gets no tool and the model names paths in text.
-    drawn = e.isInteractive && e.surface === "terminal";
+    // session gets no tool and the model names paths in text. open and osascript are macOS's.
+    drawn = e.isInteractive && e.surface === "terminal" && (await $.process.run(["uname", "-s"]).then((r) => r.stdout.trim() === "Darwin", () => false));
     if (drawn) await $.tool.register({ name: "actions", description: DESCRIPTION, inputSchema: INPUT_SCHEMA });
     return r;
   });

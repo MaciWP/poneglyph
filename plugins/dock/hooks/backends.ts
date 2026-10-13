@@ -17,12 +17,14 @@ type Aos = { base: string; locations: Location[] };
 
 const AOS_URL = "http://localhost:4317";
 const PROBE_MS = 800;
+// As workboard.mjs: a press never waits on a stuck Agentic OS for longer.
+const POST_MS = 8000;
 
 // Only a loopback origin is taken, as hud and workboard do: a press never reaches elsewhere.
 function loopback(url: string): string | null {
   try {
     const u = new URL(url);
-    const local = ["127.0.0.1", "localhost", "agentic-os.localhost"].includes(u.hostname);
+    const local = ["127.0.0.1", "localhost", "agentic-os.localhost", "[::1]"].includes(u.hostname);
     if (u.protocol !== "http:" || !local || u.username || u.password || u.pathname !== "/" || u.search || u.hash) return null;
     return u.origin;
   } catch {
@@ -60,12 +62,16 @@ export function locate(locations: Location[], path: string): { id: string; rel: 
 }
 
 // Agentic OS's local guard wants its own Origin and JSON on every write.
+// The host's fetch takes no AbortSignal, so the wait is raced against a timer.
 const post = (h: Host, base: string, route: string, body: object) =>
-  h.fetch(`${base}${route}`, {
-    method: "POST",
-    headers: { Origin: new URL(base).origin, "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  Promise.race([
+    h.fetch(`${base}${route}`, {
+      method: "POST",
+      headers: { Origin: new URL(base).origin, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+    h.sleep(POST_MS).then(() => Promise.reject(new Error("timeout"))),
+  ]);
 
 // Done there, or why not: a refusal is said next to the local app that opened instead, so a
 // broken Agentic OS route never passes for a working one. Null: the path is none of its places.
@@ -82,7 +88,11 @@ async function viaAos(h: Host, aos: Aos, a: Action): Promise<Outcome | string | 
     const r = await post(h, aos.base, "/api/code/reveal", { location: at.id, path: at.rel, ...(a.line ? { line: a.line } : {}) });
     if (!r.ok) return `AOS ${r.status}`;
     // No dashboard open to take it: opening one picks the pending file up as it loads.
-    const delivered = (JSON.parse(r.text) as { delivered?: boolean }).delivered;
+    // A 2xx with no JSON body still counts as done; the dashboard is just not opened.
+    let delivered: boolean | undefined;
+    try {
+      delivered = (JSON.parse(r.text) as { delivered?: boolean }).delivered;
+    } catch {}
     if (!delivered) await h.run(["open", aos.base]);
     return { ok: true, via: `Agentic OS · ${at.id}` };
   }

@@ -19,7 +19,7 @@ export function callout(ui: Ui, type: CalloutKind, text: string): RenderElement 
     borderColor: look.color,
     paddingX: 1,
     children: [
-      ui.Text({ bold: true, color: look.color, children: look.title }),
+      ui.Text({ weight: "semibold", color: look.color, children: look.title }),
       ui.Markdown ? ui.Markdown({ text }) : ui.Text({ wrap: "wrap", children: text }),
     ],
   });

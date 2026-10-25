@@ -33,6 +33,7 @@ function world(on: On, opts: { aos?: boolean; fail?: string; os?: string } = {})
   const toasts: string[] = [];
   const tools: { name: string; description: string }[] = [];
   on("session.start", (_, e) => ({ cwd: e.cwd }));
+  on("session.attach", (_, e) => ({ clientId: e.clientId }));
   on("tool.register", (_, e) => {
     tools.push(e);
     return { value: { tool: TOOL } };
@@ -60,7 +61,7 @@ function world(on: On, opts: { aos?: boolean; fail?: string; os?: string } = {})
   return { clock, runs, posts, toasts, tools };
 }
 
-test("actions registers in a terminal session with its schema in the prompt and a context line", async ($, on) => {
+test("actions registers deferred in a terminal session, with a context line naming how to load it", async ($, on) => {
   const w = world(on);
   let context: string[] = [];
   on("prompt.submit", (_, e) => {
@@ -74,21 +75,45 @@ test("actions registers in a terminal session with its schema in the prompt and 
   await $.prompt.submit({ text: "¿dónde está el fallo?", origin: { kind: "composer" } } as never);
   expect(context.at(-1)).toContain(TOOL);
   const described = await $.tool.describe({ tool: TOOL, description: "d", isDeferred: true, provider: { plugin: "dock", tier: "user" } });
-  expect(described.isDeferred).toBe(false);
+  expect(described.isDeferred).toBe(true);
+  expect(context.at(-1)).toContain("ToolSearch");
 });
 
-test("a desktop or headless session gets neither the tool nor the context line", async ($, on) => {
+test("a headless session gets neither the tool nor the context line", async ($, on) => {
   const w = world(on);
   let context: string[] = [];
   on("prompt.submit", (_, e) => {
     context = [...(e.context ?? [])];
     return { text: e.text };
   });
-  await $.session.start({ ...start, surface: "desktop" });
-  await $.session.start({ ...start, isInteractive: false });
+  await $.session.start({ cwd: "/work/project", surface: null, isInteractive: false });
+  // A phone cannot press a button that opens an app on this Mac.
+  await $.session.attach({ surface: "mobile", clientId: "mobile:default" });
   expect(w.tools).toHaveLength(0);
   await $.prompt.submit({ text: "hola", origin: { kind: "composer" } } as never);
   expect(context.some((c) => c.includes("dock"))).toBe(false);
+});
+
+// The desktop app starts the session as -p does and joins it afterwards; its CLI runs on this Mac.
+test("the desktop gets the tool once it joins, and its buttons run the local app", async ($, on) => {
+  const w = world(on);
+  let context: string[] = [];
+  on("prompt.submit", (_, e) => {
+    context = [...(e.context ?? [])];
+    return { text: e.text };
+  });
+  await $.session.start({ cwd: "/work/project", surface: null, isInteractive: false });
+  await $.session.attach({ surface: "desktop", clientId: "desktop:default" });
+  await $.session.attach({ surface: "desktop", clientId: "desktop:2" });
+  expect(w.tools.map((t) => t.name)).toEqual(["actions"]);
+  await $.prompt.submit({ text: "¿dónde está el fallo?", origin: { kind: "composer" } } as never);
+  expect(context.at(-1)).toContain(TOOL);
+  const row = await $.ui.mount({ ...(toolUse("u1", panel) as object), surface: "desktop" } as never);
+  await row.press({ key: "dock-0" });
+  await w.clock.settle();
+  expect(w.runs).toEqual([["open", "-na", "PyCharm", "--args", "--line", "4", "/r/poneglyph/app.ts"]]);
+  const result = await $.ui.mount({ plugin: "dock", surface: "desktop", component: "ToolResult", requestId: "r1", viewport, props: { tool_use_id: "u1", tool: TOOL, output: "x", isErrored: false } } as never);
+  expect((await result.find({ type: "Text", text: /pulsa un botón/ }))?.text).toBe("pulsa un botón para abrirlo");
 });
 
 test("outside macOS the tool is not registered, since open and osascript are macOS's", async ($, on) => {

@@ -209,12 +209,12 @@ async function writeUsage($: EngineInterface) {
   if (data && home) await $.fs.write(`${home}/.cache/poneglyph/usage.json`, JSON.stringify(data)).catch(() => {});
 }
 
-export const register: Register = (on) => {
-  on("session.start", async ($, e, next) => {
-    const r = await next(e);
-    active = e.isInteractive;
-    if (!active) return r;
-    // A new session (/clear, resume) starts from nothing.
+// The bar draws on the terminal and on the desktop app, which starts the session with no surface
+// and joins it later. Pasted images are read from the terminal's own draft, so only it polls.
+let polls = false;
+async function activate($: EngineInterface, terminal: boolean) {
+  if (!active) {
+    active = true;
     imagesDir = tmpDir = undefined;
     [shownKey, draftKey, sentKey, missKey] = ["", "", "", ""];
     [thumbs, inAos, misses] = [[], null, 0];
@@ -222,11 +222,28 @@ export const register: Register = (on) => {
     model = await $.session.model();
     aos = await findAos($);
     measure(await $.session.usage());
-    if (!timers) {
-      timers = true;
-      $.clock.every(TICK_MS, () => tick($).catch(() => {}));
-      $.clock.every(POLL_MS, () => poll($).catch(() => {}));
-    }
+  }
+  if (!timers) {
+    timers = true;
+    $.clock.every(TICK_MS, () => tick($).catch(() => {}));
+  }
+  if (terminal && !polls) {
+    polls = true;
+    $.clock.every(POLL_MS, () => poll($).catch(() => {}));
+  }
+}
+
+export const register: Register = (on) => {
+  on("session.start", async ($, e, next) => {
+    const r = await next(e);
+    active = false;
+    if (e.isInteractive && e.surface === "terminal") await activate($, true);
+    return r;
+  });
+
+  on("session.attach", { surface: "desktop" }, async ($, e, next) => {
+    const r = await next(e);
+    await activate($, false);
     return r;
   });
 
@@ -278,12 +295,12 @@ export const register: Register = (on) => {
           wrap: "truncate-end",
           children: runs.map((r) =>
             r.style === "pill"
-              ? Text({ backgroundColor: "suggestion", color: "inverseText", bold: true, children: [r.text] })
+              ? Text({ backgroundColor: "suggestion", color: "inverseText", weight: "semibold", children: [r.text] })
               : r.style === "label"
                 ? Text({ color: "inactive", children: [r.text] })
                 : r.style === "gauge" || r.style === "track"
                   ? Text({ color: r.tone, backgroundColor: "subtle", children: [r.text] })
-                  : Text({ color: r.tone, bold: r.style === "value", dimColor: r.style === "dim", children: [r.text] }),
+                  : Text({ color: r.tone, weight: r.style === "value" ? "semibold" : "regular", dimColor: r.style === "dim", children: [r.text] }),
           ),
         }),
       );
@@ -293,7 +310,7 @@ export const register: Register = (on) => {
           wrap: "truncate-end",
           children: [
             Text({ color: "suggestion", children: ["▣ "] }),
-            Text({ color: "suggestion", bold: true, children: [shown.map((t) => `#${t.n}`).join(" ")] }),
+            Text({ color: "suggestion", weight: "semibold", children: [shown.map((t) => `#${t.n}`).join(" ")] }),
             Text({ dimColor: true, children: [" · a resolución completa en Agentic OS"] }),
           ],
         }),
@@ -317,7 +334,7 @@ export const register: Register = (on) => {
                   t.raster && Raster
                     ? Raster({ key: `hud-image-${t.n}`, columns: t.raster.columns, rows: t.raster.rows, cells: t.raster.cells })
                     : Text({ dimColor: true, children: ["sin vista"] }),
-                  Text({ wrap: "truncate-end", children: [Text({ color: "suggestion", bold: true, children: [`#${t.n}`] }), Text({ dimColor: true, children: [t.raster ? ` · ${t.raster.size}` : ""] })] }),
+                  Text({ wrap: "truncate-end", children: [Text({ color: "suggestion", weight: "semibold", children: [`#${t.n}`] }), Text({ dimColor: true, children: [t.raster ? ` · ${t.raster.size}` : ""] })] }),
                 ],
               }),
             ),

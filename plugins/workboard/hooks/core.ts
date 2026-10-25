@@ -222,6 +222,20 @@ export function publish(state: State, raw: unknown): State {
     throw Error("Decisions were removed: ask the user with AskUserQuestion");
   return next;
 }
+// What a plan update tells someone away from the terminal: a task failed or got blocked, or the
+// whole plan finished. Only changes count, so resending a state raises nothing.
+export function planAlerts(previous: Task[], next: Task[]): string[] {
+  const alerts: string[] = [];
+  for (const t of next) {
+    if (t.state !== "failed" && t.state !== "blocked") continue;
+    if (previous.find((p) => p.id === t.id)?.state === t.state) continue;
+    alerts.push(`Tarea ${t.state === "failed" ? "fallida" : "bloqueada"}: ${t.title}`);
+  }
+  const done = (tasks: Task[]) => tasks.length > 0 && tasks.every((t) => t.state === "completed");
+  if (done(next) && !done(previous))
+    alerts.push(`Plan completado: ${next.length} ${next.length === 1 ? "tarea" : "tareas"}`);
+  return alerts;
+}
 const stopped = (state: string) => ["completed", "failed", "killed", "unknown"].includes(state);
 export function reconcileAgents(
   previous: Agent[],

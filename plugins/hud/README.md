@@ -62,8 +62,11 @@ Agentic OS reads it for its plan indicator. Nothing leaves the machine.
 | Surface | Bar | Thumbnails |
 |---|---|---|
 | Terminal (any truecolor terminal, Agentic OS's xterm.js included) | ✓ | ✓ as a `Raster` of quadrant cells, four pixels per cell |
-| Desktop Code tab | ✓ | no (`Raster` is terminal-only) |
+| Desktop Code tab | ✓, once the app joins | no (`Raster` is terminal-only; the draft is not polled) |
 | VS Code, `-p`, cloud | no | no |
+
+The desktop app starts its session as `-p` does (no surface, not interactive) and joins it
+afterwards (`session.attach`); the mod comes up on that join.
 
 The thumbnails need macOS `sips`; on other systems the band shows nothing extra and the tag stays in the draft.
 

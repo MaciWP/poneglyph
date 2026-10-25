@@ -18,8 +18,10 @@ claude --plugin-dir /absolute/path/to/poneglyph/plugins/workboard
 
 This is an activation command for the user, not a verification probe to run automatically.
 For every session, Poneglyph's root `.claude-plugin/marketplace.json` lists the mod; enable
-`workboard@poneglyph` in the machine overlay and run `sync-poneglyph`. Claude reads it from
-this folder, so edits apply to new sessions without a version bump. `/workboard` is the only
+`workboard@poneglyph` in the machine overlay and run `sync-poneglyph`. Claude runs a cached copy
+(`~/.claude/plugins/cache/poneglyph/workboard/<version>`), so a change needs a version bump and
+`claude plugin update workboard@poneglyph`. It draws in an interactive terminal and in the desktop
+Code tab: the desktop app starts its session as `-p` does (no surface, not interactive) and joins it afterwards (`session.attach`); the mod comes up on that join. `-p` and the SDK get no tool and no pane. `/workboard` is the only
 entry: it closes a pane that is shown and placed, and otherwise opens it, so one call is enough
 when a narrow terminal left the pane unplaced. Claude places it on the right in a sufficiently
 wide fullscreen terminal; a terminal too narrow for it shows nothing of Workboard until the
@@ -28,12 +30,20 @@ keyboard, focus with Claude's `ctrl+x tab`, move with Tab, activate with Enter, 
 **Actualizar** in the header (`a`) refreshes Git, GitHub and coverage and ends with a toast that
 says whether it worked. Opening/updating the pane does not request keyboard focus.
 
+The plan's header counts finished leaf tasks (`3/8 hechas`); each row's icon shows its state. Only the feature that is moving or stuck shows
+its subtasks, and a subtask names its state only when blocked or failed. Each agent takes one line
+(its model while it runs, time and tokens once done); **Detalles +** unfolds how each ran and its
+last message. A child agent sits right after its parent. **Ver** on a live agent shows its
+transcript in the main view (CLI 2.1.300+).
+
 The pane uses the room it gets. Docked beside the transcript it runs floor to ceiling: ROBIN, the
-plan and the changes wrap instead of truncating, every open feature shows its subtasks and the
-footer sits at the bottom. Details stay on one line everywhere: the turn's facts, quality values,
-an agent's last message and the last 4 communications. Inline above the prompt
-it asks for up to 40 rows and the frame fits the content. Below 36 columns each card's right
-label and each row's state drop under their text.
+plan and the changes wrap instead of truncating, and the footer sits at the bottom. Details stay on
+one line everywhere: the turn's facts, quality values and the latest communications (4 docked,
+2 inline). Inline above the prompt it asks for up to 40 rows and the frame fits the content. Below
+36 columns each card's right label and each row's state drop under their text.
+
+A tool error shows under ROBIN until the next ROBIN, except a closed or cut-short `AskUserQuestion`
+or `ExitPlanMode`: that is the user's move.
 
 The **Cambios** card lists every repository: branch, change count, GitHub, CI and coverage, the
 errors that hide data, and the PR link. **Ficheros (N) +** unfolds each repository's CI checks,

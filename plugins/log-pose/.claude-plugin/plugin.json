@@ -1,0 +1,6 @@
+{
+  "name": "log-pose",
+  "version": "0.3.7",
+  "description": "One Sonnet call per typed prompt, before the model starts: dictation fixes, skill candidates, the reasoning effort for the turn and an advisor gauge.",
+  "author": { "name": "Oriol Macias" }
+}

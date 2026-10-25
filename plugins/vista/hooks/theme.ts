@@ -44,8 +44,8 @@ export function frame(ui: Ui, kind: string, title: string, body: RenderChildren[
       ui.Box({
         columnGap: 1,
         children: [
-          ui.Box({ flexShrink: 0, children: ui.Text({ backgroundColor: T.accent, color: T.onAccent, bold: true, children: ` ${kind} ` }) }),
-          ui.Box({ flexShrink: 1, children: ui.Text({ bold: true, wrap: "truncate-end", children: title }) }),
+          ui.Box({ flexShrink: 0, children: ui.Text({ backgroundColor: T.accent, color: T.onAccent, weight: "semibold", children: ` ${kind} ` }) }),
+          ui.Box({ flexShrink: 1, children: ui.Text({ weight: "semibold", wrap: "truncate-end", children: title }) }),
         ],
       }),
       ...body,

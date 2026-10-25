@@ -13,7 +13,7 @@ export function draft(ui: Ui, v: Draft, copy: Copy): RenderElement {
       borderColor: T.label,
       paddingX: 1,
       rowGap: 1,
-      children: [v.subject ? ui.Text({ bold: true, wrap: "wrap", children: v.subject }) : null, ui.Text({ wrap: "wrap", children: v.body })],
+      children: [v.subject ? ui.Text({ weight: "semibold", wrap: "wrap", children: v.subject }) : null, ui.Text({ wrap: "wrap", children: v.body })],
     }),
     ui.Box({
       columnGap: 1,

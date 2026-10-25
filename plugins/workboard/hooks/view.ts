@@ -59,6 +59,10 @@ export type PaneCharge = PaneTask & {
   detail?: string;
   last?: string;
   waiting?: boolean;
+  // The folded row's note on the right: the model while it runs, time and tokens once done.
+  brief?: string;
+  // A live agent's transcript, shown in the main view.
+  view?: { key: string; onPress: () => void };
 };
 export type PanePeer = { name: string; counts: string; ago: string; tone: Tone };
 export type AgentRole = "subagents" | "coworkers" | "orchestrator" | "subordinates";
@@ -98,6 +102,8 @@ export type PaneModel = {
   changes: { repos: PaneRepo[]; open: boolean; onToggle: () => void };
   refresh: { busy: boolean; onPress: () => void };
   agents: PaneAgents;
+  // Folded, one line per agent; unfolded, how each ran and its latest message.
+  agentDetails: { open: boolean; onToggle: () => void };
   history: { open: boolean; items: { title: string; label: string }[]; onToggle: () => void };
   bridge: { connected: boolean; age: number | null; issues: string[] };
   // Docked beside the transcript with this many body rows, or null when inline above the prompt.
@@ -143,7 +149,7 @@ function card(
         justifyContent: "space-between",
         columnGap: 1,
         children: [
-          ui.Box({ flexShrink: 0, children: ui.Text({ color, bold: true, children: title }) }),
+          ui.Box({ flexShrink: 0, children: ui.Text({ color, weight: "semibold", children: title }) }),
           // Beside the title a long label truncates; narrow, it takes its own line.
           right ? ui.Box({ flexShrink: 1, children: right }) : null,
         ],
@@ -161,6 +167,7 @@ function row(
   text: string,
   trail?: RenderChildren,
   strong = false,
+  dim = false,
 ): RenderElement {
   const line = ui.Box({
     columnGap: 1,
@@ -169,7 +176,12 @@ function row(
       ui.Box({
         flexGrow: 1,
         flexShrink: 1,
-        children: ui.Text({ wrap: ui.wrap ? "wrap" : "truncate", bold: strong, children: text }),
+        children: ui.Text({
+          wrap: ui.wrap ? "wrap" : "truncate",
+          weight: strong ? "semibold" : "regular",
+          dimColor: dim,
+          children: text,
+        }),
       }),
       trail && !ui.stack ? ui.Box({ flexShrink: 0, children: trail }) : null,
     ],
@@ -190,7 +202,7 @@ function marked(ui: Fit, state: string) {
     icon: ui.Text({
       color: s.color,
       dimColor: !s.color,
-      bold: state === "running",
+      weight: state === "running" ? "semibold" : "regular",
       children: s.icon,
     }),
     label: (label: string) => ui.Text({ color: s.color, dimColor: !s.color, children: label }),
@@ -202,19 +214,10 @@ const capped = <T>(items: T[], max: number) => ({
   more: Math.max(0, items.length - max),
 });
 
-function planCard(ui: Fit, plan: PaneModel["plan"], width: number): RenderElement {
+// Each row's icon shows its state; the header only counts.
+function planCard(ui: Fit, plan: PaneModel["plan"]): RenderElement {
   const { Text } = ui;
   const body: RenderChildren[] = [];
-  if (plan.total)
-    body.push(
-      Text({
-        wrap: "truncate",
-        children: [
-          ...bar(ui, plan.done / plan.total, width, C.plan),
-          Text({ bold: true, children: ` ${Math.round((plan.done / plan.total) * 100)}%` }),
-        ],
-      }),
-    );
   for (const f of plan.features) {
     const m = marked(ui, f.state);
     const finished = f.total > 0 && (f.done === f.total || f.state === "completed");
@@ -235,26 +238,17 @@ function planCard(ui: Fit, plan: PaneModel["plan"], width: number): RenderElemen
         ui,
         m.icon,
         f.title,
-        f.total
-          ? Text({
-              children: [
-                ...bar(ui, f.done / f.total, 5, C.plan),
-                Text({ dimColor: true, children: ` ${f.done}/${f.total}` }),
-              ],
-            })
-          : m.label(f.label),
+        f.total ? Text({ dimColor: true, children: `${f.done}/${f.total}` }) : m.label(f.label),
         f.state === "running",
       ),
     );
-    // Subtasks unfold under the feature that is moving or stuck, and under every open one
-    // once docked, where the height is there to use.
-    const unfold =
-      ui.wrap ||
-      [f, ...f.subtasks].some((t) => ["running", "blocked", "failed"].includes(t.state));
-    if (unfold)
+    // Subtasks unfold only under the feature that is moving or stuck, docked or not; a label
+    // stays only on the states that ask for action.
+    if ([f, ...f.subtasks].some((t) => ["running", "blocked", "failed"].includes(t.state)))
       for (const t of f.subtasks) {
         const s = marked(ui, t.state);
-        body.push(ui.Box({ paddingLeft: 2, children: row(ui, s.icon, t.title, s.label(t.label)) }));
+        const action = ["blocked", "failed"].includes(t.state) ? s.label(t.label) : undefined;
+        body.push(ui.Box({ paddingLeft: 2, children: row(ui, s.icon, t.title, action) }));
       }
   }
   if (!plan.total && !plan.features.length)
@@ -276,7 +270,7 @@ function qualityCard(ui: Fit, quality: PaneModel["quality"], width: number): Ren
   const { Box, Text } = ui;
   const body: RenderChildren[] = [];
   for (const group of quality) {
-    if (group.heading) body.push(Text({ bold: true, wrap: "truncate", children: group.heading }));
+    if (group.heading) body.push(Text({ weight: "semibold", wrap: "truncate", children: group.heading }));
     for (const q of group.rows) {
       const color = q.tone === "info" ? C.plan : tone[q.tone];
       body.push(
@@ -286,7 +280,7 @@ function qualityCard(ui: Fit, quality: PaneModel["quality"], width: number): Ren
             Text({
               color,
               dimColor: !color,
-              bold: q.tone === "fail",
+              weight: q.tone === "fail" ? "semibold" : "regular",
               children: qualityIcon[q.tone],
             }),
             Box({ width: 9, flexShrink: 0, children: Text({ dimColor: true, children: q.label }) }),
@@ -300,7 +294,7 @@ function qualityCard(ui: Fit, quality: PaneModel["quality"], width: number): Ren
                 wrap: "truncate",
                 color,
                 dimColor: !color,
-                bold: q.tone === "fail",
+                weight: q.tone === "fail" ? "semibold" : "regular",
                 children: q.value,
               }),
             }),
@@ -324,7 +318,7 @@ function changesCard(ui: Fit, c: PaneModel["changes"]): RenderElement {
   const count = c.repos.reduce((n, r) => n + r.files.length + r.more, 0);
   const body: RenderChildren[] = [];
   for (const r of c.repos) {
-    body.push(Text({ bold: true, wrap: ui.wrap ? "wrap" : "truncate", children: r.heading }));
+    body.push(Text({ weight: "semibold", wrap: ui.wrap ? "wrap" : "truncate", children: r.heading }));
     body.push(Text({ dimColor: true, wrap: ui.wrap ? "wrap" : "truncate", children: r.status }));
     for (const n of r.notes) body.push(Text({ color: tone[n.tone], children: n.text }));
     if (r.pr) body.push(Link({ href: r.pr.href, label: r.pr.label }));
@@ -360,43 +354,96 @@ function changesCard(ui: Fit, c: PaneModel["changes"]): RenderElement {
   );
 }
 
-function agentsCard(ui: Fit, a: PaneAgents): RenderElement {
-  const { Text } = ui;
+// Folded, one line per agent: its state icon, kind and title, and a note on the right (the model
+// while it runs, time and tokens once done). An agent waiting for main's reply gets ◐ and that
+// message under it; a failed one keeps its state and latest message. Unfolded, every agent shows
+// how it ran and its latest message, titles wrapping when docked.
+function agentsCard(
+  ui: Fit,
+  a: PaneAgents,
+  details: PaneModel["agentDetails"],
+  cols: number,
+): RenderElement {
+  const { Box, Text, Button } = ui;
   const body: RenderChildren[] = [];
-  const section = (title: string, color?: string) =>
-    body.push(Text({ bold: true, color, children: color ? `● ${title}` : title }));
+  const heading = (title: string, color?: string) =>
+    body.push(Text({ weight: "semibold", color, children: color ? `● ${title}` : title }));
   const more = (n: number) => n && body.push(Text({ dimColor: true, children: `+${n} más` }));
+  // Below 48 columns the kind gives its width to the title.
+  const kinded = (c: PaneCharge) =>
+    `${c.kind && (details.open || cols >= 48) ? `${c.kind} · ` : ""}${c.title}`;
+  const line = { ...ui, wrap: false, stack: false };
+  // A live agent's row ends with Ver, which shows its transcript in the main view.
+  const viewable = (c: PaneCharge, trail: RenderChildren) =>
+    c.view
+      ? Box({
+          columnGap: 1,
+          children: [trail, Button({ key: c.view.key, label: "Ver", plain: true, onPress: c.view.onPress })],
+        })
+      : trail;
   for (const s of a.sections) {
     const { title, color } = roles[s.role];
-    section(title, color);
+    heading(title, color);
     const { shown, more: rest } = capped(s.charge, 6);
     for (const c of shown) {
       const m = marked(ui, c.state);
+      if (details.open) {
+        body.push(
+          Box({
+            paddingLeft: c.depth * 2,
+            children: row(ui, m.icon, kinded(c), viewable(c, m.label(c.label))),
+          }),
+        );
+        const facts = [
+          c.detail ? Text({ dimColor: true, children: c.detail }) : null,
+          c.waiting ? Text({ color: tone.warn, weight: "semibold", children: "espera respuesta" }) : null,
+        ].filter(Boolean);
+        if (facts.length)
+          body.push(
+            Box({
+              paddingLeft: c.depth * 2 + 2,
+              children: Text({
+                wrap: "truncate",
+                children: facts.flatMap((f, i) => (i ? [Text({ dimColor: true, children: " · " }), f] : [f])),
+              }),
+            }),
+          );
+        if (c.last)
+          body.push(
+            Box({
+              paddingLeft: c.depth * 2 + 2,
+              children: Text({ dimColor: true, wrap: "truncate", children: c.last }),
+            }),
+          );
+        continue;
+      }
+      const failed = c.state === "failed" || c.state === "killed";
+      const done = c.state === "completed" || c.state === "exited";
       body.push(
-        ui.Box({
+        Box({
           paddingLeft: c.depth * 2,
-          children: row(ui, m.icon, `${c.kind ? `${c.kind} · ` : ""}${c.title}`, m.label(c.label)),
+          children: row(
+            line,
+            c.waiting ? Text({ color: tone.warn, weight: "semibold", children: "◐" }) : m.icon,
+            kinded(c),
+            viewable(c, c.brief && !failed ? Text({ dimColor: true, children: c.brief }) : m.label(c.label)),
+            false,
+            done,
+          ),
         }),
       );
-      const facts = [
-        c.detail ? Text({ dimColor: true, children: c.detail }) : null,
-        c.waiting ? Text({ color: tone.warn, bold: true, children: "espera respuesta" }) : null,
-      ].filter(Boolean);
-      if (facts.length)
+      if (c.waiting || (failed && c.last))
         body.push(
-          ui.Box({
+          Box({
             paddingLeft: c.depth * 2 + 2,
             children: Text({
               wrap: "truncate",
-              children: facts.flatMap((f, i) => (i ? [Text({ dimColor: true, children: " · " }), f] : [f])),
+              children: [
+                c.waiting ? Text({ color: tone.warn, weight: "semibold", children: "espera respuesta" }) : null,
+                c.waiting && c.last ? Text({ dimColor: true, children: " · " }) : null,
+                c.last ? Text({ dimColor: true, children: c.last }) : null,
+              ],
             }),
-          }),
-        );
-      if (c.last)
-        body.push(
-          ui.Box({
-            paddingLeft: c.depth * 2 + 2,
-            children: Text({ dimColor: true, wrap: "truncate", children: c.last }),
           }),
         );
     }
@@ -420,35 +467,57 @@ function agentsCard(ui: Fit, a: PaneAgents): RenderElement {
     }
     more(peers.more);
   }
-  if (a.events.length) {
-    section("Últimas comunicaciones");
-    for (const e of a.events)
+  // Docked there is height for four; inline, the latest two.
+  const events = a.events.slice(0, ui.wrap ? 4 : 2);
+  if (events.length) {
+    heading("Últimas comunicaciones");
+    for (const e of events)
       body.push(
         row(
           // One line each: the whole message is in the agents' own view.
           { ...ui, wrap: false },
-          Text({ color: C.agents, bold: e.fresh, children: e.icon }),
+          Text({ color: C.agents, weight: e.fresh ? "semibold" : "regular", children: e.icon }),
           e.text,
           Text({
             wrap: "truncate",
             children: [
               Text({ color: tone[e.tone], dimColor: e.tone === "muted", children: e.trail }),
-              e.fresh ? Text({ color: C.agents, bold: true, children: "  nuevo" }) : null,
+              e.fresh ? Text({ color: C.agents, weight: "semibold", children: "  nuevo" }) : null,
             ],
           }),
           e.fresh,
         ),
       );
   }
+  const unfolds = a.sections.some((s) => s.charge.some((c) => c.detail || c.last));
   return card(
     ui,
     C.agents,
     "AGENTES",
-    Text({
-      color: a.mode === "worker" ? C.orchestrator : C.agents,
-      bold: a.mode === "group" || a.mode === "worker",
-      wrap: "truncate",
-      children: a.label,
+    Box({
+      columnGap: 1,
+      children: [
+        Box({
+          flexShrink: 1,
+          children: Text({
+            color: a.mode === "worker" ? C.orchestrator : C.agents,
+            weight: a.mode === "group" || a.mode === "worker" ? "semibold" : "regular",
+            wrap: "truncate",
+            children: a.label,
+          }),
+        }),
+        unfolds
+          ? Box({
+              flexShrink: 0,
+              children: Button({
+                key: "agent-details",
+                label: `Detalles ${details.open ? "−" : "+"}`,
+                plain: true,
+                onPress: details.onToggle,
+              }),
+            })
+          : null,
+      ],
     }),
     body,
   );
@@ -470,9 +539,9 @@ export function paneView(base: Ui, m: PaneModel): RenderElement {
         Text({
           wrap: "truncate",
           children: [
-            Text({ color: C.robin, bold: true, children: "WORKBOARD" }),
+            Text({ color: C.robin, weight: "semibold", children: "WORKBOARD" }),
             Text({ dimColor: true, children: " · " }),
-            Text({ bold: true, children: m.title }),
+            Text({ weight: "semibold", children: m.title }),
           ],
         }),
         Box({
@@ -482,7 +551,7 @@ export function paneView(base: Ui, m: PaneModel): RenderElement {
           columnGap: 1,
           children: [
             m.working
-              ? Text({ color: C.plan, bold: true, children: "● trabajando" })
+              ? Text({ color: C.plan, weight: "semibold", children: "● trabajando" })
               : Text({ dimColor: true, children: "○ esperando" }),
             Button({
               key: "workboard-refresh",
@@ -518,11 +587,11 @@ export function paneView(base: Ui, m: PaneModel): RenderElement {
     ),
   );
 
-  nodes.push(planCard(ui, m.plan, width));
+  nodes.push(planCard(ui, m.plan));
   // A card with nothing to say takes no screen: no quality data, or an agent working alone.
   if (m.quality.length) nodes.push(qualityCard(ui, m.quality, width));
   if (m.changes.repos.length) nodes.push(changesCard(ui, m.changes));
-  if (m.agents.sections.length) nodes.push(agentsCard(ui, m.agents));
+  if (m.agents.sections.length) nodes.push(agentsCard(ui, m.agents, m.agentDetails, m.cols));
   // Docked, the footer sits at the bottom of the pane, as a sidebar's footer on a web page.
   if (m.dock !== null) nodes.push(Box({ flexGrow: 1 }));
 

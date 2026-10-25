@@ -24,13 +24,13 @@ export function compare(ui: Ui, v: Compare, width: number, tabs: Tabs): RenderEl
               onPress: () => tabs.onTab(i),
               children:
                 i === active
-                  ? ui.Text({ backgroundColor: T.accent, color: T.onAccent, bold: true, children: ` ${t.name} ` })
+                  ? ui.Text({ backgroundColor: T.accent, color: T.onAccent, weight: "semibold", children: ` ${t.name} ` })
                   : ui.Text({ color: T.label, children: ` ${t.name} ` }),
             }),
           ),
         })
-      : ui.Text({ color: T.label, bold: true, children: topic?.name ?? "" }),
+      : ui.Text({ color: T.label, weight: "semibold", children: topic?.name ?? "" }),
     table(ui, v.options, topic?.rows ?? [], width - 4),
-    v.verdict ? ui.Box({ columnGap: 1, children: [ui.Text({ color: T.accent, bold: true, children: "→" }), ui.Text({ wrap: "wrap", children: v.verdict })] }) : null,
+    v.verdict ? ui.Box({ columnGap: 1, children: [ui.Text({ color: T.accent, weight: "semibold", children: "→" }), ui.Text({ wrap: "wrap", children: v.verdict })] }) : null,
   ]);
 }

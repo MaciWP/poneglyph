@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { readFileSync } from "node:fs";
 import { buildRouterNote, clipDescription, modFailing, modRoutes, parseRouterOutput, ROUTER_AGENT_FILE, routerAgentFile, routerContext, soundsLike } from "../prompt-router";
 import { formatPast, pastFor, similarPast } from "../router/memory";
@@ -70,13 +70,19 @@ describe("log-pose mirrors the router hook", () => {
 
 describe("the mod's prompt from the real router agent", () => {
   const real = parseAgentFile(routerAgentFile(ROUTER_AGENT_FILE, catalog, glossary))!;
-  const examples = (text: string) => [...text.matchAll(/<prompt>(.*)<\/prompt>\n(?:<previous>.*<\/previous>\n)?(\{.*\})/g)]
+  const examples = (text: string) => [...text.replace(/\r\n/g, "\n").matchAll(/<prompt>(.*)<\/prompt>\n(?:<previous>.*<\/previous>\n)?(\{.*\})/g)]
     .map((m) => { const o = JSON.parse(m[2]!); return { prompt: m[1], fixes: o.fixes, process: o.process, skills: o.skills }; });
 
   test("is built from the agent's sections, not the fallback", () => {
     expect(real.kind).toBe("mod");
     expect(real.system).not.toContain("effort answer");
     expect(real.system).not.toContain("\neffort: ");
+  });
+
+  test("a CRLF copy of the agent file still builds the mod's prompt", () => {
+    const crlf = parseAgentFile(routerAgentFile(ROUTER_AGENT_FILE, catalog, glossary).replace(/\r?\n/g, "\r\n"))!;
+    expect(crlf.kind).toBe("mod");
+    expect(crlf.system).toBe(real.system);
   });
 
   test("its examples keep the agent's prompts, fixes, process and skills", () => {
@@ -98,6 +104,11 @@ describe("the mod's prompt from the real router agent", () => {
 });
 
 describe("log path", () => {
+  test("learnedPath joins with backslashes when the config dir is a Windows path", () => {
+    expect(learnedPath("C:\\repo", "C:\\Users\\u\\.claude", false, "x.log")).toBe("C:\\Users\\u\\.claude\\learned\\C-repo\\x.log");
+    expect(learnedPath("/repo", "/home/u/.claude", true, "x.log")).toBe("/repo/.claude/learned/x.log");
+  });
+
   test("learnedPath matches the hook's learnedLog for a project that does not ignore learned/", () => {
     const saved = process.env.CLAUDE_PROJECT_DIR;
     delete process.env.CLAUDE_PROJECT_DIR;
@@ -132,7 +143,18 @@ describe("modRoutes", () => {
     expect(modRoutes("/work", config)).toBe(false); // no synced router agent for the mod to read
     mkdirSync(join(config, "agents"));
     writeFileSync(join(config, "agents", "prompt-router.md"), "---\nname: prompt-router\n---\n");
-    expect(modRoutes("/work", config)).toBe(true);
+    const saved = process.env.CLAUDE_CONFIG_DIR;
+    process.env.CLAUDE_CONFIG_DIR = config;
+    try {
+      expect(modRoutes("/work", config)).toBe(false); // no mod line in the log: the mod may not run at all
+      const log = learnedLog("/work", "prompt-router.log");
+      mkdirSync(dirname(log), { recursive: true });
+      writeFileSync(log, "2026-10-15T10:00:00.000Z host=claude via=mod session=s1 outcome=ok ms=1 sid=s1\r\n");
+      expect(modRoutes("/work", config)).toBe(true);
+      expect(modRoutes("/work", config, "s1")).toBe(true);
+    } finally {
+      if (saved === undefined) delete process.env.CLAUDE_CONFIG_DIR; else process.env.CLAUDE_CONFIG_DIR = saved;
+    }
   });
 
   test("modFailing: the mod's last three calls in this session failed", () => {

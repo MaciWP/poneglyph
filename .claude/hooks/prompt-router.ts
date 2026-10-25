@@ -93,21 +93,27 @@ export function enabledPluginRoots(cwd: string, config = configDir()): PluginRoo
 
 // In Claude the log-pose mod routes each typed prompt in-process, before step 0, so this hook
 // and its pending line stand down. Codex and Grok keep the hook. The hook takes over again while
-// the mod cannot work: no synced router agent to read, or its last calls in this session failed.
+// the mod cannot work: no synced router agent to read, no mod line in this project's log yet (a
+// host without mods, or a mod that cannot reach the log), or its last calls in this session failed.
 export const MOD_ROUTER = "log-pose";
 const MOD_FAILURES = 3;
 
 export function modFailing(log: string, session: string): boolean {
-  if (!session) return false;
-  const mine = log.split("\n").filter((l) => l.includes(" via=mod ") && l.endsWith(` sid=${session}`)).slice(-MOD_FAILURES);
+  const sid = session.replace(/[^\w-]/g, "");
+  if (!sid) return false;
+  const mine = log.split(/\r?\n/).filter((l) => l.includes(" via=mod ") && l.endsWith(` sid=${sid}`)).slice(-MOD_FAILURES);
   return mine.length === MOD_FAILURES && mine.every((l) => / outcome=(?:error|timeout|bad-output) /.test(l));
 }
 
 export function modRoutes(cwd: string, config = configDir(), session = ""): boolean {
   if (!enabledPluginRoots(cwd, config).some((p) => p.name === MOD_ROUTER)) return false;
   if (statSafe(join(config, "agents", "prompt-router.md")) === null) return false;
-  if (!session) return true;
-  try { return !modFailing(readFileSync(learnedLog(cwd, "prompt-router.log"), "utf8").slice(-65536), session); } catch { return true; }
+  try {
+    const log = readFileSync(learnedLog(cwd, "prompt-router.log"), "utf8").slice(-65536);
+    return log.includes(" via=mod ") && !modFailing(log, session);
+  } catch {
+    return false;
+  }
 }
 
 // Skills the main model can load, under the name the Skill tool takes: project and

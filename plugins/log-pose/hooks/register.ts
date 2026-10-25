@@ -239,7 +239,8 @@ export const register: Register = (on) => {
   on("session.start", async ($, e, next) => {
     const r = await next(e);
     cwd = e.cwd;
-    const home = (await $.env.get("HOME")) ?? "";
+    // Native Windows may have no HOME; the hook's homedir() reads USERPROFILE there.
+    const home = (await $.env.get("HOME")) || (await $.env.get("USERPROFILE")) || "";
     config = (await $.env.get("CLAUDE_CONFIG_DIR")) || `${home}/.claude`;
     session = await $.session.id();
     // The hook's projectRoot and learnedLog: the project dir, and its learned/ only when git ignores it.

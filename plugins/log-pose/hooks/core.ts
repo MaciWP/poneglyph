@@ -153,7 +153,8 @@ const SECTIONS = /^([\s\S]*?)\n\nReply with one JSON object[^\n]*\n\n(fixes:[\s\
 
 // `fallback` forces the old prompt, for the eval's study arm.
 export function parseAgentFile(text: string, fallback = false): Agent | null {
-  const body = text.replace(/^---\n[\s\S]*?\n---\n/, "").trim();
+  // A Windows checkout or copy of the agent file arrives with CRLF line ends.
+  const body = text.replace(/\r\n/g, "\n").replace(/^---\n[\s\S]*?\n---\n/, "").trim();
   const catalog = body.split("\nCatalog (name: description):\n")[1];
   if (!catalog) return null;
   const known = new Set([...catalog.matchAll(/^- ([\w:-]+): /gm)].map((m) => m[1]!));
@@ -491,9 +492,12 @@ export function logLine(at: string, f: { session: string; outcome: Outcome; ms: 
 }
 
 // Where the hook's `learnedLog` puts a log: in the project only when git ignores it there,
-// else under the config dir, one folder per project.
-export const learnedPath = (root: string, config: string, ignored: boolean, name: string) =>
-  ignored ? `${root}/.claude/learned/${name}` : `${config}/learned/${root.replace(/[^\w.-]+/g, "-")}/${name}`;
+// else under the config dir, one folder per project. Joined with the platform separator, as
+// `path.join` does, so both name the log with the same string on Windows.
+export const learnedPath = (root: string, config: string, ignored: boolean, name: string) => {
+  const sep = /\\/.test(config) ? "\\" : "/";
+  return ignored ? [root, ".claude", "learned", name].join(sep) : [config, "learned", root.replace(/[^\w.-]+/g, "-"), name].join(sep);
+};
 
 // The whole file after appending `line`, dropping the oldest lines past `maxBytes`.
 export function appendCapped(text: string, line: string, maxBytes = 2 * 1024 * 1024): string {

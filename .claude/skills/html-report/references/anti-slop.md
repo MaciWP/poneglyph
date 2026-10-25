@@ -6,9 +6,9 @@ The single highest-leverage lever for non-generic output is a **negative vocabul
 
 LLMs emit the **statistical median** of their training corpus. The purple/indigo signature traces to Tailwind's `bg-indigo-500` demo default cascading across thousands of tutorials into training data. Escaping the median requires explicit prohibition: bans override priors better than positive guidance. Sources: prg.sh "Why Your AI Keeps Building the Same Purple Gradient Website"; dev.to/alanwest; pbakaus/impeccable.
 
-## Absolute Bans (NEVER)
+## Absolute Bans
 
-Unconditional. No exceptions, no reasoning required at use-time.
+Apply them in every output; the root cause above is the reason.
 
 - Purple→blue / indigo gradients (the #1 AI tell)
 - Inter / Roboto / Arial / system fonts as the *default* choice

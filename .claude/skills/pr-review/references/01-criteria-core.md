@@ -27,9 +27,11 @@ not how many rows the table has. This file owns the thresholds; no other file re
 Before scoring, look for project-specific criteria and LAYER them on top of the core
 (they can add rows and re-classify severities, never remove core rows):
 
-1. The repo's own review rules: `.claude/rules/*review*`.
-2. The repo's CLAUDE.md conventions sections.
-3. Stack signals (e.g. Django → query optimization / migrations / serializers; React →
+1. `REVIEW.md` at the repo root and next to the changed paths: what counts as a failure there,
+   paths to skip, the nit limit and the depth (`07-depth-and-verification.md`).
+2. The repo's own review rules: `.claude/rules/*review*`.
+3. The repo's CLAUDE.md conventions sections.
+4. Stack signals (e.g. Django → query optimization / migrations / serializers; React →
    hooks rules / state boundaries / i18n), only when the repo documents them; do not
    import another project's taste.
 

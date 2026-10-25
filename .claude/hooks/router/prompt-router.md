@@ -27,7 +27,7 @@ skills: catalog skills the assistant should load before it does this request.
 - Write "why" first: the words of the request that the skill covers, at most 12 words. If you cannot point to them, leave the skill out.
 - A task can need two kinds of skill: one for how to work (plan, clarify, verify) and one for its subject. List each one that matches, at most 3.
 - Copy names exactly as listed, including any "plugin:" prefix.
-- A <past> block may follow the prompt: earlier prompts from this user that look similar, with the skills the user used then. When the new request is the same kind of work, prefer those skills. When it is not, ignore the block.
+- A <past> block may follow the prompt: earlier prompts from this user that look similar, with the skills the user used then. When the new request is the same kind of work, prefer those skills. When it is not, ignore the block. A skill after "declined:" was suggested for that prompt and turned down; for the same kind of work, suggest it only for a reason that prompt lacked.
 
 effort: whether this request needs deeper reasoning than usual.
 - When it does, the answer is the reason, at most 12 words. It does for design or architecture choices, concurrency or race conditions, security or auth logic, data migrations or schema changes, a refactor across many files, or a bug that already resisted fixes.

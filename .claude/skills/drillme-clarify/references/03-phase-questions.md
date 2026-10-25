@@ -1,7 +1,7 @@
 ---
 parent: drillme-clarify
 name: phase-questions
-description: Phase-specific question banks for the poneglyph 5-phase workflow. Loaded by drillme-clarify when auto-detecting a phase from .claude/plans/{NNN}-{slug}/ artefacts.
+description: Phase-specific question banks for the poneglyph six-phase workflow. Loaded by drillme-clarify when auto-detecting a phase from .claude/plans/{NNN}-{slug}/ artefacts.
 ---
 
 # Phase-specific question banks
@@ -18,7 +18,7 @@ description: Phase-specific question banks for the poneglyph 5-phase workflow. L
 - [Phase auto-detection priority](#phase-auto-detection-priority)
 - [When phase questions don't fit the actual context](#when-phase-questions-dont-fit-the-actual-context)
 
-When drillme-clarify detects an active 5-phase workflow context (see SKILL.md §The recipe, Step 1), it loads the relevant phase bank **in addition to** the canonical 4 categories. Phase questions are tagged `[phase-N]` in the output so the user sees their origin.
+When drillme-clarify detects an active six-phase workflow context (see SKILL.md §The recipe, Step 1), it loads the relevant phase bank **in addition to** the canonical 4 categories. Phase questions are tagged `[phase-N]` in the output so the user sees their origin.
 
 These question banks are the **canonical source**. The `flow` skill's phase references (`skills/flow/references/01-scope.md` … `06-retro.md`) cite them, they do NOT duplicate the content.
 
@@ -134,7 +134,7 @@ Before closing the feature.
 
 ### Closing rule
 
-If question 5 surfaces a Commandment violation → MUST be reported in retro.md "Commandments check" section (Commandment III, radical honesty, no softening). The feature can still close, but the violation is documented for future sessions.
+If question 5 surfaces a Commandment violation → report it in retro.md "Commandments check" section (Commandment III, radical honesty, no softening). The feature can still close, but the violation is documented for future sessions.
 
 ## Loading rule for drillme-clarify
 

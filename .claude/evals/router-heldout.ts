@@ -2,7 +2,10 @@
 // bun .claude/evals/router-heldout.ts --build [--days 30]
 // bun .claude/evals/router-heldout.ts --judge
 // bun .claude/evals/router-heldout.ts --score [--half odd|even] [--limit N] [--agent file] [--desc chars] [--memory]
-//     [--catalog rewrites.json] [--picks out.jsonl] [--cases other.jsonl]
+//     [--catalog rewrites.json] [--picks out.jsonl] [--cases other.jsonl] [--export cases.jsonl | --from answers.jsonl]
+// --export writes the selected cases as log-pose eval input ({id, prompt}); --from scores the
+// answers that LOG_POSE_EVAL wrote ({id, raw}) instead of calling the hook's router, so the same
+// parser and gold labels judge both.
 //
 // Held-out check for the prompt router: would it have proposed the skill the user had
 // to name? Cases come from this machine's transcripts:
@@ -161,9 +164,24 @@ if (import.meta.main) {
       let withPast = 0;
       // --agent <file> scores a variant of the router agent without touching the live one.
       const agent = loadRouterAgent(arg("--agent", ROUTER_AGENT_FILE), catalog, glossary);
+      if (argv.includes("--export")) {
+        writeFileSync(arg("--export", ""), cases.map((c) => JSON.stringify({ id: String(all.indexOf(c)), prompt: c.prompt.slice(0, 3000) })).join("\n") + "\n");
+        console.log(`exported ${cases.length} cases`);
+        process.exit(0);
+      }
+      const answers = argv.includes("--from")
+        ? new Map(readFileSync(arg("--from", ""), "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l) as { id: string; raw: string | null; ms: number }).map((a) => [a.id, a]))
+        : null;
       const ms: number[] = [];
       let failed = 0;
       const rows = await pool(cases, 4, async (c) => {
+        if (answers) {
+          const a = answers.get(String(all.indexOf(c)));
+          if (a) ms.push(a.ms);
+          const result = a?.raw ? parseRouterOutput(JSON.stringify({ result: a.raw }), c.prompt.slice(0, 3000), catalog, { glossary }) : null;
+          if (!result) failed++;
+          return { c, picks: result?.skills.map((s) => s.name) ?? [] };
+        }
         const started = Date.now();
         const prompt = c.prompt.slice(0, 3000);
         const pool = memory && c.at ? memory.filter((e) => e.at < c.at! - MEMORY_MAX_AGE_MS) : [];
@@ -175,11 +193,11 @@ if (import.meta.main) {
         if (!result) failed++;
         return { c, picks: result?.skills.map((s) => s.name) ?? [] };
       });
-      console.log(render("stage 1 (Haiku router)", score(rows), ms) + ` · failed ${failed}` + (memory ? ` · with past ${withPast}/${cases.length}` : ""));
+      console.log(render(answers ? "stage 1 (log-pose answers)" : "stage 1 (Haiku router)", score(rows), ms) + ` · failed ${failed}` + (memory ? ` · with past ${withPast}/${cases.length}` : ""));
       // Per-case picks for error analysis; private like the cases.
       writeFileSync(arg("--picks", join(privateDir, "router-picks.jsonl")), rows.map((r) => JSON.stringify({ ...r.c, picks: r.picks })).join("\n") + "\n");
     }
   } else {
-    console.log("usage: --build [--days 30] | --judge | --score [--half odd|even] [--limit N] [--agent file] [--desc chars] [--memory] [--catalog rewrites.json] [--picks out.jsonl] [--cases other.jsonl]");
+    console.log("usage: --build [--days 30] | --judge | --score [--half odd|even] [--limit N] [--agent file] [--desc chars] [--memory] [--catalog rewrites.json] [--picks out.jsonl] [--cases other.jsonl] [--export cases.jsonl | --from answers.jsonl]");
   }
 }

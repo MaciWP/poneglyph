@@ -13,6 +13,8 @@
 // Presets (side A = control, side B = variant):
 //   sp          style OFF vs style OFF + poneglyph-sp.md appended  (default)
 //   stock       --bare (whole poneglyph layer OFF; needs ANTHROPIC_API_KEY) vs full layer
+//               since CC 2.1.286 --bare also drops the host's own system reminders, so the gap
+//               measures Poneglyph plus those reminders, not Poneglyph alone
 //   style-vs-sp outputStyle channel vs system-prompt channel
 //   dupe        style Poneglyph alone vs style + sp append (duplication cost)
 

@@ -20,6 +20,47 @@ describe("skill-usage, parseSkillTurns", () => {
     ]);
   });
 
+  it("reads Log Pose's phase hint from the tool result's context, and no other context line", () => {
+    const context = (...content: string[]) => JSON.stringify({ type: "attachment", attachment: { type: "hook_additional_context", content, hookName: "tool.call", hookEvent: "PostToolUse" } });
+    const turns = parseSkillTurns([
+      human("lanza un agente que revise esto"),
+      context("Workboard: see Skill(dev-workflow) first.", "Log Pose: Skill(prompt-design) is not loaded; load it before you brief the next agent or another model."),
+      call("prompt-design"),
+      human("publica la página"),
+      context("Log Pose: Skill(natural-writing) is not loaded; load it and review this page's prose before you hand over the link."),
+    ]);
+    expect(turns).toEqual([
+      { named: [], hinted: ["prompt-design"], called: ["prompt-design"] },
+      { named: [], hinted: ["natural-writing"], called: [] },
+    ]);
+    expect(summarizeSkills(turns, new Set()).followed).toBe(1);
+  });
+
+  it("reads Log Pose's phase hint from a refused call's error result, and not from a plain result", () => {
+    const refused = (content: unknown, is_error = true) => JSON.stringify({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: "a", is_error, content }] } });
+    const turns = parseSkillTurns([
+      human("lanza un agente que revise esto"),
+      refused("<tool_use_error>Log Pose: Skill(prompt-design) is not loaded; load it before you brief the next agent or another model, then repeat this call; the repeat is not blocked.</tool_use_error>"),
+      call("prompt-design"),
+      human("publica la página"),
+      refused([{ type: "text", text: "Log Pose: Skill(natural-writing) is not loaded; load it." }]),
+      refused("Log Pose: Skill(flow) quoted in a normal result", false),
+    ]);
+    expect(turns).toEqual([
+      { named: [], hinted: ["prompt-design"], called: ["prompt-design"] },
+      { named: [], hinted: ["natural-writing"], called: [] },
+    ]);
+  });
+
+  it("marks a skill first called after the turn's first edit as late", () => {
+    const edit = JSON.stringify({ type: "assistant", message: { content: [{ type: "tool_use", id: "e", name: "Edit", input: { file_path: "a.ts" } }] } });
+    const turns = parseSkillTurns([human("arregla el fallo"), call("dev-workflow"), edit, call("natural-writing"), call("dev-workflow"), human("otra cosa"), call("pr-review")]);
+    expect(turns).toEqual([
+      { named: [], hinted: [], called: ["dev-workflow", "natural-writing"], late: ["natural-writing"] },
+      { named: [], hinted: [], called: ["pr-review"] },
+    ]);
+  });
+
   it("starts no turn for tool results, meta, compact summaries, sidechains or non-human origins", () => {
     const turns = parseSkillTurns([
       human("real prompt"),
@@ -155,6 +196,16 @@ describe("skill-usage, render and doctor row", () => {
     const declined = ignored.map((t, i) => (i < 5 ? { ...t, answers: [{ name: "flow", yes: false, why: "solo el tema" }] } : t));
     expect(skillsRow(summarizeSkills(declined, known)).status).toBe("🟢");
     expect(skillsRow(summarizeSkills([], known))).toEqual({ status: "🟢", detail: "no prompts in the window" });
+  });
+
+  it("warns when phase hints are mostly ignored over the sample", () => {
+    const hinted = (n: number, followed: number) => Array.from({ length: n }, (_, i) => ({ named: [], hinted: ["prompt-design"], called: i < followed ? ["prompt-design"] : [] }));
+    const ignoredHints = skillsRow(summarizeSkills(hinted(10, 4), known));
+    expect(ignoredHints.status).toBe("🟡");
+    expect(ignoredHints.detail).toContain("phase hints 10, followed 4 (40 %)");
+    expect(ignoredHints.detail).toContain("even when the first call is refused");
+    expect(skillsRow(summarizeSkills(hinted(10, 5), known)).status).toBe("🟢");
+    expect(skillsRow(summarizeSkills(hinted(9, 0), known)).status).toBe("🟢");
   });
 
   it("names the skills the user types most", () => {

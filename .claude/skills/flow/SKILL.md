@@ -71,7 +71,8 @@ file holds what every phase shares. Read exactly one phase reference per entry.
   read them before ending a turn; open HUs and no blocker → continue. Phase 2 records the
   budget in minutes; each boundary compares it with `date`. Budget spent → report the
   position, what remains and a new estimate, then ask.
-- **Effort.** Review (phase 4) runs at `/effort xhigh`; the other phases follow
+- **Effort.** Review (phase 4) runs at `xhigh` (correct a lower pick with `mcp__log-pose__set`,
+  or suggest `/effort xhigh` without Log Pose); the other phases follow
   `docs/model-uplift-playbook.md` §4. The frontmatter pins no effort.
 
 ## SIEMPRE rules
@@ -84,8 +85,7 @@ file holds what every phase shares. Read exactly one phase reference per entry.
 - Honest reduction: "skipped X because Y" in the report. Never a silent skip.
 - Human decisions stay human: scope approval, package approval, verdict ratification,
   promotions, `spec.md` edits, archiving. The skill proposes; the user decides.
-- Cite canonical files (drillme bank, test policy, flow contract); never copy them. An
-  artifact's existence is not a gate decision: read `state.json`, ask if absent.
+- Cite canonical files (drillme bank, test policy, flow contract); never copy them.
 - A premise that fails mid-phase loops back to the phase that produced it, and says so.
 
 ## Commandments cubiertos
@@ -95,7 +95,7 @@ file holds what every phase shares. Read exactly one phase reference per entry.
 | I · II | Every phase reads its inputs and verifies each claim with Glob/Grep/Read before producing |
 | III | Honest levels, findings and "nothing to learn"; irreducible gaps stay `[OPEN]` |
 | IV · VI | Oracle before build, verification before closure, checks before verdict; `security-audit` gates critical areas |
-| V · IX | One shared body, one phase file per entry, canonical files cited; six skills became one |
+| V · IX | One shared body, one phase file per entry, canonical files cited |
 | X | Inline by default; one fresh reviewer instead of a panel; a phase loads only its reference |
 
 ## Content map

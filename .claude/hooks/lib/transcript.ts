@@ -45,3 +45,15 @@ export const isHumanOrigin = (event: unknown): boolean => {
   const kind = (event as { origin?: { kind?: string } })?.origin?.kind;
   return kind === undefined || kind === "human";
 };
+
+// The router note an attachment carries, or null. The prompt-router hook's note is an async hook
+// response; the log-pose mod's rides the prompt as a `prompt.submit` context block.
+export function routerNoteOf(event: unknown): string | null {
+  const e = event as { type?: string; attachment?: { type?: string; content?: unknown; response?: { hookSpecificOutput?: { additionalContext?: unknown } } } };
+  if (e?.type !== "attachment") return null;
+  const a = e.attachment;
+  const raw = a?.type === "async_hook_response" ? a.response?.hookSpecificOutput?.additionalContext
+    : a?.type === "hook_additional_context" ? a.content : undefined;
+  const text = Array.isArray(raw) ? raw.filter((t) => typeof t === "string").join("\n") : raw;
+  return typeof text === "string" && text.includes("<prompt-router ") ? text : null;
+}

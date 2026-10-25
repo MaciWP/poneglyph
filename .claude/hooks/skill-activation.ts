@@ -26,7 +26,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { lastRequest, tail } from "./haiku-context-brake";
 import { appendLog } from "./instructions-loaded";
-import { claudeConfigDir, learnedLog } from "./lib/paths";
+import { claudeConfigDir, learnedLog, projectRoot } from "./lib/paths";
 import { readHookStdin } from "./lib/hook-stdin";
 import { foldText } from "./lib/language";
 
@@ -174,7 +174,10 @@ if (import.meta.main) {
     // Claude only: prompt-router.ts runs as an async hook and its note arrives
     // mid-turn; this line tells the main model to start without waiting for it.
     const router = await import("./prompt-router");
-    const pending = router.routablePrompt(raw) !== null ? router.ROUTER_PENDING_LINE : "";
+    const payload0 = JSON.parse(raw) as PromptPayload & { session_id?: unknown };
+    const routed = router.routablePrompt(raw) !== null &&
+      !router.modRoutes(projectRoot(payload0.cwd), claudeConfigDir(), typeof payload0.session_id === "string" ? payload0.session_id : "");
+    const pending = routed ? router.ROUTER_PENDING_LINE : "";
     const clear = clearHint(raw);
     if (clear) {
       const payload = JSON.parse(raw) as PromptPayload;

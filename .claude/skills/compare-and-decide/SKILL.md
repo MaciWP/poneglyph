@@ -29,7 +29,7 @@ One skill, two tiers. The classifier picks; the user can override either way.
 
 > "If everyone is thinking alike, then somebody isn't thinking." (Tenth Man Rule)
 
-Sycophancy is the silent killer of engineering decisions. The quick tier builds three
+Against sycophancy, the quick tier builds three
 genuinely different lenses into every reversible call; the heavy tier builds
 **structural disagreement** (forced dissent, context-isolated Outsider, Linus) into
 the ones you cannot cheaply undo.
@@ -41,17 +41,17 @@ can we undo it at acceptable cost?*
 
 | Answer | Tier | Cost | Shape |
 |---|---|---|---|
-| Yes: two-way door, reversible, low/medium stakes | **Quick** | ~500-800 tokens | 3 perspectives INLINE, ADR synthesis |
-| No: one-way door, irreversible/expensive, high stakes (architecture, framework, schema, money) | **Heavy** | ~2-3K+ tokens, 5-12 subagents | Adversarial stress-test, Phases 1-5 |
+| Yes: two-way door, reversible, low/medium stakes | **Quick** | Cheap, inline | 3 perspectives INLINE, ADR synthesis |
+| No: one-way door, irreversible/expensive, high stakes (architecture, framework, schema, money) | **Heavy** | Expensive: 5-12 subagents | Adversarial stress-test, Phases 1-5 |
 
 Default-on-uncertainty for the heavy tier's internal calibration: Medium stakes.
 Skip entirely (no tier) when there is no real decision: mechanical changes, already-committed
 choices (post-commitment stress-testing is rationalization), pure debugging, exploratory
 "what is X?" questions.
 
-Effort note: this skill pins no `effort:`; the quick tier must stay cheap. When the
-heavy tier fires, escalate reasoning for that work (deep-reasoning subagent prompts;
-suggest `/effort xhigh` to the user if the session runs low).
+Effort note: no `effort:` pin; the quick tier stays cheap. When the
+heavy tier fires, escalate reasoning for that work (deep-reasoning subagent prompts; a session level
+too low is corrected with `mcp__log-pose__set`, or `/effort xhigh` without Log Pose).
 
 ## Quick tier (reversible calls)
 

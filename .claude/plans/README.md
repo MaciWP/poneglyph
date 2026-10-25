@@ -1,6 +1,6 @@
 # Plans directory convention
 
-`.claude/plans/` stores persistent artefacts from the 5-phase workflow. Each feature occupies one directory; templates live in `templates/`.
+`.claude/plans/` stores persistent artefacts from the six-phase workflow. Each feature occupies one directory; templates live in `templates/`.
 
 ## Naming convention
 

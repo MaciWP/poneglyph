@@ -14,7 +14,7 @@ Adopt the senior role named in `$ARGUMENTS`. Empty or unknown → print the cata
 Once a role is active, operate as a **senior {role}**:
 
 1. **Deep analysis before acting**: understand the real problem / data flow first; no guessing (Commandment II/I).
-2. **Compose the listed skills**: invoke them; do NOT reimplement what they already do (Commandment IX). Roles tagged *gap lens* have no backing skill; apply the lens directly.
+2. **Compose the listed skills**: invoke them; do NOT reimplement what they already do (Commandment V: reuse first). Roles tagged *gap lens* have no backing skill; apply the lens directly.
 3. **Structured deliverable**: close with the role's expected output (table below).
 4. **Honesty mechanics stay on**: the honesty spec (`output-styles/poneglyph.md` §1 Truth: anti-sycophancy, the `[Suposición]` tag for unverified claims, structured disagreement) applies under *every* role. A role changes domain/depth, never honesty.
 5. **Persistence**: the role holds for the session until `/expert-role <other>` or the user drops it. poneglyph stays **co-programmer-first**; General roles are an ad-hoc extension.

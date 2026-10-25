@@ -31,7 +31,7 @@ There is no companion `/harness-config` command or workflow.
 
 ## Verbs
 
-Name the verb **before** acting. Impact is a step, not a sixth verb (D16).
+Name the verb **before** acting. Impact is a step, not a sixth verb.
 
 | Verb | Does | Does not |
 |---|---|---|

@@ -26,5 +26,10 @@ Steps 0-9 still apply. This file changes what each round looks at, not the verdi
 6. **Multi-repo PRs.** A pinned submodule SHA must be reachable from the other repo's base
    branch (`git -C <submodule> branch -r --contains <sha>`); if it is not, state the merge order
    (dependency PR first, repoint the pin, then this PR) in the report.
+7. **Rounds converge.** Count your review rounds on this PR. Never publish a finding already
+   posted, answered or not. After the third round with blockers still open, write one comment
+   asking the author to reconsider the approach instead of another line-by-line round. In an
+   agent-to-agent loop (one agent fixes, another reviews), stop at the third round and hand the
+   PR to the user.
 
 The report adds the trace table from point 1 before the new findings.

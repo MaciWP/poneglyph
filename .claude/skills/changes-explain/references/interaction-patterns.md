@@ -25,26 +25,26 @@ After the first report, the conversation enters Q&A mode. Behavior changes:
 
 ## Closing Line (every report)
 
-End every report with one of these (pick the most relevant 2-3):
+End every report with the 2-3 most relevant next directions, stated, not asked:
 
-- "Profundizo en el cambio N?"
-- "Sigo con el siguiente fichero / commit?"
-- "Aplico el patron a [otro caso plausible]?"
-- "Verifico contra otra fuente?"
+- Profundizar en el cambio N.
+- Seguir con el siguiente fichero o commit.
+- Aplicar el patrón a [otro caso plausible].
+- Verificar contra otra fuente.
 
-Never close with a generic "si quieres te explico mas", be specific.
+A real choice between them goes through `AskUserQuestion`, never as a text question. Never close with a generic "si quieres te explico más": be specific.
 
 ## Pattern Catalog
 
 | User signal | Pattern | Action |
 |---|---|---|
 | "profundiza en N" / "expande punto N" | Focused deep-dive | Re-run investigation only on point N; output JUST the expanded point, no other sections |
-| "y por que X?" | Focused Q&A | Answer the single question, with verification + cite if applicable |
+| "y por qué X?" | Focused Q&A | Answer the single question, with verification + cite if applicable |
 | "no entiendo X" | Reformulation | Use analogy + concrete example, see Reformulation section |
 | "sigue con [otro fichero/commit]" | Re-scope | Treat as new input, run full workflow on the new target |
-| "aplica el patron a [otro caso]" | Apply | Read the new target, identify if same pattern fits, walk through. If it does NOT fit, say so explicitly |
+| "aplica el patrón a [otro caso]" | Apply | Read the new target, identify if same pattern fits, walk through. If it does NOT fit, say so explicitly |
 | "ya entiendo" / "vale" / "gracias" | Stop | Stop. No closing summary. One-line acknowledgment max |
-| "haz el cambio" / "implementalo" | Out of scope | This skill is read-only. Recommend the `flow` skill (build phase) |
+| "haz el cambio" / "impleméntalo" | Out of scope | This skill is read-only. Recommend the `dev-workflow` skill |
 | "y este otro fichero?" + path | Re-scope | Same as "sigue con" |
 
 ## Focused Deep-Dive
@@ -64,10 +64,10 @@ When the user asks "profundiza en cambio N":
 **Implicacion adicional**:
 <one consequence not stated in the original report>
 
-**Que sigue**: profundizo aun mas en X / paso al siguiente cambio / verifico Y?
+**Qué sigue**: profundizar aún más en X, pasar al siguiente cambio o verificar Y.
 ```
 
-Key: the deep-dive does NOT include "Resumen ejecutivo", "Cadena logica", etc. Only the focused expansion.
+Key: the deep-dive does NOT include "Resumen ejecutivo", "Cadena lógica", etc. Only the focused expansion.
 
 ## Reformulation with Analogy
 
@@ -83,7 +83,7 @@ Example:
 ```markdown
 "UniqueConstraint con condition" en simple:
 
-**Analogia**: como una alfombrilla con la regla "solo una taza encima, pero las tazas vacias no cuentan". Si la taza esta soft-deleted (vacia), no impide poner otra encima.
+**Analogía**: como una alfombrilla con la regla "solo una taza encima, pero las tazas vacías no cuentan". Si la taza está soft-deleted (vacía), no impide poner otra encima.
 
 **Ejemplo concreto en el repo**: ver test_can_create_after_soft_delete en apps/library/tests/models_tests.py:42: crea, borra, vuelve a crear. Pasa.
 
@@ -92,25 +92,21 @@ Example:
 
 ## Re-Scope
 
-When the question moves outside the current target:
+When the question moves outside the current target, say it in one line
+("La pregunta sale del scope actual ([target original]): pertenece a [otro target].") and ask
+through `AskUserQuestion`, never as a text question:
 
-```markdown
-La pregunta sale del scope actual ([target original]), pertenece a [otro target].
+- **Cambiar a [nuevo target]**: re-ejecuto el workflow completo sobre el nuevo target.
+- **Seguir con el actual**: respondo puntual y dejamos lo demás para otra sesión.
 
-Cambio el target a [nuevo target]?
-- Si: re-ejecuto el workflow completo sobre el nuevo target.
-- No: respondo puntual sobre el actual y dejamos lo demas para otra sesion.
-```
-
-Wait for explicit confirmation before re-scoping.
+Re-scope only after the answer.
 
 ## Cancel / Stop
 
 When the user says they understand:
 
 - One-line acknowledgment: "Vale, queda claro." or "Listo." Nothing else.
-- Do NOT add a summary "of what we covered".
-- Do NOT proactively suggest the next step.
+- Do not add a summary "of what we covered" or suggest the next step: the user has said they understand.
 
 ## Apply Pattern to Other Case
 
@@ -131,10 +127,10 @@ If the user asks to MODIFY code, DECIDE between alternatives, AUDIT quality, etc
 
 | User wants | Redirect to |
 |---|---|
-| "cambia esto" | `flow` skill (build phase) |
-| "esta bien hecho?" | `pr-review` skill |
+| "cambia esto" | `dev-workflow` skill |
+| "¿está bien hecho?" | `pr-review` skill |
 | "deberiamos usar A o B?" | `compare-and-decide` skill |
 | "encuentra el bug" | `Skill('troubleshooting')` (Lead-invoked) |
-| "haz tests" | `flow` skill (build phase) |
+| "haz tests" | `dev-workflow` skill |
 
 State the redirect briefly, then stop. Do not also try to do the redirected task.

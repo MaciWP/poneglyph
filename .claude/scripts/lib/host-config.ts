@@ -48,6 +48,10 @@ export const CONTEXT_POLICY = {
    *  the compaction request itself stays under 100k. Oversized Reads are narrowed by
    *  hooks/haiku-context-brake.ts so one Read cannot jump past it. */
   claudeHaikuTokens: 120_000,
+  /** Sonnet has no price step, but every step re-reads the whole context from cache. A 130k window
+   *  compacts near 95k (same reserve as Haiku), so each step stays cheap; agents on Sonnet get a
+   *  budget line from hooks/lib/haiku-budget.ts to keep that context clean. */
+  claudeSonnetTokens: 130_000,
 } as const;
 
 /** Claude keys as they must appear in settings.global.json (checked by the suite). */
@@ -57,6 +61,7 @@ export const CLAUDE_DESIRED = {
   modelSettings: {
     "claude-opus-5-5": { effortLevel: CONTEXT_POLICY.claudeOpusEffort },
     "claude-haiku-5-5": { autoCompactWindow: CONTEXT_POLICY.claudeHaikuTokens },
+    "claude-sonnet-5-5": { autoCompactWindow: CONTEXT_POLICY.claudeSonnetTokens },
   },
 } as const;
 

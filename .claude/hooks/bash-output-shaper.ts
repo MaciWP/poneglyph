@@ -11,7 +11,7 @@
 //   deny     `cat` / `sed -n` on a file above BIG_FILE_BYTES with no pipe → Read (offset/limit) or Grep
 //            (a `sed -n` printing only numeric ranges totalling ≤ SED_MAX_LINES passes)
 //   rewrite  unquoted `grep --include=*.py`-style globs → quoted (zsh nomatch)
-//   rewrite  `git log` without a bound → `--oneline -n 30` · `ls -R` / `find` / `tree` with no pipe → `| head -n 200`
+//   rewrite  `git log` without a bound → `--oneline -n 30` · `ls -R` / `find` / `tree` with no pipe → first 200 lines, exit code kept
 //   never    tests, `git diff`, anything piped, redirections/heredocs (writes), or a command ending in `# raw`
 //
 // Best-effort like every PreToolUse hook (#6305): silent (exit 0, no output) unless a rule fires.
@@ -108,6 +108,13 @@ function quoteGrepGlobs(segment: string): string {
   });
 }
 
+// The first 200 lines, keeping the listing's exit code: a plain `| head` reported 0 for a
+// `find` on a missing dir. `cat` drains the rest, so the listing never takes the SIGPIPE that
+// pipefail alone would report as 141.
+export function headed(segment: string): string {
+  return `( set -o pipefail; ${segment} | { head -n 200; cat >/dev/null; } )`;
+}
+
 function denial(cmd: string, file: string, size: number): string {
   return `\`${cmd}\` would dump ${file} (${Math.round(size / 1024)} KB) whole into the context; tool output is already 56 % of it and the same 28 KB file was catted four times in one session. Use Read with offset/limit, or Grep the section you need. Append \`# raw\` to bypass.`;
 }
@@ -165,7 +172,7 @@ export function shapeCommand(command: string, cwd: string, fileSize: FileSize = 
     }
 
     if ((cmd === "ls" && toks.some((t) => /^-[a-zA-Z]*R/.test(t))) || cmd === "find" || cmd === "tree") {
-      parts[i] = parts[i].replace(segment, `${segment} | head -n 200`);
+      parts[i] = parts[i].replace(segment, headed(segment));
       rewritten = true;
     }
   }

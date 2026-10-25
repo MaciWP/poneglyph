@@ -165,7 +165,7 @@ Next: flow retro (approving verdict) | flow build US{N} (NEEDS_CHANGES) | STOP a
 
 ## SIEMPRE rules
 
-- Findings without softening; a blocker means BLOCKED, no exceptions (Cmd III).
+- Findings without softening; a blocker means BLOCKED (Cmd III).
 - Every AC traces to a closed HU **and** an observed check; an AC without both is a
   Correctness finding.
 - Suite green on the assembled branch before any APPROVED (Cmd IV).

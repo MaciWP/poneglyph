@@ -91,6 +91,25 @@ export function enabledPluginRoots(cwd: string, config = configDir()): PluginRoo
   return roots;
 }
 
+// In Claude the log-pose mod routes each typed prompt in-process, before step 0, so this hook
+// and its pending line stand down. Codex and Grok keep the hook. The hook takes over again while
+// the mod cannot work: no synced router agent to read, or its last calls in this session failed.
+export const MOD_ROUTER = "log-pose";
+const MOD_FAILURES = 3;
+
+export function modFailing(log: string, session: string): boolean {
+  if (!session) return false;
+  const mine = log.split("\n").filter((l) => l.includes(" via=mod ") && l.endsWith(` sid=${session}`)).slice(-MOD_FAILURES);
+  return mine.length === MOD_FAILURES && mine.every((l) => / outcome=(?:error|timeout|bad-output) /.test(l));
+}
+
+export function modRoutes(cwd: string, config = configDir(), session = ""): boolean {
+  if (!enabledPluginRoots(cwd, config).some((p) => p.name === MOD_ROUTER)) return false;
+  if (statSafe(join(config, "agents", "prompt-router.md")) === null) return false;
+  if (!session) return true;
+  try { return !modFailing(readFileSync(learnedLog(cwd, "prompt-router.log"), "utf8").slice(-65536), session); } catch { return true; }
+}
+
 // Skills the main model can load, under the name the Skill tool takes: project and
 // user skills bare (project shadows user), plugin skills as `plugin:skill`. Skills the
 // model cannot load (`off`, `user-invocable-only`, `disable-model-invocation`) are left
@@ -101,6 +120,26 @@ export function enabledPluginRoots(cwd: string, config = configDir()): PluginRoo
 const syncedDirs = (config: string) => {
   try { return readdirSync(join(config, "skills", "synced")).map((d) => join(config, "skills", "synced", d)); } catch { return []; }
 };
+
+// A description cut to `max` at a sentence end, its "not for" sentences kept: a cut mid-word at 600
+// dropped xlsx's "Do NOT trigger when…", the line that tells the router when not to suggest it.
+const NOT_FOR = /^(?:no|not|never|nunca|do not|don't)\b/i;
+export function clipDescription(text: string, max: number): string {
+  const flat = text.replace(/\s+/g, " ").trim();
+  if (flat.length <= max) return flat;
+  const sentences = flat.split(/(?<=[.!?])\s+(?=[\p{Lu}¿¡"'`(])/u);
+  const not = sentences.filter((s) => NOT_FOR.test(s)).join(" ").slice(0, max);
+  const room = max - (not ? not.length + 1 : 0);
+  const rest = sentences.filter((s) => !NOT_FOR.test(s));
+  let kept = "";
+  for (const s of rest) {
+    if ((kept ? kept.length + 1 : 0) + s.length > room) break;
+    kept = kept ? `${kept} ${s}` : s;
+  }
+  // A first sentence longer than the room is cut at a word.
+  if (!kept && rest.length && room > 1) kept = `${rest[0]!.slice(0, room - 1).replace(/\s\S*$/, "")}…`;
+  return [kept, not].filter(Boolean).join(" ");
+}
 
 export function loadCatalog(cwd: string, config = configDir(), plugins = enabledPluginRoots(cwd, config), descriptionChars = DESCRIPTION_CHARS, synced = true): CatalogEntry[] {
   const overrides = skillOverrides(cwd, config);
@@ -123,7 +162,7 @@ export function loadCatalog(cwd: string, config = configDir(), plugins = enabled
         const mode = overrides[name];
         if (fields["disable-model-invocation"] === true || mode === "off" || mode === "user-invocable-only") continue;
         const text = [fields.description, typeof fields.when_to_use === "string" ? fields.when_to_use : ""].join(" ");
-        byName.set(name, { name, description: text.replace(/\s+/g, " ").trim().slice(0, descriptionChars) });
+        byName.set(name, { name, description: clipDescription(text, descriptionChars) });
       } catch { /* no SKILL.md or invalid YAML */ }
     }
   }
@@ -222,7 +261,65 @@ const ROUTER_SCHEMA = {
 // without it, the model's text in `.result` (maybe fenced) is parsed. Anything off-contract
 // is dropped: unknown skills, skills the prompt already names or the session already
 // loaded (`loaded`), fixes whose "heard" text is not in the prompt. With a glossary, a fix
-// must also land on a glossary term: the model corrects ordinary spelling otherwise.
+// must also land on a glossary term and sound like it: the model corrects ordinary spelling otherwise.
+// A fix that only respells a right word (plural, case, space or hyphen: "repos" → repo,
+// "agentic-os" → Agentic OS) tells the reader nothing; eval v3 counted them as noise.
+export function isVariant(heard: string, meant: string): boolean {
+  const a = foldText(heard).replace(/[^a-z0-9]/g, ""), b = foldText(meant).replace(/[^a-z0-9]/g, "");
+  return a === b || a === `${b}s` || a === `${b}es` || b === `${a}s` || b === `${a}es`;
+}
+
+// How a word sounds to Spanish speech-to-text: folded, then one spelling per sound.
+export const soundKey = (text: string) => foldText(text).replace(/[^a-z0-9]/g, "")
+  .replace(/ph/g, "f").replace(/th/g, "t").replace(/ck/g, "k").replace(/qu/g, "k")
+  .replace(/c(?=[ei])/g, "s").replace(/[cq]/g, "k").replace(/x/g, "ks").replace(/z/g, "s")
+  .replace(/g(?=[ei])/g, "j").replace(/[jh]/g, "").replace(/v/g, "b").replace(/w/g, "u").replace(/y/g, "i")
+  .replace(/(.)\1+/g, "$1");
+
+function distance(a: string, b: string): number {
+  let row = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const next = [i];
+    for (let j = 1; j <= b.length; j++) next[j] = Math.min(row[j]! + 1, next[j - 1]! + 1, row[j - 1]! + (a[i - 1] === b[j - 1] ? 0 : 1));
+    row = next;
+  }
+  return row[b.length]!;
+}
+
+// A fix must sound like its term or one of the term's variants; without this the model lands
+// any word on the topic on a glossary term ("astra" → Codex). 0.6 split the glossary's variants
+// and eval v3's tune-split fixes from the invented ones (highest invented 0.58); the test split stays held out.
+// A key of 3 letters or fewer must match exactly: one edit from "pr" is 0.67, and "PRO" (meant
+// prompt) landed on PR (10-23).
+export function soundsLike(heard: string, meant: string, variants: readonly string[]): boolean {
+  const h = soundKey(heard);
+  return [meant, ...variants].some((v) => {
+    const k = soundKey(v);
+    if (!h || !k) return false;
+    if (Math.min(h.length, k.length) <= 3) return h === k;
+    return 1 - distance(h, k) / Math.max(h.length, k.length) >= 0.6;
+  });
+}
+
+// A fix lands on a glossary term and sounds like it or a variant, or on a catalog name and sounds
+// like one of its parts of 4+ letters: "trillme" → drillme-clarify scores 0.38 on the whole name.
+export function landsOn(heard: string, meant: string, terms: ReadonlyMap<string, readonly string[]>, known: ReadonlySet<string>): boolean {
+  const variants = terms.get(foldText(meant)) ?? (known.has(meant) ? meant.split(/[-:]/).filter((p) => p.length >= 4) : null);
+  return !!variants && soundsLike(heard, meant, variants);
+}
+
+// The reply's JSON object: the span from the first { to the last }, or, when the model wrote a
+// corrected object after the first ("Correction: …", eval v3 test split), the last one that parses.
+export function jsonObject(text: string): Record<string, unknown> | null {
+  const start = text.indexOf("{"), end = text.lastIndexOf("}");
+  if (start < 0 || end <= start) return null;
+  try { return JSON.parse(text.slice(start, end + 1)); } catch { /* two objects, or prose between */ }
+  for (let i = text.lastIndexOf("{", end); i > start; i = text.lastIndexOf("{", i - 1)) {
+    try { return JSON.parse(text.slice(i, end + 1)); } catch { /* an inner brace */ }
+  }
+  return null;
+}
+
 export function parseRouterOutput(stdout: string, prompt: string, catalog: CatalogEntry[], opts: { glossary?: Record<string, string[]>; loaded?: Set<string> } = {}): RouterResult | null {
   let text: string;
   try {
@@ -232,19 +329,19 @@ export function parseRouterOutput(stdout: string, prompt: string, catalog: Catal
     else if (typeof envelope.result === "string") text = envelope.result;
     else return null;
   } catch { return null; }
-  const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
-  if (start < 0 || end <= start) return null;
-  let answer: { fixes?: unknown; skills?: unknown; process?: unknown; effort?: unknown };
-  try { answer = JSON.parse(text.slice(start, end + 1)); } catch { return null; }
+  const answer = jsonObject(text) as { fixes?: unknown; skills?: unknown; process?: unknown; effort?: unknown } | null;
+  if (!answer || typeof answer !== "object") return null;
   const folded = foldText(prompt);
   const known = new Set(catalog.map((c) => c.name));
-  const terms = opts.glossary ? new Set(Object.keys(opts.glossary).map(foldText)) : null;
+  const terms = opts.glossary ? new Map(Object.entries(opts.glossary).map(([t, heard]) => [foldText(t), heard])) : null;
+  const fixed = new Set<string>();
   const fixes = (Array.isArray(answer.fixes) ? answer.fixes : [])
     .filter((f): f is { heard: string; meant: string } => typeof f?.heard === "string" && typeof f?.meant === "string")
     .map((f) => ({ heard: f.heard.trim(), meant: f.meant.trim() }))
     .filter((f) => f.heard && f.meant && f.heard.length <= 60 && f.meant.length <= 60 &&
-      foldText(f.heard) !== foldText(f.meant) && folded.includes(foldText(f.heard)) && (!terms || terms.has(foldText(f.meant))))
+      !isVariant(f.heard, f.meant) && folded.includes(foldText(f.heard)) && (!terms || landsOn(f.heard, f.meant, terms, known)))
+    // "cloud code" and "Cloud Code" → Claude Code is one fix (10-22).
+    .filter((f) => !fixed.has(foldText(`${f.heard}→${f.meant}`)) && !!fixed.add(foldText(`${f.heard}→${f.meant}`)))
     .slice(0, 5);
   // `process` ({skill: reason}): a non-empty reason is one more candidate after the list.
   // `true` is still read, for an answer written before the reason existed.
@@ -374,6 +471,22 @@ function refreshMemory(cwd: string): void {
 
 const statSafe = (file: string) => { try { return statSync(file).mtimeMs; } catch { return null; } };
 
+// What a router run cost, from the `claude -p` envelope: input counts cache reads and writes.
+// "-" when there is no envelope (a timeout, a newer prompt) or it does not say.
+export function costFields(stdout: string): { cost: string; in: string; out: string } {
+  const none = { cost: "-", in: "-", out: "-" };
+  try {
+    const e = JSON.parse(stdout) as { total_cost_usd?: unknown; usage?: Record<string, unknown> };
+    const n = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : 0);
+    const u = e.usage && typeof e.usage === "object" ? e.usage : null;
+    return {
+      cost: typeof e.total_cost_usd === "number" && Number.isFinite(e.total_cost_usd) ? String(e.total_cost_usd) : "-",
+      in: u ? String(n(u.input_tokens) + n(u.cache_read_input_tokens) + n(u.cache_creation_input_tokens)) : "-",
+      out: u ? String(n(u.output_tokens)) : "-",
+    };
+  } catch { return none; }
+}
+
 export function log(cwd: string, fields: Record<string, string | number>): void {
   try {
     appendLog(`${new Date().toISOString()} ${Object.entries(fields).map(([k, v]) => `${k}=${v}`).join(" ")}`, learnedLog(cwd, "prompt-router.log"));
@@ -391,6 +504,8 @@ if (import.meta.main) {
     if (prompt !== null) {
       const payload = JSON.parse(raw) as { session_id?: string; cwd?: string; transcript_path?: string };
       cwd = host === "claude" ? projectRoot(payload.cwd) : typeof payload.cwd === "string" ? payload.cwd : cwd;
+      // log-pose routes on Claude, but it reads the same memory, which only this hook rebuilds.
+      if (host === "claude" && modRoutes(cwd, configDir(), typeof payload.session_id === "string" ? payload.session_id : "")) { refreshMemory(cwd); process.exit(0); }
       const session = typeof payload.session_id === "string" ? payload.session_id.replace(/[^\w-]/g, "") : "";
       mkdirSync(routerDir(), { recursive: true });
       const pidFile = session ? join(routerDir(), `${session}.pid`) : null;
@@ -409,6 +524,9 @@ if (import.meta.main) {
         host, session: session.slice(0, 8), outcome: run.outcome === "ok" ? (result ? (note ? "ok" : "empty") : "bad-output") : run.outcome,
         ms: Date.now() - started, skills: result?.skills.map((s) => s.name).join(",") || "-", fixes: result?.fixes.length ?? 0, effort: result?.effort ? "high" : "-", past: past.length,
         attended: process.env.CLAUDE_CODE_SESSION_ATTENDED ?? "-", entry: process.env.CLAUDE_CODE_ENTRYPOINT ?? "-",
+        ...costFields(run.stdout),
+        // The full id: Codex and Grok ids are UUIDv7, so sessions opened a minute apart share `session`.
+        sid: session || "-",
       });
       if (note && host === "claude") process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: "UserPromptSubmit", additionalContext: note } }));
       else if (note && session) writeFileSync(routerNoteFile(session), note);

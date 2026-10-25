@@ -159,15 +159,14 @@ A trivial change, and a small task with one loop-back in full and compact render
 - Loop-back over push-forward: a broken premise invalidates everything built on it.
 - Maximum quality is the default for every task, the user's care budget is not
   inferred from how small the diff looks.
-- Git/PR and agent-spawn gates: CLAUDE.md §Hard rules and §Agents and skills. "Done" is never
-  permission to commit; Workflow/Team needs this-turn permission.
+- Git/PR and agent-spawn gates: CLAUDE.md §Hard rules and §Agents and skills. "Done" never
+  permits a commit; the native `Workflow` tool is denied, Team needs this-turn permission.
 
 ## Anti-patterns
 
 | Anti-pattern | Correction |
 |---|---|
 | Calling a task trivial before reading what it touches | Look first; trivial means behavior-neutral, ≤1 file, easy to revert; a high-blast trait wins |
-| Full five-stage ceremony on a typo or a question | Trivial level: do it, one line of evidence |
 | Judging importance or care level before KNOW | Investigate first; never infer care from diff size; propose the time estimate for the user to confirm |
 | Ladder applied before understanding the problem | "Read fully, then be lazy", comprehension first |
 | Simplifying away validation/errors to score fewer lines | Floor violation: restore it |

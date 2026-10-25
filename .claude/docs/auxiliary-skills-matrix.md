@@ -55,7 +55,7 @@ The plan phase is NOT invoked by scope; it waits on the human hard gate 1->2.
 | `compare-and-decide` (heavy tier) | Full mode + 2+ technically reasonable alternatives surfaced: stress-test before committing | Lead invokes `/compare-and-decide "<the choice>"` manually (its classifier lands on the heavy tier); downgrade plan confidence one tier if skipped |
 | `prompt-design` | When reviewing the Execution prompts the plan hands to the build phase (Arch H compliance) | Lead applies 5-criteria rubric inline to the delegation prompts |
 | `harness-config` | When any HU plans to create or touch native harness config (skill/command/hook/rule/MCP/plugin/agent/settings/permissions) | Lead reads `harness-config` and the matching type pack (when present) before the HU is finalized |
-| test-plan phase (downstream) | Step 13: run `references/03-test-plan.md` after producing tasks/ to generate tests.md/validations.md | Lead runs the phase manually; the human hard gate 2->3 requires both tasks/ AND tests/validations |
+| test-plan phase (downstream) | Step 13: run `references/03-test-plan.md` after producing tasks/ to generate tests.md/validations.md | Lead runs the phase manually; the human hard gate 2->3 requires tasks/ AND an oracle (tests.md or validations.md) |
 
 The Step 13 handover is critical: the Lead verifies that tests.md/validations.md exists; re-run the phase if missing.
 

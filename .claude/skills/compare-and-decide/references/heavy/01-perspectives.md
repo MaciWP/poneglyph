@@ -120,7 +120,7 @@ Your job: find the strongest reasons NOT to do this. Apply:
 - Second-Order: what does this enable that we don't want?
 
 Use Read/Grep to verify claims about existing code. Use Context7 if libraries/versions are claimed.
-NEVER invent. If you can't verify, mark UNKNOWN and say what you'd need.
+Do not invent: an unverified claim misleads the decision. If you can't verify, mark UNKNOWN and say what you'd need.
 
 Output in the standard perspective format.
 ```
@@ -193,7 +193,7 @@ Evaluate strictly on security:
 - Known CVEs in the proposed solution?
 
 Cite OWASP categories where relevant. If a CVE check is needed, do WebSearch.
-NEVER invent CVEs. UNKNOWN if not verified.
+Mark a CVE UNKNOWN if not verified.
 Output in the standard perspective format.
 ```
 
@@ -262,7 +262,7 @@ Evaluate strictly through a YAGNI lens:
 - Which layers in the proposal are removable without changing the outcome?
 - If we delete X, what breaks? If nothing breaks → X is dead weight.
 
-You MUST propose a minimal-viable alternative. "Don't do this" is not a valid output on its own.
+Propose a minimal-viable alternative. "Don't do this" is not a valid output on its own.
 Output in the standard perspective format.
 ```
 
@@ -341,7 +341,7 @@ Evaluate strictly on cost:
 - Is there an 80/20 alternative that captures most of the value at a fraction of the cost?
 - For each cut: which dimension is affected (security / reliability / correctness / compliance / perf)?
 
-NEVER invent prices: verify via Context7 or WebSearch. UNKNOWN if not verified.
+Verify prices via Context7 or WebSearch. UNKNOWN if not verified.
 Output in the standard perspective format.
 ```
 

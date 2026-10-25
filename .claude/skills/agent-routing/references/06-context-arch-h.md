@@ -85,7 +85,7 @@ Ground-truth rules for what reaches subagents. Verified via direct testing on 20
 
 ## Arch H Delegation Template
 
-When delegating to any agent, the Lead MUST build the prompt with these context blocks. Omit any block that is empty.
+When delegating to any agent, the Lead builds the prompt from these context blocks. Omit any block that is empty.
 
 ```
 [ACCUMULATED MEMORY - {agent}]
@@ -105,7 +105,7 @@ After loading them, proceed with the task.
 After loading each skill file, check if its main SKILL.md has a "Content Map", "Reference Files",
 or "Documentation" section (a canonical 3-column Topic | File | Contents table). If present,
 consult the Contents column to judge which supporting files are semantically relevant to your
-current task and Read them selectively. Do NOT read all references blindly (defeats on-demand
+current task and Read them selectively. Do not read all references blindly (defeats on-demand
 loading), but DO read those where the Contents row describes your task situation.
 
 [TASK]
@@ -164,12 +164,12 @@ When preparing a delegation:
 
 1. Match task keywords against `05-skill-matching.md` + the project's path rules (e.g., `.claude/rules/paths/`), these map domain keywords → `.claude/skills/<name>/SKILL.md` paths (global + project)
 2. Put the chosen `Read` instructions into the delegation prompt's `[RELEVANT SKILLS FOR THIS TASK]` block. Max 3 skills total (1-2 global + 1-2 project is a good balance)
-3. For skills the agent ALWAYS needs, use the native `skills:` frontmatter field instead (preloads at startup)
+3. For skills every run of the agent needs, use the native `skills:` frontmatter field instead (preloads at startup)
 4. Check if there is a specialized agent (e.g., `django-refactor-agent`, `django-security-auditor`) before routing to a generic one
 
 ## Content Map Pattern (canonical for skills with subdirectories)
 
-Any skill that has a `references/` subdirectory **MUST** include a canonical Content Map table in its main `SKILL.md`.
+Any skill that has a `references/` subdirectory includes a canonical Content Map table in its main `SKILL.md`, so an agent can pick only the files its task needs.
 
 **Canonical format: 3 columns**:
 
@@ -186,7 +186,7 @@ Any skill that has a `references/` subdirectory **MUST** include a canonical Con
 5. **Main SKILL.md stays ≤ 500 lines** per Anthropic official guidance
 6. **Critical gotchas stay inline** in the main SKILL.md, footguns with silent-failure semantics must be surfaced in the entry file
 
-**Subagent behavior**: when you Read a main SKILL.md that has a Content Map, consult the Contents column to judge which supporting files apply to your current task. Read the relevant ones. Do NOT read all blindly. Do NOT skip them when the Contents description matches your task even if task phrasing didn't explicitly mention the domain, semantic match is a valid trigger.
+**Subagent behavior**: when you Read a main SKILL.md that has a Content Map, consult the Contents column to judge which supporting files apply to your current task. Read the relevant ones. Do not read all blindly. Do not skip them when the Contents description matches your task even if task phrasing didn't explicitly mention the domain, semantic match is a valid trigger.
 
 ## Anti-Claims (False: Never Repeat)
 

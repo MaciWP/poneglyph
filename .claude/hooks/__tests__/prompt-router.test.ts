@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   buildRouterNote,
+  costFields,
   DEEP_SKILLS_LINE,
   effortLine,
   buildSystemPrompt,
@@ -188,6 +189,11 @@ describe("prompt-router: parseRouterOutput", () => {
       .toEqual([{ heard: "pone grif", meant: "Poneglyph" }]);
   });
 
+  test("drops fixes that only respell a right word (plural, case, hyphen)", () => {
+    const answer = { fixes: [{ heard: "pone grif", meant: "Pone-Grifs" }, { heard: "pone grif", meant: "Poneglyph" }], skills: [] };
+    expect(parseRouterOutput(envelope(JSON.stringify(answer)), prompt, catalog)!.fixes).toEqual([{ heard: "pone grif", meant: "Poneglyph" }]);
+  });
+
   test("drops skills the session already loaded", () => {
     const answer = { fixes: [], skills: [{ name: "dev-workflow" }, { name: "work:team-lessons" }] };
     expect(parseRouterOutput(envelope(JSON.stringify(answer)), prompt, catalog, { loaded: new Set(["dev-workflow"]) })!.skills.map((s) => s.name))
@@ -229,6 +235,22 @@ describe("prompt-router: parseRouterOutput", () => {
     const many = { skills: ["a", "b", "c", "d"].map((name) => ({ name })) };
     const cat = ["a", "b", "c", "d"].map((name) => ({ name, description: "" }));
     expect(parseRouterOutput(envelope(JSON.stringify(many)), "p", cat)!.skills.map((s) => s.name)).toEqual(["a", "b", "c"]);
+  });
+});
+
+describe("prompt-router: costFields (log)", () => {
+  test("the envelope's cost and tokens, cache reads and writes counted as input", () => {
+    const envelope = JSON.stringify({
+      type: "result", is_error: false, total_cost_usd: 0.0123, structured_output: { skills: [] },
+      usage: { input_tokens: 12, cache_read_input_tokens: 9000, cache_creation_input_tokens: 300, output_tokens: 85 },
+    });
+    expect(costFields(envelope)).toEqual({ cost: "0.0123", in: "9312", out: "85" });
+  });
+
+  test("no envelope, or one that does not say, logs a dash, never a zero", () => {
+    expect(costFields("")).toEqual({ cost: "-", in: "-", out: "-" });
+    expect(costFields("late")).toEqual({ cost: "-", in: "-", out: "-" });
+    expect(costFields(JSON.stringify({ result: "{}" }))).toEqual({ cost: "-", in: "-", out: "-" });
   });
 });
 

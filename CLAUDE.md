@@ -26,10 +26,10 @@ Every action pursues the maximum quality reasonably achievable. When two command
 ## Hard rules
 
 - **Sensitive files.** Before editing `.env`, `*.lock`, `package.json`, `.claude/settings*.json`, `secrets/` or `credentials/`, state the reason inline: `sensitive: <reason>`.
-- **Destructive operations.** Never run `rm -rf`, a force push, a database migration or a schema change yourself. Ask the user and give the reason.
-- **Git.** Commit, push, change branches, and open or merge PRs only when the user asked for that action this turn. "Done", "listo" or "sigue" is not that ask. Read-only git and drafting a message as text are always fine. When unsure, ask with `AskUserQuestion`, and never end a turn by offering to commit, push or open a PR.
+- **Destructive operations.** Never run `rm -rf`, a force push, a database migration or a schema change yourself: they can wipe data. Ask the user and give the reason.
+- **Git.** Commit, push, change branches, and open or merge PRs only when the user asked for that action this turn. "Done", "listo" or "sigue" is not that ask. Read-only git and drafting a message as text are always fine. When unsure, ask with `AskUserQuestion`, and never end a turn by offering to commit, push or open a PR: a yes to that offer authorizes it.
 - **No AI authorship.** Commits and PRs carry no AI co-author trailer, generator footer or AI credit unless the user asks for it this turn. Author and committer stay the human git identity.
-- **Shared repos.** Never run a full test suite unprompted in a shared work repo.
+- **Shared repos.** Never run a full test suite unprompted in a shared work repo: it takes minutes and blocks shared machines or CI.
 
 ## How to work
 
@@ -47,7 +47,7 @@ Apply this method at the depth its level calls for. Guide and examples: `Skill(d
 | **Normal** (default) | Everything else |
 | **High blast radius** | New module, schema, auth, money, migrations, deletion. Present the plan and wait before building |
 
-The same error twice, or two diagnoses without a fix: one pass of `Skill(troubleshooting)` §Stuck, then ask the user. A command expected to run over 30 seconds, or a chain of awaited checks, follows `.claude/docs/visible-execution.md`: supervise it from this chat and never promise alerts.
+The same error twice, or two diagnoses without a fix: one pass of `Skill(troubleshooting)` §Stuck, then ask the user. A command expected to run over 30 seconds, or a chain of awaited checks, follows `.claude/docs/visible-execution.md`: supervise it from this chat and never promise alerts, as nothing reaches the user after the turn ends. When compacting, keep the DoD, decisions taken, files touched and pending checks.
 
 Stop working only at the finish line, a hard gate, a blocking question or a spent time budget, never at a summary that announces the next step or offers to continue.
 
@@ -55,10 +55,10 @@ Stop working only at the finish line, a hard gate, a blocking question or a spen
 
 - Use the host's built-in agents (on Claude: Explore, Plan, general-purpose, fork) freely for large reads you will not reuse, web research and parallel work, but not for 1-2 known files or a quick grep. Keep writes inline unless splitting clearly pays. Give each agent one narrow question and verify the facts that decide.
 - Name the model on every spawn: the mid tier only for code or security, not research; the top tier only for a high-risk verification, with the reason stated; otherwise the cheapest (X). Tier names per host: `.claude/docs/harness-adapters.md` §Model tiers.
-- `Workflow` is denied; ask the user first only for Team, a headless top-tier `claude -p` and a call to another provider (`consult-model`).
-- You see skills by name only; a `<prompt-router>` note names the fitting ones. Answer every candidate in one `Router:` line before going on, sí or no with the reason: sí only when the skill changes how you do the task, then load it. Plan mode or the §How to work summary never justifies no to `dev-workflow` or `drillme-clarify`.
-- A new work phase mid-task with no router note: on Claude, launch the `prompt-router` agent with the task in one or two sentences (Claude only; Codex and Grok use hooks).
+- `Workflow` is denied; ask first only for Team, a headless top-tier `claude -p` and an unrequested other-provider call (`consult-model`).
+- You see skills by name only; a `<prompt-router>` note names the fitting ones. Answer every candidate in one `Router:` line before going on, sí or no with the reason: sí only when the skill changes how you do the task, then load it; a needless load spends context. Plan mode or the §How to work summary never justifies no to `dev-workflow` or `drillme-clarify`.
+- A new work phase mid-task with no router note: on Claude, launch the `prompt-router` agent with the task in one or two sentences.
 
 ## Your configuration
 
-Before adding or changing any skill, rule, hook, setting or style: `Skill(harness-config)`. Edit the Poneglyph source repo, never `~/.claude/` or another installed copy. Keep plans, source and learned output in the current project, never inside the installed skills. A `.claude/docs/…` path here resolves under `~/.claude/` when the project has none.
+Before adding or changing any skill, rule, hook, setting or style: `Skill(harness-config)`. Edit the Poneglyph source repo, never `~/.claude/` or another installed copy: a sync overwrites generated files and copies. Keep plans, source and learned output in the current project, never inside the installed skills. A `.claude/docs/…` path here resolves under `~/.claude/` when the project has none.

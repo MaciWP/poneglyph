@@ -95,11 +95,11 @@ Force WebFetch on EVERY non-trivial claim, regardless of confidence. Do not skip
 | WRONG | CORRECT |
 |---|---|
 | "Probablemente Django..." | WebFetch + literal quote |
-| "Segun he leido..." | Cite the source |
+| "Según he leído..." | Cite the source |
 | "El doc dice X" without URL | Include full URL |
 | Paraphrased "quote" | Verbatim quote |
 | URL invented from memory | WebFetch first, paste resolved URL |
-| Citing a version different from the project's | Pin to project version (Django 5.0 in this codebase) |
+| Citing a version different from the project's | Pin to the project's version (read it from the lockfile or manifest) |
 | One source for a claim across stacks | One source per stack |
 
 ## Confidence Calibration Table

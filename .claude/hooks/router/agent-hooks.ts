@@ -15,12 +15,13 @@
  *     parsed here; an unreadable one is sent back once, then the run is logged with via=agent.
  *     Skills the session already loaded are dropped here, as in the script.
  *   PreToolUse also appends the Haiku context budget (lib/haiku-budget.ts) to any Agent task that
- *     runs on Haiku, the router's included.
+ *     runs on Haiku, the router's included, and adds a note when a spawn inherits the Lead's model
+ *     because nothing named one.
  * Fail-open: any error → no output and one log line.
  */
 
 import { existsSync, readFileSync } from "node:fs";
-import { withBudget } from "../lib/haiku-budget";
+import { spawnModel, withBudget } from "../lib/haiku-budget";
 import { readHookStdin } from "../lib/hook-stdin";
 import { projectRoot } from "../lib/paths";
 import { CATALOG_HEADER, type CatalogEntry, enabledPluginRoots, glossaryFiles, installedRouterAgent, loadCatalog, loadGlossary, log, parseRouterOutput } from "../prompt-router";
@@ -54,6 +55,16 @@ export function routerTaskInput(input: Record<string, unknown> | undefined, cata
   const past = formatPast(pastFor(text, new Set(catalog.map((c) => c.name)), memory));
   // ponytail: project plugin glossaries are not added here; add them if a project plugin ships one.
   return { ...input, prompt: `${extra ? `More catalog skills for this project (name: description):\n${extra}\n\n` : ""}<prompt>\n${text.slice(0, MAX_PROMPT_CHARS)}\n</prompt>${past ? `\n${past}` : ""}` };
+}
+
+// CLAUDE.md asks for a model on every spawn. A call that names none, for an agent with no model of
+// its own, runs on the Lead's model (Explore and Plan ignore CLAUDE_CODE_SUBAGENT_MODEL). 27 of 352
+// spawns in 14 days named none. Warn only; the note reaches the Lead with the result, for its next call.
+// A fork inherits by design.
+export function modelNudge(input: Record<string, unknown>, cwd: string, envModel?: string): string | null {
+  if (input.subagent_type === "fork" || typeof input.model === "string" || spawnModel(input, cwd, envModel)) return null;
+  const type = typeof input.subagent_type === "string" ? input.subagent_type : "general-purpose";
+  return `That ${type} Agent call named no model, so it ran on your own model. Name the model on every spawn (CLAUDE.md §Agents and skills): the cheapest tier unless the work is code or security. Pass \`model\` on your next Agent call.`;
 }
 
 // The subagent's first user message (the task, <past> included) and when it started.
@@ -91,7 +102,10 @@ if (import.meta.main) {
         : null;
       // One hook owns the Agent input: two PreToolUse hooks returning updatedInput would overwrite each other.
       const updatedInput = withBudget(routed ?? payload.tool_input, cwd) ?? routed;
-      if (updatedInput) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "allow", updatedInput } }));
+      const nudge = modelNudge(payload.tool_input, cwd);
+      if (updatedInput || nudge) process.stdout.write(JSON.stringify({ hookSpecificOutput: {
+        hookEventName: "PreToolUse", ...(updatedInput && { permissionDecision: "allow", updatedInput }), ...(nudge && { additionalContext: nudge }),
+      } }));
     } else if (event === "SubagentStop" && payload.agent_type === ROUTER_AGENT) {
       const run = agentTask(payload.agent_transcript_path);
       const task = run.text.match(PROMPT_TAG)?.[1] ?? run.text;

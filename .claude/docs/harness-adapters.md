@@ -53,7 +53,7 @@ secret detection.
 |---|---|---|---|
 | Headless command guard | PreToolUse | Native PreToolUse response | Native PreToolUse response |
 | Skill hints | UserPromptSubmit context | Native UserPromptSubmit context | Explicit shared routing; UserPromptSubmit takes no context |
-| Prompt router (dictation fixes, ≤3 skills) | Async UserPromptSubmit context, mid-turn | UserPromptSubmit starts it detached; the first PreToolUse after it finishes delivers the note once (`$skill`) | Same as Codex (`/skill`); the note arrives with that tool's result |
+| Prompt router (dictation fixes, ≤3 skills) | The `log-pose` mod, before step 0, also sets the turn's effort; the async UserPromptSubmit hook only while the mod is off or failing | UserPromptSubmit starts it detached; the first PreToolUse after it finishes delivers the note once (`$skill`) | Same as Codex (`/skill`); the note arrives with that tool's result |
 | Modified-file secret heuristic | Stop warning and explicit review command | Stop user warning and explicit review command | Explicit review command |
 | Instruction-load telemetry | InstructionsLoaded | No equivalent installed | No equivalent installed |
 | Design-file note | PreToolUse context on the first UI-file contact per session (edit tools, or a UI path in a Bash command); never blocks | Native PreToolUse context on `apply_patch` (paths from `*** Add File:` / `*** Update File:`); needs `/hooks` trust | Not wired |
@@ -112,7 +112,7 @@ tier one command away. Source of truth: `.claude/scripts/lib/host-config.ts`.
 
 | Host | Keys written | Default | Raise for one session |
 |---|---|---|---|
-| Claude | `autoCompactWindow`, `effortLevel` + `modelSettings["claude-opus-5-5"].effortLevel` (settings.global.json; Opus 5.5+ ignore the top-level key in user settings; Opus runs `medium` as a cost experiment) + `modelSettings["claude-haiku-5-5"].autoCompactWindow` 100k, which also reaches Haiku subagents. Also `switchModelsOnFlag: false`, taken from the Opus 5.5 playbook; the official settings reference does not list it (checked 2026-09-23), so its effect is unverified | 300000 (integer; a suffixed string is dropped silently) · high | `/autocompact 400k` · `/effort xhigh` |
+| Claude | `autoCompactWindow`, `effortLevel` + `modelSettings["claude-opus-5-5"].effortLevel` (settings.global.json; Opus 5.5+ ignore the top-level key in user settings; Opus runs `medium` as a cost experiment) + `modelSettings["claude-haiku-5-5"].autoCompactWindow` 120k (compacts near 87k, under the 100k price step) and `modelSettings["claude-sonnet-5-5"].autoCompactWindow` 130k (cheaper steps), both of which reach Haiku subagents. Also `switchModelsOnFlag: false`, taken from the Opus 5.5 playbook; the official settings reference does not list it (checked 2026-09-23), so its effect is unverified | 300000 (integer; a suffixed string is dropped silently) · high | `/autocompact 400k` · `/effort xhigh` |
 | Codex | `model_auto_compact_token_limit`, `model_reasoning_effort`, `plan_mode_reasoning_effort` (config.toml, via `sync-codex`) | 300k · high · plan xhigh | `codex -c model_auto_compact_token_limit=400000 -c model_reasoning_effort=xhigh` |
 | Grok | `session.auto_compact_threshold_percent`, `models.default_reasoning_effort`, `model."grok-4.6".context_window` (config.toml, via `sync-grok`) | 60 % of a pinned 500k = 300k · high | `grok --effort xhigh` (per session) |
 

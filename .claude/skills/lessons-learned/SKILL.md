@@ -37,7 +37,7 @@ works without that addon and must not discover or activate it automatically.
 
 A lesson belongs in exactly **one** layer. Anything that must survive the machine is
 written here (or in `docs/`), never only in memory: four `feedback-*` memories cited
-by evals and docs were lost that way and were lost that way (G9–G12 now hold them). When an entry has a memory sibling, this file points at it: no copies.
+by evals and docs were lost that way; G9–G12 now hold them. When an entry has a memory sibling, this file points at it: no copies.
 
 ## Triggers
 
@@ -74,11 +74,12 @@ Entry format: a `| Lesson | Rule to apply |` row here, and its evidence (where i
 | **G9: Measure, don't estimate** | A number that can be measured (contrast, size, count, timing) is measured before it is asserted; an unmeasured figure carries `[Suposición]`, never a bare value. Recovered from the lost memory `feedback-measure-dont-estimate` (2026-09-03) |
 | **G10: A verified line is not a verified fix** | Existence checks verify premises (file, line, symbol exist); correctness needs its own evidence (test, run, trace). A fix that brings new tests: run them against the pre-fix head too; passing there means they do not test the fix. An unverified conclusion is labelled, not asserted. Recovered from the lost memory `feedback-antihallucination-not-fix-correctness` |
 | **G11: Brief by default, no bureaucracy** | No preamble; short answer on the first line, verdict + next step on the closing `ROBIN:` line (style §2); process narration and recaps are cut (§4 Cost). Recovered from the lost memory `feedback-default-brief-no-bureaucracy` |
-| **G13: A headless run is a spawn** | Every `claude -p` is a separate model worker under CLAUDE.md §Agents and skills: an explicit model, the cheapest tier by default (prose graders, smoke), the mid tier only when the probe measures that tier (skill triggers), the top tier only with `--allow-expensive` and this-turn permission, one rerun at most. Mechanised in `scripts/lib/headless.ts` + the `headless-model-gate` PreToolUse hook (plan 033) |
+| **G13: A headless run is a spawn** | Every `claude -p` is a separate model worker under CLAUDE.md §Agents and skills: an explicit model, the cheapest tier by default (prose graders, smoke), the mid tier only when the probe measures that tier (skill triggers), the top tier only with `--allow-expensive` and this-turn permission, one rerun at most. Mechanised in `scripts/lib/headless.ts` + the `headless-model-gate` PreToolUse hook |
 | **G12: Wire skills, don't hope for auto-trigger** | Deterministic wiring wins: `/flow-lifecycle` invokes each phase skill explicitly, the prompt router names candidate skills on every human prompt; a gate never depends on a description match alone. Recovered from the lost memory `feedback-skill-wiring-over-autotrigger` |
 | **G15: The Bash tool eats doubled backslashes, quoted heredoc included** | Content carrying backslashes, Windows paths, regexes, escape sequences, is written with Write/Edit, never a heredoc from the Bash tool. The collapse also rewrites the **command's own** flags and patterns, so a probe that spells backslashes to detect the collapse silently tests the wrong string: confirm byte counts with a command that contains none |
 | **G16: A live sibling session invalidates the measurement you are taking** | Pin the measurement to what you measured: record the commit, or a hash of each file the figure depends on, and re-check it before reporting. A changed hash invalidates the number; re-measure, and only then look for the sibling session that moved it. Waiting to watch a transcript grow proves nothing: another session can be idle and the files still change, or busy elsewhere and they do not |
 | **G17: When a delete fails, suspect a working directory, not the tool that reported it** | On Windows a process holding a directory as its working directory locks it against deletion even when empty. Before blaming the delete tool, find the holder: list the long-lived helpers you started (`codex-brokers.ts` for this one) and check which path each was given. The prevention is upstream: never hand a disposable directory to anything that outlives the command |
+| **G18: Records and acknowledgements are not process identity or completion** | A stored PID is not process identity: PID reuse can target an unrelated process. Use the owner's state resolver and protocol; reject invalid endpoints. An acknowledgement proves request acceptance, not process exit or released resources; local protocol fixtures do not prove native lifecycle behavior |
 | **G14: A stub SKILL.md is not a retirement** | When parking a skill, poison-pill or delete `references/` and `templates/` in the **same** HU as the stub. Grep the parked tree for recipes, not only `SKILL.md`. Stubs that must not fire: `disable-model-invocation: true`, `user-invocable: false`, dead one-line description, empty keywords |
 | **G19: Declare a missing spec in the FIRST delivery of the plan, not when challenged** | When the requirement source is incomplete (empty ACs, unreachable design, undocumented endpoint), open the plan with what is **missing** and mark every inferred requirement as inferred. A plan that does not separate "the ticket asks this" from "I deduced this" hides its own risk, and the reader cannot audit what they cannot see |
 | **G20: Verbatim transcription is not a cheap-tier task** | Faithfulness under length is a capability, not a mechanical chore; long verbatim copying belongs one tier up. When delegating it anyway, verify by **size against the source** (`wc -l` of output vs the section it copies), never by the agent's own file list. Extends G2: a report can satisfy the output format and still fail the requirement |
@@ -110,15 +111,6 @@ Company-specific stack references live in the configured private addon. Read onl
 the reference relevant to the task. An absent addon is normal; these cross-project
 lessons still apply. Keep each rule in one place and private evidence in its own
 repository. Do not copy company paths or examples into the core during promotion.
-
-## G18: Records and acknowledgements are not process identity or completion
-
-The 2026-09-13 review found that `codex-brokers.ts` trusted a stored PID and
-reported directory release before confirming shutdown. PID reuse can target an
-unrelated process. Use the installed owner's state resolver and protocol; reject
-invalid endpoints. An acknowledgement proves request acceptance, not process exit
-or released resources. Local protocol fixtures cover rejection, silence and
-bounded acknowledgement; they do not prove native lifecycle behavior.
 
 ## Pruning
 

@@ -10,7 +10,6 @@ description: >-
   verificar tu propio cambio antes de darlo por hecho (changes-verify).
 disable-model-invocation: false
 argument-hint: "[PR number | PR URL | branch | file-or-module] (empty = local mode: current branch vs base)"
-effort: xhigh
 ---
 
 # pr-review: generalist PR/branch review (any repo)
@@ -42,7 +41,7 @@ verifies via `git rev-parse --verify <arg>`. An existing file or folder, or a re
 code rather than a change ("huele mal este módulo", "está lento") → **module mode**: run only
 steps 3 (read the code), 4 and 5 with the lenses, then report; there is no diff, ticket or
 score. Anything else (prose, empty) → **local mode**: current branch vs the base branch.
-State which mode was resolved. A PR you already reviewed → follow-up round
+State the resolved mode and depth (`references/07-depth-and-verification.md`). A PR you already reviewed → follow-up round
 (`references/04-follow-up-round.md`).
 
 ### 2. Ticket detection → acceptance criteria
@@ -84,6 +83,8 @@ Lens severities map onto the core scale: High → Major, Medium and Low → Mino
 stays Critical. A requested refactor follows the lens's safety classification: risky
 changes need the user's confirmation, and the tests pass after each step.
 
+**Verify before scoring.** Re-check the findings in fresh context (`references/07-depth-and-verification.md`); only confirmed findings score.
+
 ### 6. AC-trace
 For EACH acceptance criterion from step 2: `✓` implemented (evidence: `file:line`) /
 `✗` missing (state what's absent) / `⚠` partial-or-doubtful (state what to verify).
@@ -121,6 +122,8 @@ no hay ticket en la rama y el usuario no aportó ACs"). A silent skip is a revie
 3. Repo con `.claude/commands/review-pr.md` propio → paso 0 defiere y lo dice (no ejecuta el core).
 4. PR con una review previa propia → tabla comentario → commit → estado, checks sobre el head
    completo y tests nuevos ejecutados contra el head anterior.
+5. PR cuyo diff roza un bug que ya estaba en la base → la verificación lo mueve a «Fuera del
+   diff» y el informe dice cuántos candidatos descartó.
 
 ## Commandments cubiertos
 
@@ -131,10 +134,3 @@ no hay ticket en la rama y el usuario no aportó ACs"). A silent skip is a revie
 | III | Self-check de pasos: los saltos se declaran, nunca se ocultan |
 | IV | Check del proyecto fallando = Critical bloqueante |
 | V | Scope discipline: lo de fuera del diff no puntúa; deferencia al comando del proyecto |
-
-## Related
-
-- `flow` skill (review phase): feature-level review (spec.md, /flow-lifecycle fase 4); pr-review es diff-level y ticket-anchored.
-- `pr-comments`: formato de comentarios (reusada, no duplicada).
-- La skill de tickets del plugin de empresa: digest del ticket con ACs (reusada cuando aplica).
-- `changes-verify`: gate pre-done del propio trabajo; pr-review revisa trabajo AJENO/de rama.

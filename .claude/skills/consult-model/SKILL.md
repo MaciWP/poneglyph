@@ -32,10 +32,10 @@ skill for a bounded, read-only opinion. Provider names alone do not select it.
 
 ## Procedure
 
-1. Confirm the bounded question. A consultation needs no extra ask
+1. Confirm the bounded question; ask before an unrequested consultation
    (CLAUDE.md §Agents and skills); preserve the model-choice gate.
 2. Load [adapters](references/adapters.md) before calling a provider.
-   On Claude Code, use the installed official plugin bridge inline.
+   On Claude Code, use the official plugin bridge inline.
    On other hosts, use the documented CLI route. Honor an explicitly requested
    plugin. If it is unavailable, report the gap and ask before changing transport.
    Do not install dependencies or open an interactive session as a fallback.

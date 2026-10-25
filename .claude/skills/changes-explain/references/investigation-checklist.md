@@ -39,7 +39,7 @@ Force WebFetch when:
 
 - Confidence in framework/library behavior < 70%.
 - Change touches a public API surface (DRF serializers, Django ORM operators, React hooks, etc.).
-- User explicitly asks for "verificacion contra docs" / "100% seguro".
+- User explicitly asks for "verificación contra docs" / "100% seguro".
 - Change uses a feature you've never seen in the codebase before.
 
 Do NOT WebFetch when:

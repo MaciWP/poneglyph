@@ -17,7 +17,7 @@ export function tasks(ui: Ui, items: Task[]): RenderElement {
         ui.Box({
           columnGap: 1,
           children: [
-            ui.Box({ flexShrink: 0, children: ui.Text({ color: t.done ? T.ok : T.label, bold: t.done, children: t.done ? "✓" : "○" }) }),
+            ui.Box({ flexShrink: 0, children: ui.Text({ color: t.done ? T.ok : T.label, weight: t.done ? "semibold" : "regular", children: t.done ? "✓" : "○" }) }),
             ui.Text({ wrap: "wrap", dimColor: t.done, strikethrough: t.done, children: t.text }),
           ],
         }),

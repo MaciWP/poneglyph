@@ -31,7 +31,7 @@ Spawn N perspectives (per stakes tier) as subagents in **parallel**: single mess
 
 ## Phase 2: cross-debate with Step-back Judge (Medium+)
 
-The judge (persona: `../../prompts/step-back-judge.md`) NEVER takes positions; after each round it returns `CONVERGED` (exit to Phase 3), `PARTIAL` (targeted re-debate to named perspectives) or `FULL` (broadcast re-debate). Circuit breaker: max 3 cycles → `MAX_CYCLES_REACHED` (Phase 4 downgrades confidence). Full protocol, thrashing prevention, premature-CONVERGED override: `06-cross-debate.md`.
+The judge (persona: `../../prompts/step-back-judge.md`) takes no positions, so its read stays neutral; after each round it returns `CONVERGED` (exit to Phase 3), `PARTIAL` (targeted re-debate to named perspectives) or `FULL` (broadcast re-debate). Circuit breaker: max 3 cycles → `MAX_CYCLES_REACHED` (Phase 4 downgrades confidence). Full protocol, thrashing prevention, premature-CONVERGED override: `06-cross-debate.md`.
 
 ## Phase 3: synthesis with the 5 adversarial techniques
 

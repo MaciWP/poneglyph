@@ -58,7 +58,7 @@ Features · `C9` Security Logging & Monitoring · `C10` Stop SSRF.
 
 **Access control / IDOR-BOLA** (OWASP REST Cheat Sheet + ASVS V4.2.1/V4.1.3):
 - [ ] Access control enforced at **every non-public endpoint**: verify the caller is authorized for the specific HTTP method, collection, action, AND record.
-- [ ] Authenticated users can reach only their own/authorized data (ASVS V4.2.1 IDOR; V4.1.3 least privilege). This is the verification control for A01:2021 Broken Access Control / API1 BOLA.
+- [ ] Authenticated users can reach only their own/authorized data (ASVS V4.2.1 IDOR; V4.1.3 least privilege). This is the verification control for A01:2025 Broken Access Control / API1 BOLA.
 
 ## 4. Secret-leak incident response: done right
 

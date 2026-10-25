@@ -166,5 +166,3 @@ Numeric claims: quote-anchor or `[Suposición]` / `UNVERIFIED` (research-rigor P
 - `/expert-role research` · `/expert-role shopping`, compose this skill + tools / `compare-and-decide`
 - `consult-model`: other-model hypothesis, not a substitute for primary sources
 - `references/escalation.md`: budget table + agent prompt template
-
-**Version**: 1.1.0 (prompt-design gate on escalation)

@@ -47,7 +47,7 @@ function claude { & "$env:USERPROFILE\.local\bin\claude.exe" --append-system-pro
 
 ## Entry points → how each routes to the workflow & skills
 
-Poneglyph has ONE flow (the 5 phases + Lead turn flow); what differs is how you enter it. Skill activation is **layered** and the entry point decides which layers fire:
+Poneglyph has ONE flow (the six phases + Lead turn flow); what differs is how you enter it. Skill activation is **layered** and the entry point decides which layers fire:
 
 | Entry point | What it is | Phase routing | Skill activation |
 |---|---|---|---|

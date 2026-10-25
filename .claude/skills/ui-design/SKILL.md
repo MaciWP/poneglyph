@@ -56,7 +56,7 @@ floor, not the brief.
    still Persuade; a fashion house's docs are still Read. Applying
    landing-page energy to a dashboard is the classic failure.
 2. **The craft floor**: numeric checks + the refuse-list of AI tells:
-   `references/craft-floor.md`. Read it BEFORE building, apply it silently
+   `references/craft-floor.md`. Read it before building, apply it silently
    (never announce the checklist).
 3. **Aesthetic direction** for genuinely new visual worlds → agree mode,
    reference and palette with the user first (do not invent it here).

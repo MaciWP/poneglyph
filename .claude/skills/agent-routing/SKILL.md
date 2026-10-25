@@ -12,12 +12,12 @@ disable-model-invocation: false
 
 # Lead Orchestration Protocol (turn-level)
 
-> **Scope**: this skill defines what the Lead (the main session: it talks to the user and spawns agents) does in a single turn (Triage → Complexity → Context → Delegate → Validate). For multi-turn FEATURE orchestration (5-phase workflow with `spec.md`/`tasks/`/`tests.md`/`review.md`/`retro.md` artefacts), use the `/flow-lifecycle` command. They are complementary, not redundant.
+> **Scope**: this skill defines what the Lead (the main session: it talks to the user and spawns agents) does in a single turn (Triage → Complexity → Context → Delegate → Validate). For multi-turn FEATURE orchestration (six-phase workflow with `spec.md`/`tasks/`/`tests.md`/`review.md`/`retro.md` artefacts), use the `/flow-lifecycle` command. They are complementary, not redundant.
 
 ## Definition of Done
 
 - Resolve the turn's task, relevant skills and execution route through the five-step checklist.
-- Return the routing decision and required context to the caller. Agents need no approval; `Workflow` is denied, and Team, a top-tier `claude -p` and a call to another provider do. Routing completion does not complete the task.
+- Return the routing decision and required context to the caller. Agents need no approval; `Workflow` is denied, and Team, a top-tier `claude -p` and an unrequested other-provider call do. Routing completion does not complete the task.
 
 ## Quality Bar
 
@@ -71,14 +71,13 @@ The three known costs of delegating work:
 
 Write fan-out (≥4 independent WRITE units) is **explicit user opt-in only** (keyword "ultracode" or a direct ask), never auto-launched. This doctrine cites evidence, not fashion, revisable via retro if agent quality materially changes.
 
-**Fork and background (CC ≥2.1.232)**: `subagent_type: "fork"` inherits the full conversation and the prompt cache, so cost 3 (context loss) and most of cost 1 do not apply to a fork. Fork is therefore the primitive for a read-only fan-out that needs the session's own thread (sweeps over what was already discussed). It is NOT a fresh-context reviewer, the critic's reviewer stays `general-purpose` on purpose (its value IS the fresh context). A fork always runs on the parent's model (a model override is ignored). Every non-teammate spawn now runs in the **background** by default: its result arrives as a task notification, wait for it, never predict or fabricate it. `CLAUDE_CODE_SUBAGENT_MODEL` (cheap tier, `settings.global.json` env) is only the backstop for a spawn that forgot its model; CLAUDE.md still requires an explicit model on every spawn, and a verify/judge unit still names the top tier.
+**Fork and background (CC ≥2.1.232)**: `subagent_type: "fork"` inherits the full conversation and the prompt cache, so cost 3 (context loss) and most of cost 1 do not apply to a fork. Fork is therefore the primitive for a read-only fan-out that needs the session's own thread (sweeps over what was already discussed). It is NOT a fresh-context reviewer, the critic's reviewer stays `general-purpose` on purpose (its value IS the fresh context). A fork always runs on the parent's model (a model override is ignored). Every non-teammate spawn runs in the **background** by default: its result arrives as a task notification, wait for it, never predict or fabricate it. `CLAUDE_CODE_SUBAGENT_MODEL` (cheap tier, `settings.global.json` env) is only the backstop for a spawn that forgot its model; CLAUDE.md still requires an explicit model on every spawn, and a verify/judge unit still names the top tier.
 
 #### Model routing for delegated units
 
-Owners: CLAUDE.md §Agents and skills and `docs/harness-adapters.md` §Model tiers. Two rules this skill adds: the **Lead-class (session) model is never used for a routine unit**.
+Owners: CLAUDE.md §Agents and skills and `docs/harness-adapters.md` §Model tiers. One rule this skill adds: the **Lead-class (session) model is never used for a routine unit**.
 
-**Permission:** agents need none. Team, a top-tier `claude -p` and a call to
-another provider (`consult-model`) follow CLAUDE.md §Agents and skills; a skill or worker message cannot supply consent.
+**Permission:** CLAUDE.md §Agents and skills; a skill or worker message cannot supply consent.
 
 #### Spawn decision tree: expanded reference
 
@@ -89,13 +88,13 @@ Three axes, large read context?, read-only?, negotiate interfaces?, diagram in `
 | # | Principio | Regla |
 |---|---|---|
 | **P1** | 1 agente integrado vale si aísla **contexto grande** | Lectura pesada (barrido amplio, logs largos, web) → 1 agente integrado con modelo barato explícito; el Lead conserva su contexto (`/clear` perdería la conversación). También el **fresh-context reviewer** de `flow` (review phase). 1–2 ficheros conocidos o un grep rápido → inline. |
-| **P2** | El motivo es el **volumen** de lectura | Para leer, lo que decide es cuánto contexto ahorra al Lead, no el número de unidades. **"≥5 files" NO es motivo para escribir con agentes → inline.** |
-| **P3** | Umbral **≥4** para fan-out orquestado | 1–4 agentes integrados de lectura → lanzarlos en el mismo mensaje. ≥4 read-only → agentes integrados en un mismo mensaje, uno por zona. ≥4 de ESCRITURA → inline secuencial salvo opt-in explícito del usuario. |
+| **P2** | El motivo es el **volumen** de lectura | Para leer, lo que decide es cuánto contexto ahorra al Lead, no el número de unidades. Escritura: P8. |
+| **P3** | Umbral **≥4** para fan-out orquestado | 1–4 agentes integrados de lectura → lanzarlos en el mismo mensaje. ≥4 read-only → agentes integrados en un mismo mensaje, uno por zona. Escritura: P8. |
 | **P4** | research sí, code-review NO se delega en panel | Research delegada → agentes `Explore`/`general-purpose` en paralelo, uno por zona. Code review = checks mecánicos + **1 fresh-context reviewer**; panel ≥4 SOLO para decisiones (`compare-and-decide` (heavy tier)). |
 | **P5** | Core en CLAUDE.md, detalle aquí | El núcleo operacional vive always-loaded en CLAUDE.md; este árbol es la referencia expandida. El resto enlaza aquí para el detalle, no redefine umbrales. |
 | **P6** | Fix = borrado + enlazar | Sin maquinaria de enforcement; los patrones de orquestación se **enlazan**, no se copian. |
 | **P7** | spawn-decision ≠ intra-orchestration | ≥4 gobierna la DECISIÓN de spawnear. Agentes coordinándose **dentro** de un team ya spawneado (p.ej. Four-Eyes generator→validator) no son un nuevo spawn. |
-| **P8** | Escritura = inline-first | Build/write SIEMPRE inline por defecto; el fan-out de escritura degrada calidad (3 costes arriba) y solo se justifica con opt-in explícito. |
+| **P8** | Escritura = inline-first | Build/write inline por defecto, también con ≥5 ficheros o una cola larga (secuencial); el fan-out de escritura degrada calidad (3 costes arriba) y solo se justifica con opt-in explícito. |
 
 **Exploración**: default = Lead `Read`/`Grep` inline. `Explore` (built-in, read-only) no necesita permiso: con volumen grande, lanzarlo con el tier barato explícito (sin `model` hereda el del Lead). 1-2 files → siempre inline. Matriz: `references/04-agent-selection.md`.
 
@@ -113,14 +112,14 @@ Count the steps above Low across the five factors (Medium 1, High 2); never prin
 | Medium (2-4) | `Skill(flow, "plan")` optional | inline or parallel agents (≥4) |
 | High (5+) | `Skill(flow, "plan")` required | inline, parallel agents, or Team |
 
-> At high complexity, suggest `/effort xhigh` to the user.
+> At high complexity Log Pose raises the effort; if its level is too low, correct it with `mcp__log-pose__set` (without Log Pose, suggest `/effort xhigh`).
 
 Complexity factors, mode selection, worktree decision: `references/03-complexity-routing.md`.
 
 ### Step 3: Prepare Context (Arch H)
 
 Skills reach an agent (a Team agentType, or the Lead's own session) by three mechanisms:
-1. **`skills:` frontmatter**: for a custom `agentType` used inside a Team that ALWAYS needs a skill (preloads at startup).
+1. **`skills:` frontmatter**: for a custom `agentType` used inside a Team that always needs a skill (preloads at startup).
 2. **`Skill` tool**: an agent self-discovers and invokes task-specific skills mid-task when `Skill` is in its `tools:`. Name the relevant skills in the task prose.
 3. **Arch H Lead-directed `Read`**: embed `Read .claude/skills/<name>/SKILL.md` in the agent prompt's `[RELEVANT SKILLS FOR THIS TASK]` block (max 3, matched via `references/05-skill-matching.md` + path rules). Use to force exact content. (Lead-side `Skill()` does NOT propagate.)
 
@@ -138,9 +137,9 @@ Full Arch H template with all blocks, propagation model, skill discovery: `refer
 | `Skill()` | Load context into the Lead's OWN session only |
 | `/goal` / `/loop` (native autonomous iteration) | Drive a gated build→critic to a verifiable stop, or recurring read-only audit/research. Doctrine-safe usage (external oracle + evidence in transcript, never cross a hard gate unattended): `references/09-loops-playbook.md` |
 
-Direct action (the default for ALL write work): Read always permitted. Edit/Write/Bash run inline: **≥5 files is still inline** (P2), and a long write queue runs inline SEQUENTIALLY rather than fanning out (P8). Sensitive paths and destructive patterns: CLAUDE.md §Hard rules.
+Direct action (the default for ALL write work): Read always permitted. Edit/Write/Bash run inline (P8). Sensitive paths and destructive patterns: CLAUDE.md §Hard rules.
 
-**Parallelize**: parallelism inside the Lead's own session is free, batch independent tool calls (Reads, Greps, disjoint Writes) in one message. Large read-only work goes to built-in agents launched in one message (P1–P3); read-only fan-out is parallel agents in one message; for write waves, inline sequential is the default and fan-out needs explicit user opt-in (P8). Multi-agent patterns + anti-patterns: `references/04-agent-selection.md`.
+**Parallelize**: parallelism inside the Lead's own session is free, batch independent tool calls (Reads, Greps, disjoint Writes) in one message. Large read-only work goes to built-in agents launched in one message (P1–P3); write waves follow P8. Multi-agent patterns + anti-patterns: `references/04-agent-selection.md`.
 
 ### Step 5: Validate
 
@@ -148,7 +147,7 @@ Direct action (the default for ALL write work): Read always permitted. Edit/Writ
 |---|---|
 | Single file, low complexity | Lead confirms tests passing inline |
 | Multi-file | `Skill(flow, "review")` inline + **1 fresh-context read-only reviewer** (P1 exception; `references/04-agent-selection.md` §Reviewer wiring) |
-| Security-related | `security-audit` skill (mandatory dispatch: Cmd VI) |
+| Security-related | `security-audit` skill (mandatory dispatch: Cmd VI); it is path-scoped, so load it with `Skill(security-audit)` when it is not listed |
 | Cross-domain feature | `Skill(flow, "review")` |
 
 Report "completed" only after confirming the tests pass. Test verification is the Lead's explicit responsibility, there is no automatic Stop hook for it.
@@ -172,6 +171,6 @@ Retry budget, stuck detection, escalation rung and procedural recovery (SendMess
 
 ## Related
 
-- `/flow-lifecycle` command: orchestrates a FEATURE lifecycle (5 phases, multi-turn). This skill orchestrates each Lead TURN within or outside a flow.
+- `/flow-lifecycle` command: orchestrates a FEATURE lifecycle (six phases, multi-turn). This skill orchestrates each Lead TURN within or outside a flow.
 - `prompt-design` skill: prompt quality refinement (replaces prompt-scoring reference).
 - `output-styles/poneglyph.md`: house style for replies to the user.

@@ -28,7 +28,7 @@ Turns a poneglyph markdown artefact (or structured data) into one **self-contain
 
 ## Underlying Principle
 
-> Distinctiveness comes from execution (type-scale discipline, a signature serif on headings, tight tabular tables, a hand-built SVG gauge), NOT from gimmicks. Every output reads as one design system: all five templates, the dynamic mode and the inline SVG diagrams take their colors, type, spacing and radius from `templates/tokens.css`, and never as generic AI filler.
+> Distinctiveness comes from execution (type-scale discipline, a signature serif on headings, tight tabular tables, a hand-built SVG gauge), not from gimmicks. Every output reads as one design system: all five templates, the dynamic mode and the inline SVG diagrams take their colors, type, spacing and radius from `templates/tokens.css`, and never as generic AI filler.
 
 ## Taste corpus & critique (references/: load on demand)
 
@@ -40,6 +40,7 @@ The design quality bar lives in `references/`, loaded only when needed, which ke
 | `references/anti-slop.md` | generating + critique | Absolute Bans + AI-slop tells catalog + root cause (the canonical bans home) |
 | `references/pre-flight-checklist.md` | before writing (Step 5) + critique | ~22-item binary gate ("any fail → not done") |
 | `references/critique-mode.md` | critique/audit requests | how to review an HTML/CSS: dimensions, severity, output format, verdict |
+| `references/smoke-test.md` | after changing a template, tokens or a component | expected render values + block→component coverage |
 
 ## When to use
 
@@ -47,7 +48,7 @@ The design quality bar lives in `references/`, loaded only when needed, which ke
 |---|---|
 | "pásalo a HTML" / "render this report" + a markdown path | Target = that file; pick `report` template (long-form) |
 | "haz un dashboard del estado" / "at-a-glance view" | Target = same content; pick `dashboard` template |
-| Finishing a `/flow-lifecycle --full` and wanting `report.md` as a shareable page | Render `report.md` → `report` template |
+| Finishing a `/flow-lifecycle` feature and wanting its `review.md` or `retro.md` as a shareable page | Render it → `report` template |
 | Presenting a `retro.md` / `review.md` (scores, findings, verdict) | Render → `report` template (or `dashboard` if glance-only) |
 | System health from `bun run doctor --md <file>` (one Check · Estado · Detalle table) | Render → `dashboard` template; publish with `Artifact` when Oriol wants the page, not the terminal |
 | Structured data (scores + findings) without a markdown file | Compose directly from the component inventory |
@@ -85,7 +86,7 @@ graph TD
 - If the argument is a **path** (e.g. `examples/sample-audit-report.md`, a `retro.md`, a `review.md`): Read it fully, frontmatter + every section. Frontmatter carries the headline numbers (`mean_score`, `findings_count`, `corpus_size`, `review_verdict`, `commit_sha`, `mode`, dates) that feed the metadata-header (C8) and gauge (C1).
 - If the argument is **`report` / `dashboard` + inline content**: treat the inline content as the body; ask for any missing headline numbers only if genuinely absent.
 - If the argument is **`critique` + a target** (an HTML path or pasted CSS): skip generation, load `references/critique-mode.md` and review the target.
-- Map every markdown block to a component **before** rendering: no orphan content. See §"report.md walkthrough" below for the canonical block→component table; the same logic applies to `retro.md` / `review.md`.
+- Map every markdown block to a component **before** rendering: no orphan content. See `references/smoke-test.md` §Block→component coverage for the canonical table; the same logic applies to `retro.md` / `review.md`.
 
 ### Step 2: Pick the template
 
@@ -97,13 +98,13 @@ graph TD
 
 When unsure, default to `report` (long-form loses no information; dashboard compresses).
 
-> **v2 layouts**: two more templates extend the system:
+> **More layouts**: two more templates extend the system:
 > - **`glance.template.html`**: scan-at-a-glance dark report: KPI row (color=info) + immediate-action callout + CSS-only filterable/expandable cards + drawer + next-steps. Pick for "se lee de un vistazo". Opens dark; inlines the token block from `templates/tokens.css`.
 > - **`decision.template.html`**: decisions WITH comparable options (dev or non-dev: monitor/PC/shoes): recommendation hero + weighted options×criteria matrix + per-option pros/cons + criteria&weights. The `compare-and-decide` skill reuses this as its base (single visual system).
 >
 > **Diagrams / charts, hybrid SVG-first**: compose inline SVG by hand for simple flows/comparisons/charts (self-contained, 0 JS, like the gauge/sevbar); `mermaid.js` runtime is an **opt-in declared exception** for complex graphs only (no `mmdc` in this env). Patterns + decision rule: `references/visuals-svg-first.md`.
 >
-> **shadcn components + interactivity** (badges/alert/separator/progress/skeleton/empty-state + tabs/tooltips CSS-only + command JS-opt-in + `:focus-visible` ring): patterns live in `templates/components.html`. Baking the full set into `components.html` + wiring into glance/decision is a tracked future evolution.
+> **shadcn components + interactivity** (badges/alert/separator/progress/skeleton/empty-state + tabs/tooltips CSS-only + command JS-opt-in + `:focus-visible` ring): patterns live in `templates/components.html`.
 
 ### Step 3: Design quality: taste corpus
 
@@ -111,7 +112,7 @@ When unsure, default to `report` (long-form loses no information; dashboard comp
 
 ### Step 4: Fill placeholders + compose components
 
-- `templates/report.template.html` is a **composition of the fixed C1–C8 inventory + an inlined token block** (authoring no new CSS beyond sidebar layout glue). `templates/dashboard.template.html` is a **self-contained v7/v8 redesign** (KPI-card row + health panels + findings drawer) with its own component CSS and the same inlined token block. NOT a C1–C8 composition. Treat the two templates as distinct architectures.
+- `templates/report.template.html` is a **composition of the fixed C1–C8 inventory + an inlined token block** (authoring no new CSS beyond sidebar layout glue). `templates/dashboard.template.html` is a **self-contained redesign** (KPI-card row + health panels + findings drawer) with its own component CSS and the same inlined token block. NOT a C1–C8 composition. Treat the two templates as distinct architectures.
 - For the report template, copy component markup from `templates/components.html` (the C1–C8 reference units) and fill them with the real data.
 - **Token block (every template)**: `templates/tokens.css` is the single source of truth for `report`, `dashboard`, `glance`, `decision`, `components.html` and the dynamic mode (`scripts/theme.ts` reads it at render time). Each template inlines it **byte-identical** between the `/* tokens:begin */` and `/* tokens:end */` markers (no external `tokens.css` at render time; never re-author, rename, or re-value a `--token`, and never add a palette of your own). Change a value in `tokens.css` only, then run `bun scripts/tokens.ts --check|--write [file...]` (default: `templates/*.html`), `--check` reports templates that differ; `--write` re-inlines them. Layout width (`--maxw`) is per template, not a token.
 - **Published copy**: the private claude.ai Design System Artifact https://claude.ai/artifact/Sg6Feha4ZqHxis65PW8pRL mirrors `tokens.css`. It is republished by hand after a token change: `bun scripts/tokens.ts --export-ds <scratch-dir>`, then publish its `project/` folder to that URL.
@@ -125,7 +126,7 @@ When unsure, default to `report` (long-form loses no information; dashboard comp
 ### Step 5: Pre-flight gate, then write the self-contained `.html`
 
 - **5a. Pre-flight gate**: run `references/pre-flight-checklist.md` against the composed output. Any failed item → fix before writing (gate semantics).
-- **5b. Write**: output path next to the source (e.g. a `report.md` input → `report.html` alongside it) or in cwd if the input was inline. One file. All CSS in one inlined `<style>`. Charts = inline SVG (gauge) + CSS flex (severity-bar) + CSS width (progress-bars). No CDN, no JS framework. **One Google Fonts `<link>` is allowed** (the v1.2.0 client-grade decision: Geist + Newsreader + Geist Mono); do NOT delete it. For pure-offline, omit the `<link>` and let the system-stack fallback render. Use the `Write` tool. Do not split into multiple files.
+- **5b. Write**: output path next to the source (e.g. a `report.md` input → `report.html` alongside it) or in cwd if the input was inline. One file. All CSS in one inlined `<style>`. Charts = inline SVG (gauge) + CSS flex (severity-bar) + CSS width (progress-bars). No CDN, no JS framework. **One Google Fonts `<link>` is allowed** (client-grade: Geist + Newsreader + Geist Mono); do NOT delete it. For pure-offline, omit the `<link>` and let the system-stack fallback render. Use the `Write` tool. Do not split into multiple files.
 
 ### Step 6: Optionally open it
 
@@ -139,14 +140,14 @@ When asked to **critique/audit** an HTML/CSS or a render: load `references/criti
 
 | Constraint | How |
 |---|---|
-| **Self-contained (near)** | All CSS in one inlined `<style>`. The only external request is one Google Fonts `<link>` (v1.2.0 client-grade); omit it for pure-offline (system-stack fallback). Verify the rest is inlined by opening with network disabled. |
+| **Self-contained (near)** | All CSS in one inlined `<style>`. The only external request is one Google Fonts `<link>` (client-grade); omit it for pure-offline (system-stack fallback). Verify the rest is inlined by opening with network disabled. |
 | **Static modes: no JS** | TOC nav = anchor links + `scroll-behavior:smooth`; active state via `:target`. Gauge/bars are static markup with computed values baked in. |
 | **Dark/light** | One mechanism from `tokens.css`: light at `:root`; dark at `html[data-theme="dark"]` and, with no `data-theme`, under `prefers-color-scheme: dark`; `@media print` restates the light values. `report.template` and the dynamic mode follow the system preference; `dashboard`, `glance` and `decision` set `data-theme="dark"` on `<html>` and open dark. Every severity + score color has both-scheme variants. |
 | **Print-friendly** | `@media print`: white bg, drop shadows/transforms, `break-inside:avoid` on cards/tables/callouts, hide sidebar + main full width, expand link URLs via `a[href^="http"]::after`. |
 | **Motion safety** | Entrance animations wrapped in `@media (prefers-reduced-motion: no-preference)`; default state is the final state. |
 | **Accessibility** | Charts carry `role="img"` + `aria-label`; severity conveyed by **text label**, not color alone; amber (not yellow) for minor text to pass contrast in both modes. |
 | **Anti-generic AI look** | This skill's identity: cool-neutral surfaces (no pure white page background), one signature accent (deep teal, no purple), serif display headings, tabular numerals. Distinctiveness via execution, not gimmicks. The full **Absolute-Bans + AI-slop tells catalog lives in `references/anti-slop.md`** (canonical source; do not restate here). |
-| **Fonts** | The v1.2.0 canonical render uses **Geist + Newsreader + Geist Mono via one Google Fonts `<link>`** (client-grade). System-stack fallback (`Newsreader`/Iowan/Palatino/Georgia + system sans/mono) is the pure-offline path: omit the `<link>` and the stack degrades gracefully, zero embedded bytes. Data-URI woff2 subset remains an opt-in alternative documented with KB cost. |
+| **Fonts** | The canonical render uses **Geist + Newsreader + Geist Mono via one Google Fonts `<link>`** (client-grade). System-stack fallback (`Newsreader`/Iowan/Palatino/Georgia + system sans/mono) is the pure-offline path: omit the `<link>` and the stack degrades gracefully, zero embedded bytes. Data-URI woff2 subset remains an opt-in alternative documented with KB cost. |
 
 ## Reutiliza (build on existing precedent)
 
@@ -167,41 +168,8 @@ When asked to **critique/audit** an HTML/CSS or a render: load `references/criti
 
 ## Verification (smoke test)
 
-The canonical smoke test: render the real audit at `.claude/skills/html-report/examples/sample-audit-report.md`.
-
-1. Render it with the `report` template → `examples/sample-audit-report.html` (next to the input).
-2. **Open with network disabled**: everything except webfonts must render (Geist/Newsreader degrade to the system stack); the single Google Fonts `<link>` is the only network dependency.
-3. Verify against the frontmatter (`mean_score: 7.57`, `findings_count: 10`, `corpus_size: 17`, `review_verdict: APPROVED_WITH_WARNINGS`, `commit_sha: c2eb838`, `mode: full`):
-   - Gauge (C1) shows `7.57 / 10`, `score--good`, arc offset 79.39.
-   - Severity-bar (C5) = 1 BLOCKER (10%) · 6 MAJOR (60%) · 3 MINOR (30%) · 0 NIT (legend only).
-   - Scoring table (C2) renders the `3` for Critic as a `score--bad` pill, distinct from the BLOCKER finding row.
-   - Verdict badge (C8) = `verdict--minor` (amber) for `APPROVED_WITH_WARNINGS`.
-4. Toggle OS dark mode: `report.template` flips every token; `dashboard`, `glance` and `decision` open dark (their light values are the print stylesheet). Severity/score colors stay legible (amber, not yellow).
-5. Print-preview: sidebar hidden, no shadows, link URLs expanded, cards don't break across pages.
-6. Run `references/pre-flight-checklist.md` against the render: all items pass.
-
-> **Block→component coverage (report.md walkthrough)**: every block maps to a component: no orphan content:
->
-> | report.md block | Component |
-> |---|---|
-> | Frontmatter (mean/verdict/sha/mode/dates) | C8 metadata-header |
-> | `> Lectura rápida` blockquote | C4 callout `--note` |
-> | §1 Executive (prose + BLOCKER) | prose + C4 callouts + C5 severity-bar |
-> | §2 Top-10 table (sev rows, /flow-lifecycle) | C2 data-table `sev-row` mode |
-> | `1 BLOCKER · 6 MAJOR · 3 MINOR · 0 NIT` | C5 severity-bar + legend |
-> | §3 Quick-wins table | C2 data-table |
-> | §4 Scoring 14-row table (the `3`) | C2 data-table + score-pill |
-> | Mean/Median/Min/Max | C5 stat-tiles |
-> | AC5 honesty check note | C4 callout `--note` |
-> | §5 Cross (Genuine/Parcial verdicts) | C2 tables + verdict badges |
-> | §6 Rúbrica + `> Techo n=1` | C2 + C4 callout |
-> | §7 Inventory counts | C2 / C5 stat-tile grid |
-> | §8 Corpus numbered lists + links | ordered lists, `--link` (print expands URLs) |
-> | §8.5 Síntesis (ordered decisions) | ordered list |
-> | §9 Limitations table | C2 data-table |
-> | AC-compliance 8/8 | C6 progress-bar or C5 tile |
->
-> NIT (`0 NIT`) is kept in the system though this report doesn't exercise it; the `flow` review phase's rubric emits NIT for `review.md` rendering.
+Render `examples/sample-audit-report.md` with the `report` template and check it against
+`references/smoke-test.md` (expected values, offline, dark mode, print, block coverage).
 
 ---
 
@@ -215,7 +183,7 @@ Para informes **interactivos self-contained** (ver/presentar/compartir, PC+móvi
 | Tokens light/dark: lee `templates/tokens.css` (fuente única) | `scripts/theme.ts` |
 | Generador (shell + nav sticky/scrollspy + colapsables + theme toggle) | `scripts/render.ts` |
 | Tabla filtrable + búsqueda | `scripts/components.ts` |
-| Charts SVG + tooltip (Observable Plot opt-in) | `scripts/charts.ts` |
+| Charts SVG + tooltip | `scripts/charts.ts` |
 
 **Uso**: `bun run .claude/skills/html-report/scripts/render.ts < data.json > out.html`
 

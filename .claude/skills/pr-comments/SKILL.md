@@ -53,7 +53,7 @@ Así pasamos de N queries a 1.
 |---|---|---|
 | `praise:` | A grounded positive observation; zero is valid | N/A |
 | `suggestion:` | Concrete improvement proposal | `(blocking)`/`(non-blocking)` |
-| `issue:` | Specific problem: ALWAYS pair with suggestion | `(blocking)` |
+| `issue:` | Specific problem: pair with a suggestion | `(blocking)` |
 | `question:` | Doubt or clarification | `(non-blocking)` |
 | `thought:` | Idea for the future | `(non-blocking)` |
 | `nitpick:` | Minor style preference | `(non-blocking)` |

@@ -42,6 +42,7 @@ function world(on: On, { draft = "", context = 48, env = {} as Record<string, st
   let compactions = 0;
   let prompt = draft;
   on("session.start", (_, e) => ({ cwd: e.cwd }));
+  on("session.attach", (_, e) => ({ clientId: e.clientId }));
   on("session.id", () => ({ value: "s1" }));
   on("session.model", () => ({ value: "claude-opus-5-5" }));
   on("session.usage", () => ({ value: { startedAt: NOW, context: { window: 200_000, percent: context }, rateLimits: [], cost: { usd: 0.5 } } }));
@@ -114,6 +115,23 @@ test("the bar sits above the prompt, labelled, and the plan limits reach the fil
   expect(await above.find({ text: "58 min" })).toBeDefined();
   // Nothing to propose with a fresh cache.
   expect(await above.find({ text: "Compactar ahora" })).toBeUndefined();
+});
+
+// The desktop app starts the session as -p does (no surface, not interactive) and joins it
+// afterwards: the bar comes up then, and the terminal's pasted-image polling does not.
+test("the desktop gets the bar once it joins, without polling a terminal draft", async ($, on) => {
+  const w = world(on, { draft: "[Image #1]" });
+  await $.session.start({ cwd: "/work/project", surface: null, isInteractive: false });
+  const before = await $.ui.mount({ ...band, surface: "desktop" });
+  expect(await before.find({ text: " Opus 5.5 " })).toBeUndefined();
+  await $.session.attach({ surface: "desktop", clientId: "desktop:default" });
+  await $.session.measure({ context: { window: 200_000, percent: 26 }, rateLimits: limits, changed: ["rateLimits", "context"] });
+  await $.turn.complete(answer);
+  await w.clock.advance(1000);
+  const above = await $.ui.mount({ ...band, surface: "desktop" });
+  expect(await above.find({ text: " Opus 5.5 " })).toBeDefined();
+  expect(await above.find({ text: "26 %" })).toBeDefined();
+  expect(w.runs.some((r) => r[0] === "sips")).toBe(false);
 });
 
 test("the footer is left alone, a narrow band gets the short bar, and a survey hides it", async ($, on) => {

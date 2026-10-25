@@ -39,9 +39,9 @@ export function table(ui: Ui, head: string[], rows: TableRow[], full: number, co
   const height = (r: TableRow) => Math.max(lines(r.label, labelWidth), ...r.values.map((_, i) => lines(shown(r, i), cellWidth)));
   const cell = (r: TableRow, i: number) =>
     i === r.best
-      ? ui.Text({ bold: true, color: T.ok, wrap: "wrap", children: shown(r, i) })
+      ? ui.Text({ weight: "semibold", color: T.ok, wrap: "wrap", children: shown(r, i) })
       : ui.Text({ wrap: "wrap", children: shown(r, i) });
-  const label = (r: TableRow) => ui.Text({ bold: true, wrap: "wrap", children: r.label });
+  const label = (r: TableRow) => ui.Text({ weight: "semibold", wrap: "wrap", children: r.label });
   const rule = (n: number) => ui.Text({ color: T.rule, children: "─".repeat(Math.max(1, Math.min(width, n))) });
 
   if (cellWidth < MIN_CELL || rows.some((r) => height(r) > 1)) {
@@ -54,7 +54,7 @@ export function table(ui: Ui, head: string[], rows: TableRow[], full: number, co
       rowGap: 1,
       width,
       children: [
-        corner ? ui.Text({ bold: true, color: T.accent, wrap: "wrap", children: corner }) : null,
+        corner ? ui.Text({ weight: "semibold", color: T.accent, wrap: "wrap", children: corner }) : null,
         ...rows.map((r) => {
           const tall = lines(r.label, body) + r.values.reduce((n, _, i) => n + lines(shown(r, i), valueWidth), 0);
           return ui.Box({
@@ -91,8 +91,8 @@ export function table(ui: Ui, head: string[], rows: TableRow[], full: number, co
     flexDirection: "column",
     children: [
       line(
-        ui.Text({ bold: true, color: T.accent, wrap: "truncate-end", children: corner }),
-        head.map((h) => ui.Text({ bold: true, color: T.accent, wrap: "truncate-end", children: h })),
+        ui.Text({ weight: "semibold", color: T.accent, wrap: "truncate-end", children: corner }),
+        head.map((h) => ui.Text({ weight: "semibold", color: T.accent, wrap: "truncate-end", children: h })),
       ),
       rule(labelWidth + (cellWidth + GAP) * head.length),
       ...rows.map((r) => line(label(r), r.values.map((_, i) => cell(r, i)))),

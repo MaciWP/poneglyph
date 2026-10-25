@@ -34,19 +34,31 @@ function agentFileModel(type: string, cwd: string, configDir = claudeConfigDir()
 // Built-in agents that ignore CLAUDE_CODE_SUBAGENT_MODEL and inherit the parent's model (sub-agents docs).
 const INHERITING_BUILTINS = new Set(["Explore", "Plan"]);
 
-// Same precedence as Claude Code: the Agent call's model, then the agent file, then
-// CLAUDE_CODE_SUBAGENT_MODEL. A fork always runs on the parent's model.
-function spawnsHaiku(input: Record<string, unknown>, cwd: string, envModel = process.env.CLAUDE_CODE_SUBAGENT_MODEL): boolean {
-  if (input.subagent_type === "fork") return false;
+// The model a spawn runs on, with Claude Code's precedence: the Agent call's model, then the
+// agent file, then CLAUDE_CODE_SUBAGENT_MODEL. Undefined: it inherits the parent's model, as a
+// fork always does.
+export function spawnModel(input: Record<string, unknown>, cwd: string, envModel = process.env.CLAUDE_CODE_SUBAGENT_MODEL): string | undefined {
+  if (input.subagent_type === "fork") return undefined;
   const type = typeof input.subagent_type === "string" ? input.subagent_type : "general-purpose";
   const fallback = INHERITING_BUILTINS.has(type) ? undefined : envModel;
   const model = typeof input.model === "string" ? input.model : agentFileModel(type, cwd) ?? fallback;
-  return /haiku/i.test(model ?? "");
+  return model && model !== "inherit" ? model : undefined;
 }
 
-// The Agent input with the budget line after the task, or null when the spawn is not on Haiku
-// or already carries it.
+// Sonnet has no price step, but each step re-reads the whole context: its window is capped at 130k
+// (`modelSettings["claude-sonnet-5-5"].autoCompactWindow`) to keep requests cheap.
+export const SONNET_BUDGET_LINE = `Context budget: you run on Sonnet with a small window so each request stays cheap; your conversation is compacted automatically near 95k and you keep working. Keep it clean: Grep before Read, Read large files in batches with offset and limit, keep command output short. ${AFTER_COMPACT} Keep your final answer under 5k tokens: findings with file:line, not file contents.`;
+
+function budgetLine(model: string): string | undefined {
+  if (/haiku/i.test(model)) return BUDGET_LINE;
+  if (/sonnet/i.test(model)) return SONNET_BUDGET_LINE;
+  return undefined;
+}
+
+// The Agent input with its model's budget line after the task, or null when the spawn runs on
+// neither Haiku nor Sonnet or already carries the line.
 export function withBudget(input: Record<string, unknown>, cwd: string, envModel?: string): Record<string, unknown> | null {
-  if (typeof input.prompt !== "string" || input.prompt.includes(BUDGET_LINE) || !spawnsHaiku(input, cwd, envModel)) return null;
-  return { ...input, prompt: `${input.prompt}\n\n${BUDGET_LINE}` };
+  const line = budgetLine(spawnModel(input, cwd, envModel) ?? "");
+  if (typeof input.prompt !== "string" || !line || input.prompt.includes(line)) return null;
+  return { ...input, prompt: `${input.prompt}\n\n${line}` };
 }

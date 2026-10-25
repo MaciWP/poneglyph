@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { basename } from "node:path";
-import { BIG_FILE_BYTES, buildOutput, shapeCommand } from "../bash-output-shaper";
+import { BIG_FILE_BYTES, buildOutput, headed, shapeCommand } from "../bash-output-shaper";
 
 // Sizes by basename so the fixture is path-separator agnostic (Windows suite).
 const sizes: Record<string, number> = { "plan.md": 28_000, "README.md": 5_000, "big.log": BIG_FILE_BYTES + 1, "small.txt": 10 };
@@ -61,11 +61,11 @@ describe("bash-output-shaper: shapeCommand", () => {
     ["git log", "git log --oneline -n 30"],
     ["git log -- src/app.ts", "git log --oneline -n 30 -- src/app.ts"],
     ["git log origin/main..HEAD", "git log origin/main..HEAD --oneline -n 30"],
-    ["ls -R", "ls -R | head -n 200"],
-    ["ls -laR .claude", "ls -laR .claude | head -n 200"],
-    ["find . -name '*.ts'", "find . -name '*.ts' | head -n 200"],
-    ["tree .claude", "tree .claude | head -n 200"],
-    ["git status && find . -name x", "git status && find . -name x | head -n 200"],
+    ["ls -R", headed("ls -R")],
+    ["ls -laR .claude", headed("ls -laR .claude")],
+    ["find . -name '*.ts'", headed("find . -name '*.ts'")],
+    ["tree .claude", headed("tree .claude")],
+    ["git status && find . -name x", `git status && ${headed("find . -name x")}`],
     ["cd /repo && git log; echo done", "cd /repo && git log --oneline -n 30; echo done"],
   ];
   for (const [cmd, expected] of rewritten) {
@@ -77,6 +77,22 @@ describe("bash-output-shaper: shapeCommand", () => {
   it("a deny anywhere in the line wins over rewrites elsewhere", () => {
     expect(shape("git log && cat plan.md").action).toBe("deny");
   });
+});
+
+// The rewrite runs in the user's shell: drive it in each one installed. Not on Windows, where
+// `bash` may resolve to the WSL launcher instead of Git Bash.
+describe("a bounded listing keeps its exit code", () => {
+  for (const shell of process.platform === "win32" ? [] : ["bash", "zsh"].filter((s) => Bun.which(s))) {
+    const run = (segment: string) => Bun.spawnSync([shell, "-c", headed(segment)]);
+    it(`${shell}: a failing listing still fails`, () => {
+      expect(run("ls /nonexistent-dir-poneglyph").exitCode).not.toBe(0);
+    });
+    it(`${shell}: a long listing is cut to 200 lines and exits 0, not 141`, () => {
+      const r = run("seq 1 100000");
+      expect(r.exitCode).toBe(0);
+      expect(r.stdout.toString().trim().split("\n")).toHaveLength(200);
+    });
+  }
 });
 
 describe("bash-output-shaper: hook output shapes", () => {

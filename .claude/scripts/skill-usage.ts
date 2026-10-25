@@ -4,34 +4,37 @@
 // Whether skills get used without supervision. Per skill: how often the prompt router
 // proposed it and how often that was followed, how often the model called it on its own,
 // and how often the user had to name it (`/name`). Sí/No count the Lead's `Router:` line,
-// its answer to each candidate (CLAUDE.md §Agents and skills). Hinted/Followed count the
-// keyword hint removed, kept to read older windows. The transcripts already record
+// its answer to each candidate (CLAUDE.md §Agents and skills). Hinted/Followed count Log
+// Pose's phase hints and, in windows before them, the removed keyword hint. The transcripts already record
 // every hook note and every Skill call, so this reads
 // them instead of keeping a log of its own. The skills the user names most are where
 // a description needs work.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { claudeConfigDir } from "../hooks/lib/paths";
-import { queuedPromptOf } from "../hooks/lib/transcript";
+import { queuedPromptOf, routerNoteOf } from "../hooks/lib/transcript";
 import { isNonHumanPayload } from "../hooks/skill-activation";
 import { collectTranscripts } from "./usage-profile";
 import type { Status } from "./doctor";
 
 export interface SkillTurn {
   named: string[]; // `/x` tokens in the prompt, lowercased; filtered against known skills later
-  hinted: string[];
+  hinted: string[]; // Log Pose phase hints (older windows: the removed keyword hint)
   routed?: string[]; // skills the prompt router proposed (async hook note or prompt-router subagent)
   answers?: RouterAnswer[]; // the Lead's `Router: <skill> sí|no (<why>)` line
   called: string[];
+  late?: string[]; // called only after the turn's first edit: a later phase than the prompt asked for
   at?: number; // epoch ms of the human prompt, when the record carries a timestamp
   text?: string; // the prompt itself, only with `withText` (eval builders)
 }
 
 const HINT_TAG = "<skill-activation-hint>";
+const PHASE_TAG = "Log Pose: Skill(";
 const ROUTER_TAG = "<prompt-router ";
 const ROUTER_AGENT = "prompt-router";
 const ROUTED_NAME_RE = /"name"\s*:\s*"([\w:-]+)"/g;
 const ANSWER_TAG = "Router:";
+const EDIT_RE = /"name":"(?:Edit|Write|MultiEdit|NotebookEdit)"/;
 // One answer: a skill as any host writes it (`x`, `Skill(x)`, `$x`, `/x`), sí or no, then the reason.
 const ANSWER_RE = /^[\s`*]*(?:Skill\()?[$/]?([\w:-]+)\)?`?\s+(s[ií]|no)(?![\p{L}\p{N}])[\s,:]*\(?(.*?)\)?[\s.]*$/iu;
 
@@ -75,11 +78,12 @@ export function humanPrompt(o: any): string | null {
 export function parseSkillTurns(lines: Iterable<string>, { withText = false } = {}): SkillTurn[] {
   const turns: SkillTurn[] = [];
   let turn: SkillTurn | null = null;
+  let edited = false;
   // A prompt-router subagent launch, by tool_use id, until its answer arrives: a tool_result, or a
   // <task-notification> naming the id when the agent ran in the background (the interactive default).
   const launches = new Map<string, SkillTurn>();
   for (const line of lines) {
-    if (!line.includes('"user"') && !line.includes(HINT_TAG) && !line.includes(ROUTER_TAG) && !line.includes('"Skill"') && !line.includes(ROUTER_AGENT) && !line.includes(ANSWER_TAG) && !line.includes("queued_command")) continue;
+    if (!line.includes('"user"') && !line.includes(HINT_TAG) && !line.includes(PHASE_TAG) && !line.includes(ROUTER_TAG) && !line.includes('"Skill"') && !line.includes(ROUTER_AGENT) && !line.includes(ANSWER_TAG) && !line.includes("queued_command") && !EDIT_RE.test(line)) continue;
     let o: any;
     try { o = JSON.parse(line); } catch { continue; }
     const prompt = humanPrompt(o) ?? queuedPromptOf(o);
@@ -96,6 +100,7 @@ export function parseSkillTurns(lines: Iterable<string>, { withText = false } = 
     }
     if (prompt !== null) {
       turn = { named: [...new Set([...prompt.matchAll(NAMED_RE)].map((m) => m[1].toLowerCase()))], hinted: [], called: [] };
+      edited = false;
       const at = Date.parse(o.timestamp);
       if (!Number.isNaN(at)) turn.at = at;
       if (withText) turn.text = prompt;
@@ -107,9 +112,25 @@ export function parseSkillTurns(lines: Iterable<string>, { withText = false } = 
     if (o?.type === "attachment" && a?.hookEvent === "UserPromptSubmit" && typeof a.content === "string" && a.content.includes(HINT_TAG)) {
       for (const m of a.content.matchAll(/Skill\(([\w:-]+)\)/g)) if (!turn.hinted.includes(m[1])) turn.hinted.push(m[1]);
     }
-    // The router note is an async hook response: it lands mid-turn, after the prompt.
-    const note = a?.response?.hookSpecificOutput?.additionalContext;
-    if (o?.type === "attachment" && a?.type === "async_hook_response" && typeof note === "string" && note.includes(ROUTER_TAG)) {
+    // Log Pose's phase hint rides the result of the session's first Agent or Artifact call.
+    if (o?.type === "attachment" && a?.type === "hook_additional_context" && Array.isArray(a.content)) {
+      for (const c of a.content) {
+        const m = typeof c === "string" && c.startsWith(PHASE_TAG) ? c.match(/Skill\(([\w:-]+)\)/) : null;
+        if (m && !turn.hinted.includes(m[1])) turn.hinted.push(m[1]);
+      }
+    }
+    // Since 0.3.6 the hint is the refusal of that call instead: an error tool result.
+    if (o?.type === "user" && Array.isArray(o.message?.content)) {
+      for (const b of o.message.content) {
+        if (b?.type !== "tool_result" || !b.is_error) continue;
+        const text = typeof b.content === "string" ? b.content : Array.isArray(b.content) ? b.content.map((c: { text?: unknown }) => (typeof c?.text === "string" ? c.text : "")).join("\n") : "";
+        const m = text.includes(PHASE_TAG) ? text.slice(text.indexOf(PHASE_TAG)).match(/Skill\(([\w:-]+)\)/) : null;
+        if (m && !turn.hinted.includes(m[1])) turn.hinted.push(m[1]);
+      }
+    }
+    // The router note: the hook's lands mid-turn, after the prompt; log-pose's rides the prompt.
+    const note = routerNoteOf(o);
+    if (note) {
       turn.routed ??= [];
       for (const m of note.matchAll(/Skill\(([\w:-]+)\)/g)) if (!turn.routed.includes(m[1])) turn.routed.push(m[1]);
     }
@@ -120,8 +141,12 @@ export function parseSkillTurns(lines: Iterable<string>, { withText = false } = 
           turn.answers ??= [];
           for (const a of parseRouterAnswers(b.text)) if (!turn.answers.some((x) => x.name === a.name)) turn.answers.push(a);
         }
+        if (b?.type === "tool_use" && ["Edit", "Write", "MultiEdit", "NotebookEdit"].includes(b.name)) edited = true;
         const name = b?.type === "tool_use" && b.name === "Skill" ? b.input?.skill : undefined;
-        if (typeof name === "string" && !turn.called.includes(name)) turn.called.push(name);
+        if (typeof name === "string" && !turn.called.includes(name)) {
+          turn.called.push(name);
+          if (edited) (turn.late ??= []).push(name);
+        }
       }
     }
   }
@@ -170,7 +195,7 @@ export function renderSkills(s: SkillSummary, days: number): string {
   const lines = [
     `## Skill use, prompts in the last ${days} days (${s.prompts} prompts)`,
     "",
-    `Hints: ${s.hints}, followed ${s.followed} (${pct(s.followed, s.hints)}) · router: ${s.routed}, followed ${s.routedFollowed} (${pct(s.routedFollowed, s.routed)}), answered sí ${s.yes} / no ${s.no} / none ${s.routed - s.yes - s.no} · autonomous calls: ${s.autonomous} · skills named by the user: ${s.typed}`,
+    `Phase hints: ${s.hints}, followed ${s.followed} (${pct(s.followed, s.hints)}) · router: ${s.routed}, followed ${s.routedFollowed} (${pct(s.routedFollowed, s.routed)}), answered sí ${s.yes} / no ${s.no} / none ${s.routed - s.yes - s.no} · autonomous calls: ${s.autonomous} · skills named by the user: ${s.typed}`,
     "", "| Skill | Hinted | Followed | Routed | Sí | No | Followed (router) | Autonomous | Typed by user |", "|---|---|---|---|---|---|---|---|---|",
     ...s.bySkill.map((x) => `| ${x.name} | ${x.hinted} | ${x.followed} | ${x.routed} | ${x.yes} | ${x.no} | ${x.routedFollowed} | ${x.autonomous} | ${x.typed} |`),
   ];
@@ -181,17 +206,22 @@ export function renderSkills(s: SkillSummary, days: number): string {
 }
 
 // A reasoned "no" is the contract working; a candidate left unanswered is the failure.
-// Flag it once the sample is large enough to judge.
-const ROUTE_SAMPLE = 10;
+// A phase hint followed less than half the time is plan 044's trigger to block the first
+// Agent or Artifact call instead of hinting after it. Flag either once the sample can judge it.
+const SAMPLE = 10;
 const UNANSWERED_WARN = 0.5;
+const HINT_FOLLOW_WARN = 0.5;
 
 export function skillsRow(s: SkillSummary): { status: Status; detail: string } {
   if (!s.prompts) return { status: "🟢", detail: "no prompts in the window" };
   const top = mostTyped(s, 1)[0];
-  const detail = `${s.prompts} prompts · router ${s.routed}, followed ${s.routedFollowed} (${pct(s.routedFollowed, s.routed)}), unanswered ${s.routed - s.yes - s.no} · ${s.autonomous} autonomous calls${top ? ` · named most: ${top.name} ${top.typed}` : ""}`;
-  return s.routed >= ROUTE_SAMPLE && (s.routed - s.yes - s.no) / s.routed > UNANSWERED_WARN
-    ? { status: "🟡", detail: `${detail}, router candidates mostly unanswered: check the note wording and CLAUDE.md §Agents and skills` }
-    : { status: "🟢", detail };
+  const hints = s.hints ? ` · phase hints ${s.hints}, followed ${s.followed} (${pct(s.followed, s.hints)})` : "";
+  const detail = `${s.prompts} prompts · router ${s.routed}, followed ${s.routedFollowed} (${pct(s.routedFollowed, s.routed)}), unanswered ${s.routed - s.yes - s.no} · ${s.autonomous} autonomous calls${hints}${top ? ` · named most: ${top.name} ${top.typed}` : ""}`;
+  const warns = [
+    s.routed >= SAMPLE && (s.routed - s.yes - s.no) / s.routed > UNANSWERED_WARN && "router candidates mostly unanswered: check the note wording and CLAUDE.md §Agents and skills",
+    s.hints >= SAMPLE && s.followed / s.hints < HINT_FOLLOW_WARN && "phase hints mostly ignored even when the first call is refused: review the hint wording (plan 044)",
+  ].filter(Boolean);
+  return warns.length ? { status: "🟡", detail: `${detail}, ${warns.join("; ")}` } : { status: "🟢", detail };
 }
 
 // --- IO ---------------------------------------------------------------------------

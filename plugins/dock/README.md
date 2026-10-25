@@ -41,8 +41,9 @@ quotes the folder and the prompt itself (`quoted form of`), and the harness is o
 
 ## Where it runs
 
-Interactive terminal sessions only: the actions run from the CLI's process (`$.process.run` is
-CLI-only). Desktop, `-p` and the SDK get no tool and no context line.
+Interactive terminal sessions and the desktop Code tab, on macOS: the actions run from the CLI's
+process (`$.process.run` is CLI-only), which the desktop app also runs on this Mac. The desktop app starts its session as `-p` does (no surface, not interactive) and joins it afterwards (`session.attach`); the mod comes up on that join. `-p`, the SDK and
+the mobile app get no tool and no context line.
 
 ## Load
 

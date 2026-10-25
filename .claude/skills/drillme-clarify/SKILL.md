@@ -54,7 +54,7 @@ This is why "always active" and "no over-engineering" do not conflict: a typo su
 
 ### Step 1: Gap gate (hybrid activation)
 
-Scan the context and ask yourself the binary gate above. If no gap would change the decision → 0 questions, close. Otherwise continue. If `$ARGUMENTS` is empty and a `.claude/plans/{NNN}-{slug}/` artefact is active, take that as the context (auto-detect the latest phase: `retro.md` > `review.md` > `tests/validations.md` > `tasks/index.md` > `spec.md`).
+Scan the context and apply the binary gate above. If no gap would change the decision → 0 questions, close. Otherwise continue. If `$ARGUMENTS` is empty and a `.claude/plans/{NNN}-{slug}/` artefact is active, take that as the context (auto-detect the latest phase: `retro.md` > `review.md` > `tests.md`/`validations.md` > `tasks/index.md` > `spec.md`).
 
 ### Step 2: Sweep the coverage checklist
 
@@ -122,14 +122,9 @@ A 22-question battery over five funnel rounds on an ambiguous caching decision, 
 
 Start with drillme-clarify; if it surfaces a genuine disagreement or won't crystallize after the sweep → escalate to `compare-and-decide` (heavy tier).
 
-## SIEMPRE rules
+## Guidance, not gate
 
-- **Gap gate first**: 0 questions when nothing would change the decision; exhaustive sweep when gaps exist. Never a fixed count.
-- **Anti-padding**: never invent a question to fill a category. Declare "N/A: reason" honestly. Every question carries information gain.
-- **Bake answers**: write them into the artefact; never let them float.
-- **Soft brake, not hard cap**: stop at saturation or degradation, marking `[OPEN]` for irreducible gaps, never machine-gun the user.
-- **No softening**: questions are direct, not hedged.
-- **Guidance, not gate**: drillme-clarify never blocks; its output is questions + baked answers. What the decision-maker does with them is their call.
+drillme-clarify never blocks; its output is questions + baked answers. What the decision-maker does with them is their call.
 
 ## Anti-patterns
 

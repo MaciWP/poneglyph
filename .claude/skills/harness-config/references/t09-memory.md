@@ -29,7 +29,7 @@ Claude memory / CLAUDE.md docs. Codex `learn.chatgpt.com` custom instructions + 
 | Disable | `claudeMdExcludes` globs; omit the file | Don't ship / don't load that layer | Don't ship the file; `compat.claude.agents=false` stops Claude-tree named files (generic top-level `CLAUDE.md` still recognized) |
 | Reload | Session; after `/compact` project-root re-injects | New session | Session start; trust |
 
-HTML comments in Claude CLAUDE.md are stripped. Instruction = **request**, not a hook (H9).
+HTML comments in CLAUDE.md are stripped. Instruction = **request**, not a hook (H9).
 
 ## 4. Min template
 

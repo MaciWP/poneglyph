@@ -9,7 +9,6 @@ description: >-
   (troubleshooting).
 disable-model-invocation: false
 argument-hint: "[file-path or module]"
-effort: xhigh
 paths:
   - "**/auth/**"
   - "**/api/**"
@@ -66,22 +65,9 @@ For the full deployment checklist, see `checklists/pre-deploy.md`.
 | No rate limiting on auth | Medium | Brute force | Check auth endpoints |
 | JSON parsing without error handling | Low | DoS | Check error handling |
 
-## OWASP Top 10 Summary
+## OWASP Top 10
 
-| ID | Issue | Key Risk |
-|----|-------|----------|
-| A01 | Broken Access Control | Missing auth/ownership checks |
-| A02 | Cryptographic Failures | Weak hashing, exposed secrets |
-| A03 | Injection | SQL/command/code injection via user input |
-| A04 | Insecure Design | No rate limiting, no lockout |
-| A05 | Security Misconfiguration | Open CORS, missing headers |
-| A06 | Vulnerable Components | Outdated deps with CVEs |
-| A07 | Authentication Failures | Weak passwords, predictable tokens |
-| A08 | Data Integrity Failures | No signature verification |
-| A09 | Logging Failures | Sensitive data in logs |
-| A10 | SSRF | User-controlled URLs to internal services |
-
-For detailed patterns with detection methods and before/after examples, see `references/owasp-quick-ref.md`.
+Edition 2025 (SSRF sits in A01). Per-category detection and before/after fixes: `references/owasp-quick-ref.md`.
 
 ## Severity Levels
 
@@ -98,7 +84,7 @@ For detailed patterns with detection methods and before/after examples, see `ref
 ## Security Review: [Component]
 
 ### Critical Issues
-- **A03 Injection**: SQL injection in `userService.ts:45`
+- **A05 Injection**: SQL injection in `userService.ts:45`
   - Line: `db.query("SELECT * FROM users WHERE id = '" + id + "'")`
   - Fix: Use parameterized query or ORM
   - CVSS: 9.8
@@ -114,7 +100,7 @@ For detailed patterns with detection methods and before/after examples, see `ref
   - Fix: Sanitize error objects before logging
 
 ### Low Severity
-- **A06 Components**: Outdated dependency with known CVE
+- **A03 Supply Chain**: Outdated dependency with known CVE
   - Fix: Update dependency to latest version
 
 ### Passed Checks
@@ -148,7 +134,7 @@ For detailed patterns with detection methods and before/after examples, see `ref
 | GitHub Token | `gh[opsr]_[A-Za-z0-9_]{36,}` | ghp_xxxx... |
 | Stripe Live | `sk_live_[A-Za-z0-9]{24,}` | sk_live_xxxx... |
 | Anthropic | `sk-ant-[A-Za-z0-9-]{20,}` | sk-ant-xxxx... |
-| OpenAI | `sk-[A-Za-z0-9]{32,}` | sk-xxxx... |
+| OpenAI | `sk-(proj-)?[A-Za-z0-9_-]{32,}` | sk-xxxx... |
 | Google API | `AIza[0-9A-Za-z-_]{35}` | AIzaSyxxxx... |
 | Generic Password | `(?i)(password\|passwd\|pwd)\s*[:=]\s*['"][^'"]{8,}` | password='secret123' |
 | Bearer Token | `Bearer\s+[A-Za-z0-9\-._~+/]+=*` | Bearer eyJhbG... |
@@ -179,14 +165,14 @@ Supporting files loaded on demand based on task context. Consult the Contents co
 
 | Topic | File | Contents |
 |---|---|---|
-| OWASP Top 10 quick reference | `${CLAUDE_SKILL_DIR}/references/owasp-quick-ref.md` | Detailed per-vulnerability descriptions (A01-A10) with Problem / Detection / BEFORE-vulnerable / AFTER-secure pseudocode pairs. Read when you need the full vulnerability explanation with code examples, e.g., fixing an identified A03 injection or A01 access control issue, or generating a remediation plan with concrete before/after snippets. |
+| OWASP Top 10 quick reference | `${CLAUDE_SKILL_DIR}/references/owasp-quick-ref.md` | Detailed per-vulnerability descriptions (A01-A10, 2025 edition) with Problem / Detection / BEFORE-vulnerable / AFTER-secure pseudocode pairs. Read when you need the full vulnerability explanation with code examples, e.g., fixing an identified A05 injection or A01 access control issue, or generating a remediation plan with concrete before/after snippets. |
 | Pre-deploy security checklist | `${CLAUDE_SKILL_DIR}/checklists/pre-deploy.md` | Full 38-item checklist across 6 categories (Auth 8, Authz 6, Input Validation 7, Data Protection 6, Headers/Config 6, Logging 5), each item is a boolean gate. Read when doing a pre-deployment audit, or when the `## Review Checklist` summary in this SKILL.md is not granular enough and you need concrete pass/fail items to tick. |
 | Review depth layer | `${CLAUDE_SKILL_DIR}/references/02-review-depth.md` | Beyond the Top 10: ASVS rigor levels (L1/L2/L3, pick by data sensitivity), OWASP Proactive Controls 2024 (C1-C10 positive guidance), and concrete auth/session/JWT/access-control review checklists (MFA, session fixation, JWT alg-pinning, IDOR/BOLA) + secret-leak incident response (rotate-first). Read when reviewing auth/session/access-control code, calibrating review rigor, or handling a leaked secret. OWASP/GitHub primary-sourced. |
 
 ## Emergency: Secret Committed to Git
 
 1. **Rotate the secret immediately**: assume compromised. This is the only step that actually mitigates exposure; history rewriting does NOT (the secret is already cloned/cached). Do this first, regardless of the rest.
-2. **Remove from history**: `git filter-branch --force --index-filter 'git rm --cached --ignore-unmatch PATH' HEAD` (or `git filter-repo`, preferred upstream). ⚠️ History rewrite: get explicit user authorization before running (Commandment VI: `--force`/history rewrites require it).
+2. **Remove from history**: `git filter-repo --invert-paths --path PATH` (preferred upstream; `git filter-branch` only where filter-repo is unavailable). ⚠️ History rewrite: get explicit user authorization before running (Commandment VI: `--force`/history rewrites require it).
 3. **Force push**: `git push --force-with-lease` (never bare `--force`), coordinate with team first; rewriting shared history is irreversible for collaborators. ⚠️ Requires explicit authorization (Commandment VI).
 4. **Audit**: Check access logs for the compromised credential
 5. **Add to .gitignore**: Prevent recurrence

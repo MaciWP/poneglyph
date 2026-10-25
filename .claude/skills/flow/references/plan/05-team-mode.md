@@ -74,9 +74,9 @@ Select agents based on task analysis:
 
 | Role (skill) | Condition | Required |
 |-------|-----------|----------|
-| `Explore` (exploration) | Codebase exploration | ALWAYS |
-| build (implementation) | Code implementation | ALWAYS |
-| review (validation) | Quality validation | ALWAYS |
+| `Explore` (exploration) | Codebase exploration | Always |
+| build (implementation) | Code implementation | Always |
+| review (validation) | Quality validation | Always |
 | plan (Mode B) | Complexity > 40 OR cross-domain interfaces, emits RFC + contracts inline | CONDITIONAL |
 | `security-audit` | Keywords: auth, token, password, jwt, encryption | CONDITIONAL |
 

@@ -11,6 +11,8 @@ Common prompt errors and how to avoid them.
 | **Infinite Scope** | "Refactorizar todo" | "Extraer validación de OrderService a ValidationService" |
 | **No Criteria** | "Hacerlo mejor" | "Reducir complejidad ciclomática de 15 a <10" |
 | **Multiple Tasks** | "Login y registro y perfil" | Split into 3 separate prompts |
+| **Generic Negative** | "Que no parezca genérico" | Name the patterns to avoid ("sin fondo crema ni botones en píldora") or show one example of the wanted result |
+| **Reasoning on Request** | "Explica tu razonamiento paso a paso" | "Da la respuesta y una explicación breve" or "resume lo que hiciste": the recipient already thinks, and some models decline a request to write that thinking out |
 
 ## Warning Signals
 

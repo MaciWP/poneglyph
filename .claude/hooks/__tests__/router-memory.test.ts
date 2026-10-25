@@ -22,11 +22,28 @@ describe("router memory: entries", () => {
     ]);
   });
 
-  test("does not learn from calls the router or the keyword hook suggested", () => {
+  test("does not learn from calls the router or the keyword hook suggested, or made after the turn's first edit", () => {
     const routed = { ...turn("arregla el bug del login cuando el token caduca y añade su test", 1, [], ["dev-workflow"]), routed: ["dev-workflow"] };
     const hinted = { ...turn("planifica la migración de la base de datos de clientes ya", 2, [], ["dev-workflow"]), hinted: ["dev-workflow"] };
     const typed = { ...turn("revisa la pr de la rama de exportación con /pr-review por favor", 3, ["pr-review"]), routed: ["pr-review"] };
-    expect(memoryFromTurns([routed, hinted, typed], catalog).map((e) => e.skills)).toEqual([["pr-review"]]);
+    const late = { ...turn("busca la documentación del despliegue y resume lo que falta", 4, [], ["dev-workflow"]), late: ["dev-workflow"] };
+    expect(memoryFromTurns([routed, hinted, typed, late], catalog).map((e) => e.skills)).toEqual([["pr-review"]]);
+  });
+
+  test("keeps a skill the router suggested and the Lead turned down, unless it was loaded then or soon after", () => {
+    const T = Date.parse("2026-10-01T10:00:00Z"), H = 3_600_000;
+    const declined = (text: string, at: number, called: string[] = []) => ({ ...turn(text, at, [], called), routed: ["pr-review"], answers: [{ name: "pr-review", yes: false }, { name: "ghost", yes: false }] });
+    expect(memoryFromTurns([
+      declined("investiga en los logs locales por qué falla el arranque", T),
+      declined("revisa el diff de la rama nueva antes de mergear hoy", T + H, ["dev-workflow"]),
+      turn("vale, al final revisa la pr de esta rama con calma", T + 2.5 * H, [], ["pr-review"]),
+      declined("mira qué hace la función de exportación del listado", T + 5 * H),
+    ], catalog)).toEqual([
+      { at: T, prompt: "investiga en los logs locales por qué falla el arranque", skills: [], declined: ["pr-review"] },
+      { at: T + H, prompt: "revisa el diff de la rama nueva antes de mergear hoy", skills: ["dev-workflow"] },
+      { at: T + 2.5 * H, prompt: "vale, al final revisa la pr de esta rama con calma", skills: ["pr-review"] },
+      { at: T + 5 * H, prompt: "mira qué hace la función de exportación del listado", skills: [], declined: ["pr-review"] },
+    ]);
   });
 
   test("drops pasted blocks and caps the text", () => {
@@ -71,6 +88,7 @@ describe("router memory: retrieval", () => {
   test("formats the block the router reads, or nothing", () => {
     expect(formatPast([])).toBe("");
     expect(formatPast([{ at: 1, prompt: 'di "hola"', skills: ["a", "b"] }])).toBe("<past>\n- \"di 'hola'\" → a, b\n</past>");
+    expect(formatPast([{ at: 1, prompt: "p", skills: ["a"], declined: ["c"] }, { at: 2, prompt: "q", skills: [], declined: ["c", "d"] }])).toBe("<past>\n- \"p\" → a · declined: c\n- \"q\" → declined: c, d\n</past>");
   });
 });
 

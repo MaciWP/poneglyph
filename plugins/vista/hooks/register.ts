@@ -19,7 +19,7 @@ const PANE = "vista";
 const DESCRIPTION =
   "Show the user an interactive component in the terminal instead of markdown. Every call needs kind and title. kind compare: 2-4 options side by side, one tab per topic (options, topics[{name, rows[{label, values: one per option, best?: index of the winner}]}], verdict?). kind cards: a ranking of 1-5 items, best first (items[{name, metric?, badge?, detail?, image?: absolute local path}]). kind draft: text the user will copy, such as a PR body, commit message, email or chat message (label, subject?, body). Do not use it for yes/no answers, explanations, a single item, plain lists or command output. After it returns, add at most one sentence; never repeat the data.";
 const CONTEXT =
-  "Vista: call mcp__vista__show instead of markdown when comparing 2+ options on 2+ dimensions (compare), ranking items (cards) or handing over text to copy: PR, commit, email, message (draft); then one sentence.";
+  "Vista (deferred: load it once with ToolSearch \"select:mcp__vista__show\"): call mcp__vista__show instead of markdown when comparing 2+ options on 2+ dimensions (compare), ranking items (cards) or handing over text to copy: PR, commit, email, message (draft); then one sentence.";
 const SHOWN = "Shown to the user. Add at most one sentence; do not repeat the data.";
 
 // Card thumbnails from local images, loaded apart from the pure render: macOS sips scales the
@@ -115,23 +115,32 @@ function draw($: EngineInterface, ui: Ui, id: string, view: View, width: number,
   });
 }
 
+// Where nothing is drawn (-p, the SDK, a consultation) a shown component would be lost data: the
+// tool stays unregistered and the model answers in markdown. A terminal draws from the start; the
+// desktop app starts the session with no surface (`isInteractive` false) and joins it later.
+async function activate($: EngineInterface) {
+  if (drawn) return;
+  // Set once both exist, so a refused registration is retried on the next join and the context
+  // line never names a missing tool; registering again only replaces them.
+  await $.tool.register({ name: "show", description: DESCRIPTION, inputSchema: INPUT_SCHEMA });
+  await $.command.register({ name: "vista", description: "Abrir una vista en un panel con teclado", argumentHint: "[n]", immediate: true });
+  drawn = true;
+}
+
 export const register: Register = (on) => {
   on("session.start", async ($, e, next) => {
     const r = await next(e);
-    // Where nothing is drawn (-p, the SDK, a consultation) a shown component would be lost
-    // data: the tool stays unregistered and the model answers in markdown.
-    drawn = e.isInteractive && (e.surface === "terminal" || e.surface === "desktop");
-    if (!drawn) return r;
-    await $.tool.register({ name: "show", description: DESCRIPTION, inputSchema: INPUT_SCHEMA });
-    await $.command.register({ name: "vista", description: "Abrir una vista en un panel con teclado", argumentHint: "[n]", immediate: true });
+    if (e.isInteractive && e.surface === "terminal") await activate($);
+    return r;
+  });
+
+  on("session.attach", { surface: "desktop" }, async ($, e, next) => {
+    const r = await next(e);
+    await activate($);
     return r;
   });
 
   on("prompt.submit", async ($, e, next) => (drawn ? next({ ...e, context: [...(e.context ?? []), CONTEXT] }) : next(e)));
-
-  // Keep the schema in the prompt instead of behind ToolSearch; the text never changes, so the
-  // prompt cache holds.
-  on("tool.describe", { tool: TOOL }, async ($, e, next) => ({ ...(await next(e)), isDeferred: false }));
 
   on("tool.call", { tool: TOOL }, async ($, e) => {
     const { tool, tool_use_id, ...input } = e as unknown as Record<string, unknown> & { tool: string; tool_use_id: string };
@@ -157,7 +166,8 @@ export const register: Register = (on) => {
   on("ui.render", { component: "ToolResult" }, async ($, e, next) => {
     if (e.props.tool !== TOOL || e.props.isErrored) return next(e);
     const { Text } = $.ui.resolve(e);
-    return Text({ dimColor: true, children: "  ⎿ vista mostrada · /vista la abre con teclado" });
+    // The keyboard pane and the ⎿ gutter are the terminal's; the desktop draws its own row.
+    return Text({ dimColor: true, children: e.surface === "terminal" ? "  ⎿ vista mostrada · /vista la abre con teclado" : "vista mostrada" });
   });
 
   on("turn.start", async ($, e, next) => {
@@ -186,13 +196,15 @@ export const register: Register = (on) => {
     if (!hasBlocks(blocks)) return next(e);
     const ui = $.ui.resolve(e);
     const { Box, Text } = ui;
-    const width = e.viewport.columns - 2;
+    // The terminal draws the reply's ⏺ bullet in a 2-cell gutter; the desktop lays out its own.
+    const gutter = e.surface === "terminal";
+    const width = e.viewport.columns - (gutter ? 2 : 0);
     const parts: RenderElement[] = [];
     for (const [i, b] of blocks.entries()) {
       const first = i === 0;
       if (b.kind === "text") {
         const drawn = (await next({ ...e, props: { ...p, text: b.text, isFirstOfReply: first && p.isFirstOfReply } })) as RenderElement;
-        parts.push(first ? drawn : Box({ paddingLeft: 2, children: drawn }));
+        parts.push(first || !gutter ? drawn : Box({ paddingLeft: 2, children: drawn }));
         continue;
       }
       const own =
@@ -201,6 +213,10 @@ export const register: Register = (on) => {
           : b.kind === "callout"
             ? callout({ ...ui, Raster: undefined }, b.type, b.text)
             : tasks({ ...ui, Raster: undefined }, b.items);
+      if (!gutter) {
+        parts.push(own);
+        continue;
+      }
       // A reply that opens with a component draws the bullet itself.
       parts.push(Box({ children: [Box({ width: 2, flexShrink: 0, children: Text({ children: first && p.isFirstOfReply ? "⏺" : "" }) }), Box({ flexGrow: 1, flexShrink: 1, children: own })] }));
     }

@@ -43,11 +43,16 @@ The gain is on runtime surface (product code, hooks, CLIs, UI).
 Run the project's check command, from the project CLAUDE.md §Commands/Verification
 (this repo: `bun test ./.claude/`; a Vite/React repo: `tsc && vitest`; a Django
 repo: `pytest`). Types and lint included when the stack has them.
-Failure → diagnose, distinguish baseline/infrastructure defects, and rerun. None
-counts as a passing check. NEVER manipulate a
+Failure → diagnose, distinguish baseline/infrastructure defects, and rerun. Neither
+defect counts as a pass; 0 tests executed or skips counted as passes is **NOT PROVEN**. Never manipulate a
 check to make it pass (Cmd IV). Run the checks over the **whole** changed set, not
 only the files you remember touching, and never trust a delegated agent's "clean"
 report (`Skill(lessons-learned)` G2/G6: a merge gate red is never a nit).
+
+**Canary** for a behavior change: break the changed line, see a test go red, restore,
+see green; repeat if flaky. No red: the suite misses the change; add the
+test first. Copy counts from saved output, never retype; each claimed rule names
+the test that ran it, or it is "not verified".
 
 ### 2. Impact sweep
 
@@ -73,7 +78,7 @@ a green suite is a hypothesis about the flow, not the flow:
 Close with per-claim status: never a bare "hecho":
 
 ```
-Verify: <check command + result> · impact: <symbols → usages checked> ·
+Verify: <check command + copied counts> · canary: <line broken → test red | n/a> · impact: <symbols → usages checked> ·
 flow: <driven + observed | n/a (no runtime surface)> · residual: <what was
 deliberately NOT tested and why | none known>
 ```
@@ -84,8 +89,7 @@ the [verification contract](../../docs/flow-contract.md) before HU closure.
 
 ## SIEMPRE rules
 
-- Never report "completed" with a failing check, no exceptions (Cmd IV).
-- Run, don't predict: an executable claim gets executed, not reasoned about (Cmd II).
+- Never report "completed" with a failing check (Cmd IV).
 - Cost scales with blast radius: trivial diff → step 1 only; shared-symbol or
   runtime change → all four steps.
 

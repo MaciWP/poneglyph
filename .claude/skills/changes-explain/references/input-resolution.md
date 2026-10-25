@@ -37,7 +37,7 @@ The algorithm tries each rule in order and stops at the first match.
 | Working tree (rule 1) | `git diff` and `git diff --cached`, run both, concat; if both empty → see edge case "clean tree" |
 | Commit (rule 2) | `git show --stat <hash>` for overview, then `git show <hash>` for full diff |
 | Branch (rule 3) | `BASE=$(git merge-base origin/dev <branch> 2>/dev/null \|\| git merge-base main <branch>)`; `git diff $BASE..<branch>` |
-| File (rule 5) | `git log --follow -p -- <path> \| head -200` for recent history; `git blame <path>` if user asks "quien cambio que" |
+| File (rule 5) | `git log --follow -p -- <path> \| head -200` for recent history; `git blame <path>` if user asks "quién cambió qué" |
 
 When `origin/dev` does not exist, fall back to `main` then `master` in that order.
 
@@ -48,7 +48,7 @@ When `origin/dev` does not exist, fall back to `main` then `master` in that orde
 If both `git diff` and `git diff --cached` are empty, do NOT proceed silently. Output:
 
 ```
-No hay cambios pendientes en la rama actual. Quieres que mire el ultimo commit (HEAD) o una rama concreta?
+No hay cambios pendientes en la rama actual. ¿Quieres que mire el último commit (HEAD) o una rama concreta?
 ```
 
 Then stop and wait for the user's reply.
@@ -87,11 +87,11 @@ When both exist, present them as two sub-targets in the report:
 
 ```markdown
 ## Resumen ejecutivo
-- Cambios staged (3 ficheros, 12 lineas): ...
-- Cambios unstaged (2 ficheros, 5 lineas): ...
+- Cambios staged (3 ficheros, 12 líneas): ...
+- Cambios unstaged (2 ficheros, 5 líneas): ...
 ```
 
-Each gets its own "Cambios punto por punto" section. The cadena logica may span both.
+Each gets its own "Cambios punto por punto" section. The cadena lógica may span both.
 
 ### Argument is `HEAD` on a freshly cloned repo (no commits)
 

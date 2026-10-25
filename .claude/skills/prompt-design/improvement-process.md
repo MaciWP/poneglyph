@@ -20,7 +20,7 @@ graph TD
 | Technique | Use | Example |
 |---------|-----|---------|
 | **XML Tags** | Structure sections | `<context>...</context>` |
-| **Chain-of-Thought** | Step-by-step reasoning | "First X, then Y" |
+| **Ordered steps** | Multi-step work in a fixed order | "First X, then Y" |
 | **Few-Shot** | Input/output examples | "Example: given X, return Y" |
 | **Constraints** | Limit scope | "Only files in src/" |
 

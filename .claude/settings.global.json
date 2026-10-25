@@ -77,7 +77,8 @@
           {
             "type": "command",
             "command": "bun \"$HOME/.claude/hooks/headless-model-gate.ts\"",
-            "timeout": 5
+            "timeout": 10,
+            "onFailure": "block"
           },
           {
             "type": "command",
@@ -92,7 +93,8 @@
           {
             "type": "command",
             "command": "bun \"$HOME/.claude/hooks/remote-git-gate.ts\"",
-            "timeout": 15
+            "timeout": 15,
+            "onFailure": "block"
           }
         ]
       },
@@ -234,6 +236,9 @@
     },
     "claude-haiku-5-5": {
       "autoCompactWindow": 120000
+    },
+    "claude-sonnet-5-5": {
+      "autoCompactWindow": 130000
     }
   },
   "switchModelsOnFlag": false,
@@ -264,6 +269,7 @@
   "skipDangerousModePermissionPrompt": true,
   "autoCompactEnabled": true,
   "autoCompactWindow": 300000,
+  "cleanupPeriodDays": 180,
   "skipAutoPermissionPrompt": true,
   "autoMode": {
     "hard_deny": [

@@ -57,6 +57,8 @@ function world(on: On, stored?: unknown, snap: unknown = data, env: Record<strin
   const opens: unknown[] = [];
   const prompts: string[] = [];
   const toasts: string[] = [];
+  const notes: string[] = [];
+  let notifying = true;
   const agents: unknown[] = [];
   let agentResult: unknown = "ok";
   let bashError = false;
@@ -64,7 +66,10 @@ function world(on: On, stored?: unknown, snap: unknown = data, env: Record<strin
     placed = true;
   let pending: (() => void) | undefined;
   on("session.start", (_, e) => ({ cwd: e.cwd }));
-  on("session.id", () => ({ value: "s1" }));
+  on("session.attach", (_, e) => ({ clientId: e.clientId }));
+  on("session.cwd", () => ({ value: "/work/project" }));
+  let sessionId = "s1";
+  on("session.id", () => ({ value: sessionId }));
   on("command.register", (_, e) => ({ value: { command: e.name } }));
   on("tool.register", () => ({ value: { tool: "mcp__workboard__progress" } }));
   on("ui.open", (_, e) => {
@@ -82,10 +87,24 @@ function world(on: On, stored?: unknown, snap: unknown = data, env: Record<strin
     ],
   }));
   on("agent.list", () => ({ value: agents as never }));
+  // $.ui.view is newer than the bundled types.
+  const views: unknown[] = [];
+  (on as unknown as (event: string, run: (_: unknown, e: unknown) => unknown) => void)("ui.view", (_, e) => {
+    views.push(e);
+    return { value: undefined };
+  });
   on("agent.spawn", () => ({ model: "claude-sonnet-5-5", agentId: "a2" }));
   on("ui.toast", (_, e) => {
     toasts.push(e.text);
     return { value: undefined };
+  });
+  on("ui.notify", (_, e) => {
+    notes.push(e.text);
+    return {
+      value: notifying
+        ? { isSent: true as const, channel: "iterm2" as const }
+        : { isSent: false as const, reason: "no-channel" as const },
+    };
   });
   on("process.run", (_, e) => ({
     value: {
@@ -98,8 +117,9 @@ function world(on: On, stored?: unknown, snap: unknown = data, env: Record<strin
   }));
   on("turn.complete", (_, e) => ({ text: e.answer }));
   on("turn.start", (_, e) => ({ turnId: e.turnId }));
+  // Every AskUserQuestion ends as an error here, as a question the user closed does.
   on("tool.call", (_, e) =>
-    e.tool === "Bash" && bashError
+    (e.tool === "Bash" && bashError) || e.tool === "AskUserQuestion"
       ? { isError: true as const, result: "Exit code 1", text: "Exit code 1" }
       : { result: e.tool === "Agent" ? agentResult : "ok" },
   );
@@ -117,11 +137,20 @@ function world(on: On, stored?: unknown, snap: unknown = data, env: Record<strin
     return { text: e.text };
   });
   return {
+    // A resume or a /clear: the process goes on under another id, with no session.start.
+    resume: (id: string) => {
+      sessionId = id;
+    },
     clock,
     opens,
     prompts,
     toasts,
+    notes,
+    noChannel: () => {
+      notifying = false;
+    },
     agents,
+    views,
     agentAnswers: (value: unknown) => {
       agentResult = value;
     },
@@ -280,6 +309,31 @@ test("the progress tool stays in the prompt instead of behind ToolSearch", async
   expect(other).toEqual({ description: "Something else", isDeferred: true });
 });
 
+// The desktop app starts the session as -p does (no surface, not interactive) and joins it
+// afterwards: only then does the board come up, once however many clients join.
+test("the desktop gets the board once it joins, and draws the plan in its pane", async ($, on) => {
+  const w = world(on);
+  await $.session.start({ cwd: "/work/project", surface: null, isInteractive: false });
+  await w.clock.settle();
+  expect(w.opens).toHaveLength(0);
+  await $.session.attach({ surface: "desktop", clientId: "desktop:default" });
+  await $.session.attach({ surface: "desktop", clientId: "desktop:2" });
+  await w.clock.settle();
+  expect(w.opens).toHaveLength(1);
+  await $.tool.call({ tool: "mcp__workboard__progress", update: { tasks: [{ id: "read", title: "Read the routes", state: "running" }] } });
+  const p = await $.ui.mount({ ...pane, surface: "desktop" } as never);
+  expect(await p.find({ text: "Read the routes" })).toBeDefined();
+});
+
+test("a headless session opens no board and draws nothing in a pane", async ($, on) => {
+  const w = world(on);
+  await $.session.start({ cwd: "/work/project", surface: null, isInteractive: false });
+  await w.clock.settle();
+  expect(w.opens).toHaveLength(0);
+  const p = await $.ui.mount(pane);
+  expect(await p.find({ text: "Existing band" })).toBeDefined();
+});
+
 test("the progress tool answers with text the host accepts and shows the plan", async ($, on) => {
   const w = world(on);
   await $.session.start(start);
@@ -377,12 +431,58 @@ test("features fold their subtasks until one of them moves", async ($, on) => {
   expect(await p.find({ text: "Write tests" })).toBeDefined();
   expect(await p.find({ text: "Feature later" })).toBeDefined();
   expect(await p.find({ text: "1/3 hechas" })).toBeDefined();
-  // Docked floor to ceiling every open feature unfolds; inline, only the moving one does.
-  expect(await p.find({ text: "Hidden step" })).toBeDefined();
+  // Docked or inline, only the moving feature unfolds.
+  expect(await p.find({ text: "Hidden step" })).toBeUndefined();
   await p.unmount();
   const compact = await $.ui.mount(inline);
   expect(await compact.find({ text: "Write tests" })).toBeDefined();
   expect(await compact.find({ text: "Hidden step" })).toBeUndefined();
+});
+
+test("the plan's header only counts, and subtasks name only what needs action", async ($, on) => {
+  const s = publish(initialState("s1", start.cwd), {
+    tasks: [
+      { id: "a", title: "Feature done", state: "completed" },
+      { id: "a1", title: "Step a1", state: "completed", parent: "a" },
+      { id: "a2", title: "Step a2", state: "completed", parent: "a" },
+      { id: "b", title: "Feature stuck", state: "running" },
+      { id: "b1", title: "Step b1", state: "completed", parent: "b" },
+      { id: "b2", title: "Step b2", state: "blocked", parent: "b" },
+      { id: "b3", title: "Step b3", state: "pending", parent: "b" },
+      { id: "c", title: "Feature later", state: "pending" },
+      { id: "c1", title: "Step c1", state: "pending", parent: "c" },
+      { id: "c2", title: "Step c2", state: "pending", parent: "c" },
+      { id: "c3", title: "Step c3", state: "pending", parent: "c" },
+    ],
+  });
+  const w = world(on, s);
+  await $.session.start(start);
+  await w.clock.settle();
+  const p = await $.ui.mount(pane);
+  expect(await p.find({ type: "Text", text: "3/8 hechas" })).toBeDefined();
+  expect((await p.find({ text: "WORKBOARD" }))!.text).not.toMatch(/[✓●⏸○]{2}/);
+  expect(await p.find({ text: "bloqueada" })).toBeDefined();
+  const text = (await p.find({ text: "WORKBOARD" }))!.text;
+  expect(text).toContain("Step b3");
+  expect(text).not.toMatch(/Step b3\s+pendiente/);
+  expect(text).not.toMatch(/Step c1/);
+});
+
+test("a resume moves the board to the resumed session's saved plan", async ($, on) => {
+  const s = publish(initialState("s1", start.cwd), {
+    tasks: [{ id: "a", title: "Resumed plan", state: "running" }],
+  });
+  const w = world(on, s);
+  w.resume("fresh");
+  await $.session.start(start);
+  await w.clock.settle();
+  const p = await $.ui.mount(pane);
+  expect(await p.find({ text: "Resumed plan" })).toBeUndefined();
+  w.resume("s1");
+  await w.clock.advance(15000);
+  await w.clock.settle();
+  await p.redraw();
+  expect(await p.find({ text: "Resumed plan" })).toBeDefined();
 });
 
 test("docked, the pane fills its height with the footer at the bottom and Terminados folded; narrow, labels drop a line", async ($, on) => {
@@ -754,10 +854,22 @@ test("subagents show how they ran, and their messages stay inside this session",
   expect(echo).toEqual({ text: "Docs say v2" });
   const p = await $.ui.mount(pane);
   expect(await p.find({ text: "Dirige 2" })).toBeDefined();
-  expect(await p.find({ text: "haiku 5.5 · medium · 12K tok · 40 s" })).toBeDefined();
+  // Folded, one line each: a finished agent's time and tokens, a running one's model, and the
+  // reply it waits for under it.
+  expect(await p.find({ text: "40 s · 12K tok" })).toBeDefined();
+  expect(await p.find({ text: "haiku 5.5 · medium · 12K tok · 40 s" })).toBeUndefined();
   expect(await p.find({ text: "sonnet 5.5" })).toBeDefined();
   expect(await p.find({ text: "espera respuesta" })).toBeDefined();
   expect(await p.find({ text: "→ principal «Docs say v2»" })).toBeDefined();
+  // Ver shows a live agent's transcript in the main view; a finished one has no Ver.
+  expect(await p.find({ key: "view-a1" })).toBeUndefined();
+  await p.press({ key: "view-a2" });
+  expect(w.views).toEqual([expect.objectContaining({ agentId: "a2" })]);
+  // Detalles unfolds how each ran, and folds it again.
+  await p.press({ key: "agent-details" });
+  expect(await p.find({ text: "haiku 5.5 · medium · 12K tok · 40 s" })).toBeDefined();
+  await p.press({ key: "agent-details" });
+  expect(await p.find({ text: "haiku 5.5 · medium · 12K tok · 40 s" })).toBeUndefined();
   expect(await p.find({ text: "scout → principal «Docs say v2»" })).toBeDefined();
   expect(await p.find({ text: "principal → scout «Look in docs/ too»" })).toBeDefined();
   expect(await p.find({ text: "Conversa con" })).toBeUndefined();
@@ -769,6 +881,38 @@ test("subagents show how they ran, and their messages stay inside this session",
   await $.session.receive({ origin: { kind: "peer" }, text: "Unrelated note" });
   await p.redraw();
   expect(await p.find({ text: "mensaje recibido de otra sesión «Unrelated note»" })).toBeDefined();
+});
+
+test("a child agent sits right after its parent, even once the parent has finished", async ($, on) => {
+  const w = world(on);
+  await $.session.start(start);
+  await w.clock.settle();
+  w.agents.push(
+    { id: "p", description: "Parent task", type: "Explore", status: "completed" },
+    { id: "x", description: "Other task", type: "Explore", status: "running" },
+    { id: "c", description: "Child task", type: "general", status: "running", parentId: "p" },
+  );
+  await w.clock.advance(15000);
+  await w.clock.settle();
+  const p = await $.ui.mount(pane);
+  const text = (await p.find({ text: "WORKBOARD" }))!.text;
+  const at = (t: string) => text.indexOf(t);
+  expect(at("Other task")).toBeGreaterThan(-1);
+  expect(at("Other task")).toBeLessThan(at("Parent task"));
+  expect(at("Parent task")).toBeLessThan(at("Child task"));
+});
+
+test("closing a question is the user's move, not a failure", async ($, on) => {
+  const w = world(on);
+  await $.session.start(start);
+  await w.clock.settle();
+  await $.tool.call({ tool: "AskUserQuestion", questions: [], tool_use_id: "q1" } as never);
+  const p = await $.ui.mount(pane);
+  expect(await p.find({ text: "AskUserQuestion: falló" })).toBeUndefined();
+  w.bashFails(true);
+  await $.tool.call({ tool: "Bash", command: "false", tool_use_id: "b1" });
+  await p.redraw();
+  expect(await p.find({ text: "Bash: falló" })).toBeDefined();
 });
 
 test("the Agents card splits partners into four ranked sections", async ($, on) => {
@@ -829,4 +973,40 @@ test("the prompt router shows under Subagentes and turns followed when its skill
   await p.redraw();
   expect(await p.find({ text: "seguida" })).toBeDefined();
   expect(await p.find({ text: "no seguida" })).toBeUndefined();
+});
+
+test("notifications: a failed task, the finished plan, a question, a plan to approve, a long turn", async ($, on) => {
+  const w = world(on);
+  await $.session.start(start);
+  await w.clock.settle();
+  const progress = (tasks: unknown[]) => $.tool.call({ tool: "mcp__workboard__progress", update: { tasks } });
+  await progress([{ id: "a", title: "Esquema", state: "running" }]);
+  expect(w.notes).toEqual([]);
+  await progress([{ id: "a", state: "failed" }]);
+  await progress([{ id: "a", state: "failed" }]);
+  expect(w.notes).toEqual(["Tarea fallida: Esquema"]);
+  await progress([{ id: "a", state: "completed" }]);
+  expect(w.notes.at(-1)).toBe("Plan completado: 1 tarea");
+  await $.tool.call({ tool: "AskUserQuestion", questions: [] } as never);
+  expect(w.notes.at(-1)).toBe("Esperando tu respuesta");
+  await $.tool.call({ tool: "ExitPlanMode" } as never);
+  expect(w.notes.at(-1)).toBe("Plan listo para aprobar");
+  const before = w.notes.length;
+  const turn = (durationMs: number, turnId: string) =>
+    $.turn.complete({ answer: "Hecho.", durationMs, isAborted: false, turnId, reason: "answer" });
+  // A long turn the person answered 40 s ago stays quiet; so does a short one.
+  await w.clock.advance(40_000);
+  await turn(200_000, "t1");
+  expect(w.notes.length).toBe(before);
+  await w.clock.advance(121_000);
+  await turn(5_000, "t2");
+  expect(w.notes.length).toBe(before);
+  // Unattended for two minutes and more: the move is the person's.
+  await turn(200_000, "t3");
+  expect(w.notes.at(-1)).toBe("Claude ha terminado; te toca");
+  // No channel to notify through: the pane's toast carries it instead.
+  w.noChannel();
+  await $.tool.call({ tool: "AskUserQuestion", questions: [] } as never);
+  await w.clock.settle();
+  expect(w.toasts).toContain("Esperando tu respuesta");
 });

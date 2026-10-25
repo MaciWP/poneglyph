@@ -9,6 +9,7 @@ import {
   initialState,
   checkExit,
   parseEnvelope,
+  planAlerts,
   publish,
   reconcileAgents,
   annotateAgent,
@@ -168,6 +169,8 @@ let active = false,
   history = false,
   // The Cambios card lists each repo's files only when unfolded.
   filesOpen = false,
+  // The Agentes card shows one line per agent until its details unfold.
+  agentDetails = false,
   refreshing = false;
 let diff: { path: string; source: string; truncated: boolean } | null = null;
 let snapshot: Snapshot | null = null;
@@ -184,6 +187,30 @@ const save = ($: EngineInterface) => {
   const copy = JSON.parse(JSON.stringify(state));
   saved = saved.catch(() => undefined).then(() => $.store.set(`session:${copy.sessionId}`, copy));
   return saved;
+};
+// A turn this long has likely lost the person's attention, so its end is worth a notification.
+const LONG_TURN_MS = 120_000;
+let alertedAt = 0;
+// When the person last answered a question or a plan: the turn's time before it was attended.
+let answeredAt = 0;
+// A native notification for whoever is away from the terminal, a toast when no channel takes
+// it. Never throws: a notification must not fail the tool or turn that raised it.
+const alert = async ($: EngineInterface, text: string) => {
+  try {
+    alertedAt = await $.clock.now();
+    const sent = await $.ui.notify(text, { title: "Workboard" });
+    if (!sent.isSent) $.ui.toast(text);
+  } catch {
+    // A Notification hook's deny or a failed write: the pane still shows the state.
+  }
+};
+// A question or a plan to approve blocks inside `next` until the person answers, so the
+// notification goes out first and the answer marks the person present.
+const waitFor = async <T>($: EngineInterface, text: string, run: () => Promise<T>): Promise<T> => {
+  if (active) void alert($, text);
+  const r = await run();
+  answeredAt = await $.clock.now();
+  return r;
 };
 const fail = ($: EngineInterface, err: unknown) => {
   error = clean(err instanceof Error ? err.message : err, 1000);
@@ -218,11 +245,33 @@ const persist = async ($: EngineInterface) => {
   await save($);
   redraw($);
 };
+// This session's saved board, or a fresh one.
+const adopt = async ($: EngineInterface, sessionId: string, cwd: string) => {
+  state = initialState(sessionId, cwd);
+  const stored = await $.store.get(`session:${sessionId}`);
+  if (
+    stored &&
+    typeof stored === "object" &&
+    (stored as State).version === 1 &&
+    (stored as State).sessionId === sessionId &&
+    (stored as State).cwd === cwd &&
+    Array.isArray((stored as State).tasks)
+  ) {
+    // State saved before a field existed gets its default; an explicit value stays. The
+    // removed decisions of an older build are dropped.
+    const { decisions: _legacy, ...kept } = stored as State & { decisions?: unknown };
+    state = { ...state, ...kept };
+  }
+};
 // True once the snapshot is in, false when it failed, undefined when another refresh runs.
 const refresh = async ($: EngineInterface): Promise<boolean | undefined> => {
   if (!active || refreshing) return undefined;
   refreshing = true;
   try {
+    // A resume or a /clear moves the process to another session id without a session.start:
+    // follow it, or the board shows the old conversation and Agentic OS refuses its id.
+    const id = await $.session.id();
+    if (id !== state.sessionId) await adopt($, id, state.cwd);
     const next = (await helper($, "snapshot", [
       "--aos",
       aos,
@@ -431,6 +480,7 @@ const agentsModel = (
   talk: boolean,
   aliases: NonNullable<Snapshot["bridge"]["aliases"]> = {},
   router?: RouterRun | null,
+  onView?: (agentId: string) => void,
 ): PaneAgents => {
   const agents = recentAgents(s.agents);
   // A native name that Agentic OS knows as a terminal becomes that terminal, and every link
@@ -444,8 +494,9 @@ const agentsModel = (
     return t ? { ...l, peer: id, harness: t.harness ?? l.harness, name: t.name } : l;
   });
   const { mode, peers, leads } = collaboration(agents, links, talk);
+  // Indented under a parent only while that parent is listed too.
   const depth = (a: { parentId?: string }, n = 0): number => {
-    const parent = a.parentId && s.agents.find((x) => x.id === a.parentId);
+    const parent = a.parentId && agents.find((x) => x.id === a.parentId);
     return parent && n < 3 ? depth(parent, n + 1) : n;
   };
   const consults = new Map<string, Link>();
@@ -479,9 +530,29 @@ const agentsModel = (
         ? `${last.from === a.id ? `→ ${agentName(last.to)}` : `← ${agentName(last.from)}`} «${last.text}»`
         : undefined,
       waiting: !finished(a.state) && last?.from === a.id && last.to === "main",
+      // The folded row's note: the model while it runs, what it cost once it ends.
+      brief: finished(a.state)
+        ? [a.durationMs !== undefined ? runTime(a.durationMs) : "", a.tokens !== undefined ? tokens(a.tokens) : ""]
+            .filter(Boolean)
+            .join(" · ") || undefined
+        : a.model
+          ? shortModel(a.model)
+          : undefined,
+      view: onView && !finished(a.state) ? { key: `view-${a.id}`, onPress: () => onView(a.id) } : undefined,
     };
   };
-  const sorted = [...agents].sort((a, b) => Number(finished(a.state)) - Number(finished(b.state)));
+  // Live ones first, and each child right after its parent, whatever their states.
+  const byState = (list: Agent[]) =>
+    [...list].sort((a, b) => Number(finished(a.state)) - Number(finished(b.state)));
+  const tree = (list: Agent[], n = 0): Agent[] =>
+    byState(list).flatMap((a) => [
+      a,
+      ...(n < 3 ? tree(agents.filter((x) => x.parentId === a.id), n + 1) : []),
+    ]);
+  // Any left out (a parent cycle, or past three levels) still shows, at the end.
+  const sorted = [
+    ...new Set([...tree(agents.filter((a) => !agents.some((x) => x.id === a.parentId))), ...byState(agents)]),
+  ];
   const helper = routerRow(router, s.skills);
   const peerRow = (p: (typeof peers)[number]) => ({
     name: peerName({ peer: p.key, name: p.name, harness: p.harness }),
@@ -562,111 +633,110 @@ const agentsModel = (
   return { mode: mode.kind, label, sections, events };
 };
 
-export const register: Register = (on) => {
-  on("session.start", async ($, e, next) => {
-    const result = await next(e);
-    if (!e.isInteractive || e.surface !== "terminal") return result;
-    active = true;
-    paneHealthy = false;
-    unplaced = [];
-    history = false;
-    filesOpen = false;
-    diff = null;
-    snapshot = null;
-    error = null;
-    aos = "http://127.0.0.1:4317";
-    launching.clear();
-    peersTalk = false;
-    state = initialState(await $.session.id(), e.cwd);
-    const stored = await $.store.get(`session:${state.sessionId}`);
-    if (
-      stored &&
-      typeof stored === "object" &&
-      (stored as State).version === 1 &&
-      (stored as State).sessionId === state.sessionId &&
-      (stored as State).cwd === e.cwd &&
-      Array.isArray((stored as State).tasks)
-    ) {
-      // State saved before a field existed gets its default; an explicit value stays. The
-      // removed decisions of an older build are dropped.
-      const { decisions: _legacy, ...kept } = stored as State & { decisions?: unknown };
-      state = { ...state, ...kept };
+// The board draws on the terminal and on the desktop app, which starts the session with no
+// surface (`isInteractive` false, as -p) and joins it later. Once per process: a desktop joining a
+// terminal session keeps its board and its refresh timer.
+async function activate($: EngineInterface, cwd: string) {
+  if (active) return;
+  active = true;
+  paneHealthy = false;
+  unplaced = [];
+  history = false;
+  filesOpen = false;
+  agentDetails = false;
+  diff = null;
+  snapshot = null;
+  error = null;
+  aos = "http://127.0.0.1:4317";
+  launching.clear();
+  peersTalk = false;
+  await adopt($, await $.session.id(), cwd);
+  actor = (await $.env.get("AOS_AGENT_ID")) || undefined;
+  const configured = await $.env.get("AOS_URL");
+  // A malformed or non-loopback AOS_URL leaves the default origin instead of aborting the
+  // start, as hud and dock leave Agentic OS out: the tool and the board still come up.
+  if (configured) {
+    try {
+      const u = new URL(configured);
+      if (
+        u.protocol !== "http:" ||
+        ![
+          "127.0.0.1",
+          "localhost",
+          "agentic-os.localhost",
+          "[::1]",
+        ].includes(u.hostname) ||
+        u.username ||
+        u.password ||
+        u.pathname !== "/" ||
+        u.search ||
+        u.hash
+      )
+        throw Error("AOS_URL must be a loopback HTTP origin");
+      aos = u.origin;
+    } catch {
+      $.ui.toast("AOS_URL no es un origen HTTP local; se usa el predeterminado");
     }
-    actor = (await $.env.get("AOS_AGENT_ID")) || undefined;
-    const configured = await $.env.get("AOS_URL");
-    // A malformed or non-loopback AOS_URL leaves the default origin instead of aborting the
-    // start, as hud and dock leave Agentic OS out: the tool and the board still come up.
-    if (configured) {
-      try {
-        const u = new URL(configured);
-        if (
-          u.protocol !== "http:" ||
-          ![
-            "127.0.0.1",
-            "localhost",
-            "agentic-os.localhost",
-            "[::1]",
-          ].includes(u.hostname) ||
-          u.username ||
-          u.password ||
-          u.pathname !== "/" ||
-          u.search ||
-          u.hash
-        )
-          throw Error("AOS_URL must be a loopback HTTP origin");
-        aos = u.origin;
-      } catch {
-        $.ui.toast("AOS_URL no es un origen HTTP local; se usa el predeterminado");
-      }
-    }
-    await $.command.register({
-      name: "workboard",
-      description: "Mostrar u ocultar trabajo y agentes",
-      immediate: true,
-    });
-    await $.command.register({
-      name: "workboard-config",
-      description: "Configurar cobertura, base y repos vinculados con JSON",
-      argumentHint: "<JSON>",
-      immediate: true,
-    });
-    await $.tool.register({
-      name: "progress",
-      description:
-        "Publish the explicit work plan to the user's workboard. Shape the plan as 2-6 features (tasks without parent), each with 2-6 subtasks (parent: the feature id) that end in something checkable. Publish it once you know the steps of work that edits files in several steps; questions, reads, reviews and one-file edits need none. Update it when a feature closes or something blocks or fails, and close everything at the end. Tasks merge by id: send only the ones that change, as {id, state}; replace: true starts a new plan. Tasks are declarations, never proof of passing tests. Keep the final ROBIN line in your answer; the mod relocates only its drawing.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          update: {
-            type: "object",
-            properties: {
-              ticket: { type: ["string", "null"] },
-              replace: { type: "boolean" },
-              tasks: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    id: { type: "string" },
-                    title: { type: "string" },
-                    state: { enum: ["pending", "running", "blocked", "completed", "failed"] },
-                    dependsOn: { type: "array", items: { type: "string" } },
-                    parent: { type: "string" },
-                  },
-                  required: ["id"],
+  }
+  await $.command.register({
+    name: "workboard",
+    description: "Mostrar u ocultar trabajo y agentes",
+    immediate: true,
+  });
+  await $.command.register({
+    name: "workboard-config",
+    description: "Configurar cobertura, base y repos vinculados con JSON",
+    argumentHint: "<JSON>",
+    immediate: true,
+  });
+  await $.tool.register({
+    name: "progress",
+    description:
+      "Publish the explicit work plan to the user's workboard. Shape the plan as 2-6 features (tasks without parent), each with 2-6 subtasks (parent: the feature id) that end in something checkable. Publish it once you know the steps of work that edits files in several steps; questions, reads, reviews and one-file edits need none. Update it when a feature closes or something blocks or fails, and close everything at the end. Tasks merge by id: send only the ones that change, as {id, state}; replace: true starts a new plan. Tasks are declarations, never proof of passing tests. Keep the final ROBIN line in your answer; the mod relocates only its drawing.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        update: {
+          type: "object",
+          properties: {
+            ticket: { type: ["string", "null"] },
+            replace: { type: "boolean" },
+            tasks: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  id: { type: "string" },
+                  title: { type: "string" },
+                  state: { enum: ["pending", "running", "blocked", "completed", "failed"] },
+                  dependsOn: { type: "array", items: { type: "string" } },
+                  parent: { type: "string" },
                 },
+                required: ["id"],
               },
             },
           },
         },
-        required: ["update"],
       },
-    });
-    await openPane($);
+      required: ["update"],
+    },
+  });
+  await openPane($);
+  void refresh($);
+  $.clock.every(15000, () => {
     void refresh($);
-    $.clock.every(15000, () => {
-      void refresh($);
-    });
+  });
+}
+
+export const register: Register = (on) => {
+  on("session.start", async ($, e, next) => {
+    const result = await next(e);
+    if (e.isInteractive && e.surface === "terminal") await activate($, e.cwd);
+    return result;
+  });
+  on("session.attach", { surface: "desktop" }, async ($, e, next) => {
+    const result = await next(e);
+    await activate($, await $.session.cwd());
     return result;
   });
   on("command.run", { command: "workboard" }, async ($) => {
@@ -687,7 +757,10 @@ export const register: Register = (on) => {
   });
   on("tool.call", { tool: TOOL }, async ($, e) => {
     try {
+      const previous = state.tasks;
       state = publish(state, (e as unknown as { update: unknown }).update);
+      const alerts = planAlerts(previous, state.tasks);
+      if (alerts.length) void alert($, alerts.join(" · "));
       await persist($);
       void refresh($);
       // A mod tool answers with text or content blocks; core rejects a plain object.
@@ -775,10 +848,25 @@ export const register: Register = (on) => {
         text: `Turno ${e.reason === "error" ? "fallido" : "rechazado"}`,
         at: Date.now(),
       };
+    // A long turn ending hands the move back, counted from the person's last answer; skipped
+    // when a plan alert just went out.
+    const now = await $.clock.now();
+    if (
+      !e.isAborted &&
+      Math.min(e.durationMs, now - answeredAt) >= LONG_TURN_MS &&
+      now - alertedAt > 30_000
+    )
+      void alert($, "Claude ha terminado; te toca");
     await persist($);
     void refresh($);
     return r;
   });
+  on("tool.call", { tool: "AskUserQuestion" }, async ($, e, next) =>
+    waitFor($, "Esperando tu respuesta", () => next(e)),
+  );
+  on("tool.call", { tool: "ExitPlanMode" }, async ($, e, next) =>
+    waitFor($, "Plan listo para aprobar", () => next(e)),
+  );
   on("tool.call", async ($, e, next) => {
     const r = await next(e);
     if (!active || e.tool === TOOL) return r;
@@ -818,7 +906,9 @@ export const register: Register = (on) => {
         state.agents = annotateAgent(state.agents, run.agentId, { effort: clean(input.effort, 20) });
       state.agents = reconcileAgents(state.agents, await $.agent.list());
     }
-    if (r.deny || r.isError)
+    // A question or plan the user closed, cut short or lost to a restart ends as an error too;
+    // that is the user's move, not a failure.
+    if (r.deny || (r.isError && !["AskUserQuestion", "ExitPlanMode"].includes(e.tool)))
       state.failure = {
         text: `${clean(e.tool)}: ${r.deny ? "denegado" : "falló"}`,
         at: Date.now(),
@@ -949,14 +1039,15 @@ export const register: Register = (on) => {
     return r;
   });
   on("ui.render", { component: "AssistantMessage" }, async ($, e, next) => {
-    if (!active || !paneHealthy || !state.robin) return next(e);
+    // The pane's visibility is the terminal's; a desktop beside it keeps ROBIN in its own chat.
+    if (e.surface !== "terminal" || !active || !paneHealthy || !state.robin) return next(e);
     const robin = extractRobin(e.props.text);
     if (!robin || robin.text !== state.robin.text) return next(e);
     const visible = (await $.ui.panes()).some((p) => p.id === PANE && p.isShown && p.isPlaced);
     return visible ? next({ ...e, props: { ...e.props, text: robin.body } }) : next(e);
   });
   on("ui.render", { component: "Pane", requestId: PANE }, async ($, e, next) => {
-    if (e.surface !== "terminal" || !active) return next(e);
+    if ((e.surface !== "terminal" && e.surface !== "desktop") || !active) return next(e);
     paneHealthy = false;
     const ui = $.ui.resolve(e);
     // ROBIN remains in the chat while a file replaces its panel.
@@ -1114,7 +1205,21 @@ export const register: Register = (on) => {
           );
         },
       },
-      agents: agentsModel(state, peersTalk, snapshot?.bridge.aliases, snapshot?.router),
+      agents: agentsModel(state, peersTalk, snapshot?.bridge.aliases, snapshot?.router, (agentId) => {
+        // $.ui.view (CLI 2.1.300) is newer than the bundled types; it refuses an agent that has
+        // ended or that the tasks list does not show.
+        // @ts-expect-error: not in the bundled 2.1.296 types.
+        $.ui.view({ agentId }).catch((e: unknown) =>
+          $.ui.toast(`No se puede ver el agente: ${e instanceof Error ? e.message : String(e)}`),
+        );
+      }),
+      agentDetails: {
+        open: agentDetails,
+        onToggle: () => {
+          agentDetails = !agentDetails;
+          redraw($);
+        },
+      },
       history: {
         open: history,
         // Features fold in the plan; finished tasks and agents that left the Agents card land here.

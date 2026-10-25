@@ -50,9 +50,10 @@ model may repeat the data in prose after the component.
 
 ## What it costs
 
-The schema stays in the prompt (`tool.describe` → `isDeferred: false`) instead of behind
-ToolSearch. Schema plus the fixed line measured about 1,200 tokens per request (20,957
-against 19,721 input tokens on Haiku for the same prompt), cached because neither text changes. A comparison payload is about 1,500 characters of output.
+The tool is deferred: only its name is in every request, and the fixed context line tells the
+model to load it with ToolSearch before the first call. Pinning the schema with `isDeferred: false`
+had measured about 1,200 tokens per request, schema plus line (20,957 against 19,721 input tokens on
+Haiku for the same prompt), for 30 uses in 190 sessions over 14 days. A comparison payload is about 1,500 characters of output.
 
 Thumbnails need macOS `sips`: an image of up to 20 MB is scaled into a temporary BMP, read
 and removed. Elsewhere the card names the file instead.
@@ -62,8 +63,11 @@ and removed. Elsewhere the card names the file instead.
 | Surface | Components | Thumbnails |
 |---|---|---|
 | Terminal (Agentic OS's xterm.js included) | ✓ | ✓ as a `Raster` of quadrant cells |
-| Desktop Code tab | ✓ | no (`Raster` is terminal-only) |
-| `-p`, SDK, consultations | not registered: no tool, no context line, plain markdown | no |
+| Desktop Code tab | ✓, once the app joins; no ⏺ gutter, no keyboard hints | no (`Raster` is terminal-only) |
+| `-p`, SDK, consultations, mobile | not registered: no tool, no context line, plain markdown | no |
+
+The desktop app starts its session as `-p` does (no surface, not interactive) and joins it
+afterwards (`session.attach`); the mod comes up on that join.
 
 ## Load
 

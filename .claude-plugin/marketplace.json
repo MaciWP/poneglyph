@@ -21,6 +21,11 @@
       "description": "Interactive answers in the transcript: a comparison with clickable topics, a ranking with thumbnails and a draft with Copiar."
     },
     {
+      "name": "log-pose",
+      "source": "./plugins/log-pose",
+      "description": "One Sonnet call per typed prompt, before the model starts: dictation fixes, skill candidates, the reasoning effort for the turn and an advisor gauge."
+    },
+    {
       "name": "dock",
       "source": "./plugins/dock",
       "description": "Action buttons in the transcript: open a file, a folder, a terminal, an agent session, a URL or Finder; through Agentic OS when it runs, macOS apps otherwise."

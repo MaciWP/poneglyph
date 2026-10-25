@@ -3,8 +3,8 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { BUDGET_LINE } from "../lib/haiku-budget";
-import { agentTask, bakedSkills, RETRY_REASON, routerTaskInput } from "../router/agent-hooks";
+import { BUDGET_LINE, SONNET_BUDGET_LINE } from "../lib/haiku-budget";
+import { agentTask, bakedSkills, modelNudge, RETRY_REASON, routerTaskInput } from "../router/agent-hooks";
 import { ignoreLearned } from "./learned-fixture";
 
 const HOOK = join(import.meta.dir, "..", "router", "agent-hooks.ts");
@@ -69,7 +69,7 @@ describe("router subagent hooks", () => {
 
   test("PreToolUse leaves other agents alone and gives the router only the skills its file lacks", () => {
     const { run } = fixture();
-    expect(run({ hook_event_name: "PreToolUse", tool_name: "Agent", tool_input: { subagent_type: "Explore", prompt: "x" } })).toBe("");
+    expect(run({ hook_event_name: "PreToolUse", tool_name: "Agent", tool_input: { subagent_type: "Explore", model: "opus", prompt: "x" } })).toBe("");
     const out = JSON.parse(run({ hook_event_name: "PreToolUse", tool_name: "Agent", tool_input: { subagent_type: "prompt-router", description: "d", prompt: "implementa a" } }));
     expect(out.hookSpecificOutput.updatedInput).toMatchObject({ subagent_type: "prompt-router", description: "d" });
     const prompt = out.hookSpecificOutput.updatedInput.prompt;
@@ -81,11 +81,13 @@ describe("router subagent hooks", () => {
     const { run, agentFile } = fixture();
     const task = (input: Record<string, unknown>, model?: string) => {
       const out = run({ hook_event_name: "PreToolUse", tool_name: "Agent", tool_input: input }, model);
-      return out ? JSON.parse(out).hookSpecificOutput.updatedInput.prompt as string : null;
+      return out ? (JSON.parse(out).hookSpecificOutput.updatedInput?.prompt as string | undefined) ?? null : null;
     };
     expect(task({ subagent_type: "Explore", model: "haiku", prompt: "find x" })).toBe(`find x\n\n${BUDGET_LINE}`);
     expect(task({ subagent_type: "general-purpose", prompt: "find x" }, "haiku")).toBe(`find x\n\n${BUDGET_LINE}`);
-    expect(task({ subagent_type: "Explore", model: "sonnet", prompt: "find x" }, "haiku")).toBeNull();
+    expect(task({ subagent_type: "Explore", model: "sonnet", prompt: "find x" }, "haiku")).toBe(`find x\n\n${SONNET_BUDGET_LINE}`);
+    expect(task({ subagent_type: "Explore", model: "sonnet", prompt: `find x\n\n${SONNET_BUDGET_LINE}` })).toBeNull();
+    expect(task({ subagent_type: "Explore", model: "opus", prompt: "find x" })).toBeNull();
     expect(task({ subagent_type: "fork", prompt: "find x" }, "haiku")).toBeNull();
     // Explore and Plan ignore CLAUDE_CODE_SUBAGENT_MODEL and inherit the parent's model.
     expect(task({ subagent_type: "Explore", prompt: "find x" }, "haiku")).toBeNull();
@@ -94,6 +96,30 @@ describe("router subagent hooks", () => {
     writeFileSync(agentFile, readFileSync(agentFile, "utf8").replace("name: prompt-router\n", "name: prompt-router\nmodel: haiku\n"));
     const routed = task({ subagent_type: "prompt-router", prompt: "implementa a" })!;
     expect(routed).toEndWith(`</prompt>\n\n${BUDGET_LINE}`);
+  });
+
+  test("a spawn that inherits the Lead's model because nothing named one gets a note, never a block", () => {
+    const { run, agentFile } = fixture();
+    const cwd = "/nonexistent";
+    expect(modelNudge({ subagent_type: "Explore", prompt: "x" }, cwd, "haiku")).toContain("named no model");
+    expect(modelNudge({ subagent_type: "Plan", prompt: "x" }, cwd, "haiku")).toContain("Plan Agent call");
+    expect(modelNudge({ prompt: "x" }, cwd, "inherit")).toContain("general-purpose Agent call");
+    expect(modelNudge({ prompt: "x" }, cwd, "")).toContain("named no model");
+    // Named on the call, by the env for a non-Explore agent, or a fork: nothing to say.
+    expect(modelNudge({ subagent_type: "Explore", model: "haiku", prompt: "x" }, cwd, "haiku")).toBeNull();
+    expect(modelNudge({ subagent_type: "Explore", model: "inherit", prompt: "x" }, cwd, "haiku")).toBeNull();
+    expect(modelNudge({ subagent_type: "general-purpose", prompt: "x" }, cwd, "haiku")).toBeNull();
+    expect(modelNudge({ subagent_type: "fork", prompt: "x" }, cwd, "")).toBeNull();
+    // Through the hook: a note alone carries no permission decision and no rewrite.
+    const alone = JSON.parse(run({ hook_event_name: "PreToolUse", tool_name: "Agent", tool_input: { subagent_type: "Explore", prompt: "x" } }, "haiku")).hookSpecificOutput;
+    expect(alone).toEqual({ hookEventName: "PreToolUse", additionalContext: modelNudge({ subagent_type: "Explore", prompt: "x" }, cwd, "haiku") });
+    // The router's rewrite and the note share one output.
+    const both = JSON.parse(run({ hook_event_name: "PreToolUse", tool_name: "Agent", tool_input: { subagent_type: "prompt-router", prompt: "implementa a" } })).hookSpecificOutput;
+    expect(both.updatedInput.prompt).toContain("<prompt>\nimplementa a\n</prompt>");
+    expect(both.additionalContext).toContain("prompt-router Agent call");
+    // The agent file's own model counts as named.
+    writeFileSync(agentFile, readFileSync(agentFile, "utf8").replace("name: prompt-router\n", "name: prompt-router\nmodel: haiku\n"));
+    expect(JSON.parse(run({ hook_event_name: "PreToolUse", tool_name: "Agent", tool_input: { subagent_type: "prompt-router", prompt: "implementa a" } })).hookSpecificOutput.additionalContext).toBeUndefined();
   });
 
   test("SubagentStop sends an unreadable answer back once, then logs", () => {

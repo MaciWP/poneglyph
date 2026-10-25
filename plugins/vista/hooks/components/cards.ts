@@ -38,13 +38,13 @@ export function cards(ui: Ui, v: Cards, thumbs: Thumbs): RenderElement {
                 children: [
                   ui.Box({
                     flexShrink: 0,
-                    children: ui.Text({ backgroundColor: i === 0 ? T.accent : T.rule, color: i === 0 ? T.onAccent : undefined, bold: true, children: ` ${i + 1} ` }),
+                    children: ui.Text({ backgroundColor: i === 0 ? T.accent : T.rule, color: i === 0 ? T.onAccent : undefined, weight: "semibold", children: ` ${i + 1} ` }),
                   }),
-                  ui.Box({ flexShrink: 1, children: ui.Text({ bold: true, wrap: "truncate-end", children: c.name }) }),
+                  ui.Box({ flexShrink: 1, children: ui.Text({ weight: "semibold", wrap: "truncate-end", children: c.name }) }),
                   c.badge ? ui.Box({ flexShrink: 0, children: ui.Text({ backgroundColor: T.label, color: T.onAccent, children: ` ${c.badge} ` }) }) : null,
                 ],
               }),
-              c.metric ? ui.Text({ color: T.accent, bold: true, children: `  ${c.metric}` }) : null,
+              c.metric ? ui.Text({ color: T.accent, weight: "semibold", children: `  ${c.metric}` }) : null,
               c.detail ? ui.Box({ paddingLeft: 2, children: ui.Text({ wrap: "wrap", children: c.detail }) }) : null,
             ],
           }),

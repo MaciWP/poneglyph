@@ -62,7 +62,7 @@ When a build step or an agent unit fails, the Lead:
 
 ## Recovery Prompt Template
 
-When re-running an agent unit, ALWAYS include:
+When re-running an agent unit, include:
 
 | Field | Content |
 |-------|---------|

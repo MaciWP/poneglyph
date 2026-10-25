@@ -34,20 +34,20 @@ Every claim is grounded: in the codebase via Read/Grep, or in canonical document
 | User says | Apply |
 |---|---|
 | "explicame los cambios pendientes" | Resolve target = working tree, run full workflow |
-| "que hace este commit" + hash | Resolve target = `git show <hash>` |
-| "ensename esta rama" | Resolve target = diff vs merge-base with the default branch |
-| "que cambio en `apps/foo/models.py`" | Resolve target = file + git blame |
+| "qué hace este commit" + hash | Resolve target = `git show <hash>` |
+| "enséñame esta rama" | Resolve target = diff vs merge-base with the default branch |
+| "qué cambió en `apps/foo/models.py`" | Resolve target = file + git blame |
 | "onboarding al modulo X" | Resolve target = file/dir, full workflow with deeper context |
 
 ## When NOT to Use
 
 | Situation | Use instead |
 |---|---|
-| User already understands the change and asks "fix it" | `flow` skill (build phase) |
+| User already understands the change and asks "fix it" | `dev-workflow` skill |
 | User wants quality assessment of the change | `pr-review` skill |
 | User wants to decide between approaches | `compare-and-decide` skill |
 | Pure debugging of a runtime error | `Skill('troubleshooting')` invoked by the Lead |
-| User wants to MODIFY the code | `flow` skill (build phase): this skill is read-only |
+| User wants to MODIFY the code | `dev-workflow` skill: this skill is read-only |
 
 ## Input Resolution
 
@@ -80,7 +80,7 @@ graph TD
     E -->|Yes| G[Compose report]
     F --> G
     G --> H[Output: professor-mode template]
-    H --> I[Offer follow-up: deep-dive / next file / apply pattern]
+    H --> I[End when answered, a next-target choice goes through AskUserQuestion]
 ```
 
 ## Investigation Protocol
@@ -141,9 +141,9 @@ Reputable sources by stack, citation format, override rules ("100% certeza" forc
 Closing every report:
 
 1. End when the questions are answered; a real choice of next target goes through `AskUserQuestion`.
-2. If user asks a focused question → respond in-place with same rigor (verify + cite). DO NOT regenerate the full report.
+2. If user asks a focused question → respond in-place with same rigor (verify + cite). Do not regenerate the full report.
 3. If user says "no entiendo X" → reformulate with analogy + concrete example.
-4. If question moves outside the original scope → offer to re-scope: "Esto pertenece a [otro target]. Cambio el target?"
+4. If question moves outside the original scope → offer the re-scope through `AskUserQuestion` (current target vs the new one)
 5. If user says "ya entiendo" / "vale" → stop. No further output.
 
 Detail per pattern (focused Q&A, re-scope, cancel, reformulation): `${CLAUDE_SKILL_DIR}/references/interaction-patterns.md`.
@@ -153,13 +153,13 @@ Detail per pattern (focused Q&A, re-scope, cancel, reformulation): `${CLAUDE_SKI
 | WRONG | CORRECT |
 |---|---|
 | "Probablemente Django usa X" sin verificar | WebFetch + literal quote with URL |
-| Resumir sin enlazar con la cadena logica | Each point references the chain step it covers |
+| Resumir sin enlazar con la cadena lógica | Each point references the chain step it covers |
 | Citar StackOverflow / blog post como autoritativo | Only canonical sources (see verification-rules.md) |
 | Inventar URLs de documentacion | Verify URL via WebFetch before citing |
 | Reporte exhaustivo cuando el cambio es trivial | Calibrate depth to change complexity |
-| Modificar codigo "para arreglar lo que no entiende" | This skill is read-only: use the `flow` skill (build phase) to make changes |
+| Modificar código "para arreglar lo que no entiende" | This skill is read-only: use the `dev-workflow` skill to make changes |
 | Regenerar el reporte completo en cada follow-up | Focused Q&A only re-runs the relevant verification |
-| Inventar el commit message si no esta disponible | Say "no commit message available" explicitly |
+| Inventar el commit message si no está disponible | Say "no commit message available" explicitly |
 
 ## Content Map
 
@@ -177,14 +177,10 @@ Detail per pattern (focused Q&A, re-scope, cancel, reformulation): `${CLAUDE_SKI
 |---|---|
 | III | Honest about gaps: "no commit message available" instead of inventing one |
 | II | Verifies framework behavior against reputable sources (WebFetch) before explaining it |
-| I | Read-only by design: understands the change, never modifies code (that is `flow` build phase) |
+| I | Read-only by design: understands the change, never modifies code (that is `dev-workflow`) |
 | VII | Teaching mode turns a diff into transferable understanding (onboarding, self-improvement) |
 
 ## Related
 
-- `flow` skill (build phase): the write path; this skill explains, it never edits.
+- `dev-workflow` skill: the write path; this skill explains, it never edits.
 - Verify file/symbol claims during investigation (`changes-verify` → existence checks).
-
----
-
-**Version**: 1.0.0

@@ -14,6 +14,7 @@ import {
   addLinks,
   collaboration,
   annotateAgent,
+  planAlerts,
   type Link,
 } from "../hooks/core.ts";
 
@@ -378,4 +379,19 @@ test("the loopback allowlists of hud, dock and workboard match", () => {
   });
   expect(sets[0]).toEqual(["127.0.0.1", "[::1]", "agentic-os.localhost", "localhost"]);
   for (const s of sets) expect(s).toEqual(sets[0]);
+});
+test("plan alerts fire on a new failure, block or finish, never on a resent state", () => {
+  const plan = publish(initialState("s", "/repo"), {
+    tasks: [
+      { id: "a", title: "Esquema", state: "running" },
+      { id: "b", title: "Backfill", state: "pending" },
+    ],
+  });
+  const failed = publish(plan, { tasks: [{ id: "a", state: "failed" }, { id: "b", state: "blocked" }] });
+  expect(planAlerts(plan.tasks, failed.tasks)).toEqual(["Tarea fallida: Esquema", "Tarea bloqueada: Backfill"]);
+  expect(planAlerts(failed.tasks, publish(failed, { tasks: [{ id: "a", state: "failed" }] }).tasks)).toEqual([]);
+  const done = publish(failed, { tasks: [{ id: "a", state: "completed" }, { id: "b", state: "completed" }] });
+  expect(planAlerts(failed.tasks, done.tasks)).toEqual(["Plan completado: 2 tareas"]);
+  expect(planAlerts(done.tasks, done.tasks)).toEqual([]);
+  expect(planAlerts([], [])).toEqual([]);
 });

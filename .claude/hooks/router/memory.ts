@@ -2,8 +2,8 @@
 // Router memory: what this user did before, so the router can follow their habits.
 //   - session: skills already loaded in this session (named `/x` or called) are not
 //     suggested again; their text is already in the main model's context.
-//   - past prompts: the user's earlier prompts with the skills used for them. The router
-//     sees the few most similar ones next to the new prompt.
+//   - past prompts: the user's earlier prompts with the skills used for them and the ones the
+//     main model turned down. The router sees the few most similar ones next to the new prompt.
 // Past prompts hold work text, so the index lives in <config>/router-memory.jsonl, outside
 // any repository, and is derived from the local transcripts only.
 // `bun memory.ts --build <cwd>` rebuilds it; the hook starts that detached when it is stale.
@@ -13,7 +13,7 @@ import { claudeConfigDir } from "../lib/paths";
 import { foldText } from "../lib/language";
 
 export interface RouterCase { prompt: string; expected: string[]; source: "typed" | "autonomous" | "negative"; at?: number }
-export interface MemoryEntry { at: number; prompt: string; skills: string[] }
+export interface MemoryEntry { at: number; prompt: string; skills: string[]; declined?: string[] }
 
 export const MIN_WORDS = 6;
 export const MAX_PROMPT_CHARS = 3000;
@@ -21,6 +21,8 @@ const PASTED_RE = /<pasted_content[^>]*>[\s\S]*?<\/pasted_content>/g;
 export const MEMORY_MAX_AGE_MS = 6 * 3_600_000;
 export const MEMORY_DAYS = 60;
 const MEMORY_PROMPT_CHARS = 300;
+// A decline stops counting when a turn within this window loads the skill after all: the Lead was wrong.
+const DECLINE_GUARD_MS = 2 * 3_600_000;
 
 export const memoryFile = (config = claudeConfigDir()) => join(config, "router-memory.jsonl");
 
@@ -61,25 +63,38 @@ export function caseFromTurn(text: string, named: string[], called: string[], ca
   return called.length ? null : { prompt: text, expected: [], source: "negative" };
 }
 
-// Prompts where the user named a skill or the main model called one; pasted blocks are
-// dropped and the text is capped, so an entry costs a line in the router's input. A call
-// the router or the keyword hook suggested in that turn does not count: the memory would
-// learn from its own picks and repeat them with more weight.
-export function memoryFromTurns(turns: { text?: string; at?: number; named: string[]; called: string[]; hinted?: string[]; routed?: string[] }[], catalog: Set<string>): MemoryEntry[] {
+type MemoryTurn = { text?: string; at?: number; named: string[]; called: string[]; late?: string[]; hinted?: string[]; routed?: string[]; answers?: { name: string; yes: boolean }[] };
+
+// Prompts where the user named a skill, the main model called one, or the main model turned one
+// down; pasted blocks are dropped and the text is capped, so an entry costs a line in the
+// router's input. A call the router or the keyword hook suggested in that turn does not count:
+// the memory would learn from its own picks and repeat them with more weight. Nor does one made
+// only after the turn's first edit: 54 of 197 such calls over 60 days were mostly a later phase
+// ("busca la documentación…" → natural-writing for the write-up).
+export function memoryFromTurns(turns: MemoryTurn[], catalog: Set<string>): MemoryEntry[] {
   const seen = new Set<string>();
   const out: MemoryEntry[] = [];
-  for (const t of turns) {
-    if (!t.text || !t.at) continue;
-    const called = t.called.filter((n) => !t.routed?.includes(n) && !t.hinted?.includes(n));
+  turns.forEach((t, i) => {
+    if (!t.text || !t.at) return;
+    const called = t.called.filter((n) => !t.routed?.includes(n) && !t.hinted?.includes(n) && !t.late?.includes(n));
     const c = caseFromTurn(t.text, t.named, called, catalog);
-    if (!c?.expected.length) continue;
+    const declined = declinedIn(turns, i, catalog);
+    if (!c || (!c.expected.length && !declined.length)) return;
     const prompt = c.prompt.replace(PASTED_RE, " ").replace(/\s+/g, " ").trim().slice(0, MEMORY_PROMPT_CHARS);
     const key = foldText(prompt);
-    if (words(prompt) < MIN_WORDS || seen.has(key)) continue;
+    if (words(prompt) < MIN_WORDS || seen.has(key)) return;
     seen.add(key);
-    out.push({ at: t.at, prompt, skills: c.expected });
-  }
+    out.push({ at: t.at, prompt, skills: c.expected, ...(declined.length ? { declined } : {}) });
+  });
   return out;
+}
+
+// Skills the router suggested and the Lead answered `Router: <skill> no` for, loaded neither in
+// that turn nor in one within DECLINE_GUARD_MS after it (plan 044 learning-loop.md §1).
+function declinedIn(turns: MemoryTurn[], i: number, catalog: Set<string>): string[] {
+  const t = turns[i]!;
+  const loadedLater = (name: string) => turns.some((u, j) => j > i && u.at !== undefined && u.at >= t.at! && u.at - t.at! <= DECLINE_GUARD_MS && (u.called.includes(name) || u.named.includes(name)));
+  return (t.answers ?? []).filter((a) => !a.yes && catalog.has(a.name) && t.routed?.includes(a.name) && !t.called.includes(a.name) && !t.named.includes(a.name) && !loadedLater(a.name)).map((a) => a.name);
 }
 
 export function loadMemory(file = memoryFile()): MemoryEntry[] {
@@ -126,12 +141,14 @@ export function similarPast(prompt: string, memory: MemoryEntry[], k = 3, minSha
 
 // The past prompts the router sees, keeping only skills still in the catalog.
 export function pastFor(prompt: string, known: Set<string>, memory = loadMemory()): MemoryEntry[] {
-  return similarPast(prompt, memory.map((e) => ({ ...e, skills: e.skills.filter((n) => known.has(n)) })).filter((e) => e.skills.length));
+  return similarPast(prompt, memory.map((e) => ({ ...e, skills: e.skills.filter((n) => known.has(n)), declined: (e.declined ?? []).filter((n) => known.has(n)) }))
+    .filter((e) => e.skills.length || e.declined.length));
 }
 
 export function formatPast(entries: MemoryEntry[]): string {
   if (!entries.length) return "";
-  return ["<past>", ...entries.map((e) => `- "${e.prompt.replace(/"/g, "'")}" → ${e.skills.join(", ")}`), "</past>"].join("\n");
+  const outcome = (e: MemoryEntry) => [e.skills.join(", "), e.declined?.length ? `declined: ${e.declined.join(", ")}` : ""].filter(Boolean).join(" · ");
+  return ["<past>", ...entries.map((e) => `- "${e.prompt.replace(/"/g, "'")}" → ${outcome(e)}`), "</past>"].join("\n");
 }
 
 // Skills already in this session's context: named by the user or called by the model.

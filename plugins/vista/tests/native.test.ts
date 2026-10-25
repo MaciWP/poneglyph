@@ -63,6 +63,7 @@ function world(on: On) {
   const toasts: string[] = [];
   const tools: { name: string; description: string }[] = [];
   on("session.start", (_, e) => ({ cwd: e.cwd }));
+  on("session.attach", (_, e) => ({ clientId: e.clientId }));
   on("command.register", (_, e) => ({ value: { command: e.name } }));
   on("tool.register", (_, e) => {
     tools.push(e);
@@ -100,7 +101,7 @@ function world(on: On) {
   return { clock, copies, opens, runs, toasts, tools };
 }
 
-test("show registers with its schema in the prompt and a fixed context line on every prompt", async ($, on) => {
+test("show registers deferred, with a fixed context line naming how to load it, on every prompt", async ($, on) => {
   const w = world(on);
   let context: string[] = [];
   on("prompt.submit", (_, e) => {
@@ -115,7 +116,8 @@ test("show registers with its schema in the prompt and a fixed context line on e
   await $.prompt.submit({ text: "Compara A y B", origin: { kind: "composer" } } as never);
   expect(context.at(-1)).toContain("mcp__vista__show");
   const described = await $.tool.describe({ tool: TOOL, description: "d", isDeferred: true, provider: { plugin: "vista", tier: "user" } });
-  expect(described.isDeferred).toBe(false);
+  expect(described.isDeferred).toBe(true);
+  expect(context.at(-1)).toContain("ToolSearch");
 });
 
 test("a session that draws nothing gets neither the tool nor the context line", async ($, on) => {
@@ -129,6 +131,49 @@ test("a session that draws nothing gets neither the tool nor the context line", 
   expect(w.tools).toHaveLength(0);
   await $.prompt.submit({ text: "Compara A y B", origin: { kind: "composer" } } as never);
   expect(context.some((c) => c.includes("vista"))).toBe(false);
+});
+
+// The desktop app starts the session as `-p` does (no surface, not interactive) and joins it
+// afterwards; only that join tells the two apart.
+test("the desktop gets the tool once it joins, and draws without the terminal's gutter", async ($, on) => {
+  const w = world(on);
+  let context: string[] = [];
+  on("prompt.submit", (_, e) => {
+    context = [...(e.context ?? [])];
+    return { text: e.text };
+  });
+  await $.session.start({ cwd: "/work/project", surface: null, isInteractive: false });
+  expect(w.tools).toHaveLength(0);
+  await $.session.attach({ surface: "desktop", clientId: "desktop:default" });
+  // A second client of the same session registers nothing twice.
+  await $.session.attach({ surface: "desktop", clientId: "desktop:2" });
+  expect(w.tools.map((t) => t.name)).toEqual(["show"]);
+  await $.prompt.submit({ text: "Compara A y B", origin: { kind: "composer" } } as never);
+  expect(context.at(-1)).toContain("mcp__vista__show");
+  const desk = <T extends object>(m: T) => ({ ...m, surface: "desktop" }) as never;
+  const row = await $.ui.mount(desk(toolUse("t1", compare)));
+  expect(await row.find({ type: "Button", text: "Rendimiento" })).toBeDefined();
+  const result = await $.ui.mount(desk({ plugin: "vista", component: "ToolResult", requestId: "t1", viewport, props: { tool_use_id: "t1", tool: TOOL, output: "Shown", isErrored: false, onScreen: null } }));
+  expect((await result.find({ type: "Text", text: /vista mostrada/ }))?.text).toBe("vista mostrada");
+  // A reply opening with a table: the terminal would draw vista's own ⏺ in a gutter beside it.
+  const m = await $.ui.mount(desk(reply("m1", "| Base | Precio |\n|---|---|\n| SQLite | gratis |\n\nDespués.")));
+  expect(await m.find({ type: "Text", text: "SQLite" })).toBeDefined();
+  // The bullet column is vista's own; the stub engine's "⏺ MD:" piece is not it.
+  expect(await m.find({ type: "Text", text: /^⏺$/ })).toBeUndefined();
+});
+
+test("a desktop joining a terminal session registers nothing twice", async ($, on) => {
+  const w = world(on);
+  await $.session.start(start);
+  await $.session.attach({ surface: "desktop", clientId: "desktop:default" });
+  expect(w.tools.map((t) => t.name)).toEqual(["show"]);
+});
+
+test("a phone joining draws nothing new: only the desktop registers the tool", async ($, on) => {
+  const w = world(on);
+  await $.session.start({ cwd: "/work/project", surface: null, isInteractive: false });
+  await $.session.attach({ surface: "mobile", clientId: "mobile:default" });
+  expect(w.tools).toHaveLength(0);
 });
 
 test("a valid call is shown and a malformed one goes back to the model with the field to fix", async ($, on) => {
@@ -149,7 +194,7 @@ test("the comparison switches topic with a click and keeps the engine's row whil
   expect(await row.find({ text: " ◆ COMPARAR " })).toBeDefined();
   expect(await row.find({ type: "Button", text: "Rendimiento" })).toBeDefined();
   // The active tab is a filled pill; the others are plain words.
-  expect((await row.find({ type: "Text", text: " Rendimiento " }))?.props).toMatchObject({ backgroundColor: "suggestion", bold: true });
+  expect((await row.find({ type: "Text", text: " Rendimiento " }))?.props).toMatchObject({ backgroundColor: "suggestion", weight: "semibold" });
   expect((await row.find({ type: "Text", text: " Precio " }))?.props).toMatchObject({ color: "inactive" });
   expect(await row.find({ text: "✓ muy rápidas" })).toBeDefined();
   expect(await row.find({ type: "Text", text: "─────" })).toBeDefined();
@@ -276,8 +321,8 @@ test("a reply with a table gets vista's table, and the text around it stays the 
   expect((await m.find({ type: "Text", text: "gratis" }))?.text).toBe("gratis");
   expect((await m.find({ type: "Text", text: "MD:Después." }))?.text).toBe("MD:Después.");
   expect(await m.find({ type: "Text", text: "ROBIN: hecho" })).toBeUndefined();
-  // The row label is bold body text, not the faint grey that made it hard to read.
-  expect((await m.find({ type: "Text", text: "SQLite" }))?.props).toMatchObject({ bold: true });
+  // The row label is semibold body text, not the faint grey that made it hard to read.
+  expect((await m.find({ type: "Text", text: "SQLite" }))?.props).toMatchObject({ weight: "semibold" });
   expect((await m.find({ type: "Text", text: "SQLite" }))?.props.color).toBeUndefined();
 });
 
@@ -288,10 +333,10 @@ test("a table of prose becomes a list: an accent bar per row, the label over its
   const md = `| Hallazgo | Consecuencia |\n|---|---|\n| Delegar ahora muy poco | ${long} |\n| FILE_ROOTS falla en Windows | Deniega toda lectura |`;
   const m = await $.ui.mount(reply("p1", md));
   // Only the first column's name heads the list; no rule, no "A · B" title.
-  expect((await m.find({ type: "Text", text: "Hallazgo" }))?.props).toMatchObject({ bold: true, color: "suggestion" });
+  expect((await m.find({ type: "Text", text: "Hallazgo" }))?.props).toMatchObject({ weight: "semibold", color: "suggestion" });
   expect(await m.find({ text: "Hallazgo · Consecuencia" })).toBeUndefined();
   expect(await m.find({ text: /^─+$/ })).toBeUndefined();
-  expect((await m.find({ type: "Text", text: "Delegar ahora muy poco" }))?.props).toMatchObject({ bold: true });
+  expect((await m.find({ type: "Text", text: "Delegar ahora muy poco" }))?.props).toMatchObject({ weight: "semibold" });
   expect((await m.find({ type: "Text", text: long }))?.props).toMatchObject({ wrap: "wrap" });
   // One value needs no name: the row's label says what it is.
   expect(await m.find({ text: "Consecuencia" })).toBeUndefined();

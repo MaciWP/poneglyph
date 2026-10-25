@@ -13,7 +13,7 @@
 // `<project>/.claude/learned/turn-nudges.log` is both the log and the marker. Claude only:
 // Codex and Grok carry the same duties in the doctrine.
 import { readFileSync } from "node:fs";
-import { queuedPromptOf, readTranscriptTail, userPromptOf } from "./lib/transcript";
+import { queuedPromptOf, readTranscriptTail, routerNoteOf, userPromptOf } from "./lib/transcript";
 import { stopwordCounts } from "./lib/language";
 import { appendLog } from "./instructions-loaded";
 import { learnedLog } from "./lib/paths";
@@ -64,9 +64,9 @@ export function readTail(jsonl: string): TailState {
       continue;
     }
     const turn = turns.at(-1);
-    if (e?.type === "attachment" && e.attachment?.type === "async_hook_response") {
-      const note = e.attachment.response?.hookSpecificOutput?.additionalContext;
-      if (turn && typeof note === "string" && note.includes("Candidate skills") && noteMatches(note, turn.prompt)) turn.routerNote = true;
+    const note = routerNoteOf(e);
+    if (note !== null) {
+      if (turn && note.includes("Candidate skills") && noteMatches(note, turn.prompt)) turn.routerNote = true;
       continue;
     }
     if (e?.type !== "assistant" || !Array.isArray(e.message?.content)) continue;

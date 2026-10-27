@@ -255,3 +255,7 @@ The current bridge topology and verification commands live in
 | Claude hook fires twice in Poneglyph | hook registered in both user and project settings | Keep hooks only in `settings.global.json`; rerun sync |
 | Codex lacks Poneglyph behavior | Codex adapter not installed | Run `sync-codex.ts --execute --backup --force` |
 | `bun test` fails to find files | wrong cwd | run from repo root |
+
+## Author
+
+Built by [Oriol Macias](https://oriolmacias.dev).

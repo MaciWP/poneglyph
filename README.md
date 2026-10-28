@@ -256,6 +256,6 @@ The current bridge topology and verification commands live in
 | Codex lacks Poneglyph behavior | Codex adapter not installed | Run `sync-codex.ts --execute --backup --force` |
 | `bun test` fails to find files | wrong cwd | run from repo root |
 
-## Author
+## License
 
-Built by [Oriol Macias](https://oriolmacias.dev).
+[MIT](LICENSE). Built by [Oriol Macias](https://oriolmacias.dev).

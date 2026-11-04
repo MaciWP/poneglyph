@@ -1,0 +1,17 @@
+{
+  "us": "US4",
+  "revision": "HEAD 690040f + factory-mode.md, rules/paths/hooks.md and 09-loops-playbook.md, sha1 258b478839ad (D6 rework plus the pre-review mint fix); CLAUDE.md unchanged by user decision",
+  "tests_passed": true,
+  "checks": [
+    {"name": "AC1b CLAUDE.md unchanged", "status": "passed", "evidence": "git diff --stat CLAUDE.md empty; factory-mode.md opens with: opening that PR is the last thing it does; it never merges, marks the PR ready, asks to merge or offers to"},
+    {"name": "AC2 playbook row", "status": "passed", "evidence": "row rejects unattended build/write without the factory grant and its gates and names docs/factory-mode.md"},
+    {"name": "AC3 hooks.md cell", "status": "passed", "evidence": "remote-git-gate cell names the separate fail-open Write|Edit|MultiEdit entry, the attended gh api merge and alias reading, the D6 allowlist, the exact-name mint denial with reads and other variables free, the best-effort limit and docs/factory-mode.md"},
+    {"name": "validations Post", "status": "passed", "evidence": "factory-mode.md states the grant fields, the two allowed commands, the https push URL precondition, never-covered actions (merge, ready, force, gh api write), dudas.md format, the high-risk exclusion, no --agent, and the threat model (one call at a time; scripts and work split across calls out of reach; GitHub review protection without admin bypass as the boundary)"},
+    {"name": "validations amended", "status": "passed", "evidence": "validations.md: the CLAUDE.md assertions are marked superseded by AC1b; tests.md carries the D6 amendment (T2.1, T2.4, T3.1, T3.4, T3.4b changed; T6.1-T6.4 new)"},
+    {"name": "cross-validation", "status": "passed", "evidence": "the doc's denied rows match refusalOf in remote-git.ts: force or delete, URL or other remote, other destination, other shape, merge, ready, gh api write, non-read-only gh, non-builtin git"},
+    {"name": "no dates or models", "status": "passed", "evidence": "rg 20[0-9]{2}-|claude-|opus|sonnet|haiku on factory-mode.md: empty"},
+    {"name": "check:config", "status": "passed", "evidence": "419 text files, 21 skills; 0 errors, 3 warnings (pre-existing binary diagrams)"},
+    {"name": "budget", "status": "passed", "evidence": "15087 B <= snapshot 15087 B"},
+    {"name": "doctor", "status": "passed", "evidence": "suite 1258 pass, types, budget, memory, compliance 🟢; Claude layer 🟡 1/24 (settings.json not validated: claude not on this session's PATH; sync-claude --status does not flag the stale matcher), plugin validation 🟡 (same PATH), config 🟡 (3 pre-existing binary warnings)"}
+  ]
+}

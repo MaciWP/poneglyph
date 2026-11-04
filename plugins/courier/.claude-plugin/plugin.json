@@ -1,0 +1,6 @@
+{
+  "name": "courier",
+  "version": "0.1.0",
+  "description": "Delivers Agentic OS messages to this session as prompts of their own, without typing into the terminal.",
+  "author": { "name": "Oriol Macias" }
+}

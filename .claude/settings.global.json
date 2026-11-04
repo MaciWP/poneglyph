@@ -310,6 +310,7 @@
     "prompt-design": "name-only",
     "security-audit": "name-only",
     "troubleshooting": "name-only",
-    "ui-design": "name-only"
+    "ui-design": "name-only",
+    "aos-messages": "name-only"
   }
 }

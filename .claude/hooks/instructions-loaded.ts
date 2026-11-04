@@ -15,10 +15,11 @@
  * No rotation, the log is plain lines; truncate manually or at retro.
  */
 
-import { appendFileSync, mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { appendFileSync, mkdirSync, statSync } from "node:fs";
+import { basename, dirname } from "node:path";
 import { readHookStdin } from "./lib/hook-stdin";
 import { learnedLog } from "./lib/paths";
+import { noteRun } from "./lib/run-log";
 
 export interface InstructionsLoadedPayload {
   session_id?: string;
@@ -38,6 +39,13 @@ export function formatLogLine(
   const type = payload.memory_type ?? "?";
   const reason = payload.load_reason ?? "?";
   return `${now.toISOString()} ${session} ${type} ${reason} ${payload.file_path}`;
+}
+
+/** The file's name inside `.claude/` (`rules/x.md`), else its base name: never the project path. */
+export function instructionName(path: string): string {
+  const p = path.replaceAll("\\", "/");
+  const i = p.lastIndexOf("/.claude/");
+  return i >= 0 ? p.slice(i + "/.claude/".length) : basename(p);
 }
 
 export function appendLog(line: string, logPath: string): void {
@@ -63,6 +71,12 @@ if (import.meta.main) {
       }
       const line = formatLogLine(payload);
       if (line) {
+        // The run log keeps the name and size only, so the usage view can sum what loads.
+        try {
+          noteRun({ file: instructionName(payload.file_path!), type: payload.memory_type ?? "?", bytes: statSync(payload.file_path!).size });
+        } catch {
+          // a file gone before the stat: no size
+        }
         appendLog(line, learnedLog(payload.cwd, "instructions-loaded.log"));
       }
     }

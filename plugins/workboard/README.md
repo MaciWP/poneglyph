@@ -28,7 +28,10 @@ wide fullscreen terminal; a terminal too narrow for it shows nothing of Workboar
 window grows. The pane uses native buttons: a click presses them in the fullscreen terminal; by
 keyboard, focus with Claude's `ctrl+x tab`, move with Tab, activate with Enter, leave with Esc.
 **Actualizar** in the header (`a`) refreshes Git, GitHub and coverage and ends with a toast that
-says whether it worked. Opening/updating the pane does not request keyboard focus.
+says whether it worked. Opening/updating the pane does not request keyboard focus. The board
+refreshes by itself every 15 s while a turn or an agent runs, at the end of each turn, and every
+5 minutes in an idle session, since each snapshot costs seconds of CPU; a failed one is retried
+on the next 15 s tick.
 
 The plan's header counts finished leaf tasks (`3/8 hechas`); each row's icon shows its state. Only the feature that is moving or stuck shows
 its subtasks, and a subtask names its state only when blocked or failed. Each agent takes one line

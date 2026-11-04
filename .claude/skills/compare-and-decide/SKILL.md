@@ -108,7 +108,7 @@ Verdict shapes: Proceed / Proceed with conditions / Investigate first / Reject.
 | I | Brief + triage + framing check force understanding before recommending |
 | II | Heavy tier: per-finding verification gate; no speculative objections |
 | III | Forced dissent (Adversary), verbatim dissents in the vote; the decision is challenged, not validated |
-| V | Tier classifier keeps reversible calls at ~500-800 tokens; no over-engineering |
+| V | Tier classifier keeps reversible calls short and inline; no over-engineering |
 | X | Quick tier inline (no spawns for 1-3 units); heavy tier stakes-calibrated 5-12, never fixed over-spend |
 
 ## Related

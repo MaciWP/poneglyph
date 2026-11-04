@@ -98,6 +98,8 @@ Three axes, large read context?, read-only?, negotiate interfaces?, diagram in `
 
 **Exploración**: default = Lead `Read`/`Grep` inline. `Explore` (built-in, read-only) no necesita permiso: con volumen grande, lanzarlo con el tier barato explícito (sin `model` hereda el del Lead). 1-2 files → siempre inline. Matriz: `references/04-agent-selection.md`.
 
+**Lead de varias sesiones** (usa `aos message` o `aos create`): compacta 4,6 veces más por hora que un worker (0,39 frente a 0,084, 30 días a 2026-10-27). Cada ronda empieza en sesión limpia con un fichero de traspaso (decisiones, hecho con checks, reservas, pendiente, ids a informar); traspasa antes de compactar. Las lecturas de varios ficheros van a `Explore` con el tier barato.
+
 **Ortogonal al árbol (no son spawn)**: sensitive paths y destructive ops → inline, nunca delegados; reglas en CLAUDE.md §Hard rules.
 
 **Cuándo Team** (eje-2) + dispatch del fresh-context reviewer: `references/04-agent-selection.md` §Reviewer wiring.
@@ -130,7 +132,7 @@ Full Arch H template with all blocks, propagation model, skill discovery: `refer
 | Tool | Usage |
 |---|---|
 | Parallel `Agent` calls (≥4 independent **read-only** units, one message) | Fan-out: research sweeps / exploration / decision-review panel (`general-purpose`, or built-ins like `Explore`). Write fan-out: explicit user opt-in only (`isolation: 'worktree'` on file collision) |
-| `Explore` | Read-only codebase sweep (built-in, session model; not a work-spawn) |
+| `Explore` | Read-only codebase sweep (built-in); name the model explicitly (CLAUDE.md §Agents and skills) |
 | `Agent(subagent_type: "fork")` | Read-only sweep that needs the session's thread (inherits conversation + cache, parent model). Never for the fresh-context reviewer |
 | `Skill(flow, "plan")` | Plan complex tasks: Lead inline, no dedicated agent |
 | `Skill('troubleshooting')` | Diagnose failures: Lead inline, no dedicated agent |

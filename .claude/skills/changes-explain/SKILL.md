@@ -99,7 +99,7 @@ Detailed checklist with batching rules and stack-specific guidance: `${CLAUDE_SK
 
 ```markdown
 ## Resumen ejecutivo
-- 3-5 bullets: WHAT changed and WHY.
+- Bullets: WHAT changed and WHY, one per logical change.
 - Mention the logical chain if changes depend on each other.
 
 ## Cadena lógica
@@ -116,7 +116,7 @@ Diagram (text or mermaid) showing how each change depends on the previous one.
 ### 2. ...
 
 ## Preguntas frecuentes pre-anticipadas
-- **Q**: pregunta probable (3-5).
+- **Q**: las preguntas que es probable que haga quien lo lea.
   **A**: respuesta directa.
 ```
 
@@ -144,7 +144,7 @@ Closing every report:
 2. If user asks a focused question → respond in-place with same rigor (verify + cite). Do not regenerate the full report.
 3. If user says "no entiendo X" → reformulate with analogy + concrete example.
 4. If question moves outside the original scope → offer the re-scope through `AskUserQuestion` (current target vs the new one)
-5. If user says "ya entiendo" / "vale" → stop. No further output.
+5. If user says "ya entiendo" / "vale" → stop: reply with the `ROBIN:` line only.
 
 Detail per pattern (focused Q&A, re-scope, cancel, reformulation): `${CLAUDE_SKILL_DIR}/references/interaction-patterns.md`.
 
@@ -165,10 +165,10 @@ Detail per pattern (focused Q&A, re-scope, cancel, reformulation): `${CLAUDE_SKI
 
 | Topic | File | Contents |
 |---|---|---|
-| Input resolution | `${CLAUDE_SKILL_DIR}/references/input-resolution.md` | Full algorithm with edge cases (ambiguous hash, clean working tree, remote-only branch, multi-match glob) and the exact git commands per case. Read in step 1 of the workflow when the argument is non-trivial. |
-| Investigation checklist | `${CLAUDE_SKILL_DIR}/references/investigation-checklist.md` | Step-by-step exploration: read target, batch greps, read tests, get commit message, compare with project pattern. Includes WebFetch trigger rules and parallel-batching guidance. Read in step 3 before composing the report. |
-| Output template | `${CLAUDE_SKILL_DIR}/references/output-template.md` | Literal "professor-mode" template + condensed worked example (good) + bad example with annotations of what's wrong. Read in step 5 when composing the report. |
-| Verification rules | `${CLAUDE_SKILL_DIR}/references/verification-rules.md` | Reputable-source table per stack (Django, DRF, Python, Postgres, TypeScript, React, Anthropic, OWASP), canonical citation format, anti-patterns, and the "100% certeza" override that forces WebFetch. Read in step 4 when verifying any non-trivial framework behavior. |
+| Input resolution | `${CLAUDE_SKILL_DIR}/references/input-resolution.md` | Full algorithm with edge cases (ambiguous hash, clean working tree, remote-only branch, multi-match glob) and the exact git commands per case. Read when the argument is non-trivial. |
+| Investigation checklist | `${CLAUDE_SKILL_DIR}/references/investigation-checklist.md` | Step-by-step exploration: read target, batch greps, read tests, get commit message, compare with project pattern. Includes WebFetch trigger rules and parallel-batching guidance. Read before investigating. |
+| Output template | `${CLAUDE_SKILL_DIR}/references/output-template.md` | Literal "professor-mode" template + condensed worked example (good) + bad example with annotations of what's wrong. Read when composing the report. |
+| Verification rules | `${CLAUDE_SKILL_DIR}/references/verification-rules.md` | Reputable-source table per stack (Django, DRF, Python, Postgres, TypeScript, React, Anthropic, OWASP), canonical citation format, anti-patterns, and the "100% certeza" override that forces WebFetch. Read when verifying non-trivial framework behavior. |
 | Interaction patterns | `${CLAUDE_SKILL_DIR}/references/interaction-patterns.md` | Follow-up patterns: focused Q&A, re-scope, apply-to-other-case, cancel, reformulation with analogies. Read after emitting the first report when the user asks a follow-up question. |
 
 ## Commandments cubiertos

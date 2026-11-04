@@ -118,7 +118,7 @@ A 22-question battery over five funnel rounds on an ambiguous caching decision, 
 | Shape | **One voice asking the user** N questions | **5-12 agents debating** one decision |
 | Input | Gaps in a decision/plan/output | A committed-to choice to stress |
 | Output | Closed gaps baked into the artefact (or `[OPEN]`) | Multi-perspective synthesis + vote |
-| When | Default for closing any non-trivial decision | High-stakes architectural commitment |
+| When | Several open decisions, or a gap that PLAN's 0-3 questions cannot close | High-stakes architectural commitment |
 
 Start with drillme-clarify; if it surfaces a genuine disagreement or won't crystallize after the sweep → escalate to `compare-and-decide` (heavy tier).
 

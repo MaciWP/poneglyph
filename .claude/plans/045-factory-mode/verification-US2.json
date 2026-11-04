@@ -1,0 +1,12 @@
+{
+  "us": "US2",
+  "revision": "HEAD 690040f + diff of remote-git.ts and remote-git-gate.test.ts, sha1 7f99d61a4ac2",
+  "tests_passed": true,
+  "checks": [
+    {"name": "red before impl", "status": "passed", "evidence": "SyntaxError: Export named 'factoryReading' not found (T2.1 predicted)"},
+    {"name": "US2 tests", "status": "passed", "evidence": "remote-git-gate.test.ts 199 pass 0 fail: 35 reading rows, force forms, unknown, attended unchanged (T2.1-T2.4, AC6)"},
+    {"name": "attended regression", "status": "passed", "evidence": "pre-existing remoteActions/authorized/judge/entrypoint cases unchanged and green; remoteActions now shares nestedOf"},
+    {"name": "hooks suite", "status": "passed", "evidence": "bun test ./.claude/hooks/: 532 pass, 0 fail"},
+    {"name": "typecheck", "status": "passed", "evidence": "tsc --noEmit, no errors"}
+  ]
+}

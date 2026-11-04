@@ -1,0 +1,11 @@
+{
+  "us": "US1",
+  "revision": "HEAD 690040f + untracked lib/factory-grant.ts and __tests__/factory-grant.test.ts, sha1 of both c4d404d6d7d6",
+  "tests_passed": true,
+  "checks": [
+    {"name": "red before impl", "status": "passed", "evidence": "bun test ./.claude/hooks/__tests__/factory-grant.test.ts: Cannot find module '../lib/factory-grant' (T1.1 predicted)"},
+    {"name": "US1 tests", "status": "passed", "evidence": "3 pass, 0 fail, 40 expect() calls (T1.1, T1.2 incl. 25 h cap, AC3 env-only)"},
+    {"name": "hooks suite", "status": "passed", "evidence": "bun test ./.claude/hooks/: 494 pass, 0 fail"},
+    {"name": "typecheck", "status": "passed", "evidence": "bun run typecheck: tsc --noEmit, no errors"}
+  ]
+}

@@ -66,7 +66,7 @@ Poll a CI run or remote queue and resume when state flips. Use the `Monitor` too
 | `/goal` (closed) and `/loop` (open) triggers | **Adopt natively** | `/goal` + `/loop` are built-in; no component to build |
 | Schedule/cron + event triggers | **Adopt where read-only** (R2) | cron via `schedule`/`/loop`; events via Channels: gated/read-only only |
 | Open-ended "improve forever" self-judged loop | **Reject** | Model judges itself → violates maker≠auditor AND Commandment III; unbounded |
-| Unattended overnight build/write, no gates | **Reject** | Bypasses hard gates 1→2/2→3; re-triggers the inline-first quality regression |
+| Unattended build/write without the factory grant and its gates | **Reject** | Bypasses hard gates 1→2/2→3; re-triggers the inline-first quality regression. A factory session (`docs/factory-mode.md`) is the allowed form: approved ticket, launcher grant, draft PR, merge kept by the user |
 | Bespoke poneglyph "loops engine" / custom `/goal` command | **Reject** | Native primitives cover R1–R3; rows against `prune > add` (Cmd IX) |
 | 4 machines 24/7, ROI 16×, $1M tokens, paid "motor agéntico" | **Out of scope** | Marketing, not load-bearing for "can poneglyph use loops?" |
 

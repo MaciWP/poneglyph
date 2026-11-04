@@ -106,15 +106,22 @@ function world(on: On, stored?: unknown, snap: unknown = data, env: Record<strin
         : { isSent: false as const, reason: "no-channel" as const },
     };
   });
-  on("process.run", (_, e) => ({
-    value: {
-      exitCode: 0,
-      stdout: JSON.stringify(
-        e.argv.includes("diff") ? { path: "a.ts", source: "-old\n+new", truncated: false } : snap,
-      ),
-      stderr: "",
-    },
-  }));
+  let snapshots = 0;
+  let snapshotError = false;
+  on("process.run", (_, e) => {
+    if (e.argv.includes("snapshot")) snapshots++;
+    if (e.argv.includes("snapshot") && snapshotError)
+      return { value: { exitCode: 1, stdout: "", stderr: "Agentic OS down" } };
+    return {
+      value: {
+        exitCode: 0,
+        stdout: JSON.stringify(
+          e.argv.includes("diff") ? { path: "a.ts", source: "-old\n+new", truncated: false } : snap,
+        ),
+        stderr: "",
+      },
+    };
+  });
   on("turn.complete", (_, e) => ({ text: e.answer }));
   on("turn.start", (_, e) => ({ turnId: e.turnId }));
   // Every AskUserQuestion ends as an error here, as a question the user closed does.
@@ -142,6 +149,7 @@ function world(on: On, stored?: unknown, snap: unknown = data, env: Record<strin
       sessionId = id;
     },
     clock,
+    snapshots: () => snapshots,
     opens,
     prompts,
     toasts,
@@ -156,6 +164,9 @@ function world(on: On, stored?: unknown, snap: unknown = data, env: Record<strin
     },
     bashFails: (value: boolean) => {
       bashError = value;
+    },
+    snapshotFails: (value: boolean) => {
+      snapshotError = value;
     },
     isShown: () => shown,
     release: () => pending?.(),
@@ -483,6 +494,57 @@ test("a resume moves the board to the resumed session's saved plan", async ($, o
   await w.clock.settle();
   await p.redraw();
   expect(await p.find({ text: "Resumed plan" })).toBeDefined();
+});
+
+test("an idle session snapshots every 5 minutes; a turn in progress every 15 s", async ($, on) => {
+  const w = world(on);
+  await $.session.start(start);
+  await w.clock.settle();
+  const first = w.snapshots();
+  expect(first).toBe(1);
+  await w.clock.advance(60000);
+  await w.clock.settle();
+  expect(w.snapshots()).toBe(first);
+  await w.clock.advance(240000);
+  await w.clock.settle();
+  expect(w.snapshots()).toBe(first + 1);
+  await $.turn.start({ text: "Work", turnId: "t1" });
+  await w.clock.advance(15000);
+  await w.clock.settle();
+  expect(w.snapshots()).toBe(first + 2);
+});
+
+test("an agent running between turns keeps the 15 s snapshot; its end refreshes once, then the idle pace", async ($, on) => {
+  const w = world(on);
+  await $.session.start(start);
+  await w.clock.settle();
+  w.agents.push({ id: "a1", description: "Find the routes", type: "Explore", status: "running" });
+  await w.clock.advance(15000);
+  await w.clock.settle();
+  expect(w.snapshots()).toBe(2);
+  (w.agents[0] as { status: string }).status = "completed";
+  await $.turn.complete({ answer: "done", durationMs: 1, isAborted: false, turnId: "ta1", reason: "answer", agentId: "a1" });
+  await w.clock.advance(15000);
+  await w.clock.settle();
+  expect(w.snapshots()).toBe(3);
+  await w.clock.advance(60000);
+  await w.clock.settle();
+  expect(w.snapshots()).toBe(3);
+});
+
+test("an idle session whose snapshot failed retries on the next 15 s tick", async ($, on) => {
+  const w = world(on);
+  w.snapshotFails(true);
+  await $.session.start(start);
+  await w.clock.settle();
+  expect(w.snapshots()).toBe(1);
+  w.snapshotFails(false);
+  await w.clock.advance(15000);
+  await w.clock.settle();
+  expect(w.snapshots()).toBe(2);
+  await w.clock.advance(60000);
+  await w.clock.settle();
+  expect(w.snapshots()).toBe(2);
 });
 
 test("docked, the pane fills its height with the footer at the bottom and Terminados folded; narrow, labels drop a line", async ($, on) => {

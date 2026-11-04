@@ -147,6 +147,14 @@ export function clipDescription(text: string, max: number): string {
   return [kept, not].filter(Boolean).join(" ");
 }
 
+// What a skill does, for the note: the main model sees skill names only and judged
+// analista-decisiones by its name (10-27). The first sentence, cut at a word past `max`;
+// never a `Skill(` that skill-usage would read as one more candidate.
+export function purposeOf(description: string, max = 160): string {
+  const first = description.replace(/\s+/g, " ").trim().split(/(?<=[.!?])\s+(?=[\p{Lu}¿¡"'`(])/u)[0]!.replace(/Skill\(/g, "Skill (");
+  return first.length <= max ? first : `${first.slice(0, max - 1).replace(/\s\S*$/, "")}…`;
+}
+
 export function loadCatalog(cwd: string, config = configDir(), plugins = enabledPluginRoots(cwd, config), descriptionChars = DESCRIPTION_CHARS, synced = true): CatalogEntry[] {
   const overrides = skillOverrides(cwd, config);
   const sources = [
@@ -378,7 +386,12 @@ const SKILL_CALL: Record<RouterHost, { line: (name: string) => string; how: stri
 
 // The note names the prompt it belongs to: when the main model answers without a
 // tool call, the note only rides the next prompt and must be recognisable as late.
-export function buildRouterNote(result: RouterResult, prompt: string, host: RouterHost = "claude"): string {
+const candidateTail = (why: string, purpose = "") => {
+  const reason = why.replace(/[\s.]+$/, "");
+  return reason && purpose ? `: ${reason}. What it does: ${purpose}` : reason ? `: ${reason}` : purpose ? `: what it does: ${purpose}` : "";
+};
+
+export function buildRouterNote(result: RouterResult, prompt: string, host: RouterHost = "claude", purposes: ReadonlyMap<string, string> = new Map()): string {
   if (!result.fixes.length && !result.skills.length && !result.effort) return "";
   const words = prompt.replace(/\s+/g, " ").trim().split(" ");
   const re = escapeAttr(words.slice(0, 8).join(" ") + (words.length > 8 ? " …" : ""));
@@ -386,7 +399,7 @@ export function buildRouterNote(result: RouterResult, prompt: string, host: Rout
   if (result.fixes.length) lines.push(`Probable dictation fixes: ${result.fixes.map((f) => `"${f.heard}" → ${f.meant}`).join("; ")}.`);
   if (result.skills.length) {
     lines.push(`Candidate skills: answer each one now in one progress line, \`Router: <skill> sí (<why>); <skill> no (<why>)\`, then ${SKILL_CALL[host].how}.`);
-    lines.push(...result.skills.map((s) => `- ${SKILL_CALL[host].line(s.name)}${s.why ? `: ${s.why}` : ""}`));
+    lines.push(...result.skills.map((s) => `- ${SKILL_CALL[host].line(s.name)}${candidateTail(s.why, purposes.get(s.name))}`));
     if (result.skills.some((s) => DEEP_SKILLS.includes(s.name))) lines.push(DEEP_SKILLS_LINE);
   }
   if (result.effort) lines.push(effortLine(result.effort, host));
@@ -525,7 +538,7 @@ if (import.meta.main) {
       const loading = host === "claude" ? sessionSkills(payload.transcript_path) : Promise.resolve(new Set<string>());
       const run = await runRouter(agent, prompt, pidFile, ROUTER_TIMEOUT_MS, formatPast(past));
       const result = run.outcome === "ok" ? parseRouterOutput(run.stdout, prompt, catalog, { glossary, loaded: await loading }) : null;
-      const note = result ? buildRouterNote(result, prompt, host) : "";
+      const note = result ? buildRouterNote(result, prompt, host, new Map(catalog.map((c) => [c.name, purposeOf(c.description)]))) : "";
       log(cwd, {
         host, session: session.slice(0, 8), outcome: run.outcome === "ok" ? (result ? (note ? "ok" : "empty") : "bad-output") : run.outcome,
         ms: Date.now() - started, skills: result?.skills.map((s) => s.name).join(",") || "-", fixes: result?.fixes.length ?? 0, effort: result?.effort ? "high" : "-", past: past.length,

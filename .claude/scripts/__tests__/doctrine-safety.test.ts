@@ -105,11 +105,18 @@ describe("recursive deletes always prompt; git is gated only on the remote", () 
     for (const shell of ["Bash", "PowerShell"]) expect(prompts(shell, cmd)).toBe(false);
   });
 
-  it("registers the remote gate for every tool that runs a command", () => {
-    const entry = settings.hooks.PreToolUse.find((e: { hooks: Array<{ command: string }> }) =>
+  it("registers the remote gate for every tool that runs a command, and the file tools apart", () => {
+    const entries = settings.hooks.PreToolUse.filter((e: { hooks: Array<{ command: string }> }) =>
       e.hooks.some((h) => h.command.includes("remote-git-gate.ts")),
     );
-    expect(entry?.matcher.split("|").sort()).toEqual(["Bash", "Monitor", "PowerShell"]);
+    const [entry, files] = entries;
+    expect(entries.map((e: { matcher: string }) => e.matcher.split("|").sort())).toEqual([
+      ["Bash", "Monitor", "PowerShell"],
+      ["Edit", "MultiEdit", "Write"],
+    ]);
+    // The grant-file rule is best-effort: a broken gate must not freeze every edit.
+    expect(files.hooks[0].onFailure).toBeUndefined();
+    expect(entry.hooks[0].onFailure).toBe("block");
     // A hook that times out does not block, so the timeout must leave room for the gate's own
     // 10 s deadline, which fails closed.
     const hook = entry?.hooks.find((h: { command: string }) => h.command.includes("remote-git-gate.ts"));

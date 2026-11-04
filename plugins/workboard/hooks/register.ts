@@ -172,6 +172,13 @@ let active = false,
   // The Agentes card shows one line per agent until its details unfold.
   agentDetails = false,
   refreshing = false;
+// A snapshot costs seconds of CPU and every session ran one each 15 s, idle ones too: between
+// turns, with no agent running, the board changes only through others' work, so it waits this
+// long; Actualizar and the end of each turn still refresh at once.
+// ponytail: busy sessions still snapshot every 15 s, each on its own; detect HEAD/index changes
+// and share one snapshot per cwd once many busy sessions keep the load high.
+const IDLE_REFRESH_MS = 300_000;
+let refreshedAt = 0;
 let diff: { path: string; source: string; truncated: boolean } | null = null;
 let snapshot: Snapshot | null = null;
 let error: string | null = null;
@@ -268,6 +275,7 @@ const refresh = async ($: EngineInterface): Promise<boolean | undefined> => {
   if (!active || refreshing) return undefined;
   refreshing = true;
   try {
+    refreshedAt = await $.clock.now();
     // A resume or a /clear moves the process to another session id without a session.start:
     // follow it, or the board shows the old conversation and Agentic OS refuses its id.
     const id = await $.session.id();
@@ -300,6 +308,8 @@ const refresh = async ($: EngineInterface): Promise<boolean | undefined> => {
     await persist($);
     return true;
   } catch (err) {
+    // Due again on the next 15 s tick, not in 5 minutes.
+    refreshedAt = Number.NEGATIVE_INFINITY;
     fail($, err);
     return false;
   } finally {
@@ -724,8 +734,19 @@ async function activate($: EngineInterface, cwd: string) {
   await openPane($);
   void refresh($);
   $.clock.every(15000, () => {
-    void refresh($);
+    void tick($);
   });
+}
+// The host's agent list and session id cost nothing to read: an agent started between turns
+// and a resume or a /clear are followed at once.
+async function tick($: EngineInterface) {
+  if (
+    state.working ||
+    (await $.agent.list()).some((a) => a.status === "running") ||
+    (await $.session.id()) !== state.sessionId ||
+    (await $.clock.now()) - refreshedAt >= IDLE_REFRESH_MS
+  )
+    await refresh($);
 }
 
 export const register: Register = (on) => {
@@ -832,6 +853,9 @@ export const register: Register = (on) => {
         tokens: u ? (a.tokens ?? 0) + used : a.tokens,
         model: u?.model ? clean(u.model, 60) : undefined,
       });
+      // It ends now on the board; the next tick refreshes, so Agentic OS hears it too.
+      state.agents = reconcileAgents(state.agents, await $.agent.list());
+      refreshedAt = Number.NEGATIVE_INFINITY;
       void persist($);
       return r;
     }

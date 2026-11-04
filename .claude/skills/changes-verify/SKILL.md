@@ -41,8 +41,10 @@ The gain is on runtime surface (product code, hooks, CLIs, UI).
 ### 1. Project checks
 
 Run the project's check command, from the project CLAUDE.md §Commands/Verification
-(this repo: `bun test ./.claude/`; a Vite/React repo: `tsc && vitest`; a Django
-repo: `pytest`). Types and lint included when the stack has them.
+(Poneglyph: `bun test ./.claude/`; a Vite/React repo: `tsc && vitest`; a Django
+repo: `pytest`). Types and lint included when the stack has them. In a shared work
+repo, scope the checks to the changed files unless the user asks for the full suite
+(CLAUDE.md §Hard rules).
 Failure → diagnose, distinguish baseline/infrastructure defects, and rerun. Neither
 defect counts as a pass; 0 tests executed or skips counted as passes is **NOT PROVEN**. Never manipulate a
 check to make it pass (Cmd IV). Run the checks over the **whole** changed set, not

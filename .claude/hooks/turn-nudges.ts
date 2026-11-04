@@ -18,6 +18,7 @@ import { stopwordCounts } from "./lib/language";
 import { appendLog } from "./instructions-loaded";
 import { learnedLog } from "./lib/paths";
 import { readHookStdin } from "./lib/hook-stdin";
+import { noteRun } from "./lib/run-log";
 
 export type NudgeKind = "router" | "english" | "config" | "question";
 
@@ -167,6 +168,7 @@ async function runNudges(payload: Record<string, any>, logPath: string): Promise
   }
   const session = String(payload.session_id ?? "unknown");
   const fresh = due.filter((d) => !alreadyNudged(log, session, d.kind, d.key));
+  if (fresh.length) noteRun({ nudges: fresh.map((d) => d.kind) });
   for (const d of fresh) {
     try {
       appendLog(`${new Date().toISOString()} ${session} ${d.kind} ${d.key}`, logPath);

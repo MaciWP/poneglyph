@@ -2,7 +2,7 @@ import type { EngineInterface, Register } from "claude-code";
 import {
   type Decision, type Effort, type LastTurn, LEVELS, type Outcome, type Reply, type StepUsage,
   appendCapped, buildNote, cacheBroke, classifierPrompt, decide, effortNote, extraCatalog, extraGlossary, floorOf, formatPast,
-  isContinuation, learnedPath, logLine, mergeGlossaries, parseAgentFile, parseMemory, parseReply, pastFor, PHASE_SKILLS, phaseHint, routable, settingsEffort, skillFrontmatter, skillsInHistory, withFloor,
+  isContinuation, learnedPath, logLine, mergeGlossaries, parseAgentFile, parseMemory, parseReply, pastFor, PHASE_SKILLS, phaseHint, purposeOf, routable, settingsEffort, typedText, skillFrontmatter, skillsInHistory, withFloor,
 } from "./core.ts";
 
 // One Sonnet call per typed prompt, before step 0: dictation fixes, skill candidates, effort and
@@ -34,6 +34,8 @@ let config = "";
 let logFile = "";
 let session = "";
 let extra: { name: string; description: string }[] = [];
+// What each catalog skill does, from the last agent file read; the note names it per candidate.
+let purposes = new Map<string, string>();
 const loaded = new Set<string>();
 const hinted = new Set<string>();
 let previous = "";
@@ -179,6 +181,7 @@ async function classify($: EngineInterface, text: string, prev: string, pastBefo
   const memory = pastBefore > 0 ? parseMemory(String(await $.fs.read(`${config}/router-memory.jsonl`).catch(() => ""))).filter((e) => e.at < pastBefore) : [];
   const past = pastFor(text, agent.known, memory);
   const known = new Set([...agent.known, ...extra.map((e) => e.name)]);
+  purposes = new Map([...extra.map((e) => [e.name, purposeOf(e.description)] as [string, string]), ...agent.purposes]);
   // The hook reads the glossaries live; terms added since the last sync go in the prompt.
   const glossary = mergeGlossaries(await Promise.all([`${config}/hooks/router/glossary.json`, `${config}/router-glossary.json`].map(async (f) => String(await $.fs.read(f).catch(() => "")))));
   const newTerms = extraGlossary(glossary, agent.terms);
@@ -233,21 +236,24 @@ async function evaluate($: EngineInterface, cases: string, out: string) {
   }
 }
 
+// The hook's projectRoot and learnedLog: the project dir, and its learned/ only when git ignores it.
+async function bindProject($: EngineInterface, dir: string, root: string) {
+  cwd = dir;
+  const ignored = await $.process.run(["git", "-C", root, "check-ignore", "-q", ".claude/learned/x.log"]).then((r) => r.exitCode === 0, () => false);
+  logFile = learnedPath(root, config, ignored, "prompt-router.log");
+  extra = await projectSkills($, cwd);
+}
+
 const isMain = (e: { agentId?: string; model: string; effort?: unknown }) => !e.agentId && e.model === OPUS && typeof e.effort === "string";
 
 export const register: Register = (on) => {
   on("session.start", async ($, e, next) => {
     const r = await next(e);
-    cwd = e.cwd;
     // Native Windows may have no HOME; the hook's homedir() reads USERPROFILE there.
     const home = (await $.env.get("HOME")) || (await $.env.get("USERPROFILE")) || "";
     config = (await $.env.get("CLAUDE_CONFIG_DIR")) || `${home}/.claude`;
     session = await $.session.id();
-    // The hook's projectRoot and learnedLog: the project dir, and its learned/ only when git ignores it.
-    const root = (await $.env.get("CLAUDE_PROJECT_DIR")) || cwd;
-    const ignored = await $.process.run(["git", "-C", root, "check-ignore", "-q", ".claude/learned/x.log"]).then((r) => r.exitCode === 0, () => false);
-    logFile = learnedPath(root, config, ignored, "prompt-router.log");
-    extra = await projectSkills($, cwd);
+    await bindProject($, e.cwd, (await $.env.get("CLAUDE_PROJECT_DIR")) || e.cwd);
     // A resumed session already loaded skills; the hook read them from the transcript.
     for (const name of skillsInHistory(await $.session.messages().catch(() => []))) loaded.add(name);
     // Without the per-message effort beta a rewrite would reset the cache: steer with words instead.
@@ -327,6 +333,12 @@ export const register: Register = (on) => {
       await evaluate($, evalCases, evalOut);
       return next(e);
     }
+    // The desktop app starts the CLI in a spare folder and moves it to the project before the first prompt.
+    const root = await $.session.root().catch(() => cwd);
+    if (root && root !== cwd) {
+      await record($, { ev: "cwd", from: cwd, to: root });
+      await bindProject($, root, root);
+    }
     await follow($);
     // A prompt typed over a running turn joins its task: it keeps the turn's level and suggests no
     // skills, which would ask for a second `Router:` line about the same work; its fixes still count.
@@ -339,10 +351,11 @@ export const register: Register = (on) => {
       await record($, { ev: "other", origin, effort: pending?.effort ?? null });
       return next(e);
     }
-    const text = routable(e.text);
-    if (!text || isContinuation(e.text)) {
+    const typed = typedText(e.text);
+    const text = routable(typed);
+    if (!text || isContinuation(typed)) {
       pending = kept();
-      await record($, { ev: "submit", origin, call: false, skip: isContinuation(e.text) ? "continuation" : e.text.trimStart().startsWith("/") ? "command" : "short", effort: pending?.effort ?? null, mid });
+      await record($, { ev: "submit", origin, call: false, skip: isContinuation(typed) ? "continuation" : typed.startsWith("/") ? "command" : "short", effort: pending?.effort ?? null, mid });
       return next(e);
     }
     const mine = ++seq;
@@ -369,7 +382,7 @@ export const register: Register = (on) => {
     }
     const steer = mode === "steer" && shown ? (shown.effort === "low" ? " Answer directly without deliberating." : shown.effort === "medium" ? "" : " Please think hard before responding.") : "";
     const skills = mid ? [] : r.reply?.skills ?? [];
-    const note = buildNote({ fixes: r.reply?.fixes ?? [], skills, labels: null }, text, pending && !mid ? effortNote(pending, override?.reason, floor) + steer : "");
+    const note = buildNote({ fixes: r.reply?.fixes ?? [], skills, labels: null }, text, pending && !mid ? effortNote(pending, override?.reason, floor) + steer : "", purposes);
     await record($, { ev: "submit", origin, call: true, outcome: r.outcome, ms: r.ms, labels: r.reply?.labels ?? null, skills: skills.map((s) => s.name), fixes: r.reply?.fixes ?? [], effort: decision?.effort ?? null, floor, gauge: decision?.gauge ?? null, override: override?.effort ?? null, mode, mid, read: r.read ?? null, write: r.write ?? null, why: r.why ?? null });
     await routerLog($, { session, outcome: r.outcome, ms: r.ms, skills: skills.map((s) => s.name), fixes: r.reply?.fixes.length ?? 0, effort: decision?.effort ?? "-", floor: floor ?? "-", past: r.past, input: r.input, output: r.output, read: r.read, write: r.write });
     return next(note ? { ...e, context: [...(e.context ?? []), note] } : e);

@@ -91,7 +91,7 @@ Spanish, informal "yo", professional:
 |---|---|---|
 | Always a question, even when certain | "Esto está mal" | "¿Puede ser que aquí se pierda el 400?" |
 | Effect first: what the ticket expects vs what happens | "El `try` envuelve todo el método…" | "En el ticket pone X, pero ¿aquí no pasa Y?" |
-| 1-2 sentences, plain words | 5-line paragraph | Mechanism only if the fix needs it |
+| Short, plain words: the effect and the ask | 5-line paragraph | Mechanism only if the fix needs it |
 | No evidence in the body | `file:line`, SHAs, test names, dumps | That stays in the chat |
 | Code, not person; nothing the author knows | "No entiendes select_related" | "¿Le ponemos `select_related`?" |
 
@@ -156,12 +156,12 @@ say why the draft was not written. Submitting (`event` = `APPROVE` / `COMMENT` /
    the existing review id reported.
 3. `pr-review` loads this skill for its report → comments as text only, nothing written to GitHub.
 4. Local branch with no PR → comments shown; the reply says no draft was written and why.
-5. A certain, grave finding → still opens with a question, ≤2 sentences, no path or SHA in the body.
+5. A certain, grave finding → still opens with a question, short, no path or SHA in the body.
 
 ## Quality checklist (before delivering)
 
 Every comment has label + decorator · `praise:` only when grounded · every `issue:` paired with
-`suggestion:` · opens with a question, ≤2 sentences, no evidence dump · natural-writing pass
+`suggestion:` · opens with a question, short, no evidence dump · natural-writing pass
 done · shown in chat and written as one pending review (or the reason it was not).
 
 Worked examples per label live with the team conventions in the company plugin

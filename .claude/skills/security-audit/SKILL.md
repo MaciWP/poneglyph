@@ -9,12 +9,6 @@ description: >-
   (troubleshooting).
 disable-model-invocation: false
 argument-hint: "[file-path or module]"
-paths:
-  - "**/auth/**"
-  - "**/api/**"
-  - "**/middleware/**"
-  - "**/*security*"
-  - "**/*.env*"
 ---
 
 # Security Review Checklist

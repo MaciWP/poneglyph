@@ -121,7 +121,7 @@ invocation unless the user explicitly asks to go deeper.
 
 Single report for the user:
 
-1. **BLUF**: answer in 1–3 sentences.
+1. **BLUF**: the answer first, before any evidence.
 2. **Findings**: claim · evidence (quote-anchor or file:line / URL) · tier · confidence.
 3. **Counter-evidence / dissent**: what argued the other way (or “none found after …”).
 4. **Gaps**: what remains unknown and whether it matters.

@@ -80,16 +80,7 @@ A host that lacks a type is **ausente**. Never clone a Claude recipe into that c
 
 ## Live docs (lookup)
 
-Fetch now. Do not treat this table as the spec.
-
-| Surface | Index |
-|---|---|
-| Portable (Agent Skills) | `https://agentskills.io/llms.txt` · spec `https://agentskills.io/specification` |
-| Claude Code | `https://code.claude.com/docs/llms.txt` |
-| Codex | `https://developers.openai.com/codex` · `https://learn.chatgpt.com/llms.txt` |
-| Grok Build | `https://docs.x.ai/build` · installed `~/.grok/docs/user-guide/` |
-
-Date-stamp the fetch. Unreachable → use the pack snapshot and say so.
+Fetch the indexes in [lookup.md](references/lookup.md) §Indexes now. Date-stamp the fetch. Unreachable → use the pack snapshot and say so.
 
 ## Native creators (draft only)
 

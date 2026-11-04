@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   MATRIX, appendCapped, buildNote, cacheBroke, classifierPrompt, clipDescription, decide, effortNote, floorOf, isContinuation,
-  extraGlossary, logLine, mergeGlossaries, parseAgentFile, parseMemory, parseReply, pastFor, phaseHint, routable, settingsEffort, skillFrontmatter, skillsInHistory, soundsLike,
+  extraGlossary, logLine, mergeGlossaries, parseAgentFile, parseMemory, parseReply, pastFor, phaseHint, purposeOf, routable, settingsEffort, typedText, skillFrontmatter, skillsInHistory, soundsLike,
 } from "../hooks/core.ts";
 
 const AGENT = `---
@@ -79,6 +79,15 @@ describe("prompts", () => {
     expect(routable("arregla el typo")).toBeNull();
     expect(routable("/clear")).toBeNull();
     expect(routable("/goal revisa la PR de esta rama y deja comentarios")).toBe("revisa la PR de esta rama y deja comentarios");
+  });
+
+  test("the desktop app's reminder ahead of the typed prompt is left out, however long", () => {
+    const reminder = `<system-reminder>\nThe user started this session without choosing a project folder. ${"x ".repeat(2200)}\n</system-reminder>\n\n`;
+    const q = "Que crees que deberia hacer como programador para prepararme de cara a la IA?";
+    expect(routable(reminder + q)).toBe(q);
+    expect(routable(reminder)).toBeNull();
+    expect(routable(`${reminder}sigue`)).toBeNull();
+    expect(isContinuation(typedText(`${reminder}sigue`))).toBe(true);
   });
 
   test("the classifier prompt carries the previous request", () => {
@@ -251,6 +260,21 @@ describe("note", () => {
 
   test("nothing to say gives no note", () => {
     expect(buildNote({ fixes: [], skills: [], labels: null }, "x", "")).toBe("");
+  });
+
+  test("each candidate says what it does, from the agent file's catalog", () => {
+    const a = parseAgentFile(AGENT.replace("- pr-review: Reviews a PR.", "- anthropic-skills:analista-decisiones: Analista de decisiones: carrera y futuro ante la IA, dinero. Úsala solo cuando la nombren."))!;
+    expect(a.purposes.get("dev-workflow")).toBe("The development loop.");
+    const note = buildNote({ fixes: [], skills: [{ name: "anthropic-skills:analista-decisiones", why: "qué hago como programador ante la IA." }, { name: "dev-workflow", why: "" }], labels: null }, "qué hago como programador ante la IA estos años", "", a.purposes);
+    expect(note).toContain("- Skill(anthropic-skills:analista-decisiones): qué hago como programador ante la IA. What it does: Analista de decisiones: carrera y futuro ante la IA, dinero.\n");
+    expect(note).toContain("- Skill(dev-workflow): what it does: The development loop.");
+    expect(note).not.toContain("Úsala solo");
+  });
+
+  test("a purpose is one sentence, capped at a word, and never names a Skill( call", () => {
+    expect(purposeOf(`Builds ${"long spreadsheets ".repeat(20)}now.`)).toMatch(/^Builds long spreadsheets .{100,}…$/);
+    expect(purposeOf(`Builds ${"long spreadsheets ".repeat(20)}now.`).length).toBeLessThanOrEqual(160);
+    expect(purposeOf("Loads Skill(x) first. Then more.")).toBe("Loads Skill (x) first.");
   });
 });
 

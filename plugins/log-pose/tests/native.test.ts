@@ -95,6 +95,16 @@ test("one call before step 0 gives the note, and every main Opus step runs at it
   expect(w.writes.get(LOG)).toMatch(/host=claude via=mod session=s1 outcome=ok ms=\d+ skills=pr-review,dev-workflow fixes=0 effort=high floor=- past=0 .* read=8900 write=0 in=8940 out=110 sid=s1\n$/);
 });
 
+test("a session the desktop app moves from a spare folder logs and routes in the project it moved to", async ($, on) => {
+  const w = world(on);
+  on("session.root", () => ({ value: "/work/other" }));
+  await $.session.start({ ...start, cwd: "/home/me/.claude/spares/spare-1" });
+  await prompt($, PROMPT, "t1");
+  expect(w.writes.get("/work/other/.claude/learned/prompt-router.log")).toContain("via=mod session=s1 outcome=ok");
+  expect([...w.writes.keys()].some((k) => k.includes("spares"))).toBe(false);
+  expect(rows(w).find((r) => r.ev === "cwd")).toMatchObject({ from: "/home/me/.claude/spares/spare-1", to: "/work/other" });
+});
+
 test("the user's /effort is a floor, and a max floor stays max", async ($, on) => {
   const w = world(on, [JSON.stringify({ skills: [], difficulty: "easy", uncertainty: "clear", continuity: "new" })]);
   await $.session.start(start);

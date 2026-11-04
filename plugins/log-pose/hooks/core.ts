@@ -133,9 +133,15 @@ const CONTINUATIONS = new Set(["sigue", "continua", "ok", "vale", "dale", "si", 
 export const foldText = (text: string) => text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 export const isContinuation = (text: string) => CONTINUATIONS.has(foldText(text).replace(/[\s.!¡?¿,]+$/g, "").replace(/^[\s¡¿]+/, "").trim());
 
-// The text worth a classifier call, as the hook's `routablePrompt` judges a typed prompt.
-export function routable(text: string): string | null {
-  const goal = text.trimStart().match(/^\/goal\s+(.+)/is);
+// What the user typed. The desktop app puts its own `<system-reminder>` blocks ahead of it in the same
+// text: 4.4 KB in a session without a folder, which filled the 3000-character cut before the question.
+export const typedText = (text: string) => text.replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, "").trim();
+
+// The text worth a classifier call, as the hook's `routablePrompt` judges a typed prompt, except that
+// the hook drops a prompt that starts with a reminder while this routes what follows it.
+export function routable(input: string): string | null {
+  const text = typedText(input);
+  const goal = text.match(/^\/goal\s+(.+)/is);
   const body = goal ? goal[1]! : text;
   if (!goal && body.trimStart().startsWith("/")) return null;
   if (body.trim().split(/\s+/).length < MIN_WORDS) return null;
@@ -145,7 +151,7 @@ export function routable(text: string): string | null {
 // --- The router agent file (`<config>/agents/prompt-router.md`, written by sync-claude) ---
 
 // `terms`: each glossary term, folded, with its heard variants.
-export type Agent = { system: string; known: Set<string>; terms: Map<string, string[]>; kind: "mod" | "fallback" };
+export type Agent = { system: string; known: Set<string>; terms: Map<string, string[]>; purposes: Map<string, string>; kind: "mod" | "fallback" };
 
 // The agent's intro, the mod's reply line, the agent's fixes, process and skills sections, then
 // the mod's labels and examples in place of its `effort` section and examples, then its glossary and catalog.
@@ -157,7 +163,9 @@ export function parseAgentFile(text: string, fallback = false): Agent | null {
   const body = text.replace(/\r\n/g, "\n").replace(/^---\n[\s\S]*?\n---\n/, "").trim();
   const catalog = body.split("\nCatalog (name: description):\n")[1];
   if (!catalog) return null;
-  const known = new Set([...catalog.matchAll(/^- ([\w:-]+): /gm)].map((m) => m[1]!));
+  const lines = [...catalog.matchAll(/^- ([\w:-]+): (.*)$/gm)];
+  const known = new Set(lines.map((m) => m[1]!));
+  const purposes = new Map(lines.map((m) => [m[1]!, purposeOf(m[2]!)] as [string, string]));
   const glossary = body.match(/\nGlossary \(term: heard variants\):\n(.*)\n/)?.[1] ?? "";
   const terms = new Map(glossary === "(none)" ? [] : glossary.split(" | ").map((t) => {
     const [term, heard = ""] = t.split(": ");
@@ -167,7 +175,7 @@ export function parseAgentFile(text: string, fallback = false): Agent | null {
   const system = s
     ? [s[1], REPLY_LINE, `${s[2]}\n${FIX_RULE}`, s[3], s[4], LABELS, EXAMPLES, s[5]].join("\n\n")
     : `${body}\n\n${RUBRIC}`;
-  return { system, known, terms, kind: s ? "mod" : "fallback" };
+  return { system, known, terms, purposes, kind: s ? "mod" : "fallback" };
 }
 
 // A description cut to `max` at a sentence end, its "not for" sentences kept: a cut mid-word at 600
@@ -188,6 +196,14 @@ export function clipDescription(text: string, max: number): string {
   // A first sentence longer than the room is cut at a word.
   if (!kept && rest.length && room > 1) kept = `${rest[0]!.slice(0, room - 1).replace(/\s\S*$/, "")}…`;
   return [kept, not].filter(Boolean).join(" ");
+}
+
+// What a skill does, for the note: the main model sees skill names only and judged
+// analista-decisiones by its name (10-27). The first sentence, cut at a word past `max`;
+// never a `Skill(` that skill-usage would read as one more candidate.
+export function purposeOf(description: string, max = 160): string {
+  const first = description.replace(/\s+/g, " ").trim().split(/(?<=[.!?])\s+(?=[\p{Lu}¿¡"'`(])/u)[0]!.replace(/Skill\(/g, "Skill (");
+  return first.length <= max ? first : `${first.slice(0, max - 1).replace(/\s\S*$/, "")}…`;
 }
 
 // The project's skills the synced agent file does not list, as catalog lines for the prompt.
@@ -395,9 +411,14 @@ export function effortNote(d: Decision, reason?: string, floor: Effort | null = 
   return `Effort: ${level}. Advisor gauge ${d.gauge}: ${GAUGE[d.gauge]} Wrong level? Call mcp__log-pose__set; it applies from the next step.${after}`;
 }
 
+const candidateTail = (why: string, purpose = "") => {
+  const reason = why.replace(/[\s.]+$/, "");
+  return reason && purpose ? `: ${reason}. What it does: ${purpose}` : reason ? `: ${reason}` : purpose ? `: what it does: ${purpose}` : "";
+};
+
 // The router note as the hook writes it (`buildRouterNote`), with the effort line in place of
 // the hook's "propose /effort high". `turn-nudges.ts` and `skill-usage.ts` read this shape.
-export function buildNote(reply: Pick[] | Reply, prompt: string, effort: string): string {
+export function buildNote(reply: Pick[] | Reply, prompt: string, effort: string, purposes: ReadonlyMap<string, string> = new Map()): string {
   const r = Array.isArray(reply) ? { fixes: [], skills: reply } : reply;
   if (!r.fixes.length && !r.skills.length && !effort) return "";
   const words = prompt.replace(/\s+/g, " ").trim().split(" ");
@@ -406,7 +427,7 @@ export function buildNote(reply: Pick[] | Reply, prompt: string, effort: string)
   if (r.fixes.length) lines.push(`Probable dictation fixes: ${r.fixes.map((f) => `"${f.heard}" → ${f.meant}`).join("; ")}.`);
   if (r.skills.length) {
     lines.push("Candidate skills: answer each one now in one progress line, `Router: <skill> sí (<why>); <skill> no (<why>)`, then load the yes ones with the Skill tool.");
-    lines.push(...r.skills.map((s) => `- Skill(${s.name})${s.why ? `: ${s.why}` : ""}`));
+    lines.push(...r.skills.map((s) => `- Skill(${s.name})${candidateTail(s.why, purposes.get(s.name))}`));
     if (r.skills.some((s) => DEEP_SKILLS.includes(s.name))) lines.push(DEEP_SKILLS_LINE);
   }
   if (effort) lines.push(effort);

@@ -3,11 +3,11 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { readFileSync } from "node:fs";
-import { buildRouterNote, clipDescription, modFailing, modRoutes, parseRouterOutput, ROUTER_AGENT_FILE, routerAgentFile, routerContext, soundsLike } from "../prompt-router";
+import { buildRouterNote, clipDescription, modFailing, modRoutes, parseRouterOutput, purposeOf, ROUTER_AGENT_FILE, routerAgentFile, routerContext, soundsLike } from "../prompt-router";
 import { formatPast, pastFor, similarPast } from "../router/memory";
 import { routerNoteOf } from "../lib/transcript";
 import { claudeConfigDir, learnedLog } from "../lib/paths";
-import { buildNote, clipDescription as modClipDescription, EXAMPLES, formatPast as modFormatPast, learnedPath, parseAgentFile, parseReply, pastFor as modPastFor, similarPast as modSimilarPast, soundsLike as modSoundsLike } from "../../../plugins/log-pose/hooks/core.ts";
+import { buildNote, clipDescription as modClipDescription, EXAMPLES, formatPast as modFormatPast, learnedPath, parseAgentFile, parseReply, pastFor as modPastFor, purposeOf as modPurposeOf, similarPast as modSimilarPast, soundsLike as modSoundsLike } from "../../../plugins/log-pose/hooks/core.ts";
 
 // log-pose cannot import this repo's hooks (a mod loads only its own files), so it carries
 // copies of the router's parsing, note and memory code. These cases keep the two equal.
@@ -48,6 +48,8 @@ describe("log-pose mirrors the router hook", () => {
       // Same candidate, fix and deep-skill lines; the frame differs on purpose (no late-note line).
       const body = (note: string) => note.split("\n").filter((l) => /^(- Skill\(|Probable dictation|`dev-workflow`|Candidate skills|<prompt-router re=)/.test(l));
       expect(body(buildNote(mod, c.prompt, ""))).toEqual(body(buildRouterNote({ ...hook, effort: "" }, c.prompt)));
+      // With what each candidate does: the mod reads it from the agent file, the hook from its catalog.
+      expect(body(buildNote(mod, c.prompt, "", agent.purposes))).toEqual(body(buildRouterNote({ ...hook, effort: "" }, c.prompt, "claude", new Map(catalog.map((e) => [e.name, purposeOf(e.description)])))));
     });
   }
 
@@ -94,6 +96,13 @@ describe("the mod's prompt from the real router agent", () => {
     const long = `Builds spreadsheets. ${"Also reads and cleans tabular files. ".repeat(20)}Do NOT trigger for a Word document. No es para informes.`;
     for (const [text, max] of [[long, 600], [long, 120], [`docs ${"word ".repeat(200)}`, 600], ["Short.", 600], ["No es para nada. Y algo más.", 10]] as const) {
       expect(modClipDescription(text, max)).toBe(clipDescription(text, max));
+    }
+  });
+
+  test("purposeOf is the hook's", () => {
+    const long = `Builds spreadsheets ${"and reads tabular files ".repeat(10)}. Do NOT trigger for Word.`;
+    for (const text of [long, "Analista de decisiones: carrera, dinero. Úsala solo cuando la nombren.", "Loads Skill(x) first. Then more.", "One line"]) {
+      expect(modPurposeOf(text)).toBe(purposeOf(text));
     }
   });
 

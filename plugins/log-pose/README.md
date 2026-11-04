@@ -36,6 +36,10 @@ failed (`modFailing`). Disable the mod in the overlay and sync to return to the 
   (`landsOn`, `soundsLike`: Spanish sound folds plus Levenshtein, 0.6; a sound key of three
   letters or fewer needs an identical key, so `PRO` no longer lands on `PR`). A fix said twice is
   kept once. The hook uses the same filter.
+- **Note.** Each candidate line ends with what the skill does: the first sentence of its catalog
+  description (`purposeOf`, 160 characters). The main model sees skill names only; without it,
+  Opus declined `analista-decisiones` for a career question 3 of 3 times, judging the name, and
+  took it 3 of 3 with it. The hook writes the same line.
 - **Effort.** `MATRIX` maps difficulty × uncertainty to `low`, `medium`, `high` or `xhigh`
   (never `max`) and a gauge 0-3, from each prompt's own labels. No cell gives `xhigh`: hard ×
   unclear is `high`, and becomes `xhigh` only on a same-task follow-up whose last typed turn ran
@@ -74,7 +78,7 @@ failed (`modFailing`). Disable the mod in the overlay and sync to return to the 
 | File | Contents |
 |---|---|
 | `~/.cache/poneglyph/log-pose/<session>.jsonl` | session, submit (with `skip` when no call, and `why` when the call failed), other (another origin), step, override, hint (`blocked`), complete and end rows, appended when a turn or the session ends |
-| `prompt-router.log` (the hook's resolved `learned/` folder) | one `via=mod` line per call, the hook's format plus `floor`, `read` and `write`; `effort` is the mod's own level. `timeout` is a call that ran to the limit; a call cut sooner (Escape, a newer prompt) is `superseded`, which `modFailing` ignores |
+| `prompt-router.log` (the hook's resolved `learned/` folder) | one `via=mod` line per call, the hook's format plus `floor`, `read` and `write`; `effort` is the mod's own level. The folder follows `$.session.root()` on each prompt: the desktop app starts the CLI in `~/.claude/spares/` and moves it, so a log fixed at `session.start` missed the project and the hook routed a second time (a `cwd` row marks the move). The classifier gets what the user typed (`typedText`): a session without a folder carries the app's 4.4 KB `<system-reminder>` ahead of the prompt in the same text, and the 3000-character cut dropped the question. `timeout` is a call that ran to the limit; a call cut sooner (Escape, a newer prompt) is `superseded`, which `modFailing` ignores |
 
 ## Tests and eval
 

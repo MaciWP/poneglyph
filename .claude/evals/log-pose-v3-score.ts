@@ -155,7 +155,8 @@ function rowOf(id: string, p: Pred | undefined, g: Gold): Row {
     jump: pe ? Math.abs(lv(pe) - lv(ge)) >= 2 : null, pe,
     // The one effort signal the hook gives: high or not.
     highOk: pe ? high(pe) === high(ge) : p?.effortHigh != null ? p.effortHigh === high(ge) : null,
-    gaugeHit: l && g.changedCourse ? gaugeOf(l) >= 2 : null,
+    // The gauge tops out at 1 since 0.3.15 (no cell asks for the advisor unconditionally): 1 is the highest.
+    gaugeHit: l && g.changedCourse ? gaugeOf(l) >= 1 : null,
     changed: g.changedCourse, labelled: Boolean(l), pd: l?.difficulty, gd: g.difficulty, pu: l?.uncertainty, gu: g.uncertainty,
   };
 }
@@ -187,7 +188,7 @@ const METRICS: Record<string, (rs: Row[]) => number> = {
   "2-level jumps": (rs) => rate(rs, "jump"),
   ...Object.fromEntries(["low", "medium", "high", "xhigh"].map((e) => [`${e} share`, (rs: Row[]) => { const xs = rs.filter((r) => r.pe); return xs.length ? xs.filter((r) => r.pe === e).length / xs.length : NaN; }])),
   "high y/n": (rs) => rate(rs, "highOk"),
-  "gauge≥2 | changed": (rs) => rate(rs, "gaugeHit"),
+  "gauge≥1 | changed": (rs) => rate(rs, "gaugeHit"),
 };
 // Paired binary outcome per metric for McNemar, where one exists.
 const BINARY: Record<string, keyof Row> = { "hit@3": "hit", difficulty: "diffOk", uncertainty: "uncOk", continuity: "contOk", effort: "effortOk", "high y/n": "highOk" };
@@ -321,7 +322,7 @@ for (const [name, rows] of rowsByArm) {
     const u = user.get(i);
     return rowOf(i, r1.get(i), { difficulty: u.difficulty, uncertainty: u.uncertainty, continuity: u.continuity, changedCourse: u.changedCourse === "yes", skills: judge.get(i)?.skills ?? new Set(), fixes: [] });
   });
-  report.vsUser[name] = Object.fromEntries(["difficulty", "easy↔hard", "uncertainty", "continuity", "effort", "under-effort", "high y/n", "gauge≥2 | changed"].map((k) => [k, { v: METRICS[k]!(ur), n: ur.length }]));
+  report.vsUser[name] = Object.fromEntries(["difficulty", "easy↔hard", "uncertainty", "continuity", "effort", "under-effort", "high y/n", "gauge≥1 | changed"].map((k) => [k, { v: METRICS[k]!(ur), n: ur.length }]));
   void rows;
 }
 

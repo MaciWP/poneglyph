@@ -55,9 +55,13 @@
    CONTRAST: every text token reaches WCAG AA 4.5:1 on --bg,
    --surface and --surface-2, every severity reaches it on its own
    -bg tint and --link reaches it on --info-bg, in light and in
-   dark (scripts/tokens.test.ts). Light accent and status colors
-   are darkened only as far as AA requires; surfaces, lines, ink
-   and every other dark value are v2.
+   dark (scripts/tokens.test.ts). --line-strong outlines controls,
+   so it reaches 3:1 on --bg, --surface and --surface-2. --good
+   and --ok sit further in lightness from --bad and --blocker than
+   v2 did, yet still below 3:1 apart: a status mark must carry a
+   word or glyph too. Light accent and status colors are
+   darkened only as far as AA requires, --accent-2 further so its
+   hover reads; surfaces, ink and every other dark value are v2.
 
    BLOCKS: light at :root; dark at html[data-theme="dark"] and,
    for no-JS visitors, under prefers-color-scheme with
@@ -75,16 +79,16 @@
 /* ---- LIGHT: clean cool-neutral, deep teal ---- */
 :root {
   --bg:#f3f5f9; --surface:#ffffff; --surface-2:#e9eef5;
-  --line:#d9e0ea; --line-soft:#e4e9f1; --line-strong:#bcc6d4;
+  --line:#d9e0ea; --line-soft:#e4e9f1; --line-strong:#768aa7;
   --ink:#0f1620; --ink-2:#404a59; --ink-3:#5d6776;
-  --accent:#0b786e; --accent-2:#0f766e; --accent-bg:#dcf5f0; --accent-bd:#a9dcd3; --link:#0e7490;
+  --accent:#0b786e; --accent-2:#095e56; --accent-bg:#dcf5f0; --accent-bd:#a9dcd3; --link:#0e7490;
   --info-bg:#e6f4f8; --info-bd:#b4dbe6;
-  --good:#117b38; --mid:#906303; --warn:#b9460a; --bad:#d12222;
+  --good:#0d5b29; --mid:#906303; --warn:#b9460a; --bad:#d12222;
   --blocker:#d12222; --blocker-bg:#fef2f2; --blocker-bd:#f6c9c9;
   --major:#b9460a;   --major-bg:#fff4ec;   --major-bd:#f8cfae;
   --minor:#906303;   --minor-bg:#fdf8e7;   --minor-bd:#ecd9a0;
   --nit:#5e6d82;     --nit-bg:#eef2f7;     --nit-bd:#d3dbe6;
-  --ok:#117b38;      --ok-bg:#edf7ee;      --ok-bd:#b9e2bf;
+  --ok:#0d5b29;      --ok-bg:#edf7ee;      --ok-bd:#b9e2bf;
   --track:rgba(15,22,32,.08);
   --serif:"Newsreader","Iowan Old Style",Palatino,Georgia,serif;
   --sans:"Geist",ui-sans-serif,-apple-system,"Segoe UI",sans-serif;
@@ -106,16 +110,16 @@
 /* ---- DARK: deep blue-black, vivid teal, lively data ---- */
 html[data-theme="dark"] {
   --bg:#0a0e1a; --surface:#1a2236; --surface-2:#232e48;
-  --line:#33415f; --line-soft:#29344f; --line-strong:#475a7e;
+  --line:#33415f; --line-soft:#29344f; --line-strong:#5f77a5;
   --ink:#eef1f6; --ink-2:#c4ccda; --ink-3:#959fb1;
   --accent:#2dd4bf; --accent-2:#5eead4; --accent-bg:#0e3330; --accent-bd:#14534c; --link:#38bdf8;
   --info-bg:#0c2436; --info-bd:#16425c;
-  --good:#34d399; --mid:#fbbf24; --warn:#fb923c; --bad:#f87171;
+  --good:#8ae6c4; --mid:#fbbf24; --warn:#fb923c; --bad:#f87171;
   --blocker:#f87171; --blocker-bg:#2c1212; --blocker-bd:#5c1f1f;
   --major:#fb923c;   --major-bg:#2a1808;   --major-bd:#5a3411;
   --minor:#fbbf24;   --minor-bg:#261f08;   --minor-bd:#524212;
   --nit:#94a3b8;     --nit-bg:#1f2a40;     --nit-bd:#3a4869;
-  --ok:#34d399;      --ok-bg:#0e2415;      --ok-bd:#1d4d2c;
+  --ok:#8ae6c4;      --ok-bg:#0e2415;      --ok-bd:#1d4d2c;
   --track:rgba(255,255,255,.06);
   --shadow:0 1px 2px rgba(0,0,0,.55),0 12px 32px rgba(0,0,0,.5);
   --shadow-hover:0 4px 12px rgba(0,0,0,.6),0 16px 40px rgba(0,0,0,.55);
@@ -125,16 +129,16 @@ html[data-theme="dark"] {
 @media (prefers-color-scheme: dark) {
   html:not([data-theme]) {
     --bg:#0a0e1a; --surface:#1a2236; --surface-2:#232e48;
-    --line:#33415f; --line-soft:#29344f; --line-strong:#475a7e;
+    --line:#33415f; --line-soft:#29344f; --line-strong:#5f77a5;
     --ink:#eef1f6; --ink-2:#c4ccda; --ink-3:#959fb1;
     --accent:#2dd4bf; --accent-2:#5eead4; --accent-bg:#0e3330; --accent-bd:#14534c; --link:#38bdf8;
     --info-bg:#0c2436; --info-bd:#16425c;
-    --good:#34d399; --mid:#fbbf24; --warn:#fb923c; --bad:#f87171;
+    --good:#8ae6c4; --mid:#fbbf24; --warn:#fb923c; --bad:#f87171;
     --blocker:#f87171; --blocker-bg:#2c1212; --blocker-bd:#5c1f1f;
     --major:#fb923c;   --major-bg:#2a1808;   --major-bd:#5a3411;
     --minor:#fbbf24;   --minor-bg:#261f08;   --minor-bd:#524212;
     --nit:#94a3b8;     --nit-bg:#1f2a40;     --nit-bd:#3a4869;
-    --ok:#34d399;      --ok-bg:#0e2415;      --ok-bd:#1d4d2c;
+    --ok:#8ae6c4;      --ok-bg:#0e2415;      --ok-bd:#1d4d2c;
     --track:rgba(255,255,255,.06);
     --shadow:0 1px 2px rgba(0,0,0,.55),0 12px 32px rgba(0,0,0,.5);
     --shadow-hover:0 4px 12px rgba(0,0,0,.6),0 16px 40px rgba(0,0,0,.55);
@@ -145,16 +149,16 @@ html[data-theme="dark"] {
 @media print {
   :root, html[data-theme], html:not([data-theme]) {
     --bg:#f3f5f9; --surface:#ffffff; --surface-2:#e9eef5;
-    --line:#d9e0ea; --line-soft:#e4e9f1; --line-strong:#bcc6d4;
+    --line:#d9e0ea; --line-soft:#e4e9f1; --line-strong:#768aa7;
     --ink:#0f1620; --ink-2:#404a59; --ink-3:#5d6776;
-    --accent:#0b786e; --accent-2:#0f766e; --accent-bg:#dcf5f0; --accent-bd:#a9dcd3; --link:#0e7490;
+    --accent:#0b786e; --accent-2:#095e56; --accent-bg:#dcf5f0; --accent-bd:#a9dcd3; --link:#0e7490;
     --info-bg:#e6f4f8; --info-bd:#b4dbe6;
-    --good:#117b38; --mid:#906303; --warn:#b9460a; --bad:#d12222;
+    --good:#0d5b29; --mid:#906303; --warn:#b9460a; --bad:#d12222;
     --blocker:#d12222; --blocker-bg:#fef2f2; --blocker-bd:#f6c9c9;
     --major:#b9460a;   --major-bg:#fff4ec;   --major-bd:#f8cfae;
     --minor:#906303;   --minor-bg:#fdf8e7;   --minor-bd:#ecd9a0;
     --nit:#5e6d82;     --nit-bg:#eef2f7;     --nit-bd:#d3dbe6;
-    --ok:#117b38;      --ok-bg:#edf7ee;      --ok-bd:#b9e2bf;
+    --ok:#0d5b29;      --ok-bg:#edf7ee;      --ok-bd:#b9e2bf;
     --track:rgba(15,22,32,.08);
     --shadow:0 1px 2px rgba(17,22,29,.08),0 8px 24px rgba(17,22,29,.10);
     --shadow-hover:0 4px 12px rgba(17,22,29,.12),0 12px 36px rgba(17,22,29,.12);
@@ -212,6 +216,9 @@ html[data-theme="dark"] {
   .dmatrix .cell i b { position:absolute; left:0; top:0; height:100%; border-radius:999px; }
   .dmatrix .tot { font-family:var(--mono); font-weight:600; font-variant-numeric:tabular-nums; color:var(--ink); }
   .dmatrix .tot.good { color:var(--good); } .dmatrix .tot.mid { color:var(--mid); } .dmatrix .tot.warn { color:var(--warn); } .dmatrix .tot.bad { color:var(--bad); }
+  /* a status color never stands alone: each total carries a glyph, read aloud as a word */
+  .dmatrix td.tot::before { margin-right:.35em; }
+  .dmatrix .tot.good::before { content:"✓"; content:"✓"/"bien"; } .dmatrix .tot.mid::before { content:"~"; content:"~"/"regular"; } .dmatrix .tot.warn::before { content:"!"; content:"!"/"atención"; } .dmatrix .tot.bad::before { content:"✕"; content:"✕"/"mal"; }
   .dmatrix tr.win td { background:var(--ok-bg); } /* the AA-tested good tint: a 9% color-mix left --good text at 4.36 */
   .dmatrix tr.win .opt::before { content:'★ '; color:var(--good); }
 

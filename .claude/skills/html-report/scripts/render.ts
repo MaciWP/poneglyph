@@ -112,6 +112,8 @@ h1.title em{font-style:italic;color:var(--ink-2);font-weight:400}
 .kpi-k .pip{width:6px;height:6px;border-radius:50%;background:var(--bad)}
 .kpi-v{font-family:var(--sans);font-weight:600;font-size:1.9rem;line-height:1;letter-spacing:-.01em;color:var(--accent)}
 .kpi-v.h-good{color:var(--good)}.kpi-v.h-mid{color:var(--mid)}.kpi-v.h-warn{color:var(--warn)}.kpi-v.h-bad{color:var(--bad)}
+.kpi-v[class*=" h-"]::before{font-size:.55em;margin-right:.3em;vertical-align:.3em}
+.kpi-v.h-good::before{content:"✓";content:"✓"/"bien"}.kpi-v.h-mid::before{content:"~";content:"~"/"regular"}.kpi-v.h-warn::before{content:"!";content:"!"/"atención"}.kpi-v.h-bad::before{content:"✕";content:"✕"/"mal"}
 .kpi-sub{font-size:var(--t-xs);color:var(--ink-3);margin-top:auto}
 /* sticky TOC */
 .toc{position:sticky;top:1.5rem;align-self:start;font-size:var(--t-sm);display:flex;flex-direction:column;gap:.1rem;max-height:calc(100vh - 3rem);overflow:auto}

@@ -31,6 +31,18 @@ test("T3.2: fallback: content + anchor nav present in static markup", () => {
   expect(noScript.includes('href="#b"')).toBe(true);
 });
 
+test("T3.2b: a KPI health color always carries a glyph with a spoken word", () => {
+  const html = render({ meta: { title: "K", date: "2026-11-05" }, sections: [
+    { id: "k", title: "K", blocks: [{ type: "kpis", data: [{ label: "Bien", value: "92%", health: "good" }, { label: "Mal", value: "31%", health: "bad" }] }] },
+  ] });
+  expect(html).toContain('class="kpi-v num h-good"');
+  expect(html).toContain('class="kpi-v num h-bad"');
+  for (const h of ["good", "mid", "warn", "bad"]) {
+    expect(html, `h-${h} colored`).toContain(`.kpi-v.h-${h}{color:var(--${h})}`);
+    expect(html, `h-${h} glyph`).toMatch(new RegExp(`\\.kpi-v\\.h-${h}::before\\{content:"[^"]+";content:"[^"]+"/"[^"]+"\\}`));
+  }
+});
+
 test("T3.3: edge: empty sections does not throw", () => {
   const html = render({ meta: { title: "Empty", date: "2026-06-08" }, sections: [] });
   expect(html.includes("<!DOCTYPE html>")).toBe(true);

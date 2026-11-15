@@ -14,6 +14,14 @@ const canonical = () => {
   return new Set([p.light, p.dark, p.darkMedia, p.print].flatMap((o) => Object.keys(o)));
 };
 
+test("T5.1b: every colored decision total carries a glyph with a spoken word", () => {
+  const html = readFileSync(join(TEMPLATES_DIR, "decision.template.html"), "utf8");
+  for (const h of ["good", "mid", "warn", "bad"]) {
+    expect(html, `tot.${h} colored`).toContain(`.dmatrix .tot.${h} { color:var(--${h}); }`);
+    expect(html, `tot.${h} glyph`).toMatch(new RegExp(`\\.dmatrix \\.tot\\.${h}::before \\{ content:"[^"]+"; content:"[^"]+"/"[^"]+"; \\}`));
+  }
+});
+
 test.each(FAMILY)("T5.1: %s starts dark and uses canonical surfaces", (name) => {
   const html = readFileSync(join(TEMPLATES_DIR, name), "utf8");
 

@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { extractRouter } from "../hooks/core.ts";
 import {
   MATRIX, appendCapped, buildNote, cacheBroke, classifierPrompt, clipDescription, decide, effortNote, floorOf, isContinuation,
   extraGlossary, logLine, mergeGlossaries, parseAgentFile, parseMemory, parseReply, pastFor, phaseHint, purposeOf, routable, settingsEffort, typedText, skillFrontmatter, skillsInHistory, soundsLike,
@@ -25,7 +26,7 @@ const LABELS = { difficulty: "hard", uncertainty: "some-doubt", continuity: "new
 describe("decide", () => {
   test("difficulty sets the effort and uncertainty the gauge", () => {
     expect(decide({ difficulty: "easy", uncertainty: "clear", continuity: "new" }, null, null)).toMatchObject({ effort: "low", gauge: 0 });
-    expect(decide({ difficulty: "hard", uncertainty: "unclear", continuity: "new" }, null, null)).toMatchObject({ effort: "high", gauge: 3 });
+    expect(decide({ difficulty: "hard", uncertainty: "unclear", continuity: "new" }, null, null)).toMatchObject({ effort: "high", gauge: 1 });
   });
 
   test("no cell gives xhigh: only a same-task follow-up of a turn that ran high or xhigh escalates", () => {
@@ -242,7 +243,7 @@ describe("note", () => {
     expect(note.startsWith('<prompt-router re="diseña el &quot;mod&quot; nuevo con todos sus tests …">')).toBe(true);
     expect(note).toContain("- Skill(dev-workflow): build it");
     expect(note).toContain("go much deeper");
-    expect(note).toContain("Effort: high for this prompt (hard, some doubt). Advisor gauge 3:");
+    expect(note).toContain("Effort: high for this prompt (hard, some doubt). Advisor gauge 1:");
     expect(note.endsWith("</prompt-router>")).toBe(true);
   });
 
@@ -341,6 +342,27 @@ describe("phase hints", () => {
     expect(phaseHint("Artifact", { action: "read" }, none, known, none)).toBeNull();
     expect(phaseHint("Bash", {}, none, known, none)).toBeNull();
     expect(phaseHint("Agent", { subagent_type: "prompt-router" }, none, known, none)).toBeNull();
+    expect(phaseHint("Agent", { subagent_type: "critic" }, none, known, none)).toBeNull();
     expect(phaseHint("Agent", { subagent_type: "Explore" }, none, known, none)?.skill).toBe("prompt-design");
+  });
+});
+
+describe("extractRouter", () => {
+  test("takes the run of Router lines that opens the block and leaves the rest", () => {
+    expect(extractRouter("Router: deep-research sí (investigación amplia).\n\nEmpiezo por el repo.")).toEqual({
+      lines: ["deep-research sí (investigación amplia)."],
+      body: "Empiezo por el repo.",
+    });
+    expect(extractRouter("**Router:** a sí (x)\n\n  Router: b no (y)\nSigo.")).toEqual({ lines: ["a sí (x)", "b no (y)"], body: "Sigo." });
+    expect(extractRouter("Router: dev-workflow no (es una lectura).")).toEqual({ lines: ["dev-workflow no (es una lectura)."], body: "" });
+    expect(extractRouter("Router: a sí (x)\n\n    const indented = 1;")?.body).toBe("    const indented = 1;");
+  });
+
+  test("never moves a Router line from further down, from code or from a quote", () => {
+    expect(extractRouter("Leo el fichero.\n\nRouter: a sí (x)")).toBeNull();
+    expect(extractRouter("```\nRouter: a sí (x)\n```")).toBeNull();
+    expect(extractRouter("    Router: a sí (x)")).toBeNull();
+    expect(extractRouter("> Router: a sí (x)")).toBeNull();
+    expect(extractRouter("Router:")).toBeNull();
   });
 });

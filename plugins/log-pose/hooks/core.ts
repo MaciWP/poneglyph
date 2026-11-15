@@ -5,7 +5,7 @@
 
 export const LEVELS = ["low", "medium", "high", "xhigh", "max"] as const;
 export type Effort = (typeof LEVELS)[number];
-export type Gauge = 0 | 1 | 2 | 3;
+export type Gauge = 0 | 1;
 
 export type Labels = {
   difficulty: "easy" | "normal" | "hard";
@@ -24,7 +24,14 @@ export const MAX_PROMPT_CHARS = 3000;
 const MAX_SKILLS = 3;
 const PREVIOUS_CHARS = 300;
 const ANSWER_CHARS = 300;
+// Main-loop models whose per-step effort the mod sets. Each one needs `medium` as its default in
+// settings.global.json `modelSettings`, or `floorOf` reads its default as the user's floor.
+export const MAIN_MODELS: readonly string[] = ["claude-opus-5-5", "claude-fable-5-2"];
 const PROCESS_SKILLS = ["dev-workflow", "drillme-clarify", "natural-writing", "changes-verify"];
+// Not suggested to a worker an orchestrator launched (Agentic OS sets AOS_PARENT_ID): its brief
+// fixes method and checks. Week of 2026-11-09: 254 worker calls, 54 % with a process skill,
+// which the Lead turned down about 9 times in 10.
+export const WORKER_SKIPS: readonly string[] = ["dev-workflow", "changes-verify"];
 const DEEP_SKILLS = ["dev-workflow", "drillme-clarify"];
 export const DEEP_SKILLS_LINE = "`dev-workflow` and `drillme-clarify` go much deeper than the summary in your instructions; that summary is never a reason for no.";
 
@@ -85,10 +92,13 @@ export const RUBRIC = `Also add three keys to the same JSON object:
 // Difficulty sets the effort, uncertainty the advisor gauge (plan 044 §Two axes). No cell gives
 // xhigh: Sonnet paired "hard" with "unclear" 11 times in 14 (10-22/23), so that cell put 19 % of
 // prompts at xhigh; `decide` raises it only when the hard part outlived a turn at high or above.
+// The gauge tops out at 1: from 10-13 to 11-14 the main model skipped a gauge-2 ask in 73 % of turns
+// (336 of 461) and fell short of a gauge-3 one in 93 % (198 of 214); the weekly judge rated the
+// asks excessive in 77 % of the turns it saw (597 of 777).
 export const MATRIX: Record<Labels["difficulty"], Record<Labels["uncertainty"], { effort: Effort; gauge: Gauge }>> = {
-  easy: { clear: { effort: "low", gauge: 0 }, "some-doubt": { effort: "medium", gauge: 1 }, unclear: { effort: "medium", gauge: 2 } },
-  normal: { clear: { effort: "medium", gauge: 1 }, "some-doubt": { effort: "medium", gauge: 2 }, unclear: { effort: "high", gauge: 2 } },
-  hard: { clear: { effort: "high", gauge: 2 }, "some-doubt": { effort: "high", gauge: 3 }, unclear: { effort: "high", gauge: 3 } },
+  easy: { clear: { effort: "low", gauge: 0 }, "some-doubt": { effort: "medium", gauge: 1 }, unclear: { effort: "medium", gauge: 1 } },
+  normal: { clear: { effort: "medium", gauge: 1 }, "some-doubt": { effort: "medium", gauge: 1 }, unclear: { effort: "high", gauge: 1 } },
+  hard: { clear: { effort: "high", gauge: 1 }, "some-doubt": { effort: "high", gauge: 1 }, unclear: { effort: "high", gauge: 1 } },
 };
 
 const rank = (e: Effort) => LEVELS.indexOf(e);
@@ -107,7 +117,7 @@ const CAP: Effort = "xhigh";
 export function decide(labels: Labels, override: Effort | null, floor: Effort | null, last: string | null = null): Decision {
   const cell = MATRIX[labels.difficulty][labels.uncertainty];
   const same = labels.continuity === "same";
-  const level: Effort = same && labels.difficulty === "hard" && labels.uncertainty === "unclear" && (last === "high" || last === "xhigh") ? "xhigh"
+  const level: Effort = same && labels.difficulty === "hard" && labels.uncertainty === "unclear" && (last === "high" || last === "xhigh" || last === "max") ? "xhigh"
     : same && labels.difficulty === "easy" && labels.uncertainty === "some-doubt" ? "low" : cell.effort;
   const task = rank(level) > rank(CAP) ? CAP : level;
   const kept = labels.continuity === "new" ? null : override;
@@ -118,7 +128,7 @@ export function decide(labels: Labels, override: Effort | null, floor: Effort | 
 // The user's floor over a decision, so the note names the level the steps run at.
 export const withFloor = (d: Decision, floor: Effort | null): Decision => (floor ? { ...d, effort: maxOf(d.effort, floor) } : d);
 
-// The user's `/effort` counts as a floor unless it is Opus 5.5's default.
+// The user's `/effort` counts as a floor unless it is the main models' default (`medium`).
 export const floorOf = (effort: unknown): Effort | null =>
   typeof effort === "string" && effort !== "medium" && (LEVELS as readonly string[]).includes(effort) ? (effort as Effort) : null;
 
@@ -136,6 +146,21 @@ export const isContinuation = (text: string) => CONTINUATIONS.has(foldText(text)
 // What the user typed. The desktop app puts its own `<system-reminder>` blocks ahead of it in the same
 // text: 4.4 KB in a session without a folder, which filled the 3000-character cut before the question.
 export const typedText = (text: string) => text.replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, "").trim();
+
+// The person picks the turn: `+` runs it at max effort, `_` on Haiku (the use-haiku mod switches
+// the model). Either way no classifier call. A doubled mark (`++`, `__`) or a number (`+1`) is
+// plain text; `_1` is a mark, as use-haiku reads it. `+` is read on what the person typed: the
+// desktop puts reminders ahead of it. `_` follows use-haiku's own rule (its `isMarked`: the raw
+// text, `__` excluded, something after the mark), so Log Pose skips exactly the turns that mod
+// moves to Haiku; it does not move a `_` that sits behind reminders.
+export function markOf(text: string): "+" | "_" | null {
+  if (text.startsWith("_") && !text.startsWith("__") && text.slice(1).trim() !== "") return "_";
+  const typed = typedText(text);
+  return typed[0] === "+" && typed[1] !== "+" && !/\d/.test(typed[1] ?? "") ? "+" : null;
+}
+
+// The text without the first mark, any reminders ahead of it kept.
+export const unmarked = (text: string) => text.replace(/^((?:\s*<system-reminder>[\s\S]*?<\/system-reminder>)*\s*)[+_]\s*/, "$1");
 
 // The text worth a classifier call, as the hook's `routablePrompt` judges a typed prompt, except that
 // the hook drops a prompt that starts with a reminder while this routes what follows it.
@@ -258,8 +283,10 @@ export function phaseHint(tool: string, input: Readonly<Record<string, unknown>>
   if (!p || hinted.has(p.skill) || !known.has(p.skill)) return null;
   if ([...loaded].some((n) => n.split(":").pop() === p.skill)) return null;
   if (tool === "Artifact" && (input.action ?? "publish") !== "publish") return null;
-  // The router agent takes a one-line task, not a brief; refusing it would only cost a step.
-  if (tool === "Agent" && input.subagent_type === "prompt-router") return null;
+  // The router takes a one-line task, and the critic a fixed brief that Poneglyph's
+  // .claude/hooks/router/agent-hooks.ts already checks (this assumes those hooks are installed);
+  // refusing either would only cost a step.
+  if (tool === "Agent" && (input.subagent_type === "prompt-router" || input.subagent_type === "critic")) return null;
   return { skill: p.skill, text: `Log Pose: Skill(${p.skill}) is not loaded; ${p.hint}` };
 }
 
@@ -397,8 +424,6 @@ export function parseReply(text: string, prompt: string, known: Set<string>, ter
 const GAUGE: Record<Gauge, string> = {
   0: "Better not to call the advisor on this task.",
   1: "Call the advisor only if you get stuck or are about to take a risky, hard-to-undo step.",
-  2: "Call the advisor once before declaring done.",
-  3: "Call the advisor before committing to a plan, when stuck, and before declaring done.",
 };
 const DOUBT: Record<Labels["uncertainty"], string> = { clear: "clear", "some-doubt": "some doubt", unclear: "unclear" };
 const escapeAttr = (s: string) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -525,4 +550,40 @@ export function appendCapped(text: string, line: string, maxBytes = 2 * 1024 * 1
   let out = `${text}${text && !text.endsWith("\n") ? "\n" : ""}${line}\n`;
   if (out.length > maxBytes) out = out.slice(out.indexOf("\n", out.length - maxBytes) + 1);
   return out;
+}
+
+// --- The `Router:` lines Claude writes to answer the router note (drawn as a box by register) ---
+
+// Which lines sit outside code fences; a fence left open marks everything after it.
+// A copy of workboard's `prose()` (a mod cannot import another); the parity test keeps them equal.
+export function prose(lines: string[]): boolean[] {
+  let fence: string | null = null;
+  return lines.map((line) => {
+    const mark = /^ {0,3}(`{3,}|~{3,})/.exec(line)?.[1];
+    if (mark) {
+      if (!fence) fence = mark;
+      else if (mark[0] === fence[0] && mark.length >= fence.length) fence = null;
+      return false;
+    }
+    return !fence;
+  });
+}
+
+const ROUTER = /^ {0,3}(?:\*\*)?Router:(?:\*\*)?\s+(?=\S)/;
+
+// The run of `Router:` lines that opens a block, blank lines between them allowed; the first prose
+// line ends it. A `Router:` line further down stays text, so the reply is never reordered.
+export function extractRouter(text: string): { lines: string[]; body: string } | null {
+  const all = text.split("\n");
+  const open = prose(all);
+  const lines: string[] = [];
+  let i = 0;
+  for (; i < all.length; i++) {
+    const line = all[i]!;
+    if (!line.trim()) continue;
+    if (!open[i] || !ROUTER.test(line)) break;
+    lines.push(line.replace(ROUTER, "").trim());
+  }
+  if (!lines.length) return null;
+  return { lines, body: all.slice(i).join("\n").trimEnd() };
 }

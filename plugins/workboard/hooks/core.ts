@@ -63,14 +63,47 @@ export type State = {
   initial: string[];
   initialized: boolean;
   working: boolean;
-  robin: { text: string; at: number } | null;
   failure: { text: string; at: number } | null;
   links: Link[];
   notice: string | null;
   turn: { at: number; ms: number | null; edits: number; commands: number } | null;
   // Skills this session loaded, newest last: whether it followed the prompt router.
   skills?: { name: string; at: number }[];
+  // When the board was last saved: the store prunes the oldest boards by it.
+  savedAt?: number;
 };
+// `$.store` holds 4 MiB of JSON for every session on the machine, and the boards of ~400
+// sessions a week filled it, so every save failed. The newest boards stay within this budget;
+// the rest of the 4 MiB is room for boards to grow between two session starts.
+export const STORE_BUDGET = 3 * 1024 * 1024;
+// Pruning reads every board, so one session start a day does it for all sessions.
+export const PRUNE_EVERY_MS = 24 * 60 * 60 * 1000;
+/** Whether the store is due a prune, from the time the last one started (`prune:at`). */
+export const pruneDue = (last: unknown, now: number) =>
+  typeof last !== "number" || now < last || now - last >= PRUNE_EVERY_MS;
+// Files already changed when the session started, kept to label them «preexistente». A tree with
+// thousands of them filled half the store; past this many they show as unknown attribution.
+export const INITIAL_CAP = 200;
+/** Store keys of the boards to delete: walking from the newest (`at`, then the later key),
+ *  every board after the first that would pass `budget`. `current` always stays and counts. */
+export function staleBoards(
+  boards: { key: string; at?: number; size: number }[],
+  current: string,
+  budget = STORE_BUDGET,
+): string[] {
+  let total = boards.find((b) => b.key === current)?.size ?? 0;
+  let full = false;
+  return boards
+    .map((b, i) => ({ ...b, i }))
+    .filter((b) => b.key !== current)
+    .sort((a, b) => (b.at ?? 0) - (a.at ?? 0) || b.i - a.i)
+    .filter((b) => {
+      full ||= total + b.size > budget;
+      if (!full) total += b.size;
+      return full;
+    })
+    .map((b) => b.key);
+}
 export const initialState = (sessionId: string, cwd: string): State => ({
   version: 1,
   sessionId,
@@ -83,7 +116,6 @@ export const initialState = (sessionId: string, cwd: string): State => ({
   initial: [],
   initialized: false,
   working: false,
-  robin: null,
   failure: null,
   links: [],
   notice: null,
@@ -105,7 +137,7 @@ export const identifier = (v: unknown) => {
   return s;
 };
 // Which lines sit outside code fences; a fence left open marks everything after it.
-function prose(lines: string[]): boolean[] {
+export function prose(lines: string[]): boolean[] {
   let fence: string | null = null;
   return lines.map((line) => {
     const mark = /^ {0,3}(`{3,}|~{3,})/.exec(line)?.[1];
@@ -116,18 +148,6 @@ function prose(lines: string[]): boolean[] {
     }
     return !fence;
   });
-}
-export function extractRobin(value: string): { text: string; body: string } | null {
-  const lines = value.trimEnd().split("\n");
-  const open = prose(lines);
-  let candidate = -1;
-  for (let i = 0; i < lines.length; i++)
-    if (open[i] && /^(?:\*\*)?ROBIN:(?:\*\*)?\s+\S/.test(lines[i]!)) candidate = i;
-  if (candidate !== lines.length - 1 || !open[candidate]) return null;
-  return {
-    text: lines[candidate]!.replace(/^(?:\*\*)?ROBIN:(?:\*\*)?\s+/, ""),
-    body: lines.slice(0, candidate).join("\n").trimEnd(),
-  };
 }
 // A check runs a test, type or lint tool as a command (`bun test`, `npm run lint`,
 // `.venv/bin/pytest`), never a word inside another one (`grep test`, `git diff --check`).
@@ -313,13 +333,17 @@ export const bridgeSession = (s: State) => ({
   checks: s.checks,
   agents: s.agents.map(({ id, title, state }) => ({ id, title, state })),
   working: s.working,
-  robin: s.robin,
+  // Agentic OS still requires the key; the ROBIN line is the robin mod's now.
+  robin: null,
   failure: s.failure,
 });
+// A failure shows until the next turn starts.
 export const viewStatus = (s: State) =>
-  s.failure && (!s.robin || s.failure.at >= s.robin.at)
+  s.failure && (!s.turn || s.failure.at >= s.turn.at)
     ? s.failure.text
-    : (s.robin?.text ?? (s.working ? "Trabajo en curso" : "Esperando trabajo"));
+    : s.working
+      ? "Trabajo en curso"
+      : "Esperando trabajo";
 
 // A native message from another session arrives wrapped by the host (measured on 2.1.292):
 // <cross-session-message from="uds:…" from-name="agentic-os-70" …>body</cross-session-message>

@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "bun:test";
 import {
-  extractRobin,
   initialState,
   publish,
   reconcileAgents,
@@ -15,16 +14,12 @@ import {
   collaboration,
   annotateAgent,
   planAlerts,
+  staleBoards,
+  pruneDue,
+  PRUNE_EVERY_MS,
   type Link,
 } from "../hooks/core.ts";
 
-test("ROBIN only extracts a final unquoted standalone line outside fences", () => {
-  expect(extractRobin("Answer\n\nROBIN: Finished.")).toEqual({ text: "Finished.", body: "Answer" });
-  expect(extractRobin("```text\nROBIN: example\n```\n")).toBeNull();
-  expect(extractRobin("> ROBIN: quoted")).toBeNull();
-  expect(extractRobin("ROBIN: example\nFurther explanation")).toBeNull();
-  expect(extractRobin("Answer\n\n**ROBIN:** Done.")?.text).toBe("Done.");
-});
 test("decisions were removed: the tool refuses them and the bridge gets an empty list", () => {
   const s = initialState("s", "/repo");
   expect(() =>
@@ -33,14 +28,17 @@ test("decisions were removed: the tool refuses them and the bridge gets an empty
   expect(bridgeSession(s).decisions).toEqual([]);
   expect("decisions" in s).toBe(false);
 });
-test("a completed task does not pass checks and an old ROBIN cannot hide a tool failure", () => {
+test("a completed task does not pass checks; a failure shows until the next turn starts", () => {
   const s = publish(initialState("s", "/repo"), {
     tasks: [{ id: "t", title: "Build", state: "completed" }],
   });
-  s.robin = { text: "All good", at: 1 };
+  s.turn = { at: 1, ms: null, edits: 0, commands: 0 };
   s.failure = { text: "Tests failed", at: 2 };
   expect(viewStatus(s)).toContain("Tests failed");
   expect(s.checks).toEqual([]);
+  s.turn = { at: 3, ms: null, edits: 0, commands: 0 };
+  expect(viewStatus(s)).toBe("Esperando trabajo");
+  expect(bridgeSession(s).robin).toBeNull();
 });
 test("missing agent from a snapshot becomes unknown, not completed", () => {
   const s = initialState("s", "/repo");
@@ -367,10 +365,10 @@ test("the router run of this session is the latest claude line with its session 
   expect(await routerRun(`${dir}/missing`, "abcdef12")).toBeNull();
 });
 
-// A plugin installs alone, so each of these four loopback checks carries its own copy of the
+// A plugin installs alone, so each of these loopback checks carries its own copy of the
 // allowlist; they must stay the same set.
-test("the loopback allowlists of hud, dock and workboard match", () => {
-  const files = ["../../hud/hooks/register.ts", "../../dock/hooks/backends.ts", "../hooks/register.ts", "../scripts/workboard.mjs"];
+test("the loopback allowlists of hud, dock, workboard, courier and courier-voice match", () => {
+  const files = ["../../hud/hooks/register.ts", "../../dock/hooks/backends.ts", "../hooks/register.ts", "../scripts/workboard.mjs", "../../courier/hooks/register.ts", "../../courier-voice/hooks/register.ts"];
   const sets = files.map((f) => {
     const src = readFileSync(new URL(f, import.meta.url), "utf8");
     const list = /\[((?:\s*"[^"]+",?)+\s*)\]\.includes\(\s*u(?:rl)?\.hostname/.exec(src)?.[1];
@@ -394,4 +392,24 @@ test("plan alerts fire on a new failure, block or finish, never on a resent stat
   expect(planAlerts(failed.tasks, done.tasks)).toEqual(["Plan completado: 2 tareas"]);
   expect(planAlerts(done.tasks, done.tasks)).toEqual([]);
   expect(planAlerts([], [])).toEqual([]);
+});
+
+test("staleBoards keeps the newest boards within the byte budget, and the current one", () => {
+  const b = (key: string, at: number | undefined, size: number) => ({ key, at, size });
+  // Newest first: new (3) fits, mid (2) fits, old (1) passes the budget; legacy has no date.
+  const boards = [b("session:old", 1, 40), b("session:legacy", undefined, 10), b("session:new", 3, 40), b("session:mid", 2, 10), b("session:me", undefined, 30)];
+  expect(staleBoards(boards, "session:me", 100).sort()).toEqual(["session:legacy", "session:old"]);
+  expect(staleBoards(boards, "session:me", 1000)).toEqual([]);
+  expect(staleBoards(boards, "session:me", 10).sort()).toEqual(["session:legacy", "session:mid", "session:new", "session:old"]);
+  // Undated boards: the later key counts as newer.
+  expect(staleBoards([b("session:a", undefined, 10), b("session:b", undefined, 10)], "x", 10)).toEqual(["session:a"]);
+});
+
+test("pruneDue runs once a day, and again when the mark is missing or from the future", () => {
+  const day = PRUNE_EVERY_MS;
+  expect(pruneDue(undefined, 5 * day)).toBe(true);
+  expect(pruneDue("x", 5 * day)).toBe(true);
+  expect(pruneDue(5 * day, 5 * day + day - 1)).toBe(false);
+  expect(pruneDue(5 * day, 6 * day)).toBe(true);
+  expect(pruneDue(6 * day, 5 * day)).toBe(true);
 });

@@ -94,7 +94,7 @@ export type PaneModel = {
   title: string;
   working: boolean;
   cols: number;
-  robin: { text: string; at: number | null; detail: string | null; notice: string | null };
+  turn: { text: string; at: number | null; detail: string | null; notice: string | null };
   failure: string | null;
   error: string | null;
   plan: { done: number; total: number; features: PaneFeature[] };
@@ -569,16 +569,16 @@ export function paneView(base: Ui, m: PaneModel): RenderElement {
     card(
       ui,
       C.robin,
-      "ROBIN",
-      m.robin.at
-        ? Text({ dimColor: true, children: new Date(m.robin.at).toLocaleTimeString("es-ES") })
+      "ÚLTIMO TURNO",
+      m.turn.at
+        ? Text({ dimColor: true, children: new Date(m.turn.at).toLocaleTimeString("es-ES") })
         : null,
       [
-        Text({ children: m.robin.text }),
-        m.robin.detail
-          ? Text({ dimColor: true, wrap: "truncate", children: m.robin.detail })
+        Text({ children: m.turn.text }),
+        m.turn.detail
+          ? Text({ dimColor: true, wrap: "truncate", children: m.turn.detail })
           : null,
-        m.robin.notice ? Text({ color: C.decision, children: `Aviso: ${m.robin.notice}` }) : null,
+        m.turn.notice ? Text({ color: C.decision, children: `Aviso: ${m.turn.notice}` }) : null,
         m.failure
           ? Text({ color: C.decision, wrap: "truncate", children: `⚠ ${m.failure}` })
           : null,

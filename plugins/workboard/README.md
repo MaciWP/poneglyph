@@ -1,7 +1,7 @@
 # Workboard
 
 Native Claude Code mod: one pane for completed work, active tasks, quality, changed files,
-agents and the latest ROBIN summary. Nothing of it draws outside the pane. No external
+agents and the last turn. Nothing of it draws outside the pane. No external
 web UI or extra service. Agentic OS is an optional local bridge for related repositories
 and sessions; the mod works with local Git while that bridge is offline.
 
@@ -39,13 +39,13 @@ its subtasks, and a subtask names its state only when blocked or failed. Each ag
 last message. A child agent sits right after its parent. **Ver** on a live agent shows its
 transcript in the main view (CLI 2.1.300+).
 
-The pane uses the room it gets. Docked beside the transcript it runs floor to ceiling: ROBIN, the
+The pane uses the room it gets. Docked beside the transcript it runs floor to ceiling: the last turn, the
 plan and the changes wrap instead of truncating, and the footer sits at the bottom. Details stay on
 one line everywhere: the turn's facts, quality values and the latest communications (4 docked,
 2 inline). Inline above the prompt it asks for up to 40 rows and the frame fits the content. Below
 36 columns each card's right label and each row's state drop under their text.
 
-A tool error shows under ROBIN until the next ROBIN, except a closed or cut-short `AskUserQuestion`
+A tool error shows in the last-turn card until the next turn starts, except a closed or cut-short `AskUserQuestion`
 or `ExitPlanMode`: that is the user's move.
 
 The **Cambios** card lists every repository: branch, change count, GitHub, CI and coverage, the
@@ -111,7 +111,7 @@ matches, and the repository fingerprint is unchanged from start through observat
 during/after testing, an old report, a failed command, partial instrumentation and a missing
 report are distinct states. Completion of an AI task never turns checks green.
 
-## Plans and ROBIN
+## Plans and the last turn
 
 The `mcp__workboard__progress` tool publishes explicit tasks (`id`, `title`, `state`, optional
 `dependsOn` and `parent`). A task with `parent` is a subtask of that feature, one level deep;
@@ -130,6 +130,13 @@ Questions to the user are not the board's job: they go through Claude Code's nat
 build) is refused with a message that says so. A session state saved by that build loads
 without its decisions, and Agentic OS receives an empty `decisions` list.
 
+Each session's board is saved under its own key of `$.store`, which holds 4 MiB for every
+session on the machine. The first session start 24 h after the last prune (`prune:at`), or the first failed save of a
+process, keeps the newest boards
+within 3 MiB and deletes the rest, so resuming an older session starts a fresh board. A board
+keeps at most 200 files that were already changed when its session started; past that, a file
+shows as unknown attribution instead of «preexistente».
+
 While the mod is loaded, a `tool.describe` hook keeps this one tool's schema in the prompt
 instead of behind ToolSearch, and a `prompt.submit` line asks the model to publish its task
 list once it knows the steps of work that edits files in several steps; questions, reads,
@@ -138,12 +145,10 @@ Measured on 2.1.292 with the same build task: Sonnet published the plan unprompt
 it at the end; Haiku received the same line and skipped it. Both publish when asked. A
 read-only summary usually gets no plan, which matches the instruction.
 
-The last `Aviso:` line and the turn's duration, edits and commands show under ROBIN.
-Only the final standalone `ROBIN:` line is relocated, and only while its replacement pane is
-shown and placed. Quotes, fences and older summaries remain in the chat. Stored transcripts
-and `turn.complete` text remain unchanged. Closing the pane, viewing a diff or insufficient
-placement keeps ROBIN in the chat. The pane shows the latest summary separately from observed
-failures. Native render exceptions fall back to normal rendering.
+The **Último turno** card shows the turn's duration, edits and commands, its last `Aviso:` line
+and a tool failure. The closing `ROBIN:` line is the robin mod's (`plugins/robin`): Workboard
+never moves or shows it. Agentic OS still receives `robin: null`, a key its `/session` schema
+requires. Native render exceptions fall back to normal rendering.
 
 ## Quality
 
@@ -160,7 +165,7 @@ four of its sections are empty.
 
 ## One pane per terminal
 
-ROBIN, Plan, Quality and the history show only this session's data, even when
+The last turn, Plan, Quality and the history show only this session's data, even when
 Agentic OS knows other sessions in the same repository. The Agents card is the only view
 outward, and it lists only sessions linked to this one, by rank, one colour per section:
 

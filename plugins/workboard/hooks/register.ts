@@ -5,8 +5,10 @@ import {
   collaboration,
   DIRECTS,
   extractNotice,
-  extractRobin,
+  INITIAL_CAP,
   initialState,
+  pruneDue,
+  staleBoards,
   checkExit,
   parseEnvelope,
   planAlerts,
@@ -164,7 +166,6 @@ type RouterRun = { at: number; ms: number; outcome: string; skills: string[]; fi
 
 let state = initialState("pending", "");
 let active = false,
-  paneHealthy = false,
   paneFaulted = false,
   history = false,
   // The Cambios card lists each repo's files only when unfolded.
@@ -190,10 +191,46 @@ let unplaced: { id: string; text: string; at: number }[] = [];
 let saved: Promise<unknown> = Promise.resolve();
 const launching = new Set<string>();
 const redraw = ($: EngineInterface) => $.ui.invalidate("ui.render");
+// A failed save prunes once per process even if today's prune ran: the store may be full.
+let forcedPrune = false;
 const save = ($: EngineInterface) => {
-  const copy = JSON.parse(JSON.stringify(state));
-  saved = saved.catch(() => undefined).then(() => $.store.set(`session:${copy.sessionId}`, copy));
+  const copy = { ...JSON.parse(JSON.stringify(state)), savedAt: Date.now() };
+  saved = saved
+    .catch(() => undefined)
+    .then(() => $.store.set(`session:${copy.sessionId}`, copy))
+    .catch((err: unknown) => {
+      if (!forcedPrune) {
+        forcedPrune = true;
+        prune($, true);
+        // Queued after the prune; a second failure does not prune again.
+        void save($).catch(() => undefined);
+      }
+      throw err;
+    });
   return saved;
+};
+// Drops the oldest boards, queued with the saves so none races it; the board works without it.
+const prune = ($: EngineInterface, force = false) => {
+  saved = saved
+    .catch(() => undefined)
+    .then(async () => {
+      const now = await $.clock.now();
+      if (!force && !pruneDue(await $.store.get("prune:at"), now)) return;
+      // Claimed before the walk, so a session starting meanwhile does not repeat it. A full store
+      // refuses even this small set, and that is when the walk matters most: go on without it.
+      await $.store.set("prune:at", now).catch(() => undefined);
+      const keys = (await $.store.keys()).filter((k) => k.startsWith("session:"));
+      const boards = await Promise.all(
+        keys.map(async (key) => {
+          // A board saved before `savedAt` existed dates from its last turn.
+          const v = (await $.store.get(key)) as { savedAt?: unknown; turn?: { at?: unknown } } | undefined;
+          const at = typeof v?.savedAt === "number" ? v.savedAt : v?.turn?.at;
+          return { key, at: typeof at === "number" ? at : undefined, size: new TextEncoder().encode(JSON.stringify(v ?? null)).length };
+        }),
+      );
+      for (const key of staleBoards(boards, `session:${state.sessionId}`)) await $.store.delete(key);
+    })
+    .catch(() => undefined);
 };
 // A turn this long has likely lost the person's attention, so its end is worth a notification.
 const LONG_TURN_MS = 120_000;
@@ -265,9 +302,9 @@ const adopt = async ($: EngineInterface, sessionId: string, cwd: string) => {
     Array.isArray((stored as State).tasks)
   ) {
     // State saved before a field existed gets its default; an explicit value stays. The
-    // removed decisions of an older build are dropped.
-    const { decisions: _legacy, ...kept } = stored as State & { decisions?: unknown };
-    state = { ...state, ...kept };
+    // removed decisions and ROBIN of an older build are dropped.
+    const { decisions: _legacy, robin: _robin, ...kept } = stored as State & { decisions?: unknown; robin?: unknown };
+    state = { ...state, ...kept, initial: Array.isArray(kept.initial) ? kept.initial.slice(0, INITIAL_CAP) : [] };
   }
 };
 // True once the snapshot is in, false when it failed, undefined when another refresh runs.
@@ -298,7 +335,7 @@ const refresh = async ($: EngineInterface): Promise<boolean | undefined> => {
     error = null;
     if (!state.ticket && next.ticket) state.ticket = next.ticket;
     if (!state.initialized) {
-      state.initial = next.repos.find((r) => r.cwd === state.cwd)?.files.map((f) => f.path) ?? [];
+      state.initial = (next.repos.find((r) => r.cwd === state.cwd)?.files.map((f) => f.path) ?? []).slice(0, INITIAL_CAP);
       state.initialized = true;
     }
     state.agents = reconcileAgents(state.agents, await $.agent.list());
@@ -325,7 +362,6 @@ const openPane = async ($: EngineInterface) => {
 // A pane that is shown but has no room to be placed reads as closed: one /workboard opens it.
 const togglePane = async ($: EngineInterface) => {
   if ((await $.ui.panes()).some((p) => p.id === PANE && p.isShown && p.isPlaced)) {
-    paneHealthy = false;
     await $.ui.close({ id: PANE });
     redraw($);
   } else await openPane($);
@@ -649,7 +685,6 @@ const agentsModel = (
 async function activate($: EngineInterface, cwd: string) {
   if (active) return;
   active = true;
-  paneHealthy = false;
   unplaced = [];
   history = false;
   filesOpen = false;
@@ -661,6 +696,7 @@ async function activate($: EngineInterface, cwd: string) {
   launching.clear();
   peersTalk = false;
   await adopt($, await $.session.id(), cwd);
+  prune($);
   actor = (await $.env.get("AOS_AGENT_ID")) || undefined;
   const configured = await $.env.get("AOS_URL");
   // A malformed or non-loopback AOS_URL leaves the default origin instead of aborting the
@@ -702,7 +738,7 @@ async function activate($: EngineInterface, cwd: string) {
   await $.tool.register({
     name: "progress",
     description:
-      "Publish the explicit work plan to the user's workboard. Shape the plan as 2-6 features (tasks without parent), each with 2-6 subtasks (parent: the feature id) that end in something checkable. Publish it once you know the steps of work that edits files in several steps; questions, reads, reviews and one-file edits need none. Update it when a feature closes or something blocks or fails, and close everything at the end. Tasks merge by id: send only the ones that change, as {id, state}; replace: true starts a new plan. Tasks are declarations, never proof of passing tests. Keep the final ROBIN line in your answer; the mod relocates only its drawing.",
+      "Publish the explicit work plan to the user's workboard. Shape the plan as 2-6 features (tasks without parent), each with 2-6 subtasks (parent: the feature id) that end in something checkable. Publish it once you know the steps of work that edits files in several steps; questions, reads, reviews and one-file edits need none. Update it when a feature closes or something blocks or fails, and close everything at the end. Tasks merge by id: send only the ones that change, as {id, state}; replace: true starts a new plan. Tasks are declarations, never proof of passing tests.",
     inputSchema: {
       type: "object",
       properties: {
@@ -861,8 +897,6 @@ export const register: Register = (on) => {
     }
     state.working = false;
     if (state.turn) state.turn = { ...state.turn, ms: Date.now() - state.turn.at };
-    const robin = extractRobin(e.answer);
-    if (robin) state.robin = { text: clean(robin.text, 4000), at: Date.now() };
     if (!e.isAborted) {
       const notice = extractNotice(e.answer);
       state.notice = notice ? clean(notice) : null;
@@ -1057,24 +1091,13 @@ export const register: Register = (on) => {
   on("ui.close", async ($, e, next) => {
     const r = await next(e);
     if (e.id === PANE) {
-      paneHealthy = false;
       redraw($);
     }
     return r;
   });
-  on("ui.render", { component: "AssistantMessage" }, async ($, e, next) => {
-    // The pane's visibility is the terminal's; a desktop beside it keeps ROBIN in its own chat.
-    if (e.surface !== "terminal" || !active || !paneHealthy || !state.robin) return next(e);
-    const robin = extractRobin(e.props.text);
-    if (!robin || robin.text !== state.robin.text) return next(e);
-    const visible = (await $.ui.panes()).some((p) => p.id === PANE && p.isShown && p.isPlaced);
-    return visible ? next({ ...e, props: { ...e.props, text: robin.body } }) : next(e);
-  });
   on("ui.render", { component: "Pane", requestId: PANE }, async ($, e, next) => {
     if ((e.surface !== "terminal" && e.surface !== "desktop") || !active) return next(e);
-    paneHealthy = false;
     const ui = $.ui.resolve(e);
-    // ROBIN remains in the chat while a file replaces its panel.
     if (diff)
       return diffView(ui, { ...diff, path: clean(diff.path) }, () => {
         diff = null;
@@ -1197,9 +1220,9 @@ export const register: Register = (on) => {
       title: clean(state.ticket ?? snapshot?.repos[0]?.branch ?? tail(state.cwd), 80),
       working: state.working,
       cols: e.props.bodyColumns,
-      robin: {
-        text: clean(state.robin?.text ?? viewStatus(state), 2000),
-        at: state.robin?.at ?? null,
+      turn: {
+        text: clean(viewStatus(state), 2000),
+        at: state.turn?.at ?? null,
         detail: turnDetail(state),
         notice: state.notice,
       },
@@ -1266,11 +1289,9 @@ export const register: Register = (on) => {
             : [],
       },
     });
-    paneHealthy = true;
     paneFaulted = false;
     return tree;
   }).catch(($, e, next) => {
-    paneHealthy = false;
     if (!paneFaulted) {
       paneFaulted = true;
       redraw($);

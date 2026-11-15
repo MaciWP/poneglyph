@@ -95,6 +95,10 @@ graph TD
 - Every push URL of `origin` in the worktree is `https://github.com/<repo>` (D6): a repo cloned
   through an SSH alias gets its push URL set by the launcher, or every push is denied.
 - No `--agent` at launch (index §Research).
+- An interactive launch passes `permissions.denyInsteadOfPrompting: true` through `--settings` (Claude
+  Code 2.1.319), so a call that would wait on a permission prompt is denied and the turn goes on; with
+  nobody there, a prompt stalls the ticket. A `-p` launch needs none: it never prompts.
+  [Suposición: verificar en F3 que `--settings` admite la clave y que llega a los subagentes]
 - The kickoff prompt carries the limit from `docs/factory-mode.md`: the draft PR is the last step and
   the merge is never attempted, asked for or offered. `CLAUDE.md` does not load that doc, and the
   gate's denial alone teaches the limit only after an attempt.

@@ -42,7 +42,8 @@ Plus: design-doc audits, cross-file consistency checks, and full-file reads → 
 
 | Need | Primitive | Model |
 |------|-----------|-------|
-| Fresh context (critic reviewer, adversarial check) | `general-purpose` | explicit: top tier for a verify/judge (`CLAUDE_CODE_SUBAGENT_MODEL` would silently give it the cheap tier) |
+| Fresh-context review (plan, feature, design doubt) | `critic` (`dev-workflow` `references/03-critic-loop.md`) | none passed: the agent file pins it |
+| Other adversarial check | `general-purpose` | explicit: top tier for a verify/judge (`CLAUDE_CODE_SUBAGENT_MODEL` would silently give it the cheap tier) |
 | Read-only sweep over the session's own thread | `subagent_type: "fork"` (inherits conversation + prompt cache) | parent's model, override ignored |
 | Read-only codebase exploration, thread not needed | `Explore` | explicit cheapest tier (locate, inventory, summarise, web); mid tier only for security work |
 | Quick read-only question | `Explore` | explicit cheapest tier, `effort: "medium"` (`03-complexity-routing.md` §Model Routing) |
@@ -107,7 +108,7 @@ How the capabilities of the former custom agents map onto the current model (`Wo
 | Capability (historical agent) | Now | Fan-out trigger |
 |---|---|---|
 | implement (was `builder`) | `flow` (build phase) inline by default | Parallel write agents need explicit opt-in |
-| validate (was `reviewer`) | `flow` skill (review phase) inline | standard/full code review → **ONE fresh-context read-only reviewer** (correctness/requirements only, P1 exception); decision review → panel via `compare-and-decide` (heavy tier) |
+| validate (was `reviewer`) | `flow` skill (review phase) inline | code review at every level → **the `critic` agent**, full scope (P1 exception); decision review → panel via `compare-and-decide` (heavy tier) |
 | explore (was `scout`) | `Explore` (built-in) | ≥4 independent exploration sweeps → parallel `Explore`, one message |
 | generator→validator | generator inline, validator = ONE fresh-context reviewer | Four-Eyes inside a team: NOT a new spawn decision (spawn-tree P7) |
 

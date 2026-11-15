@@ -16,7 +16,7 @@ send, check, reserve.
 ## Definition of Done
 
 - Every message addressed to this session gets the reply its sender asked for, sent with
-  `aos message reply`, or a one-line acknowledgement when it asks for none.
+  `aos message reply`, none if it asks for none: a reply wakes the sender.
 - A message sent to another session returns `delivered`, or `pending` with a reason; the
   sender reports which.
 - Files shared with other sessions are reserved before the first edit.
@@ -59,7 +59,7 @@ aos message reply <message-id> --text-file reply.txt
 ### Send to another session
 
 ```sh
-aos list                                   # find the session id
+aos list  # find the session id
 aos message send <session-id> --text-file note.txt --request-id <unique-id>
 ```
 
@@ -71,8 +71,8 @@ For `uncertain`, read the terminal (`aos read <session-id>`) before sending anyt
 ### Check messages
 
 ```sh
-aos message list                           # recent messages; filter by your own id in `to`
-aos message get <message-id>               # the full text
+aos message list              # recent messages; filter by your own id in `to`
+aos message get <message-id>  # the full text
 ```
 
 ### Reserve before editing shared files
@@ -99,6 +99,7 @@ A conflict names the owner and the reason: coordinate with that session instead 
 
 1. A turn starts with `[Agentic OS message 9f… from 37dc…] Acusa recibo en una línea.`
    Expected: one `aos message reply 9f… --text-file …` with a one-line acknowledgement.
+   Without that request (`He terminado US16.`), no reply.
 2. Near miss: "pide a Codex una segunda opinión sobre este diff". Expected: `consult-model`,
    not this skill.
 3. Edge: `aos message send` returns `pending` with "waits until the question … is answered".

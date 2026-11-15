@@ -10,6 +10,7 @@ import {
   formatGrokTwinLine,
   formatSettingsValidationLine,
   mergeHookEvents,
+  normalizeFolderLinks,
   statusExitCode,
   formatSpTwinStatusLine,
   generateRouterAgent,
@@ -621,5 +622,28 @@ describe("staleGlobalRules", () => {
 
     expect(out.remove.map((p) => path.basename(p)).sort()).toEqual(["paths", "retired.md"]);
     expect(out.report.map((p) => path.basename(p))).toEqual(["old-copy.md"]);
+  });
+});
+
+describe("normalizeFolderLinks", () => {
+  it("turns a leftover agents dir-symlink into a real directory and leaves its target intact", () => {
+    const root = mkdtempSync(path.join(tmpdir(), "sync-agents-"));
+    try {
+      const repoAgents = path.join(root, "repo", ".claude", "agents");
+      mkdirSync(repoAgents, { recursive: true });
+      writeFileSync(path.join(repoAgents, "critic.md"), "source");
+      const home = path.join(root, "home", ".claude");
+      mkdirSync(home, { recursive: true });
+      symlinkSync(repoAgents, path.join(home, "agents"));
+      mkdirSync(path.join(home, "rules"));
+
+      expect(normalizeFolderLinks(home)).toEqual([path.join(home, "agents")]);
+      expect(lstatSync(path.join(home, "agents")).isDirectory()).toBe(true);
+      expect(readdirSync(path.join(home, "agents"))).toEqual([]);
+      expect(readFileSync(path.join(repoAgents, "critic.md"), "utf-8")).toBe("source");
+      expect(lstatSync(path.join(home, "rules")).isDirectory()).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });

@@ -12,6 +12,7 @@ import { bannedOpeners, cardSeparators, esEsDetect, stripCode, stripFenced } fro
 import { humanPrompt, windowStart } from "./skill-usage";
 import { collectTranscripts } from "./usage-profile";
 import type { Status } from "./doctor";
+import { CRITIC_AGENT } from "../hooks/lib/critic-events";
 import { claudeConfigDir } from "../hooks/lib/paths";
 
 export interface ComplianceTurn {
@@ -104,7 +105,8 @@ export const RULES: Rule[] = [
     const c = t.bash.filter((x) => /git commit/.test(x));
     return c.length ? !c.some((x) => /Co-Authored-By: Claude|Generated with \[?Claude/i.test(x)) : null;
   } },
-  { id: "C-MODEL", source: "CLAUDE.md", rule: "model named on every spawn", check: (t) => (t.spawns.length ? t.spawns.every((s) => !!s.model || s.type === "fork") : null) },
+  // A fork inherits by design; the critic runs on its agent file's model, and a call model would override it.
+  { id: "C-MODEL", source: "CLAUDE.md", rule: "model named on every spawn", check: (t) => (t.spawns.length ? t.spawns.every((s) => !!s.model || s.type === "fork" || s.type === CRITIC_AGENT) : null) },
   { id: "C-HCONFIG", source: "CLAUDE.md", rule: "harness-config loaded for config edits", check: (t) => (t.edits.some((e) => CONFIG.test(e)) ? [...t.sessionSkills].some((s) => s.endsWith("harness-config")) : null) },
   { id: "S-ESES", source: "style", rule: "final answer in es-ES", check: (t) => esEsDetect(final(t)).pass },
   { id: "S-ESES-MID", source: "style", rule: "progress notes in es-ES", check: (t) => (mids(t).length ? mids(t).every((x) => esEsDetect(x).pass) : null) },

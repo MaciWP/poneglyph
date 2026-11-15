@@ -74,6 +74,7 @@ migrations, deletion). Else proceed once the DoD is settled.
 - Non-trivial task → weigh the router's candidates, or launch the `prompt-router` agent when no
   note covers this phase; load the ones the task justifies.
 - A blocking gap the questions can't close → `drillme-clarify` (deep sweep).
+- Before leaving plan mode (Claude): `critic` review, `references/03-critic-loop.md`.
 
 ## Stage 3: BUILD (minimum code / simple / maintainable / elegant)
 
@@ -109,7 +110,8 @@ continue. Hard gates and blocking questions still apply.
 Before "done": run the project's checks, sweep the impact of every touched symbol,
 drive the real flow end-to-end when there is runtime surface, and declare residual
 risk. Full protocol: `Skill(changes-verify)`. Compliance is bidirectional: meet every agreed
-AC, and add NOTHING beyond them.
+AC, and add NOTHING beyond them. On Claude, a feature or turn closes after a `critic` review
+(`references/03-critic-loop.md`).
 
 **Diff review lens** (on request, "revisa este diff por sobreingeniería"): tags and
 scope in `references/02-on-request-lenses.md`.
@@ -193,3 +195,4 @@ A trivial change, and a small task with one loop-back in full and compact render
 |---|---|
 | Worked examples: trivial level; full and compact rendering of the five stages | `references/01-worked-example.md` |
 | Diff review lens (over-engineering tags) · ponytail debt harvest | `references/02-on-request-lenses.md` |
+| `critic` agent: when, brief, answer table, disputes, what the gate counts | `references/03-critic-loop.md` |

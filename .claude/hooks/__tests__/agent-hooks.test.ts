@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { BUDGET_LINE, SONNET_BUDGET_LINE } from "../lib/haiku-budget";
-import { agentTask, bakedSkills, modelNudge, RETRY_REASON, routerTaskInput } from "../router/agent-hooks";
+import { agentTask, bakedSkills, briefGaps, CRITIC_BRIEF, criticSpawn, modelNudge, RETRY_REASON, routerTaskInput } from "../router/agent-hooks";
 import { ignoreLearned } from "./learned-fixture";
 
 const HOOK = join(import.meta.dir, "..", "router", "agent-hooks.ts");
@@ -136,5 +136,74 @@ describe("router subagent hooks", () => {
     const answer = '```json\n{"fixes": [], "skills": [{"why": "implement a", "name": "a"}, {"why": "x", "name": "b"}, {"why": "y", "name": "zz"}]}\n```';
     expect(run({ hook_event_name: "SubagentStop", agent_type: "prompt-router", agent_transcript_path: agent, last_assistant_message: answer })).toBe("");
     expect(readFileSync(logFile, "utf8")).toMatch(/via=agent session=sess-123 outcome=ok ms=\d+ skills=a fixes=0 effort=- past=1\n$/);
+  });
+});
+
+describe("criticSpawn", () => {
+  const brief = "MODE: feature\nGOAL: x\nARTEFACT: src/a.ts";
+  test("drops model and effort from a critic call and says so", () => {
+    const { input, note } = criticSpawn({ subagent_type: "critic", prompt: brief, model: "haiku", effort: "low", description: "d" });
+    expect(input).toEqual({ subagent_type: "critic", prompt: brief, description: "d" });
+    expect(note).toContain("dropped");
+  });
+  test("leaves a complete critic call alone when the session has no prompt to append", () => {
+    expect(criticSpawn({ subagent_type: "critic", prompt: brief })).toEqual({ input: null, note: null });
+    expect(criticSpawn({ subagent_type: "critic", prompt: CRITIC_BRIEF.map((b) => `${b}: ${b === "MODE" ? "plan" : "x"}`).join("\n") }, "/nonexistent.jsonl")).toEqual({ input: null, note: null });
+  });
+  test("names what the three required blocks lack", () => {
+    expect(briefGaps(brief)).toEqual([]);
+    expect(briefGaps("MODE: doubt (second round)\nGOAL (verbatim):\n«x»\nARTEFACT (working tree): a.ts")).toEqual([]);
+    expect(briefGaps("Review this change, focus on the tests.")).toHaveLength(3);
+    expect(briefGaps("MODE: plan\nGOAL: x")).toEqual(["`ARTEFACT:` with content"]);
+    expect(briefGaps("MODE: plan\nGOAL:\nARTEFACT: a.ts")).toEqual(["`GOAL:` with content"]);
+    expect(briefGaps("MODE: plan\nGOAL:\nDOD tests pass: the user's words\nARTEFACT: a.ts")).toEqual([]);
+    expect(briefGaps("MODE: plan\nGOAL:\nDOD (agreed): x\nARTEFACT: a.ts")).toEqual(["`GOAL:` with content"]);
+    expect(briefGaps("MODE: finished feature review\nGOAL: x\nARTEFACT: a.ts")[0]).toContain("`MODE:`");
+    expect(briefGaps("MODE: feature-ish\nGOAL: x\nARTEFACT: a.ts")[0]).toContain("`MODE:`");
+    expect(briefGaps("MODE-extra: plan\nGOAL: x\nARTEFACT: a.ts")[0]).toContain("`MODE:`");
+  });
+  test("denies a brief with a gap, and the deny wins over the model strip", () => {
+    const { input, note, deny } = criticSpawn({ subagent_type: "critic", prompt: "MODE: plan\nGOAL: x", model: "haiku" });
+    expect(deny).toContain("`ARTEFACT:` with content");
+    expect({ input, note }).toEqual({ input: null, note: null });
+  });
+  test("appends the first user entry and the last four, each cut, and skips what no person typed", () => {
+    const { lead } = fixture();
+    const user = (content: string, extra: object = {}) => JSON.stringify({ type: "user", message: { role: "user", content }, ...extra });
+    const ask = (id: string, answers: object, prefilled = false) => [
+      JSON.stringify({ type: "assistant", message: { content: [{ type: "tool_use", id, name: "AskUserQuestion", input: prefilled ? { answers } : {} }] } }),
+      JSON.stringify({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: id, content: "answered" }] }, toolUseResult: { answers } }),
+    ];
+    writeFileSync(lead, [
+      user("<command-message>dev-workflow</command-message>\n<command-name>/dev-workflow</command-name>\n<command-args>primero</command-args>"),
+      ...ask("q0", { "¿Sigo?": "nunca llegó al usuario" }, true), ...ask("q1", { "¿Qué hago?": "reenfoca" }), user("x".repeat(1600)),
+      user("The courier plugin sent a message", { origin: { kind: "plugin", name: "courier" } }),
+      user("<task-notification>\n<tool-use-id>t1</tool-use-id>\n</task-notification>"),
+      user("resumen", { isCompactSummary: true }),
+      JSON.stringify({ type: "attachment", attachment: { type: "queued_command", commandMode: "prompt", prompt: "a mitad de turno" } }),
+      user("p5"), user("último"),
+    ].join("\n"));
+    const added = String(criticSpawn({ subagent_type: "critic", prompt: brief }, lead).input?.prompt).slice(brief.length);
+    expect(added).toStartWith("\n\nUSER-PROMPTS (appended by the harness");
+    expect(added.match(/^\[\d of 6\]/gm)).toEqual(["[1 of 6]", "[3 of 6]", "[4 of 6]", "[5 of 6]", "[6 of 6]"]);
+    expect(added).toContain("[1 of 6] /dev-workflow primero\n");
+    expect(added).toContain(`[3 of 6] ${"x".repeat(1500)} [cut]\n[4 of 6] a mitad de turno`);
+    expect(added).not.toMatch(/reenfoca|nunca llegó|courier|task-notification|resumen/);
+    const noted = JSON.stringify({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: "q2", content: "answered" }] }, toolUseResult: { answers: { "¿Umbral?": "400 €" }, annotations: { "¿Umbral?": { notes: "pero no lo descartes" } } } });
+    writeFileSync(lead, [user("primero"), ...ask("q1", { "¿Qué hago?": "reenfoca" }), noted].join("\n"));
+    expect(criticSpawn({ subagent_type: "critic", prompt: brief }, lead).input?.prompt).toEndWith("[1 of 3] primero\n[2 of 3] answer to «¿Qué hago?»: reenfoca\n[3 of 3] answer to «¿Umbral?»: 400 € (note: pero no lo descartes)");
+  });
+  test("the hook denies a free-form critic brief and appends the prompts to a valid one", () => {
+    const { run } = fixture();
+    const call = (prompt: string) => JSON.parse(run({ hook_event_name: "PreToolUse", tool_name: "Agent", tool_input: { subagent_type: "critic", prompt, model: "haiku" } })).hookSpecificOutput;
+    expect(call("Review my change")).toMatchObject({ permissionDecision: "deny", permissionDecisionReason: expect.stringContaining("`MODE:`") });
+    expect(call("Review my change").updatedInput).toBeUndefined();
+    const ok = call(brief);
+    expect(ok.permissionDecision).toBe("allow");
+    expect(ok.updatedInput).toEqual({ subagent_type: "critic", prompt: `${brief}\n\nUSER-PROMPTS (appended by the harness from the session transcript, not by the author):\n[1 of 1] implementa la parte b del plan` });
+  });
+  test("ignores other agents, and the model nudge skips the critic", () => {
+    expect(criticSpawn({ subagent_type: "Explore", prompt: "x", model: "haiku" })).toEqual({ input: null, note: null });
+    expect(modelNudge({ subagent_type: "critic", prompt: "x" }, "/nonexistent")).toBeNull();
   });
 });

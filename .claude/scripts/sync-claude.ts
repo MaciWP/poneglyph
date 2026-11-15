@@ -32,6 +32,8 @@ export const LINK_FOLDERS = [
 // Top-level FILES link individually; subdirectories link as directories.
 const RULES_FOLDER = "rules";
 const DOCS_FOLDER = "docs";
+// `agents` holds the generated prompt-router (generateRouterAgent) next to linked agent files.
+const AGENTS_FOLDER = "agents";
 
 // Rules specific to the poneglyph PROJECT, they must NOT propagate to the global
 // ~/.claude/rules (user layer), or they would wrongly apply to every repo on the machine.
@@ -56,6 +58,8 @@ const LINK_FILES = [
   // poneglyph's project loop and the user-level default for every other repo.
   // Another repo overrides locally with its own .claude/loop.md.
   { src: ".claude/loop.md", dest: "loop.md" },
+  // The critic agent needs no generation, so it links like any file; Windows gets a copy.
+  { src: ".claude/agents/critic.md", dest: "agents/critic.md" },
 ];
 
 // settings.json is NOT symlinked: it is GENERATED per-machine as a real file by
@@ -862,6 +866,24 @@ function computeLinkStatus(source: string, dest: string): LinkInfo["status"] {
   return "exists";
 }
 
+// BLINDAJE: `rules` and `docs` were whole-folder dir-symlinks, and an early install linked
+// `agents` the same way. Per-entry links need REAL directories, or `mkdirSync(dirname(dest))`
+// would resolve through the leftover symlink and create per-file links INSIDE the repo source
+// (corruption: agents/critic.md would replace itself). Each leftover dir-symlink becomes a real
+// directory; its target is left untouched.
+export function normalizeFolderLinks(destBase: string): string[] {
+  const out: string[] = [];
+  for (const folder of [RULES_FOLDER, DOCS_FOLDER, AGENTS_FOLDER]) {
+    const dest = path.join(destBase, folder);
+    if (!isSymlink(dest)) continue;
+    fs.unlinkSync(dest);
+    fs.mkdirSync(dest, { recursive: true });
+    console.log(`📁 Normalized ${dest} (dir-symlink → real dir for per-file links)`);
+    out.push(dest);
+  }
+  return out;
+}
+
 function detectLinks(projectRoot: string, homeDir: string): LinkInfo[] {
   const links: LinkInfo[] = [];
   const srcBase = path.join(projectRoot, ".claude");
@@ -1062,31 +1084,7 @@ async function createSymlinks(
 
   console.log(`\n🔗 Link method: ${method}\n`);
 
-  // BLINDAJE: the whole `rules` folder was one dir-symlink. In the per-entry model
-  // ~/.claude/rules must be a REAL directory, or `mkdirSync(dirname(dest))` below would resolve
-  // through the leftover symlink and create per-file links INSIDE the repo source (corruption).
-  // Replace any leftover dir-symlink with a real directory before creating rule links.
-  const rulesDest = path.join(destBase, RULES_FOLDER);
-  if (isSymlink(rulesDest)) {
-    fs.unlinkSync(rulesDest);
-    fs.mkdirSync(rulesDest, { recursive: true });
-    console.log(
-      `📁 Normalized ${rulesDest} (dir-symlink → real dir for per-file rules)`,
-    );
-  }
-
-  // Same BLINDAJE for `docs`: it was a whole-folder dir-symlink until PROJECT_ONLY_DOCS
-  // moved it to the per-entry model to keep docs/local-model/ out of the
-  // global layer. A leftover dir-symlink here would corrupt per-entry docs links exactly
-  // like the rules case above.
-  const docsDest = path.join(destBase, DOCS_FOLDER);
-  if (isSymlink(docsDest)) {
-    fs.unlinkSync(docsDest);
-    fs.mkdirSync(docsDest, { recursive: true });
-    console.log(
-      `📁 Normalized ${docsDest} (dir-symlink → real dir for per-file docs)`,
-    );
-  }
+  normalizeFolderLinks(destBase);
 
   for (const link of links) {
     if (link.status === "already-linked") {

@@ -197,6 +197,16 @@ describe("three-host agent definition files (AC20)", () => {
     expect(errors(source({ ".codex/agents/other.toml": codexAgent({ ...validCodex, name: "sample" }) }))).toContain("metadata.collision");
   });
 
+  it("checks a Claude agent's hooks and typed fields like a skill's", () => {
+    const hook = (command: string) => `hooks:\n  PreToolUse:\n    - matcher: Bash\n      hooks:\n        - type: command\n          command: ${JSON.stringify(command)}\n`;
+    expect(errors(source({ ".claude/agents/reviewer.md": claudeAgent("reviewer", "Reviews diffs.", hook('bun "$HOME/.claude/hooks/missing-guard.ts"')) }))).toContain("hooks.path");
+    expect(errors(source({ ".claude/agents/reviewer.md": claudeAgent("reviewer", "Reviews diffs.", "hooks: nope\n") }))).toContain("hooks.shape");
+    expect(errors(source({ ".claude/agents/reviewer.md": claudeAgent("reviewer", "Reviews diffs.", "model: 5\n") }))).toContain("metadata.string");
+    expect(errors(source({ ".claude/agents/reviewer.md": claudeAgent("reviewer", "Reviews diffs.", "tools: {a: 1}\n") }))).toContain("metadata.tools");
+    const ok = { ".claude/hooks/guard.ts": "export {};\n", ".claude/agents/reviewer.md": claudeAgent("reviewer", "Reviews diffs.", `model: claude-opus-5-5\neffort: medium\ntools: Read, Grep\n${hook('bun "$HOME/.claude/hooks/guard.ts"')}`) };
+    expect(errors(source(ok))).toEqual([]);
+  });
+
   it("T2.7 Codex TOML required fields (A2/A3)", () => {
     expect(errors(source({ ".codex/agents/other.toml": codexAgent(validCodex) })).filter(r => r.startsWith("metadata."))).toEqual([]);
     expect(errors(source({ ".codex/agents/reviewer.toml": codexAgent({ name: "reviewer", developer_instructions: "Review." }) }))).toContain("metadata.description");

@@ -91,7 +91,7 @@ describe("rules, positive and negative", () => {
     ["C-STOP", { texts: ["**Hecho.**\nROBIN: hecho."] }, true, { texts: ["**Hecho.**\n¿Sigo con lo demás?\nROBIN: hecho."] }, false],
     ["C-SENS", { edits: ["/r/package.json"], texts: ["sensitive: añade un script\n**Hecho.**"] }, true, { edits: ["/r/package.json"] }, false],
     ["C-NOAI", { bash: ["git commit -m 'fix'"] }, true, { bash: ["git commit -m 'fix\n\nCo-Authored-By: Claude <x@y>'"] }, false],
-    ["C-MODEL", { spawns: [{ model: "haiku" }, { type: "fork" }] }, true, { spawns: [{ type: "Explore" }] }, false],
+    ["C-MODEL", { spawns: [{ model: "haiku" }, { type: "fork" }, { type: "critic" }] }, true, { spawns: [{ type: "Explore" }] }, false],
     ["C-HCONFIG", { edits: ["/r/CLAUDE.md"], sessionSkills: new Set(["harness-config"]) }, true, { edits: ["/r/CLAUDE.md"], sessionSkills: new Set() }, false],
     ["S-ESES", { texts: ["**Hecho.** Ya está el cambio en el fichero y funciona.\nROBIN: hecho."] }, true, { texts: ["**Done.** The change is in the file and it works fine for the whole team.\nROBIN: done."] }, false],
     ["S-ESES-MID", { texts: ["Estoy mirando el código del módulo.", "**Hecho.**"] }, true, { texts: ["I am looking at the code of the module now.", "**Hecho.**"] }, false],

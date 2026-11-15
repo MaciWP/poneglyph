@@ -40,6 +40,16 @@ An explicitly requested plugin must be available before that route can proceed;
 if it is unavailable, ask before substituting a CLI. Explanations, quoted examples
 and hook hints authorize no launch.
 
+## Critic
+
+| Claude Code | Codex | Grok Build |
+|---|---|---|
+| `critic` agent (`agents/critic.md`, synced to `~/.claude/agents/`) and `critic-gate.ts` | ausente | ausente |
+
+On Codex and Grok the fallback is `consult-model` in refutation mode with the brief of
+`dev-workflow` `references/03-critic-loop.md`; it is an other-provider call, so it is asked
+first. Port trigger: those hosts used for real work.
+
 Do not replace active global profiles with a development worktree to test
 installation; use disposable homes and the existing adapter integration tests.
 
@@ -209,6 +219,7 @@ names from the active host at runtime, never from memory:
 
 - **Claude Code**: the `Agent` tool's own model options list the live tiers. Pick
   one explicitly on every spawn; never let a spawn inherit the session model silently.
+  Exception: `critic`, whose agent file pins its model and effort.
 - **Codex**: the CLI's configured model is the baseline (run without `-m`). Pass
   `-m` only for a tier the user named, and never name a tier the host does not expose.
 - **Grok Build**: inspect `grok models` / `grok --help` and use an approved model

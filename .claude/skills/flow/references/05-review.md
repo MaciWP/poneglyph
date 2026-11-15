@@ -45,8 +45,8 @@ starting revision and inspect committed **and** working-tree changes against it.
 
 | Level | When | Scope |
 |---|---|---|
-| **light** | 1-2 HUs, no security or performance surface | Base checks + the single most relevant drillme gap; no fresh reviewer, quality lenses or `security-audit` |
-| **standard** (default) | 3-N HUs, no critical area | Full checklist, the maintainability lens, ONE fresh-context reviewer, phase bank sweep |
+| **light** | 1-2 HUs, no security or performance surface | Base checks + the single most relevant drillme gap + the `critic` reviewer; no quality lenses or `security-audit` |
+| **standard** (default) | 3-N HUs, no critical area | Full checklist, the maintainability lens, the `critic` reviewer, phase bank sweep |
 | **full** | Architectural, or the diff touches auth / payments / secrets / crypto / session | Standard + `security-audit` + both quality lenses; the reviewer prompt carries the critical-area focus |
 
 Override with `--light` / `--standard` / `--full`. Declare `review_level` and its reason in
@@ -94,14 +94,14 @@ is the checklist; this phase orchestrates it.
 
 ## Step 7: Independent review and conditional gates
 
-**ONE fresh-context reviewer** at standard/full on code. Evidence:
+**ONE fresh-context reviewer** at every level on code. Evidence:
 deliberative panels are the weak form for code review; runnable checks plus one fresh
-reviewer is the strong form. Dispatch one read-only `general-purpose` agent (never `fork`:
-it inherits the author's context) with the **top-tier model set explicitly**, constrained to
-correctness and requirements only: trace each AC to the diff, verify the happy path, flag
-gaps. Style, performance and maintainability stay in Steps 5-6. Merge its findings with
-attribution; on a correctness conflict the reviewer wins, on style the inline review wins,
-irreconcilable → the user. If no
+reviewer is the strong form. On Claude, launch the `critic` agent (never `fork`: it inherits
+the author's context) in mode `feature` over the whole approved diff, with the brief and
+answer table of `dev-workflow` `references/03-critic-loop.md`; its scope is full (path,
+solution, reuse, design, style, correctness, safety, evidence, scope). Record each finding and
+its answer in `review.md` with attribution; a disputed blocker or major goes to the user. On
+Codex and Grok, `consult-model` in refutation mode stands in, asked first. If no
 agent can run, review inline and declare residual author bias in `review.md`; never skip the
 independence concern silently. Panels (≥4 perspectives) belong to decision review via
 `compare-and-decide`, never to code.

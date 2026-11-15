@@ -16,14 +16,18 @@
  *     Skills the session already loaded are dropped here, as in the script.
  *   PreToolUse also appends the Haiku context budget (lib/haiku-budget.ts) to any Agent task that
  *     runs on Haiku, the router's included, and adds a note when a spawn inherits the Lead's model
- *     because nothing named one.
+ *     because nothing named one. A `critic` launch is denied when its brief lacks `MODE`, `GOAL` or
+ *     `ARTEFACT`; a valid one gets the user's prompts appended from the transcript and loses any
+ *     `model`/`effort` the call passes, since a call argument beats the agent file.
  * Fail-open: any error → no output and one log line.
  */
 
 import { existsSync, readFileSync } from "node:fs";
+import { CRITIC_AGENT, is, parseEvents } from "../lib/critic-events";
 import { spawnModel, withBudget } from "../lib/haiku-budget";
 import { readHookStdin } from "../lib/hook-stdin";
 import { projectRoot } from "../lib/paths";
+import { questionAnswers } from "../lib/transcript";
 import { CATALOG_HEADER, type CatalogEntry, enabledPluginRoots, glossaryFiles, installedRouterAgent, loadCatalog, loadGlossary, log, parseRouterOutput } from "../prompt-router";
 import { formatPast, loadMemory, MAX_PROMPT_CHARS, type MemoryEntry, pastFor, sessionSkills } from "./memory";
 
@@ -62,9 +66,75 @@ export function routerTaskInput(input: Record<string, unknown> | undefined, cata
 // spawns in 14 days named none. Warn only; the note reaches the Lead with the result, for its next call.
 // A fork inherits by design.
 export function modelNudge(input: Record<string, unknown>, cwd: string, envModel?: string): string | null {
-  if (input.subagent_type === "fork" || typeof input.model === "string" || spawnModel(input, cwd, envModel)) return null;
+  if (input.subagent_type === "fork" || input.subagent_type === CRITIC_AGENT || typeof input.model === "string" || spawnModel(input, cwd, envModel)) return null;
   const type = typeof input.subagent_type === "string" ? input.subagent_type : "general-purpose";
   return `That ${type} Agent call named no model, so it ran on your own model. Name the model on every spawn (CLAUDE.md §Agents and skills): the cheapest tier unless the work is code or security. Pass \`model\` on your next Agent call.`;
+}
+
+// The brief blocks the critic reads (dev-workflow references/03-critic-loop.md, agents/critic.md).
+export const CRITIC_BRIEF = ["MODE", "GOAL", "DOD", "USER-DECISIONS", "AUTHOR-PROPOSALS", "PATH", "ARTEFACT", "CHECKS"];
+
+// What a critic brief lacks of its three required blocks. A label may carry a qualifier in
+// parentheses (`ARTEFACT (working tree):`, 7 of 120 real briefs); content may start on the next line,
+// but not at the next block's label.
+export function briefGaps(prompt: string): string[] {
+  const label = (names: string) => `(?:${names})(?:[ \\t]*\\([^)\\n]*\\))?:`;
+  const filled = (block: string) => new RegExp(`^${label(block)}\\s*(?!${label(CRITIC_BRIEF.join("|"))})\\S`, "m").test(prompt);
+  return [
+    !/^MODE:[ \t]*(?:plan|feature|doubt)(?![\w-])/m.test(prompt) && "`MODE:` as `plan`, `feature` or `doubt`",
+    !filled("GOAL") && "`GOAL:` with content",
+    !filled("ARTEFACT") && "`ARTEFACT:` with content",
+  ].filter((gap): gap is string => !!gap);
+}
+
+// What the user typed, prompts and AskUserQuestion answers in order, for the critic to hold the
+// author's `GOAL` and `USER-DECISIONS` against: the author writes every other block. "" when the
+// transcript has none or cannot be read. A slash command shows as `/name args`.
+// ponytail: the first entry and the last four, 1,500 characters each; widen when the critic reports a goal it could not find.
+export function userPromptsBlock(transcript: string | undefined): string {
+  if (!transcript) return "";
+  try {
+    const records = readFileSync(transcript, "utf8").split("\n");
+    const prompts = parseEvents(records).filter(is("prompt")).map((e) => {
+      const text = e.text ?? "";
+      const command = text.match(/<command-name>(\/[\w:-]+)<\/command-name>/)?.[1];
+      return { idx: e.idx, text: (command ? `${command} ${text.match(/<command-args>([\s\S]*?)<\/command-args>/)?.[1] ?? ""}` : text).trim() };
+    });
+    const answered = questionAnswers();
+    const answers = records.flatMap((line, i) => {
+      if (!line.includes("AskUserQuestion") && !line.includes('"answers"')) return [];
+      try {
+        return answered(JSON.parse(line)).map(([question, answer, note]) => ({ idx: i + 1, text: `answer to «${question}»: ${answer}${note && ` (note: ${note})`}` }));
+      } catch {
+        return [];
+      }
+    });
+    const all = [...prompts, ...answers].filter((p) => p.text).sort((a, b) => a.idx - b.idx);
+    if (!all.length) return "";
+    const lines = all.map(({ text }, i) => `[${i + 1} of ${all.length}] ${text.length > 1500 ? `${text.slice(0, 1500)} [cut]` : text}`).filter((_, i) => i === 0 || i >= all.length - 4);
+    return `\n\nUSER-PROMPTS (appended by the harness from the session transcript, not by the author):\n${lines.join("\n")}`;
+  } catch {
+    return "";
+  }
+}
+
+// A critic launch needs the three required brief blocks: a brief without them is free-form, the
+// kind that tells the critic what to check, and is denied before the transcript is read. A valid
+// one gets the user's prompts appended and runs on its agent file's model and effort
+// (claude-opus-5-5, medium) whatever the call passes; the critic gates also check the model it
+// really ran on.
+export function criticSpawn(input: Record<string, unknown>, transcript?: string): { input: Record<string, unknown> | null; note: string | null; deny?: string } {
+  if (input.subagent_type !== CRITIC_AGENT) return { input: null, note: null };
+  const prompt = typeof input.prompt === "string" ? input.prompt : "";
+  const gaps = briefGaps(prompt);
+  if (gaps.length) return { input: null, note: null, deny: `Critic brief refused: it needs ${gaps.join(", ")}, each label at the start of a line. Send the brief from dev-workflow references/03-critic-loop.md.` };
+  const { model, effort, ...rest } = input;
+  const stripped = model !== undefined || effort !== undefined;
+  const asked = userPromptsBlock(transcript);
+  return {
+    input: stripped || asked ? { ...rest, prompt: prompt + asked } : null,
+    note: stripped ? "The critic call's `model`/`effort` were dropped: it runs on claude-opus-5-5 at medium from its agent file." : null,
+  };
 }
 
 // The subagent's first user message (the task, <past> included) and when it started.
@@ -100,11 +170,14 @@ if (import.meta.main) {
       const routed = payload.tool_input.subagent_type === ROUTER_AGENT
         ? routerTaskInput(payload.tool_input, catalog(), bakedSkills(installedRouterAgent()), memoryOverride ? loadMemory(memoryOverride) : undefined)
         : null;
+      const critic = criticSpawn(payload.tool_input, payload.transcript_path);
       // One hook owns the Agent input: two PreToolUse hooks returning updatedInput would overwrite each other.
-      const updatedInput = withBudget(routed ?? payload.tool_input, cwd) ?? routed;
-      const nudge = modelNudge(payload.tool_input, cwd);
-      if (updatedInput || nudge) process.stdout.write(JSON.stringify({ hookSpecificOutput: {
-        hookEventName: "PreToolUse", ...(updatedInput && { permissionDecision: "allow", updatedInput }), ...(nudge && { additionalContext: nudge }),
+      const changed = routed ?? critic.input;
+      const updatedInput = withBudget(changed ?? payload.tool_input, cwd) ?? changed;
+      const nudge = [modelNudge(payload.tool_input, cwd), critic.note].filter(Boolean).join("\n") || null;
+      const decision = critic.deny ? { permissionDecision: "deny", permissionDecisionReason: critic.deny } : updatedInput && { permissionDecision: "allow", updatedInput };
+      if (decision || nudge) process.stdout.write(JSON.stringify({ hookSpecificOutput: {
+        hookEventName: "PreToolUse", ...decision, ...(nudge && { additionalContext: nudge }),
       } }));
     } else if (event === "SubagentStop" && payload.agent_type === ROUTER_AGENT) {
       const run = agentTask(payload.agent_transcript_path);

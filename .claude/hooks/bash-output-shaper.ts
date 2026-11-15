@@ -179,8 +179,11 @@ export function shapeCommand(command: string, cwd: string, fileSize: FileSize = 
   return rewritten ? { action: "rewrite", command: parts.join("") } : { action: "allow" };
 }
 
-export function buildOutput(shape: Shape, toolInput: Record<string, unknown>): string | null {
-  if (shape.action === "allow") return null;
+// Code Mode (CLAUDE_CODE_EXPERIMENTAL_CODE_MODE=1) runs Bash from a script and, in auto mode,
+// refuses the script when a hook rewrites its calls; the output stays in the script there, so a
+// rewrite gains nothing. A deny still holds.
+export function buildOutput(shape: Shape, toolInput: Record<string, unknown>, codeMode = false): string | null {
+  if (shape.action === "allow" || (shape.action === "rewrite" && codeMode)) return null;
   if (shape.action === "deny") {
     return JSON.stringify({ hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: shape.reason } });
   }
@@ -193,7 +196,7 @@ if (import.meta.main) {
     const payload = JSON.parse(raw) as { tool_name?: string; tool_input?: { command?: unknown }; cwd?: string };
     if (payload.tool_name === "Bash" && typeof payload.tool_input?.command === "string") {
       const cwd = typeof payload.cwd === "string" && payload.cwd ? payload.cwd : process.cwd();
-      const out = buildOutput(shapeCommand(payload.tool_input.command, cwd), payload.tool_input as Record<string, unknown>);
+      const out = buildOutput(shapeCommand(payload.tool_input.command, cwd), payload.tool_input as Record<string, unknown>, process.env.CLAUDE_CODE_EXPERIMENTAL_CODE_MODE === "1");
       if (out) process.stdout.write(out + "\n");
     }
   } catch {

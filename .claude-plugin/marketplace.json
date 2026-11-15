@@ -34,6 +34,16 @@
       "name": "courier",
       "source": "./plugins/courier",
       "description": "Delivers Agentic OS messages to this session as prompts of their own, without typing into the terminal."
+    },
+    {
+      "name": "courier-voice",
+      "source": "./plugins/courier-voice",
+      "description": "Draws the Agentic OS messages courier delivers as a violet box naming the sender."
+    },
+    {
+      "name": "robin",
+      "source": "./plugins/robin",
+      "description": "Draws each answer's closing ROBIN line as a box in the chat and watches the canary: a missing line, an English answer or two misses in a row turn it red and tell Claude on the next prompt."
     }
   ]
 }

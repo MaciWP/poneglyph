@@ -5,9 +5,7 @@ import { INPUT_SCHEMA, type Panel, target, validate } from "./schema.ts";
 const TOOL = "mcp__dock__actions";
 
 const DESCRIPTION =
-  "Show buttons the user presses to act on their machine: open a file at a line or a folder in the editor, a terminal in a folder (shell, or a claude, codex or grok session with an optional first prompt), a URL in the browser, or a path in Finder. Through Agentic OS when it runs, local apps otherwise. Offer it when the next step is the user's own hands-on look or work, not to report; 1-6 items, absolute paths. After it returns, add at most one sentence.";
-const CONTEXT =
-  "Dock (deferred: load it once with ToolSearch \"select:mcp__dock__actions\"): when the next step is the user's own hands-on look or work on what you point at (a file, folder, terminal, agent session, URL), call mcp__dock__actions with those buttons; not to report. Then one sentence.";
+  "Show buttons the user presses to act on their machine: open a file at a line or a folder in the editor, a terminal in a folder (shell, or a claude, codex or grok session with an optional first prompt), or a URL in the browser. Through Agentic OS when it runs, local apps otherwise. Offer it when the next step is the user's own hands-on look or work, not to report; 1-6 items, absolute paths. After it returns, add at most one sentence.";
 const SHOWN = "Buttons shown to the user. Add at most one sentence; do not list them again.";
 
 // What each press came to, by call and item, for this session.
@@ -82,8 +80,6 @@ export const register: Register = (on) => {
     await activate($);
     return r;
   });
-
-  on("prompt.submit", async ($, e, next) => (drawn ? next({ ...e, context: [...(e.context ?? []), CONTEXT] }) : next(e)));
 
   on("tool.call", { tool: TOOL }, async ($, e) => {
     const { tool, tool_use_id, ...input } = e as unknown as Record<string, unknown> & { tool: string; tool_use_id: string };

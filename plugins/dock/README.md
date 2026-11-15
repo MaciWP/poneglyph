@@ -10,7 +10,6 @@ macOS app otherwise.
 | `folder {path}` | — | `open -na $DOCK_EDITOR --args path` |
 | `terminal {cwd, harness?, prompt?}` | `POST /api/terminals {harness, location}` | shell: `open -a $DOCK_TERMINAL cwd`; agent: a Terminal.app window via `osascript` |
 | `url {href}` | — | `open href` (http and https only) |
-| `finder {path}` | — | `open -R path` |
 
 ## How a press decides
 
@@ -43,7 +42,7 @@ quotes the folder and the prompt itself (`quoted form of`), and the harness is o
 
 Interactive terminal sessions and the desktop Code tab, on macOS: the actions run from the CLI's
 process (`$.process.run` is CLI-only), which the desktop app also runs on this Mac. The desktop app starts its session as `-p` does (no surface, not interactive) and joins it afterwards (`session.attach`); the mod comes up on that join. `-p`, the SDK and
-the mobile app get no tool and no context line.
+the mobile app get no tool. The mod adds no line to the prompt: the tool waits behind ToolSearch.
 
 ## Load
 

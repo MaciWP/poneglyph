@@ -128,8 +128,6 @@ function argvFor(h: Host, a: Action): { argv: string[]; via: string } {
         : { argv: ["osascript", ...AGENT_SCRIPT, a.cwd, a.harness, ...(a.prompt ? [a.prompt] : [])], via: "Terminal" };
     case "url":
       return { argv: ["open", a.href], via: "navegador" };
-    case "finder":
-      return { argv: ["open", "-R", a.path], via: "Finder" };
   }
 }
 
@@ -139,7 +137,6 @@ function target(a: Action): { path: string; want: "file" | "dir" | "any" } | nul
   if (a.kind === "terminal") return { path: a.cwd, want: "dir" };
   if (a.kind === "folder") return { path: a.path, want: "dir" };
   if (a.kind === "file") return { path: a.path, want: "file" };
-  if (a.kind === "finder") return { path: a.path, want: "any" };
   return null;
 }
 

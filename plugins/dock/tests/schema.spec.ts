@@ -12,7 +12,6 @@ test("every kind comes through as sent, and a terminal defaults to a shell", () 
     { label: "Carpeta", kind: "folder", path: "/repo" },
     { label: "Claude", kind: "terminal", cwd: "/repo", harness: "claude", prompt: "Revisa a.ts" },
     { label: "Docs", kind: "url", href: "https://example.com/x" },
-    { label: "Finder", kind: "finder", path: "/repo/a.ts" },
   ];
   expect(validate({ title: "Siguiente", items })).toEqual({ ok: true, panel: { title: "Siguiente", items: items as never } });
   expect(validate({ items: [{ label: "Shell", kind: "terminal", cwd: "/repo" }] })).toEqual({
@@ -36,7 +35,7 @@ test("paths, URLs and prompts that could reach a command are refused with the fi
 test("the shape is checked: kinds, fields per kind and the item count", () => {
   expect(error({ items: [] })).toBe(`items has 0 entries; send 1 to ${CAPS.items}`);
   expect(error({ items: Array(CAPS.items + 1).fill({ label: "x", kind: "url", href: "https://a.b" }) })).toBe(`items has ${CAPS.items + 1} entries; send 1 to ${CAPS.items}`);
-  expect(error({ items: [{ label: "x", kind: "run", path: "/r" }] })).toBe("items[0].kind must be file, folder, terminal, url or finder");
+  expect(error({ items: [{ label: "x", kind: "run", path: "/r" }] })).toBe("items[0].kind must be file, folder, terminal or url");
   expect(error({ items: [{ label: "x", kind: "url", href: "https://a.b", path: "/r" }] })).toBe("items[0].path is not a field here; allowed: label, kind, href");
   expect(error({ items: [{ kind: "url", href: "https://a.b" }] })).toBe("items[0].label must be a non-empty string");
   expect(error({ title: "t", items: [{ label: "x", kind: "url", href: "https://a.b" }], kind: "x" })).toBe("kind is not a field here; allowed: title, items");
@@ -45,7 +44,6 @@ test("the shape is checked: kinds, fields per kind and the item count", () => {
 test("the target names what a press opens, for every kind", () => {
   expect(target({ kind: "file", label: "a", path: "/r/a.ts", line: 3 })).toBe("fichero /r/a.ts:3");
   expect(target({ kind: "folder", label: "a", path: "/r" })).toBe("carpeta /r");
-  expect(target({ kind: "finder", label: "a", path: "/r/a.ts" })).toBe("Finder /r/a.ts");
   expect(target({ kind: "url", label: "a", href: "https://x.y/z" })).toBe("https://x.y/z");
   expect(target({ kind: "terminal", label: "a", cwd: "/r", harness: "shell" })).toBe("shell en /r");
   expect(target({ kind: "terminal", label: "a", cwd: "/r", harness: "codex", prompt: "hola" })).toBe("codex en /r · «hola»");

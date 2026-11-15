@@ -90,8 +90,8 @@ function world(on: On) {
   });
   on("turn.start", (_, e) => ({ turnId: e.turnId }));
   on("turn.complete", (_, e) => ({ text: e.answer }));
-  // The engine's own drawing; for a reply it drops the ROBIN line the way workboard does
-  // when its pane shows it, standing in for any mod after vista.
+  // The engine's own drawing; for a reply it drops the ROBIN line the way robin does when it
+  // boxes it, standing in for any mod after vista.
   on("ui.render", ($, e) => {
     const { Text } = $.ui.resolve(e);
     if (e.component !== "AssistantMessage") return Text({ children: `Original ${e.component}` });

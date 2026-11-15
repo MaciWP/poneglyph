@@ -21,8 +21,8 @@ Vista also redraws three markdown blocks in the model's replies, with the same c
 
 A reply with none of them is left untouched. Code fences are never looked into, and an
 incomplete or nested block stays text. The text around a block goes back to Claude Code piece
-by piece (`next()`), so the reply keeps its bullet and a mod after vista, such as workboard
-moving ROBIN to its pane, still acts on it. A reply is redrawn only once its turn ends, so a
+by piece (`next()`), so the reply keeps its bullet and a mod after vista, such as
+robin boxing the ROBIN line, still acts on it. A reply is redrawn only once its turn ends, so a
 table being written never flickers; summaries are left alone. Cell text loses its inline marks
 (bold, italics, code), since a table cell is plain text.
 

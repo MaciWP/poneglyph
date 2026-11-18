@@ -376,6 +376,65 @@ test("the progress tool stays in the prompt instead of behind ToolSearch", async
   expect(other).toEqual({ description: "Something else", isDeferred: true });
 });
 
+test("the progress call draws a box in the chat with the tasks it changed; its result folds to one dim line", async ($, on) => {
+  world(on);
+  await $.session.start(start);
+  const plan = { replace: true, tasks: [{ id: "f", title: "Rutas", state: "running" }, { id: "f1", parent: "f", title: "Leer las rutas", state: "pending" }] };
+  const call = (tool_use_id: string, update: object) => $.tool.call({ tool: "mcp__workboard__progress", tool_use_id, update } as never);
+  await call("u1", plan);
+  await call("u2", { tasks: [{ id: "f1", state: "completed" }] });
+  const use = (id: string, update: object, state: object = {}) =>
+    ({
+      plugin: "workboard",
+      surface: "terminal" as const,
+      component: "ToolUse" as const,
+      requestId: id,
+      viewport: { columns: 100, rows: 40, isFullscreen: true },
+      props: { tool_use_id: id, tool: "mcp__workboard__progress", input: { update }, isRunning: false, isErrored: false, isInterrupted: false, output: undefined, onScreen: null, ...state },
+    }) as never;
+  const first = await $.ui.mount(use("u1", plan));
+  expect((await first.find({ type: "Text", text: "Workboard · plan nuevo · 2 tareas" }))?.props).toMatchObject({ weight: "semibold", color: "#4ade80" });
+  const boxes = async (m: typeof first) => (await m.findAll({ type: "Box" })).map((b) => b.props as Record<string, unknown>);
+  expect((await boxes(first)).filter((b) => b.borderStyle === "round" && b.borderColor === "#4ade80")).toHaveLength(1);
+  // An {id, state} update takes the title from the board; a subtask is indented under its feature.
+  const step = await $.ui.mount(use("u2", { tasks: [{ id: "f1", state: "completed" }] }));
+  expect(await step.find({ type: "Text", text: "Workboard · 1 cambio" })).toBeDefined();
+  expect(await step.find({ type: "Text", text: "Leer las rutas" })).toBeDefined();
+  expect(await step.find({ type: "Text", text: "terminada" })).toBeDefined();
+  expect((await boxes(step)).filter((b) => b.paddingLeft === 2)).toHaveLength(1);
+  expect((await boxes(first)).filter((b) => b.paddingLeft === 2)).toHaveLength(1);
+  // A later plan that reuses the id never rewrites the old row: the box was frozen when it ran.
+  await call("u5", { replace: true, tasks: [{ id: "f1", title: "Escribir tests", state: "running" }] });
+  await step.redraw();
+  expect(await step.find({ type: "Text", text: "Leer las rutas" })).toBeDefined();
+  expect(await step.find({ type: "Text", text: "Escribir tests" })).toBeUndefined();
+  // A call from before this process (a resume) is drawn from its input alone.
+  const old = await $.ui.mount(use("u6", { replace: true, tasks: [], ticket: null }));
+  expect(await old.find({ type: "Text", text: "Workboard · plan vaciado" })).toBeDefined();
+  expect(await old.find({ type: "Text", text: "ticket quitado" })).toBeDefined();
+  // A refused or running call keeps the engine's row.
+  for (const [i, state] of [{ isErrored: true }, { isRunning: true }, { isInterrupted: true }].entries()) {
+    const native = await $.ui.mount(use(`u3-${i}`, { tasks: [{ id: "x", state: "completed" }] }, state));
+    expect(await native.find({ text: "Workboard · 1 cambio" })).toBeUndefined();
+  }
+  const result = await $.ui.mount({
+    plugin: "workboard",
+    surface: "terminal" as const,
+    component: "ToolResult" as const,
+    requestId: "r1",
+    props: { tool_use_id: "u2", tool: "mcp__workboard__progress", isErrored: false, output: '{"accepted":true}' },
+  } as never);
+  expect((await result.find({ type: "Text", text: "  ⎿ tablero actualizado" }))?.props).toMatchObject({ dimColor: true });
+  const desk = await $.ui.mount({
+    plugin: "workboard",
+    surface: "desktop" as const,
+    component: "ToolResult" as const,
+    requestId: "r2",
+    props: { tool_use_id: "u2", tool: "mcp__workboard__progress", isErrored: false, output: '{"accepted":true}' },
+  } as never);
+  expect(await desk.find({ type: "Text", text: /^tablero actualizado$/ })).toBeDefined();
+});
+
 // The desktop app starts the session as -p does (no surface, not interactive) and joins it
 // afterwards: only then does the board come up, once however many clients join.
 test("the desktop gets the board once it joins, and draws the plan in its pane", async ($, on) => {

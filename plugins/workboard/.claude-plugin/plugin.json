@@ -1,6 +1,6 @@
 {
   "name": "workboard",
-  "version": "0.3.15",
+  "version": "0.3.17",
   "description": "Ticket, changes, evidence, agents and decisions inside Claude Code. Agentic OS is optional.",
   "author": { "name": "Oriol Macias" }
 }

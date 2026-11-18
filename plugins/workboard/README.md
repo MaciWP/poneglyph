@@ -1,7 +1,7 @@
 # Workboard
 
 Native Claude Code mod: one pane for completed work, active tasks, quality, changed files,
-agents and the last turn. Nothing of it draws outside the pane. No external
+agents and the last turn. Outside the pane it draws only its own tool call in the chat. No external
 web UI or extra service. Agentic OS is an optional local bridge for related repositories
 and sessions; the mod works with local Git while that bridge is offline.
 
@@ -124,6 +124,16 @@ a plan from chat or invent task progress. File attribution is labelled as initia
 observed through editing tools, or unknown; shell edits are not attributed to the model.
 The tool answers with JSON text (core rejects a plain object from a mod tool's hook):
 `{"accepted":true}`.
+
+In the chat the call is boxed as the other mods box their rows: a round border in the plan's
+green, a title (`Workboard · plan nuevo · N tareas` on `replace`, else `Workboard · N cambios`),
+the ticket when the call sets one, and one row per task it sends, with the state's icon and label
+and a subtask indented, at most 8 then «… y N más». The box is frozen when the call runs, so a
+later plan that reuses an id never rewrites an old row; a task sent as `{id, state}` takes its title
+from the board just published. A call from before the process (a resume) is drawn from its input
+alone. `replace` with no tasks reads «plan vaciado», `ticket: null` «ticket quitado». The result
+folds to a dim «⎿ tablero actualizado»; a running, interrupted or refused call keeps the engine's
+row.
 
 Questions to the user are not the board's job: they go through Claude Code's native
 `AskUserQuestion` dialog. An update that still carries `decisions` (the field of an older

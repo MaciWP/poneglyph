@@ -25,11 +25,13 @@ import {
 import {
   diffView,
   paneView,
+  progressView,
   type PaneAgents,
   type PaneCharge,
   type PaneFeature,
   type PaneQuality,
   type PaneRepo,
+  type ProgressRow,
   type Tone,
 } from "./view.ts";
 
@@ -191,6 +193,9 @@ let unplaced: { id: string; text: string; at: number }[] = [];
 let saved: Promise<unknown> = Promise.resolve();
 const launching = new Set<string>();
 const redraw = ($: EngineInterface) => $.ui.invalidate("ui.render");
+// Each progress call's box, frozen when the call runs: a later plan that reuses an id never
+// rewrites an old row in the chat.
+const calls = new Map<string, { title: string; ticket: string | null; rows: ProgressRow[] }>();
 // A failed save prunes once per process even if today's prune ran: the store may be full.
 let forcedPrune = false;
 const save = ($: EngineInterface) => {
@@ -434,6 +439,42 @@ const turnDetail = (s: State) =>
   s.turn
     ? `${s.turn.ms === null ? "Turno en curso" : `Turno de ${duration(s.turn.ms)}`} · ${s.turn.edits} ${s.turn.edits === 1 ? "edición" : "ediciones"} · ${s.turn.commands} ${s.turn.commands === 1 ? "comando" : "comandos"}`
     : null;
+// What a progress call's box shows: the tasks it sends, each filled in from the board just
+// published (an {id, state} update names no title); without that board, from the call alone.
+const progressBox = (update: unknown, board: Task[] | null) => {
+  const u = (update && typeof update === "object" && !Array.isArray(update) ? update : {}) as {
+    tasks?: unknown;
+    replace?: unknown;
+    ticket?: unknown;
+  };
+  const sent = (Array.isArray(u.tasks) ? u.tasks : []).filter(
+    (t): t is Record<string, unknown> => !!t && typeof t === "object",
+  );
+  const rows = sent.map((t) => {
+    const known = board?.find((x) => x.id === t.id);
+    const status = typeof t.state === "string" ? t.state : (known?.state ?? "pending");
+    const parent = typeof t.parent === "string" ? t.parent : known?.parent;
+    return {
+      title: clean(typeof t.title === "string" ? t.title : (known?.title ?? t.id)),
+      state: status,
+      label: labels[status] ?? status,
+      sub: parent !== undefined,
+    };
+  });
+  const n = rows.length;
+  const title =
+    u.replace === true
+      ? n
+        ? `Workboard · plan nuevo · ${n} ${n === 1 ? "tarea" : "tareas"}`
+        : "Workboard · plan vaciado"
+      : n
+        ? `Workboard · ${n} ${n === 1 ? "cambio" : "cambios"}`
+        : "Workboard";
+  const ticket =
+    typeof u.ticket === "string" ? `ticket ${clean(u.ticket, 40)}` : u.ticket === null ? "ticket quitado" : null;
+  return { title, ticket, rows };
+};
+
 // Features are tasks without parent; their progress counts their subtasks.
 const planModel = (tasks: Task[]) => {
   const view = (t: Task) => ({
@@ -815,7 +856,9 @@ export const register: Register = (on) => {
   on("tool.call", { tool: TOOL }, async ($, e) => {
     try {
       const previous = state.tasks;
-      state = publish(state, (e as unknown as { update: unknown }).update);
+      const call = e as unknown as { update: unknown; tool_use_id?: string };
+      state = publish(state, call.update);
+      if (call.tool_use_id) calls.set(call.tool_use_id, progressBox(call.update, state.tasks));
       const alerts = planAlerts(previous, state.tasks);
       if (alerts.length) void alert($, alerts.join(" · "));
       await persist($);
@@ -1095,6 +1138,22 @@ export const register: Register = (on) => {
     }
     return r;
   });
+  // The progress call draws in the chat as the other mods draw theirs, from the box frozen when it
+  // ran; a call from before this process (a resume) is drawn from its input alone.
+  on("ui.render", { component: "ToolUse" }, async ($, e, next) => {
+    const p = e.props;
+    if (p.tool !== TOOL || p.isRunning || p.isErrored || p.isInterrupted) return next(e);
+    const box = calls.get(p.tool_use_id) ?? progressBox((p.input as { update?: unknown } | undefined)?.update, null);
+    return progressView($.ui.resolve(e), box.title, box.rows, box.ticket);
+  });
+
+  // `{"accepted":true}` is for the model; the person already sees the box. A refusal stays native.
+  on("ui.render", { component: "ToolResult" }, async ($, e, next) => {
+    if (e.props.tool !== TOOL || e.props.isErrored) return next(e);
+    const { Text } = $.ui.resolve(e);
+    return Text({ dimColor: true, children: e.surface === "terminal" ? "  ⎿ tablero actualizado" : "tablero actualizado" });
+  });
+
   on("ui.render", { component: "Pane", requestId: PANE }, async ($, e, next) => {
     if ((e.surface !== "terminal" && e.surface !== "desktop") || !active) return next(e);
     const ui = $.ui.resolve(e);

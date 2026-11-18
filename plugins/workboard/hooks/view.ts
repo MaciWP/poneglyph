@@ -641,6 +641,31 @@ export function paneView(base: Ui, m: PaneModel): RenderElement {
   return Box({ flexDirection: "column", minHeight: m.dock ?? undefined, children: nodes });
 }
 
+// The progress call in the chat, boxed as the other mods box their own rows: a round border in the
+// plan's colour, a title, and one row per task the call changed (a subtask indented).
+export type ProgressRow = PaneTask & { sub: boolean };
+const PROGRESS_ROWS = 8;
+export function progressView(base: Ui, title: string, rows: ProgressRow[], ticket: string | null): RenderElement {
+  const ui: Fit = { ...base, wrap: true, stack: false };
+  const { shown, more } = capped(rows, PROGRESS_ROWS);
+  return ui.Box({
+    flexDirection: "column",
+    borderStyle: "round",
+    borderColor: C.plan,
+    paddingX: 1,
+    children: [
+      ui.Text({ weight: "semibold", color: C.plan, wrap: "truncate-end", children: title }),
+      ticket ? ui.Text({ dimColor: true, children: ticket }) : null,
+      ...shown.map((r) => {
+        const m = marked(ui, r.state);
+        const line = row(ui, m.icon, r.title, m.label(r.label));
+        return r.sub ? ui.Box({ paddingLeft: 2, children: line }) : line;
+      }),
+      more ? ui.Text({ dimColor: true, children: `… y ${more} más` }) : null,
+    ],
+  });
+}
+
 export function diffView(
   base: Ui,
   d: { path: string; source: string; truncated: boolean },

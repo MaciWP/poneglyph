@@ -23,6 +23,15 @@ describe("parseComplianceTurns", () => {
     expect(turns[0].texts).toEqual(["**Hecho.**\nROBIN: hecho."]);
   });
 
+  it("keeps the longest run of read-only calls of the turn", () => {
+    const [turn] = parseComplianceTurns([
+      human("mira"),
+      assistant([tool("Read", {}), tool("Grep", {}), tool("Edit", { file_path: "/r/a.md" }), tool("Read", {})], "tool_use"),
+      assistant([text("**Hecho.**\nROBIN: hecho.")]),
+    ]);
+    expect(turn.readStreak).toBe(2);
+  });
+
   it("counts a review only when a check runs after the last code edit", () => {
     const [late] = parseComplianceTurns([
       human("arregla"),
@@ -92,6 +101,7 @@ describe("rules, positive and negative", () => {
     ["C-SENS", { edits: ["/r/package.json"], texts: ["sensitive: añade un script\n**Hecho.**"] }, true, { edits: ["/r/package.json"] }, false],
     ["C-NOAI", { bash: ["git commit -m 'fix'"] }, true, { bash: ["git commit -m 'fix\n\nCo-Authored-By: Claude <x@y>'"] }, false],
     ["C-MODEL", { spawns: [{ model: "haiku" }, { type: "fork" }, { type: "critic" }] }, true, { spawns: [{ type: "Explore" }] }, false],
+    ["C-READS", { readStreak: 6, spawns: [{ type: "Explore", model: "haiku" }] }, true, { readStreak: 9, spawns: [{ type: "general-purpose", model: "haiku" }] }, false],
     ["C-HCONFIG", { edits: ["/r/CLAUDE.md"], sessionSkills: new Set(["harness-config"]) }, true, { edits: ["/r/CLAUDE.md"], sessionSkills: new Set() }, false],
     ["S-ESES", { texts: ["**Hecho.** Ya está el cambio en el fichero y funciona.\nROBIN: hecho."] }, true, { texts: ["**Done.** The change is in the file and it works fine for the whole team.\nROBIN: done."] }, false],
     ["S-ESES-MID", { texts: ["Estoy mirando el código del módulo.", "**Hecho.**"] }, true, { texts: ["I am looking at the code of the module now.", "**Hecho.**"] }, false],
@@ -112,7 +122,7 @@ describe("rules, positive and negative", () => {
   }
 
   it("rules with a precondition return null when it does not hold", () => {
-    for (const id of ["C-RETRY", "C-SENS", "C-NOAI", "C-MODEL", "C-HCONFIG", "S-ESES-MID", "S-ASK3", "S-HEDGE", "S-NARR"]) expect(rule(id)(final("**Hecho.**"))).toBeNull();
+    for (const id of ["C-RETRY", "C-SENS", "C-NOAI", "C-MODEL", "C-READS", "C-HCONFIG", "S-ESES-MID", "S-ASK3", "S-HEDGE", "S-NARR"]) expect(rule(id)(final("**Hecho.**"))).toBeNull();
   });
 });
 

@@ -2,7 +2,8 @@ import { describe, expect, it } from "bun:test";
 import { mkdirSync, mkdtempSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { bashFamily, collectTranscripts, contextRow, parseTranscript, percentile, summarizeContext, summarizeTools } from "../usage-profile";
+import { collectTranscripts, contextRow, parseTranscript, percentile, summarizeContext, summarizeTools } from "../usage-profile";
+import { bashFamily, nextReadStreak, readsIn } from "../lib/read-calls";
 
 const asst = (ctx: number, out = 100, model = "claude-fable-5-1", content: unknown[] = []) =>
   JSON.stringify({ type: "assistant", message: { model, usage: { input_tokens: 10, cache_creation_input_tokens: 0, cache_read_input_tokens: ctx - 10, output_tokens: out }, content } });
@@ -34,6 +35,26 @@ describe("usage-profile, parseTranscript", () => {
     const img = JSON.stringify({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: "a", content: [{ type: "image", source: { type: "base64", data: "A".repeat(90_000) } }, { type: "text", text: "caption" }] }] } });
     const t = parseTranscript([asst(1000, 1, "m", [toolUse("a", "Read", {})]), img]);
     expect(t.tools[0].chars).toBeLessThan(200);
+  });
+});
+
+describe("read-calls", () => {
+  it("counts reads per tool call and nothing else", () => {
+    expect(readsIn("Read", {})).toBe(1);
+    expect(readsIn("Glob", {})).toBe(1);
+    expect(readsIn("Bash", { command: "cd x && git diff HEAD" })).toBe(1);
+    expect(readsIn("Bash", { command: "bun test ./x" })).toBe(0);
+    expect(readsIn("Edit", { file_path: "a" })).toBe(0);
+    expect(readsIn("REPL", { code: "await file('x').text()" })).toBe(0); // its inner calls are logged on their own
+    expect(nextReadStreak(4, "REPL", {})).toBe(4);
+    expect(nextReadStreak(4, "Poll", {})).toBe(4);
+  });
+
+  it("a run grows on reads and restarts on anything else", () => {
+    let s = 0;
+    for (const name of ["Read", "Grep", "Read"]) s = nextReadStreak(s, name, {});
+    expect(s).toBe(3);
+    expect(nextReadStreak(s, "Edit", {})).toBe(0);
   });
 });
 

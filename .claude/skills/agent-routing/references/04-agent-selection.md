@@ -25,7 +25,7 @@ Before any exploration, decide HOW to read the codebase. **The exploration primi
 | **LOW volume** (1-2 files) | Lead `Read` directly: no delegation | Lead `Read`/Grep inline, or `Explore` |
 | **HIGH volume** (≥3 files, long logs or outputs) | `Explore` on the cheapest tier: best fit | `Explore` on the cheapest tier, one per area; mid tier only for security work |
 
-Plus: design-doc audits, cross-file consistency checks, and full-file reads → `Explore` (≥4 independent units → one `Explore` per unit in one message). WebSearch/WebFetch is **not** a discriminator (both have those tools).
+Plus: design-doc audits, cross-file consistency checks, and full-file reads → `Explore` (one per independent unit, in one message). WebSearch/WebFetch is **not** a discriminator (both have those tools).
 
 ### Derived rules
 
@@ -81,7 +81,7 @@ The "Suggested skills to Read (for delegation)" column lists `.claude/skills/<na
 | performance, slow, bottleneck, N+1 | `Skill(flow, "review")` / pr-review (performance lens) | pr-review (performance lens) | pr-review | none |
 | plan, design, decompose, RFC, architecture, contract | Lead via `Skill(flow, "plan")` | (no dedicated agent) | decide (heavy tier) (for design risk), pr-review | none |
 | >3 subtasks, breakdown, dependencies | Lead via `Skill(flow, "plan")` | (decomposition in skill) | none | none |
-| find, explore, search codebase | `Explore` (built-in); ≥4 sweeps → one `Explore` each, one message | none | none | Lead `Read` inline |
+| find, explore, search codebase | `Explore` (built-in), one per area, one message | none | none | Lead `Read` inline |
 | error, failing, debug, diagnose | Lead via `Skill('troubleshooting')` | (no dedicated agent) | troubleshooting | fix inline (obvious fix) |
 
 ## Multi-Agent Patterns
@@ -109,10 +109,10 @@ How the capabilities of the former custom agents map onto the current model (`Wo
 |---|---|---|
 | implement (was `builder`) | `flow` (build phase) inline by default | Parallel write agents need explicit opt-in |
 | validate (was `reviewer`) | `flow` skill (review phase) inline | code review at every level → **the `critic` agent**, full scope (P1 exception); decision review → panel via `compare-and-decide` (heavy tier) |
-| explore (was `scout`) | `Explore` (built-in) | ≥4 independent exploration sweeps → parallel `Explore`, one message |
+| explore (was `scout`) | `Explore` (built-in) | independent sweeps → parallel `Explore`, one per area, one message |
 | generator→validator | generator inline, validator = ONE fresh-context reviewer | Four-Eyes inside a team: NOT a new spawn decision (spawn-tree P7) |
 
-For CODE review the dispatch target is **ONE fresh-context read-only reviewer** (panels measured as the weak form for code: verifier gap, LLM-judge ensembles ~80% FP). The author≠evaluator lesson is preserved via fresh context, not lens count. Panels (≥4 perspectives) remain the form for DECISION review (`compare-and-decide` (heavy tier)) and read-only research fan-out.
+For CODE review the dispatch target is **ONE fresh-context read-only reviewer, the `critic` agent** (panels measured as the weak form for code: verifier gap, LLM-judge ensembles ~80% FP). The author≠evaluator lesson is preserved via fresh context, not lens count. Panels (≥4 perspectives) remain the form for DECISION review (`compare-and-decide` (heavy tier)) and read-only research fan-out.
 
 ## Parallelization & Batch Operations
 
@@ -151,15 +151,16 @@ When a message contains N parallel tool-calls and **one fails**, the others in t
 
 | Anti-Pattern | Problem | Use Instead |
 |--------------|---------|-------------|
-| Spawning an agent for exploration | misses context, wastes tokens | `Explore` (read) or Lead `Read` inline |
+| The Lead sweeping ≥3 files or an unknown area itself | fills the Lead's context at the top-tier price | `Explore` on the cheapest tier, one per area |
+| A read-only unit on `general-purpose` | starts with about three times the context of `Explore` | `Explore` with an explicit model |
 | `flow` skill (plan phase) at low complexity or for an obviously trivial task | overkill, slows execution | act inline |
 | skipping `flow` (review phase) after multi-file changes | quality risk | `Skill(flow, "review")` checkpoint |
 | no `flow` (plan phase) at high complexity | uncoordinated, error-prone | Lead `Skill(flow, "plan")` → inline (≥4 HUs → inline sequential) |
 | ≥4 parallel write agents without worktree on overlapping files | Write conflicts | `isolation: "worktree"` per unit |
-| team mode for <3 domains | 3-7x cost with no real benefit | inline, or parallel agents at ≥4 independent units |
+| team mode for <3 domains | 3-7x cost with no real benefit | inline, or parallel read-only agents |
 | team mode for dependent domains | file conflicts between teammates | sequential inline |
 | Reading files one by one | Latency + context overhead | Batch 3+ Reads in one message |
 | Sequential agents with no dependency | Wasted parallelism | Spawn in one message |
 | Glob → Read → Grep when Glob+Grep would suffice | Round-trips add up | Glob + Grep in same message |
 | Edit without prior Read | risk of stale content | Read first, then Edit sequentially |
-| Spawning 1-3 subagents when the Lead could act inline | wasted cost+latency, no parallelism return | Main session for ≤3 units; spawn only at ≥4 (Commandment X) |
+| Delegating 1-3 write units | wasted cost+latency, no parallelism return | Main session for writes (P8); reads follow the volume rule (P3) |

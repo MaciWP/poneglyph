@@ -30,7 +30,7 @@ The Lead diagnoses failures inline with `troubleshooting` when needed, then retr
 
 ## SendMessage Recovery (Team / live agents only)
 
-`SendMessage({to: agentId})` continues a still-running **Team or background agent**, preserves context, saves ~2K-5K tokens vs re-spawn. It does NOT apply to inline work (1-3 units): there is no agent to message, the Lead simply re-runs the step in its own session.
+`SendMessage({to: agentId})` continues a still-running **Team or background agent**, preserves context, saves ~2K-5K tokens vs re-spawn. It does NOT apply to inline work: there is no agent to message, the Lead simply re-runs the step in its own session.
 
 | Situation | Method | Reason |
 |-----------|--------|--------|

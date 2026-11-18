@@ -53,7 +53,7 @@ Stop working only at the finish line, a hard gate, a blocking question or a spen
 
 ## Agents and skills
 
-- Use the host's built-in agents (on Claude: Explore, Plan, general-purpose, fork) freely for large reads you will not reuse, web research and parallel work, but not for 1-2 known files or a quick grep. Keep writes inline unless splitting clearly pays. Give each agent one narrow question and verify the facts that decide.
+- Reads of 3+ files, an unknown place, logs or the web go to the host's read-only agent (Claude: `Explore`) on the cheapest tier, one per area, one message; 1-2 known files or a grep: inline. Built-in agents need no approval. Keep writes inline. Give each one narrow question and verify the facts that decide.
 - Name the model on every spawn: the mid tier only for code or security, not research; the top tier only for a high-risk verification, with the reason stated; otherwise the cheapest (X). Tier names per host: `.claude/docs/harness-adapters.md` §Model tiers.
 - On Claude, launch `critic` (no `model`) before `ExitPlanMode`, before closing a workboard feature or a turn leaving >20 unreviewed lines, and on a design doubt; answer each finding: `dev-workflow` `references/03-critic-loop.md`.
 - `Workflow` is denied; ask first only for Team, a headless top-tier `claude -p` and an unrequested other-provider call (`consult-model`).

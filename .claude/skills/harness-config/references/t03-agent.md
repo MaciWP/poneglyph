@@ -29,7 +29,7 @@ Claude sub-agents docs (code.claude.com). Codex custom agents (`.codex/agents/*.
 | Collision | vs skills and commands, not vs the same agent name on another host | same | same |
 | Disable | omit / don't spawn; no per-file TOML | don't list / don't spawn | Host-level `GROK_SUBAGENTS=0` or `[subagents] enabled=false`. Per-type `[subagents.toggle.<name>] = false`. Per-agent: Agents tab `/config-agents`. Not a per-file delete |
 | Reload | session | restart | `/config-agents` |
-| Claude optional fields | `model`; `effort` (fixed per agent, not per call); `maxTurns` (returns `error_max_turns`); `memory` (`user`/`project`/`local`); `isolation: worktree`; `initialPrompt` (auto-submitted) | none | none |
+| Claude optional fields | `model`; `effort` (fixed per agent, not per call); `maxTurns` (the Lead gets a completed result saying the agent stopped at its N-turn limit, with no report); `memory` (`user`/`project`/`local`); `isolation: worktree`; `initialPrompt` (auto-submitted) | none | none |
 
 Do **not** require Claude `permissionMode` or `model: sonnet` on the portable default.
 

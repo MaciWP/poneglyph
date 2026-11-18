@@ -46,8 +46,8 @@ give 0-10 steps. A task that is obviously trivial is not counted at all.
 
 | Level | Units / Domains | Negotiate interfaces | Mode | Cost |
 |-------|---------|-------------------|------|------|
-| Any | 1-3 units | none | **inline** | 1x |
-| Any | ≥4 independent READ-ONLY units | No | **parallel agents** (one message) | scales w/ #units |
+| Any | 1-3 write units | none | **inline** | 1x |
+| Any | Read-only volume (≥3 files, unknown location, logs, web) | No | **`Explore` on the cheapest tier**, one per area, one message | scales w/ #areas |
 | Any | ≥4 independent WRITE units | No | **inline sequential** (parallel worktree agents only with explicit user opt-in, "ultracode" / direct ask) | 1x |
 | medium | 2-3 | Yes (shared types/APIs) | **tiered** (inline contracts) | ~2x |
 | high | 3+ domains (4-gate pass) | Yes | **team** (experimental) | 3-7x |

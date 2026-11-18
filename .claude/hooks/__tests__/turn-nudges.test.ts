@@ -1,9 +1,12 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, setDefaultTimeout } from "bun:test";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { dueNudges, endsWithTextQuestion, isConfigPath, isEnglishNote, NUDGE_TEXT, noteMatches, readTail } from "../turn-nudges";
 import { ignoreLearned } from "./learned-fixture";
+import { SPAWN_TEST_TIMEOUT_MS } from "./spawn-timeout";
+
+setDefaultTimeout(SPAWN_TEST_TIMEOUT_MS);
 
 const HOOK = resolve(import.meta.dir, "../turn-nudges.ts");
 const IMPERATIVE = /^(Read|Ask|You must|Do not|Never|Answer|Load)\b/m;
@@ -98,6 +101,23 @@ describe("turn-nudges: pure parts", () => {
     expect(dueNudges({ event: "UserPromptSubmit", tail, prompt: "sí, bórralo" })).toEqual([{ kind: "question", key: "t1" }]);
     const asked = readTail(jsonl(prompt("uno", "t1"), tool("AskUserQuestion"), say("**Hecho.**\n¿Borramos?\nROBIN: hecho.")));
     expect(dueNudges({ event: "UserPromptSubmit", tail: asked, prompt: "sí" })).toEqual([]);
+  });
+
+  it("reads nudge after six read-only calls in a row with no Explore launched", () => {
+    const reads = (n: number) => Array.from({ length: n }, (_, i) => tool("Read", { file_path: `/r/f${i}.ts` }));
+    const kinds = (...events: object[]) => dueNudges({ event: "PostToolUse", tail: readTail(jsonl(prompt(PROMPT, "t1"), ...events)) }).map((d) => d.kind);
+    expect(kinds(...reads(5))).toEqual([]);
+    expect(kinds(...reads(4), tool("Grep", { pattern: "x" }), tool("Bash", { command: "cd /r && rg -n foo src" }))).toEqual(["reads"]);
+    // An edit restarts the run; an Explore launched this turn silences it, another agent does not.
+    expect(kinds(...reads(5), tool("Edit", { file_path: "/r/src/a.ts" }), tool("Read", {}))).toEqual([]);
+    expect(kinds(tool("Agent", { subagent_type: "Explore" }), ...reads(7))).toEqual([]);
+    expect(kinds(tool("Agent", { subagent_type: "general-purpose" }), ...reads(7))).toEqual(["reads"]);
+    // A Code Mode script's inner calls are logged as tool calls of their own: the script and its Poll are neutral.
+    expect(kinds(...reads(3), tool("REPL", { code: "await file('a').text()" }), tool("Poll", {}), ...reads(3))).toEqual(["reads"]);
+    expect(kinds(tool("REPL", { code: "await Promise.all([file('a').text(), file('b').text(), file('c').text(), file('d').text(), file('e').text(), file('f').text()])" }))).toEqual([]);
+    // A streamed record that repeats a block is counted once.
+    const twice = { type: "assistant", message: { content: [{ type: "tool_use", id: "u1", name: "Read", input: {} }] } };
+    expect(kinds(...reads(4), twice, twice)).toEqual([]);
   });
 
   it("every reminder is a factual sentence", () => {

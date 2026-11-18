@@ -90,7 +90,7 @@ For Phase 3, `drillme-clarify` runs on every HU and `troubleshooting` runs when 
 | `security-audit` | Step 7: MANDATORY dispatch when the diff touches auth/payments/secrets/credentials/crypto (gate, not advisory; Cmd VI) | Lead invokes `/security-audit` manually before the verdict |
 | `changes-verify` | Step 5 Correctness: drive the assembled happy path when a runtime exists | Lead walks the flow manually and records what was observed |
 | `compare-and-decide` (heavy tier) | ⚠️ Conditional: Step 5 reveals an architectural decision that merits adversarial challenge | Lead invokes it manually if the doubt warrants it |
-| `changes-explain` | ⚠️ Conditional: a human needs a walkthrough of the diff | Lead invokes `/changes-explain` on request |
+| `changes-explain` | ⚠️ Conditional: a human needs a walkthrough of the diff | Lead invokes `Skill(changes-explain)` on request |
 | `simplify` | ⚠️ Conditional: refactor opportunity surfaced, not mandatory | Lead may invoke `/simplify` after the review |
 
 Critical auxiliaries in phase 4 are the `pr-review` lenses (catalog) and `security-audit` (gate, dispatched even when auto-fire succeeded).
@@ -101,7 +101,7 @@ Critical auxiliaries in phase 4 are the `pr-review` lenses (catalog) and `securi
 |---|---|---|
 | verify existence | Before proposing any promotion, verify the target path does not collide with an existing file/skill/rule | Lead Globs/Reads the target path before listing the promotion |
 | `drillme-clarify` | Step 6: the Phase 5 bank over `[approach]`/`[context]`/`[failure]` | Lead invokes `/drillme-clarify "Phase 5 retro of <NNN-slug>"` manually before closing the feature |
-| `changes-explain` | ⚠️ Conditional: a candidate promotion is an educational walkthrough | Lead invokes `/changes-explain` if the candidate is a learning artefact |
+| `changes-explain` | ⚠️ Conditional: a candidate promotion is an educational walkthrough | Lead invokes `Skill(changes-explain)` if the candidate is a learning artefact |
 | `harness-config` | ⚠️ Conditional: a candidate is native harness config (skill/rule/hook/agent/command/MCP/plugin/settings/permissions) | Lead Reads `harness-config/SKILL.md` (and the matching type pack) before sketching the candidate |
 
 Phase 5 is synthesis: `drillme-clarify` is the canonical auxiliary; the other two are conditional on what the candidates are.

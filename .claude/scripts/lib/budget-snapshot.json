@@ -1,12 +1,12 @@
 {
-  "takenAt": "2026-11-14",
+  "takenAt": "2026-11-17",
   "alwaysLoaded": {
-    "CLAUDE.md": 7591,
+    "CLAUDE.md": 7588,
     "output-styles/poneglyph.md": 7454,
     "skills: description + when_to_use": 275
   },
   "skillBodies": {
-    "agent-routing": 14199,
+    "agent-routing": 14137,
     "aos-messages": 5340,
     "changes-explain": 9656,
     "changes-verify": 4975,

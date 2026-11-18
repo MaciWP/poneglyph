@@ -6,7 +6,8 @@
 // (`model_auto_compact_token_limit = 800000`, xhigh) and Grok (xhigh). The policy is tiered:
 // compact at 300k by default, raise to 400k per session when a task needs it, effort `high`
 // with the stronger tier one command away. `high` was the hosts' own default until Opus 5.5,
-// which defaults to `medium` (Claude Code 2.1.280); the policy pins `high` there explicitly.
+// which defaults to `medium` (Claude Code 2.1.280); the policy pins the top-level key to `high`
+// and runs the main models (Opus 5.5, Fable 5.2) on `medium` as a cost experiment (`claudeMainEffort`).
 // The default was 200k until 2026-10-02: below it Opus 5.5 showed no measurable rise in latency
 // or tool errors, while 137 compactions in 8 days cost ~19 min/day; the Claude Code team places
 // context rot at ~300-400k on the 1M model, so 300k sits at the lower edge of that band.

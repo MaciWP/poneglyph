@@ -47,12 +47,23 @@ test("a reply with ROBIN gets a green box that holds the line, and one log row",
   await $.turn.complete(turn(OK));
   const chat = await $.ui.mount(message(OK));
   expect(await chat.find({ text: "ROBIN ✓" })).toBeDefined();
-  expect(await chat.find({ text: "Página corregida; falta mirarla." })).toBeDefined();
+  // The line is markdown, drawn as a reply draws it: its links open on a click.
+  expect(await chat.find({ type: "Markdown", text: "Página corregida; falta mirarla." })).toBeDefined();
   expect(await chat.find({ text: "ROBIN:" })).toBeUndefined();
   expect(await chat.find({ text: `MD:${ES}` })).toBeDefined();
   expect(w.rows).toHaveLength(1);
   expect(w.rows[0]).toStartWith("/home/me/.cache/poneglyph/robin/s1.jsonl ");
   expect(JSON.parse(w.rows[0]!.split(" ").slice(1).join(" "))).toMatchObject({ session: "s1", turnId: "t1", verdict: "ok", lang: "es", streak: 0, fail: false });
+});
+
+test("a ROBIN line with a link keeps the link's markdown for the engine to draw", async ($, on) => {
+  world(on);
+  await prompt($);
+  await $.turn.start({ turnId: "t1" } as never);
+  const answer = `${ES}\nROBIN: Página corregida; detalle en [la guía](https://example.com/guia).`;
+  await $.turn.complete(turn(answer));
+  const chat = await $.ui.mount(message(answer));
+  expect(await chat.find({ type: "Markdown", text: "Página corregida; detalle en [la guía](https://example.com/guia)." })).toBeDefined();
 });
 
 test("a missing line draws a red box and tells Claude once, with the next prompt", async ($, on) => {
@@ -87,7 +98,9 @@ test("an English answer fails even with its ROBIN line", async ($, on) => {
   await $.turn.complete(turn(answer));
   const chat = await $.ui.mount(message(answer));
   expect(await chat.find({ text: "ROBIN ✗ idioma" })).toBeDefined();
-  expect(await chat.find({ text: "La respuesta está en inglés." })).toBeDefined();
+  expect(await chat.find({ type: "Markdown", text: "Page fixed." })).toBeDefined();
+  // The fixed lines are the mod's own plain text.
+  expect(await chat.find({ type: "Text", text: "La respuesta está en inglés." })).toBeDefined();
   await prompt($);
   expect(w.context.at(-1)!.join(" ")).toContain("in English");
 });

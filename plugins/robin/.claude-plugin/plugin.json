@@ -1,6 +1,6 @@
 {
   "name": "robin",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Draws each answer's closing ROBIN line as a box in the chat and watches the canary: a missing line, an English answer or two misses in a row turn the box red, tell Claude on the next prompt and land in a per-session log.",
   "author": { "name": "Oriol Macias" }
 }

@@ -109,14 +109,17 @@ export const register: Register = (on) => {
     if (!turn || !box) return next(e);
     const found = extractRobin(p.text);
     const moved = found && found.text === turn.check.robin;
-    const { Box, Text } = $.ui.resolve(e);
+    const { Box, Text, Markdown } = $.ui.resolve(e);
     const color = TONE[box.tone];
+    // The ROBIN line is the model's markdown: drawn as a reply draws it, its links open on a click
+    // and its code spans lose their backticks. The fixed lines are this mod's own plain text.
+    const line = (l: string) => (l === turn.check.robin && Markdown ? Markdown({ text: l }) : Text({ wrap: "wrap", children: l }));
     const frame = Box({
       flexDirection: "column",
       borderStyle: "round",
       borderColor: color,
       paddingX: 1,
-      children: [Text({ weight: "semibold", color, children: box.title }), ...box.lines.map((l) => Text({ wrap: "wrap", children: l }))],
+      children: [Text({ weight: "semibold", color, children: box.title }), ...box.lines.map(line)],
     });
     // The terminal draws the reply's ⏺ bullet in a 2-cell gutter; the box lines up with the text.
     const placed = e.surface === "terminal" ? Box({ paddingLeft: 2, children: frame }) : frame;

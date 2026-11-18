@@ -45,6 +45,10 @@ a line of its own. So interim messages get no box, a reply vista split around a 
 box on its last piece, and every turn keeps its own box through the redraw at each turn's end,
 whatever the order of the mods. A reply is drawn with its box only after its turn ends.
 
+The ROBIN line is drawn with the engine's `Markdown`, as a reply draws its text: its links open on
+a click where the terminal takes hyperlinks, and its code spans lose their backticks. The box's
+own lines («falta», «idioma», «conviene /compact») stay plain `Text`.
+
 The box draws where `ui.render` reaches `AssistantMessage` with a viewport: the terminal, and
 the desktop if it renders mod elements there (unverified). `-p` gets the log and the context
 line only.

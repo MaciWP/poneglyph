@@ -13,7 +13,8 @@
 //   session is idle is a `user` record whose content is the same text.
 // - Plan mode changes are `permission-mode` records.
 // A spawn can therefore show several deliveries; consumers take the first complete one.
-import { isAbsolute, join } from "node:path";
+// Shell commands name POSIX paths; win32 `join` would turn them into backslashes the note patterns miss.
+import { posix } from "node:path";
 import { isHumanOrigin, queuedPromptOf, userPromptOf } from "./transcript";
 
 export type CriticMode = "plan" | "feature" | "doubt";
@@ -127,7 +128,7 @@ export function bashWriteLines(cmd: string, home = process.env.HOME ?? "", cwd =
     let out = unquote(t);
     for (let i = 0; i < 3 && /^\$/.test(out); i++) out = out.replace(/^\$\{?(\w+)\}?/, (m, v: string) => vars.get(v) ?? (v === "HOME" && home ? home : m));
     out = out.replace(/^~(?=\/|$)/, home);
-    return base && !isAbsolute(out) && !out.startsWith("$") ? join(base, out) : out;
+    return base && !posix.isAbsolute(out) && !out.startsWith("$") ? posix.join(base.replaceAll("\\", "/"), out) : out;
   };
 
   const inPlace = bare.search(/\b(sed|perl)\s+(-[a-zA-Z]*i\b|-i\b)/);

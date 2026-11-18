@@ -211,6 +211,8 @@ describe("bashWriteLines", () => {
     expect(bashWriteLines("echo x > tasks/reports/a.txt", "", plan)).toBe(0);
     expect(bashWriteLines("python3 - <<'EOF'\np='tasks/progress.md'\nopen(p,'w').write(s)\nEOF", "", plan)).toBe(0);
     expect(bashWriteLines("echo x > tasks/a.md", "", "/Users/x/repo")).toBe(5);
+    // A Windows session's directory resolves with forward slashes, like the shell paths it joins.
+    expect(bashWriteLines("echo x > tasks/a.txt", "", "C:\\Users\\x\\repo\\.claude\\plans\\001-x")).toBe(0);
     expect(bashWriteLines("echo x > /Users/x/repo/src/a.ts", "", plan)).toBe(5);
     expect(bashWriteLines("cd /Users/x/repo && sed -i '' 's/a/b/' a.ts", "", plan)).toBe(5);
     expect(bashWriteLines("python3 - <<'EOF'\nopen('/Users/x/repo/a.py','w')\nEOF", "", plan)).toBe(5);

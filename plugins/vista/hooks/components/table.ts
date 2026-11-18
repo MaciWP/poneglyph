@@ -1,4 +1,5 @@
 import type { RenderElement } from "claude-code";
+import { LINK } from "../markdown.ts";
 import { T, type Ui } from "../theme.ts";
 
 export type TableRow = { label: string; values: string[]; best?: number };
@@ -30,6 +31,9 @@ const MAX_WIDTH = 100;
 // the header. A cell that wraps, or columns too narrow to hold words, make a list instead: one
 // entry per row behind an accent bar, the label in bold and each value under it with its column
 // name at a fixed width, so every value starts at the same column.
+// A cell with a link (value, label or column name) is drawn with the engine's Markdown, so the link
+// opens on a click. It is measured in its raw markdown, never shorter than what Markdown draws even
+// where the terminal shows each link's text then its URL.
 export function table(ui: Ui, head: string[], rows: TableRow[], full: number, corner = ""): RenderElement {
   const width = Math.min(full, MAX_WIDTH);
   const longest = Math.max(corner.length, ...rows.map((r) => r.label.length));
@@ -37,11 +41,27 @@ export function table(ui: Ui, head: string[], rows: TableRow[], full: number, co
   const cellWidth = Math.max(4, Math.floor((width - labelWidth - GAP * head.length) / Math.max(1, head.length)));
   const shown = (r: TableRow, i: number) => (i === r.best ? `✓ ${r.values[i]}` : (r.values[i] ?? ""));
   const height = (r: TableRow) => Math.max(lines(r.label, labelWidth), ...r.values.map((_, i) => lines(shown(r, i), cellWidth)));
-  const cell = (r: TableRow, i: number) =>
-    i === r.best
+  const linked = (s: string) => (ui.Markdown && LINK.test(s) ? ui.Markdown({ text: s }) : null);
+  // A heading that truncates keeps one row with a link too: Markdown wraps, so a box clips it.
+  const oneRow = (s: string) => {
+    const link = linked(s);
+    return link && ui.Box({ height: 1, overflow: "hidden", children: link });
+  };
+  // What the list's accent bar counts: a link's text only, as a terminal with hyperlinks draws it.
+  const seen = (s: string) =>
+    ui.Markdown && LINK.test(s) ? s.replace(/\[([^\]]*)\]\([^)\s]+\)/g, "$1").replace(/<(https?:\/\/[^>\s]+)>/g, "$1") : s;
+  const cell = (r: TableRow, i: number) => {
+    const link = linked(r.values[i] ?? "");
+    // The best cell keeps its green check in front of the link.
+    if (link && i === r.best) return ui.Box({ children: [ui.Text({ weight: "semibold", color: T.ok, children: "✓ " }), ui.Box({ flexShrink: 1, children: link })] });
+    if (link) return link;
+    return i === r.best
       ? ui.Text({ weight: "semibold", color: T.ok, wrap: "wrap", children: shown(r, i) })
       : ui.Text({ wrap: "wrap", children: shown(r, i) });
-  const label = (r: TableRow) => ui.Text({ weight: "semibold", wrap: "wrap", children: r.label });
+  };
+  const label = (r: TableRow) => linked(r.label) ?? ui.Text({ weight: "semibold", wrap: "wrap", children: r.label });
+  const heading = (h: string, wrap: "wrap" | "truncate-end") =>
+    (wrap === "wrap" ? linked(h) : oneRow(h)) ?? ui.Text({ weight: "semibold", color: T.accent, wrap, children: h });
   const rule = (n: number) => ui.Text({ color: T.rule, children: "─".repeat(Math.max(1, Math.min(width, n))) });
 
   if (cellWidth < MIN_CELL || rows.some((r) => height(r) > 1)) {
@@ -54,9 +74,9 @@ export function table(ui: Ui, head: string[], rows: TableRow[], full: number, co
       rowGap: 1,
       width,
       children: [
-        corner ? ui.Text({ weight: "semibold", color: T.accent, wrap: "wrap", children: corner }) : null,
+        corner ? heading(corner, "wrap") : null,
         ...rows.map((r) => {
-          const tall = lines(r.label, body) + r.values.reduce((n, _, i) => n + lines(shown(r, i), valueWidth), 0);
+          const tall = lines(seen(r.label), body) + r.values.reduce((n, _, i) => n + lines(seen(shown(r, i)), valueWidth), 0);
           return ui.Box({
             columnGap: 1,
             children: [
@@ -69,7 +89,7 @@ export function table(ui: Ui, head: string[], rows: TableRow[], full: number, co
                   ...r.values.map((_, i) =>
                     ui.Box({
                       children: [
-                        keyWidth ? ui.Box({ width: keyWidth, flexShrink: 0, children: ui.Text({ color: T.label, wrap: "truncate-end", children: head[i] }) }) : null,
+                        keyWidth ? ui.Box({ width: keyWidth, flexShrink: 0, children: oneRow(head[i] ?? "") ?? ui.Text({ color: T.label, wrap: "truncate-end", children: head[i] }) }) : null,
                         ui.Box({ width: valueWidth, children: cell(r, i) }),
                       ],
                     }),
@@ -91,8 +111,8 @@ export function table(ui: Ui, head: string[], rows: TableRow[], full: number, co
     flexDirection: "column",
     children: [
       line(
-        ui.Text({ weight: "semibold", color: T.accent, wrap: "truncate-end", children: corner }),
-        head.map((h) => ui.Text({ weight: "semibold", color: T.accent, wrap: "truncate-end", children: h })),
+        heading(corner, "truncate-end"),
+        head.map((h) => heading(h, "truncate-end")),
       ),
       rule(labelWidth + (cellWidth + GAP) * head.length),
       ...rows.map((r) => line(label(r), r.values.map((_, i) => cell(r, i)))),

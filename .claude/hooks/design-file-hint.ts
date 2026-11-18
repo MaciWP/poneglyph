@@ -12,7 +12,7 @@
 // `<cwd>/.claude/learned/design-file-hints.log` is both the observability record and the
 // once-per-session marker. `noteOnce` is host-neutral; `native-hook.ts` reuses it for Codex.
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { readHookStdin } from "./lib/hook-stdin";
 import { appendLog } from "./instructions-loaded";
 import { learnedLog, projectRoot } from "./lib/paths";
@@ -70,8 +70,15 @@ export function alreadyNoted(logText: string, session: string): boolean {
 // can both emit it. Both cost at most one extra or one early note per session.
 // ponytail: the root is the caller's (Claude: CLAUDE_PROJECT_DIR; Codex: payload cwd), so a monorepo
 // subdirectory with its own design file is missed; walk up from the edited file if that bites.
+// A UI file outside the project (a scratch HTML report under /tmp) says nothing about its design file.
+// ponytail: string compare, so a symlinked project root (/tmp vs /private/tmp) misses the note; compare realpaths if one is reported.
+function inProject(cwd: string, path: string): boolean {
+  const rel = relative(cwd, resolve(cwd, path));
+  return rel !== ".." && !rel.startsWith(".." + sep) && !isAbsolute(rel);
+}
+
 export function noteOnce({ cwd, session, paths }: { cwd: string; session: string; paths: string[] }): string | null {
-  if (!paths.some(isUiFile)) return null;
+  if (!paths.some((p) => isUiFile(p) && inProject(cwd, p))) return null;
   const logPath = learnedLog(cwd, "design-file-hints.log");
   let logText = "";
   try {
@@ -109,10 +116,12 @@ function designFileHint(payload: ClaudeEditPayload): ReturnType<typeof noteOutpu
     : payload.tool_name === "Bash" && typeof command === "string" ? commandPaths(command)
     : [];
   if (paths.length === 0) return null;
+  const root = projectRoot(payload.cwd);
+  // A shell path is relative to where the agent cd'd, not to the project root.
   const note = noteOnce({
-    cwd: projectRoot(payload.cwd),
+    cwd: root,
     session: payload.session_id ?? "unknown",
-    paths,
+    paths: paths.map((p) => resolve(payload.cwd ?? root, p)),
   });
   return note ? noteOutput(note) : null;
 }

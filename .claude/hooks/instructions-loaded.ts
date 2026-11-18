@@ -12,10 +12,10 @@
  * InstructionsLoaded is async (fire-and-forget): stdout/exit code are ignored.
  * SessionStart(compact) adds a language reminder before Claude continues.
  * https://code.claude.com/docs/en/hooks#sessionstart-decision-control
- * No rotation, the log is plain lines; truncate manually or at retro.
+ * Over LOG_CAP_BYTES (1 MB) appendLog drops the older half; see appendLog.
  */
 
-import { appendFileSync, mkdirSync, statSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname } from "node:path";
 import { readHookStdin } from "./lib/hook-stdin";
 import { learnedLog } from "./lib/paths";
@@ -48,8 +48,18 @@ export function instructionName(path: string): string {
   return i >= 0 ? p.slice(i + "/.claude/".length) : basename(p);
 }
 
-export function appendLog(line: string, logPath: string): void {
+// Every learned log goes through here. Over the cap the older half goes, so a 7- or 30-day reader keeps its
+// window: the largest, instructions-loaded.log, reached 364 KB in 65 days. A line written by a parallel hook
+// during the trim can be lost; these logs are best-effort.
+const LOG_CAP_BYTES = 1_000_000;
+
+export function appendLog(line: string, logPath: string, cap = LOG_CAP_BYTES): void {
   mkdirSync(dirname(logPath), { recursive: true });
+  if (existsSync(logPath) && statSync(logPath).size > cap) {
+    const text = readFileSync(logPath, "utf8");
+    const cut = text.indexOf("\n", text.length >> 1);
+    writeFileSync(logPath, cut < 0 ? "" : text.slice(cut + 1), "utf8");
+  }
   appendFileSync(logPath, line + "\n", "utf8");
 }
 

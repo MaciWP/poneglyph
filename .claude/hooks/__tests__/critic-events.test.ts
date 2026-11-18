@@ -35,6 +35,11 @@ describe("parseEvents", () => {
     ]);
   });
 
+  it("reads a Windows file_path with forward slashes, so the note patterns match it", () => {
+    const [ev] = parseEvents([tool("w1", "Write", { file_path: "C:\\Users\\x\\repo\\.claude\\plans\\p.md", content: "x" })]);
+    expect(ev).toMatchObject({ kind: "edit", path: "C:/Users/x/repo/.claude/plans/p.md" });
+  });
+
   it("records permission-mode changes", () => {
     expect(lastMode(parseEvents([mode("plan"), mode("bypassPermissions")]))).toBe("bypassPermissions");
     expect(lastMode(parseEvents([say("hola")]))).toBeNull();
@@ -213,6 +218,23 @@ describe("bashWriteLines", () => {
     expect(bashWriteLines("echo x > tasks/a.md", "", "/Users/x/repo")).toBe(5);
     // A Windows session's directory resolves with forward slashes, like the shell paths it joins.
     expect(bashWriteLines("echo x > tasks/a.txt", "", "C:\\Users\\x\\repo\\.claude\\plans\\001-x")).toBe(0);
+    expect(bashWriteLines("sed -i '' 's/a/b/' tasks/progress.md", "", "C:\\Users\\x\\repo\\.claude\\plans\\001-x")).toBe(0);
+    expect(bashWriteLines("python3 - <<'EOF'\np='tasks/progress.md'\nopen(p,'w').write(s)\nEOF", "", "C:\\Users\\x\\repo\\.claude\\plans\\001-x")).toBe(0);
+    expect(bashWriteLines("sed -i '' 's/a/b/' ../notes.md", "", "C:\\Users\\x\\AppData\\Local\\Temp\\s")).toBe(0);
+    expect(bashWriteLines("sed -i '' 's/a/b/' ../src/a.ts", "", "C:\\Users\\x\\repo\\src")).toBe(5);
+    // A drive path named from a Windows plan directory is where the write goes, either slash.
+    const winPlan = "C:\\Users\\x\\repo\\.claude\\plans\\001-x";
+    expect(bashWriteLines("sed -i 's/a/b/' C:/Users/x/repo/src/a.ts", "", winPlan)).toBe(5);
+    expect(bashWriteLines("python3 - <<'EOF'\nopen('C:/Users/x/repo/src/a.py','w')\nEOF", "", winPlan)).toBe(5);
+    expect(bashWriteLines('cd "C:\\Users\\x\\repo\\src" && echo x > a.ts', "", winPlan)).toBe(5);
+    expect(bashWriteLines('echo x > "C:\\Users\\x\\repo\\src\\a.ts"', "", winPlan)).toBe(5);
+    expect(bashWriteLines("sed -i 's/a/b/' C:/Users/x/AppData/Local/Temp/s/n.md", "", winPlan)).toBe(0);
+    expect(bashWriteLines("echo x > n.md", "", "C:\\Users\\x\\AppData\\Local\\Temp")).toBe(0);
+    expect(bashWriteLines('P="C:\\Users\\x\\repo\\src\\a.ts"; echo x > $P', "", winPlan)).toBe(5);
+    expect(bashWriteLines('P="C:\\Users\\x\\AppData\\Local\\Temp\\n.md"; echo x > $P', "", winPlan)).toBe(0);
+    expect(bashWriteLines("python3 - <<'EOF'\nopen('C:\\\\Users\\\\x\\\\AppData\\\\Local\\\\Temp\\\\n.md','w')\nEOF", "", winPlan)).toBe(0);
+    // A sed expression delimited by `:` is no drive path.
+    expect(bashWriteLines("sed -i 's:/tmp/a:/tmp/b:' /tmp/n.md", "", "/Users/x/repo")).toBe(0);
     expect(bashWriteLines("echo x > /Users/x/repo/src/a.ts", "", plan)).toBe(5);
     expect(bashWriteLines("cd /Users/x/repo && sed -i '' 's/a/b/' a.ts", "", plan)).toBe(5);
     expect(bashWriteLines("python3 - <<'EOF'\nopen('/Users/x/repo/a.py','w')\nEOF", "", plan)).toBe(5);

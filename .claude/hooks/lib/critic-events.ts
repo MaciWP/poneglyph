@@ -53,8 +53,11 @@ function editLines(name: string, input: Record<string, unknown>): number {
 
 export const PLAN_PATH = /\/\.claude\/plans(\/|$)/;
 
+/** Windows paths with `/`, the only separator the path patterns here read. */
+const toSlash = (path: string): string => path.replaceAll("\\", "/");
+
 /** Working notes, not the delivered change: plans, memory, transcripts, temp and scratch files. */
-export const isWorkingNote = (path: string): boolean => PLAN_PATH.test(path) || /\/\.claude\/projects(\/|$)|\/memory(\/|$)|^\/(private\/)?tmp(\/|$)|^\/(private\/)?var\/folders\/|^\/dev\//.test(path);
+export const isWorkingNote = (path: string): boolean => PLAN_PATH.test(path) || /\/\.claude\/projects(\/|$)|\/memory(\/|$)|^\/(private\/)?tmp(\/|$)|^\/(private\/)?var\/folders\/|\/AppData\/Local\/Temp(\/|$)|^\/dev\//.test(path);
 
 // A line an answer-rows section is made of: blank, its heading, a table separator or header, or a `| H# |` row.
 const ROWS_LINE = /^\s*$|^#+\s*critic answers|^\|[\s:|-]+\|?\s*$|^\|\s*\**H\d+|^\|\s*(?:hallazgo|finding|id|h)\s*\|/i;
@@ -110,6 +113,8 @@ const unquote = (s: string) => s.replace(/^(['"])(.*)\1$/, "$2");
 // `cwd` is the session's directory at the call (each record carries it). Each write resolves
 // against the directory in force at its position: the last `cd` before it, else `cwd`.
 export function bashWriteLines(cmd: string, home = process.env.HOME ?? "", cwd = ""): number {
+  // A Windows session's directory and home enter with backslashes; the note patterns read `/`.
+  [home, cwd] = [toSlash(home), toSlash(cwd)];
   const bodies: string[] = [];
   // `<<` and the tag line's tail stay: `cat <<'EOF' > src/a.ts` redirects after the tag.
   const bare = cmd.replace(HEREDOC, (_m, _q, _tag, tail: string, body: string) => {
@@ -128,7 +133,10 @@ export function bashWriteLines(cmd: string, home = process.env.HOME ?? "", cwd =
     let out = unquote(t);
     for (let i = 0; i < 3 && /^\$/.test(out); i++) out = out.replace(/^\$\{?(\w+)\}?/, (m, v: string) => vars.get(v) ?? (v === "HOME" && home ? home : m));
     out = out.replace(/^~(?=\/|$)/, home);
-    return base && !posix.isAbsolute(out) && !out.startsWith("$") ? posix.join(base.replaceAll("\\", "/"), out) : out;
+    // Only a drive path, the value a variable held included, turns its backslashes (an escaped
+    // `C:\\a` collapses to one `/`): elsewhere `a\ b` is a shell escape.
+    if (/^[A-Za-z]:\\/.test(out)) out = posix.normalize(toSlash(out));
+    return base && !ABSOLUTE.test(out) && !out.startsWith("$") ? posix.join(base, out) : out;
   };
 
   const inPlace = bare.search(/\b(sed|perl)\s+(-[a-zA-Z]*i\b|-i\b)/);
@@ -187,18 +195,21 @@ function groupEnd(shell: string, from: number): number {
 // In a script body only quoted paths name files (`open('/r/a.py')`, `'src/a.py'`); `GET /api/a`
 // in prose does not. A relative one resolves against the directory the script runs in.
 const quotedPaths = (body: string) =>
-  [...body.matchAll(/['"]((?:\/|~\/|\.\.\/|\$\{?\w+\}?\/|[\w.-]+\/)[^'"\s]*|[\w-]+\.[A-Za-z]\w{0,4})['"]/g)].map((m) => m[1]);
+  [...body.matchAll(/['"]((?:\/|[A-Za-z]:[\\/]|~\/|\.\.\/|\$\{?\w+\}?\/|[\w.-]+\/)[^'"\s]*|[\w-]+\.[A-Za-z]\w{0,4})['"]/g)].map((m) => m[1]);
+
+// `/a` or a resolved Windows drive path (`C:/a`).
+const ABSOLUTE = /^(?:\/|[A-Za-z]:\/)/;
 
 // Exempt only when every path named is an absolute working note, and it names one or runs inside one.
 function namedPathsAreNotes(text: string, resolve: (t: string) => string, dir: string): boolean {
   // Relative paths that climb out (`../src/a.ts`) count too; one left unresolved (`${UNSET}/a.ts`)
   // could be anywhere: it is not a note.
   // A bare variable (`python3 - "$P"`) names a path only when it was assigned one (`P=/tmp/a.py`).
-  const paths = [...text.matchAll(/(?:^|[\s="'(])((?:\/|~\/|\.\.\/|\$\{?\w+\}?\/)[^\s"';&|)]*|\$\{?[A-Za-z_]\w*\}?(?![\w/]))/g)]
+  const paths = [...text.matchAll(/(?:^|[\s="'(])((?:\/|[A-Za-z]:[\\/](?=[^\s"';&|):]*(?:[\s"';&|)]|$))|~\/|\.\.\/|\$\{?\w+\}?\/)[^\s"';&|)]*|\$\{?[A-Za-z_]\w*\}?(?![\w/]))/g)]
     .map((m) => [m[1], resolve(m[1])])
-    .filter(([raw, p]) => raw.includes("/") || p.startsWith("/"))
+    .filter(([raw, p]) => raw.includes("/") || ABSOLUTE.test(p))
     .map(([, p]) => p);
-  return paths.every((p) => p.startsWith("/") && isWorkingNote(p)) && (paths.length > 0 || (dir !== "" && isWorkingNote(dir)));
+  return paths.every((p) => ABSOLUTE.test(p) && isWorkingNote(p)) && (paths.length > 0 || (dir !== "" && isWorkingNote(dir)));
 }
 
 function textOf(content: unknown): string {
@@ -268,7 +279,7 @@ export function parseEvents(lines: Iterable<string>): Event[] {
           spawns.set(ev.id, ev);
           out.push(ev);
         } else if (EDIT_TOOLS.has(b.name)) {
-          const path = String(input.file_path ?? input.notebook_path ?? "");
+          const path = toSlash(String(input.file_path ?? input.notebook_path ?? ""));
           // Adding only answer rows to the plan is not a plan change, so it never asks for a review.
           const added = PLAN_PATH.test(path) ? addedPlanLines(b.name, path, input, planFiles) : [];
           const rowsOnly = added.length > 0 && added.every((l) => ROWS_LINE.test(l));

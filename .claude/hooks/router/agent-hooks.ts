@@ -18,12 +18,16 @@
  *     runs on Haiku, the router's included, and adds a note when a spawn inherits the Lead's model
  *     because nothing named one. A `critic` launch is denied when its brief lacks `MODE`, `GOAL` or
  *     `ARTEFACT`; a valid one gets the user's prompts appended from the transcript and loses any
- *     `model`/`effort` the call passes, since a call argument beats the agent file.
+ *     `model`/`effort` the call passes, since a call argument beats the agent file. With
+ *     PONEGLYPH_SUBAGENT_CAP set (Agentic OS sets it on workers that have a lead), the spawn past
+ *     that many in one turn is denied (subagentCap).
  * Fail-open: any error → no output and one log line.
  */
 
-import { existsSync, readFileSync } from "node:fs";
-import { CRITIC_AGENT, is, parseEvents } from "../lib/critic-events";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { CRITIC_AGENT, hookDenied, is, parseEvents, turnStarts } from "../lib/critic-events";
 import { spawnModel, withBudget } from "../lib/haiku-budget";
 import { readHookStdin } from "../lib/hook-stdin";
 import { projectRoot } from "../lib/paths";
@@ -38,7 +42,7 @@ export const RETRY_REASON = 'Reply again with only the JSON object {"fixes": [..
 interface HookPayload {
   hook_event_name?: string; session_id?: string; cwd?: string; transcript_path?: string;
   agent_type?: string; agent_transcript_path?: string; last_assistant_message?: string; stop_hook_active?: boolean;
-  tool_name?: string; tool_input?: Record<string, unknown>;
+  tool_name?: string; tool_input?: Record<string, unknown>; tool_use_id?: string;
 }
 
 // The skill names baked into the installed agent file, read back from its catalog block.
@@ -72,7 +76,7 @@ export function modelNudge(input: Record<string, unknown>, cwd: string, envModel
 }
 
 // The brief blocks the critic reads (dev-workflow references/03-critic-loop.md, agents/critic.md).
-export const CRITIC_BRIEF = ["MODE", "GOAL", "DOD", "USER-DECISIONS", "AUTHOR-PROPOSALS", "PATH", "ARTEFACT", "CHECKS"];
+export const CRITIC_BRIEF = ["MODE", "GOAL", "DOD", "USER-DECISIONS", "AUTHOR-PROPOSALS", "PATH", "ARTEFACT", "CHECKS", "PRIOR"];
 
 // What a critic brief lacks of its three required blocks. A label may carry a qualifier in
 // parentheses (`ARTEFACT (working tree):`, 7 of 120 real briefs); content may start on the next line,
@@ -137,6 +141,53 @@ export function criticSpawn(input: Record<string, unknown>, transcript?: string)
   };
 }
 
+// A worker under a lead may start `cap` subagents per turn; a turn opens on a prompt or a room
+// or peer message (`turnStarts`). The critic and the router are free, and a spawn a hook denied
+// never ran. PreToolUse runs before the call, and its parallel siblings, reach the transcript
+// (probe 2026-11-17: three of four parallel calls saw none), so the spawns this hook let through
+// are also kept per session in `dir`. Returns the deny reason, or null after recording the spawn.
+// ponytail: hooks of one message ran one after another in the probe; run at once, each could pass
+// (ceiling cap + siblings - 1). Lock the file if a worker is seen over its cap.
+export function subagentCap(input: Record<string, unknown>, cap: number, session: string, transcript: string | undefined, id: string, dir = join(tmpdir(), "poneglyph-subagent-cap")): string | null {
+  const type = typeof input.subagent_type === "string" ? input.subagent_type : "general-purpose";
+  if (type === CRITIC_AGENT || type === ROUTER_AGENT || !session || !id) return null;
+  const events = transcript && existsSync(transcript) ? parseEvents(readFileSync(transcript, "utf8").split("\n")) : [];
+  const turn = turnStarts(events).at(-1) ?? 0;
+  const denied = hookDenied(events);
+  const seen = events.filter(is("spawn")).filter((e) => e.idx > turn && e.type !== CRITIC_AGENT && e.type !== ROUTER_AGENT && !denied.has(e.id)).map((e) => e.id);
+  const file = join(dir, `${session.replace(/[^\w-]/g, "")}.json`);
+  let kept: string[] = [];
+  try {
+    const saved = JSON.parse(readFileSync(file, "utf8")) as { turn?: unknown; ids?: unknown };
+    // A spawn allowed here that a later hook denied does not count either.
+    if (saved.turn === turn && Array.isArray(saved.ids)) kept = saved.ids.filter((x): x is string => typeof x === "string" && !denied.has(x));
+  } catch { /* first spawn of this session */ }
+  const started = new Set([...seen, ...kept]);
+  started.delete(id);
+  if (started.size >= cap) return `This session may start ${cap} subagents per turn and has started ${started.size}. Do the rest yourself, or ask your lead for help in the room (aos room post) instead.`;
+  mkdirSync(dir, { recursive: true });
+  if (!existsSync(file)) pruneStale(dir);
+  writeFileSync(file, JSON.stringify({ turn, ids: [...kept.filter((x) => x !== id), id] }));
+  return null;
+}
+
+// Sessions' cap files untouched for a day: their turns are over. Run on a session's first spawn.
+const STALE_MS = 24 * 60 * 60 * 1000;
+function pruneStale(dir: string, now = Date.now()) {
+  for (const name of readdirSync(dir)) {
+    const path = join(dir, name);
+    try {
+      if (now - statSync(path).mtimeMs > STALE_MS) unlinkSync(path);
+    } catch { /* another session removed it first */ }
+  }
+}
+
+// The cap from the environment: a positive integer, or null (no cap).
+export function capFromEnv(value: string | undefined): number | null {
+  const n = Number(value);
+  return value && Number.isInteger(n) && n > 0 ? n : null;
+}
+
 // The subagent's first user message (the task, <past> included) and when it started.
 export function agentTask(transcript: string | undefined): { text: string; at: number | null } {
   if (!transcript) return { text: "", at: null };
@@ -171,11 +222,13 @@ if (import.meta.main) {
         ? routerTaskInput(payload.tool_input, catalog(), bakedSkills(installedRouterAgent()), memoryOverride ? loadMemory(memoryOverride) : undefined)
         : null;
       const critic = criticSpawn(payload.tool_input, payload.transcript_path);
+      const cap = capFromEnv(process.env.PONEGLYPH_SUBAGENT_CAP);
+      const deny = critic.deny ?? (cap ? subagentCap(payload.tool_input, cap, payload.session_id ?? "", payload.transcript_path, payload.tool_use_id ?? "") : null);
       // One hook owns the Agent input: two PreToolUse hooks returning updatedInput would overwrite each other.
       const changed = routed ?? critic.input;
       const updatedInput = withBudget(changed ?? payload.tool_input, cwd) ?? changed;
       const nudge = [modelNudge(payload.tool_input, cwd), critic.note].filter(Boolean).join("\n") || null;
-      const decision = critic.deny ? { permissionDecision: "deny", permissionDecisionReason: critic.deny } : updatedInput && { permissionDecision: "allow", updatedInput };
+      const decision = deny ? { permissionDecision: "deny", permissionDecisionReason: deny } : updatedInput && { permissionDecision: "allow", updatedInput };
       if (decision || nudge) process.stdout.write(JSON.stringify({ hookSpecificOutput: {
         hookEventName: "PreToolUse", ...decision, ...(nudge && { additionalContext: nudge }),
       } }));

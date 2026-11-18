@@ -1,11 +1,14 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test, setDefaultTimeout } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { BUDGET_LINE, SONNET_BUDGET_LINE } from "../lib/haiku-budget";
-import { agentTask, bakedSkills, briefGaps, CRITIC_BRIEF, criticSpawn, modelNudge, RETRY_REASON, routerTaskInput } from "../router/agent-hooks";
+import { agentTask, bakedSkills, briefGaps, CRITIC_BRIEF, capFromEnv, criticSpawn, modelNudge, RETRY_REASON, routerTaskInput, subagentCap } from "../router/agent-hooks";
 import { ignoreLearned } from "./learned-fixture";
+import { SPAWN_TEST_TIMEOUT_MS } from "./spawn-timeout";
+
+setDefaultTimeout(SPAWN_TEST_TIMEOUT_MS);
 
 const HOOK = join(import.meta.dir, "..", "router", "agent-hooks.ts");
 const memory = [{ at: 1, prompt: "revisa la pr de esta rama y deja comentarios", skills: ["pr-review", "gone"] }];
@@ -158,6 +161,7 @@ describe("criticSpawn", () => {
     expect(briefGaps("MODE: plan\nGOAL:\nARTEFACT: a.ts")).toEqual(["`GOAL:` with content"]);
     expect(briefGaps("MODE: plan\nGOAL:\nDOD tests pass: the user's words\nARTEFACT: a.ts")).toEqual([]);
     expect(briefGaps("MODE: plan\nGOAL:\nDOD (agreed): x\nARTEFACT: a.ts")).toEqual(["`GOAL:` with content"]);
+    expect(briefGaps("MODE: feature\nGOAL: x\nARTEFACT:\nPRIOR: feature-1a2b3c4 H1")).toEqual(["`ARTEFACT:` with content"]);
     expect(briefGaps("MODE: finished feature review\nGOAL: x\nARTEFACT: a.ts")[0]).toContain("`MODE:`");
     expect(briefGaps("MODE: feature-ish\nGOAL: x\nARTEFACT: a.ts")[0]).toContain("`MODE:`");
     expect(briefGaps("MODE-extra: plan\nGOAL: x\nARTEFACT: a.ts")[0]).toContain("`MODE:`");
@@ -205,5 +209,77 @@ describe("criticSpawn", () => {
   test("ignores other agents, and the model nudge skips the critic", () => {
     expect(criticSpawn({ subagent_type: "Explore", prompt: "x", model: "haiku" })).toEqual({ input: null, note: null });
     expect(modelNudge({ subagent_type: "critic", prompt: "x" }, "/nonexistent")).toBeNull();
+  });
+});
+
+describe("subagentCap", () => {
+  const J = (o: unknown) => JSON.stringify(o);
+  const spawn = (id: string, type = "Explore") => J({ type: "assistant", message: { content: [{ type: "tool_use", id, name: "Agent", input: { subagent_type: type, prompt: "x" } }] } });
+  const denied = (id: string) => J({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: id, is_error: true, content: "PreToolUse:Agent hook error: This session may start 3 subagents" }] } });
+  const setup = (lines: string[]) => {
+    const root = mkdtempSync(join(tmpdir(), "subagent-cap-"));
+    const transcript = join(root, "t.jsonl");
+    writeFileSync(transcript, lines.join("\n") + "\n");
+    return { transcript, dir: join(root, "state") };
+  };
+  const explore = { subagent_type: "Explore", prompt: "x" };
+
+  test("parallel calls none of which reached the transcript: the fourth is denied", () => {
+    const { transcript, dir } = setup([J({ type: "user", message: { content: "do it" } })]);
+    for (const id of ["a", "b", "c"]) expect(subagentCap(explore, 3, "s1", transcript, id, dir)).toBeNull();
+    expect(subagentCap(explore, 3, "s1", transcript, "d", dir)).toContain("may start 3 subagents per turn");
+    // The same call asked again is not counted twice.
+    expect(subagentCap(explore, 3, "s1", transcript, "c", dir)).toBeNull();
+  });
+
+  test("a room message opens a new turn", () => {
+    const lines = [J({ type: "user", message: { content: "do it" } }), spawn("a"), spawn("b"), spawn("c")];
+    const { transcript, dir } = setup(lines);
+    expect(subagentCap(explore, 3, "s1", transcript, "d", dir)).not.toBeNull();
+    writeFileSync(transcript, [...lines, J({ type: "user", message: { content: "<room>@ia go</room>" }, origin: { kind: "peer" } })].join("\n") + "\n");
+    expect(subagentCap(explore, 3, "s1", transcript, "d", dir)).toBeNull();
+  });
+
+  test("a spawn a hook denied, the critic and the router are not counted", () => {
+    const { transcript, dir } = setup([J({ type: "user", message: { content: "do it" } }), spawn("a"), spawn("b"), spawn("x"), denied("x"), spawn("k", "critic"), spawn("r", "prompt-router")]);
+    expect(subagentCap(explore, 3, "s1", transcript, "c", dir)).toBeNull();
+    expect(subagentCap(explore, 3, "s1", transcript, "d", dir)).not.toBeNull();
+    expect(subagentCap({ subagent_type: "critic" }, 3, "s1", transcript, "e", dir)).toBeNull();
+  });
+
+  test("a spawn the cap allowed and a later hook denied stops counting", () => {
+    const lines = [J({ type: "user", message: { content: "do it" } })];
+    const { transcript, dir } = setup(lines);
+    for (const id of ["a", "b", "c"]) expect(subagentCap(explore, 3, "s1", transcript, id, dir)).toBeNull();
+    writeFileSync(transcript, [...lines, spawn("c"), denied("c")].join("\n") + "\n");
+    expect(subagentCap(explore, 3, "s1", transcript, "d", dir)).toBeNull();
+  });
+
+  test("a session's first spawn removes cap files untouched for a day", () => {
+    const { transcript, dir } = setup([J({ type: "user", message: { content: "do it" } })]);
+    mkdirSync(dir, { recursive: true });
+    const stale = join(dir, "old.json");
+    const fresh = join(dir, "recent.json");
+    for (const f of [stale, fresh]) writeFileSync(f, "{}");
+    const twoDaysAgo = (Date.now() - 2 * 24 * 60 * 60 * 1000) / 1000;
+    utimesSync(stale, twoDaysAgo, twoDaysAgo);
+    expect(subagentCap(explore, 3, "s1", transcript, "a", dir)).toBeNull();
+    expect([existsSync(stale), existsSync(fresh)]).toEqual([false, true]);
+  });
+
+  test("capFromEnv takes a positive integer only", () => {
+    expect([capFromEnv("3"), capFromEnv(undefined), capFromEnv(""), capFromEnv("0"), capFromEnv("2.5"), capFromEnv("x")]).toEqual([3, null, null, null, null, null]);
+  });
+
+  test("the hook denies past the cap only when PONEGLYPH_SUBAGENT_CAP is set", () => {
+    const { transcript, dir } = setup([J({ type: "user", message: { content: "do it" } }), spawn("a"), spawn("b")]);
+    const session = `cap-${Date.now()}`;
+    const run = (cap: string | undefined) => spawnSync(process.execPath, [HOOK], {
+      input: JSON.stringify({ hook_event_name: "PreToolUse", tool_name: "Agent", tool_use_id: "z", session_id: session, transcript_path: transcript, tool_input: { ...explore, model: "haiku" } }),
+      // The cap file goes under the test's own temp root, not the machine's.
+      env: { ...process.env, TMPDIR: dir, PONEGLYPH_SUBAGENT_CAP: cap ?? "" }, encoding: "utf8",
+    }).stdout;
+    expect(run(undefined)).not.toContain("deny");
+    expect(JSON.parse(run("2")).hookSpecificOutput).toMatchObject({ permissionDecision: "deny" });
   });
 });

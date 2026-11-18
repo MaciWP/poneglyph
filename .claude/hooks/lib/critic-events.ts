@@ -24,6 +24,8 @@ export type Event =
   | { kind: "result"; idx: number; id: string; status: string; text: string }
   | { kind: "tool"; idx: number; id: string; name: string; input: Record<string, unknown>; ok?: boolean }
   | { kind: "text"; idx: number; text: string }
+  /** `| H# |` row lines found in a tool call's input: what was already written before a delivery. */
+  | { kind: "rows"; idx: number; lines: string[] }
   /** `queued`: typed while the Lead was working; it lands mid-turn and does not open a turn. */
   | { kind: "prompt"; idx: number; text?: string; queued?: boolean }
   /** A message that opens a turn without a human: a courier or other plugin message. */
@@ -71,25 +73,29 @@ function addedPlanLines(name: string, path: string, input: Record<string, unknow
 
 const HEREDOC = /<<-?\s*(['"]?)(\w+)\1([^\n]*)\n([\s\S]*?)\n\s*\2\s*(?=\n|$)/g;
 
+// From the first `| H#` to the last pipe, so a row inside a script string compares equal to the
+// same row in the plan. A tool input may also write `\n` literally (`"| H1 | ✅ |\n"`); a plan or
+// a message may quote it inside a row's evidence, so only `literal` splits on it.
+const ROW = /\|\s*\**H\d+.*\|/;
+export const rowLines = (s: string, literal = false) => s.split(literal ? /\r?\n|\\n/ : /\r?\n/).flatMap((l) => l.match(ROW)?.[0] ?? []);
+const strings = (v: unknown): string[] => (typeof v === "string" ? [v] : v && typeof v === "object" ? Object.values(v).flatMap(strings) : []);
+
 /**
- * The lines heredocs in `cmd` add to a plan file, each tied to its own `>`, `>>` or `tee [-a]`
- * target: `>` is diffed like a Write, `>>` appends to the file as last seen (`known`).
+ * Review `r` with the rows in `plan`, the text ExitPlanMode submits, as answers too. Leads write
+ * the rows into the plan by any tool (Edit, Write, a heredoc, a python script, `sed -i`: caseria
+ * 442dde15 was denied 5 times) or leave them in thinking. A row line already seen in the session
+ * before `r` was delivered is an earlier review's row and answers nothing here; `repeated` names the
+ * findings left unanswered that such a row would answer, so the deny can say why.
  */
-function heredocPlanLines(cmd: string, cwd: string, known: Map<string, string>): string[] {
-  const out: string[] = [];
-  for (const m of cmd.matchAll(HEREDOC)) {
-    const head = `${cmd.slice(0, m.index).split("\n").at(-1)} ${m[3]}`;
-    const t = [...head.matchAll(/(>>?|\btee\s+(-a\s+)?)\s*(['"]?)([^\s'";|&<>]+)\3/g)].at(-1);
-    if (!t) continue;
-    const raw = t[4]!.replace(/^~(?=\/)/, process.env.HOME ?? "~");
-    const target = isAbsolute(raw) ? raw : join(cwd, raw);
-    if (!PLAN_PATH.test(target)) continue;
-    const body = m[0].startsWith("<<-") ? m[4]!.replace(/^\t+/gm, "") : m[4]!;
-    if (t[1] === ">" || (t[1]!.startsWith("tee") && !t[2])) { out.push(...addedPlanLines("Write", target, { content: body }, known)); continue; }
-    if (known.has(target)) known.set(target, `${known.get(target)}\n${body}`);
-    out.push(...body.split("\n"));
-  }
-  return out;
+export function withPlanRows(r: Review, plan: string, events: Event[]): Review & { repeated: string[] } {
+  const earlier = new Set(events.flatMap((e) => (e.idx >= r.resultIdx ? [] : e.kind === "rows" ? e.lines : e.kind === "text" ? rowLines(e.text) : [])));
+  const rows = rowLines(plan);
+  const fresh = rows.filter((l) => !earlier.has(l)).join("\n");
+  const stale = rows.filter((l) => earlier.has(l)).join("\n");
+  // A plan row with evidence also replaces a visible bare ❌.
+  const answers = r.answers.map(([h, a]) => [h, a === null || a === "disputed-no-evidence" ? (fresh && answerOf(h, fresh)) || a : a] as const);
+  const unanswered = answers.filter(([, a]) => a === null).map(([h]) => h);
+  return { ...r, answers, unanswered, disputedNoEvidence: answers.filter(([, a]) => a === "disputed-no-evidence").map(([h]) => h), repeated: stale ? unanswered.filter((h) => answerOf(h, stale) !== null) : [] };
 }
 const unquote = (s: string) => s.replace(/^(['"])(.*)\1$/, "$2");
 
@@ -111,6 +117,12 @@ export function bashWriteLines(cmd: string, home = process.env.HOME ?? "", cwd =
   });
   const vars = new Map<string, string>();
   for (const m of bare.matchAll(/(?:^|[\s;&(])([A-Za-z_]\w*)=("[^"]*"|'[^']*'|[^\s;&|]+)/g)) vars.set(m[1], unquote(m[2]));
+  // A loop over plain names (`for f in ia web; do … >> $f.md`) writes beside the directory in
+  // force: the variable stands for its first word. A word with a path or a variable proves nothing.
+  for (const m of bare.matchAll(/\bfor\s+([A-Za-z_]\w*)\s+in\s+([^;\n]+)/g)) {
+    const words = m[2].trim().split(/\s+/);
+    if (words.every((w) => !/[/$`]/.test(w))) vars.set(m[1], unquote(words[0] ?? ""));
+  }
   const resolve = (t: string, base: string) => {
     let out = unquote(t);
     for (let i = 0; i < 3 && /^\$/.test(out); i++) out = out.replace(/^\$\{?(\w+)\}?/, (m, v: string) => vars.get(v) ?? (v === "HOME" && home ? home : m));
@@ -203,7 +215,6 @@ export function parseEvents(lines: Iterable<string>): Event[] {
   const tools = new Map<string, Of<"tool">>();
   const byAgentId = new Map<string, string>();
   const planFiles = new Map<string, string>();
-  const planText = new Map<string, string>();
   let idx = 0;
   for (const line of lines) {
     idx++;
@@ -249,28 +260,22 @@ export function parseEvents(lines: Iterable<string>): Event[] {
         if (b?.type === "text" && typeof b.text === "string" && b.text.trim()) out.push({ kind: "text", idx, text: b.text });
         if (b?.type !== "tool_use") continue;
         const input = (b.input ?? {}) as Record<string, unknown>;
+        const seen = strings(input).flatMap((v) => rowLines(v, true));
+        if (seen.length) out.push({ kind: "rows", idx, lines: seen });
         if (b.name === "Agent" || b.name === "Task") {
           const ev: Of<"spawn"> = { kind: "spawn", idx, id: String(b.id), type: String(input.subagent_type ?? "general-purpose"), async: false };
           spawns.set(ev.id, ev);
           out.push(ev);
         } else if (EDIT_TOOLS.has(b.name)) {
           const path = String(input.file_path ?? input.notebook_path ?? "");
-          // Answer rows written into the plan count as text once the call succeeds: Leads put them
-          // there, or only in thinking, far more often than in a visible message (agentic-os
-          // 269e41a0, f40ab327). Adding only rows is not a plan change, so it never asks for a review.
+          // Adding only answer rows to the plan is not a plan change, so it never asks for a review.
           const added = PLAN_PATH.test(path) ? addedPlanLines(b.name, path, input, planFiles) : [];
-          if (added.length) planText.set(String(b.id), added.join("\n"));
           const rowsOnly = added.length > 0 && added.every((l) => ROWS_LINE.test(l));
           if (path && !rowsOnly) out.push({ kind: "edit", idx, path, lines: editLines(b.name, input) });
         } else {
           const ev: Of<"tool"> = { kind: "tool", idx, id: String(b.id), name: String(b.name), input };
           tools.set(ev.id, ev);
           out.push(ev);
-          // `cat >> plan.md <<EOF` with the rows: caseria 69a1877a answered this way, denied 4 times.
-          if (b.name === "Bash" && typeof input.command === "string") {
-            const rows = heredocPlanLines(input.command, typeof r.cwd === "string" ? r.cwd : "", planFiles);
-            if (rows.some((l) => /^\|\s*\**H\d+/.test(l))) planText.set(ev.id, rows.join("\n"));
-          }
           const written = b.name === "Bash" && typeof input.command === "string" ? bashWriteLines(input.command, undefined, typeof r.cwd === "string" ? r.cwd : "") : 0;
           if (written) out.push({ kind: "edit", idx, path: BASH_EDIT, lines: written });
         }
@@ -281,8 +286,6 @@ export function parseEvents(lines: Iterable<string>): Event[] {
         if (b?.type !== "tool_result") continue;
         const tool = tools.get(String(b.tool_use_id));
         if (tool) tool.ok = b.is_error !== true;
-        const rows = planText.get(String(b.tool_use_id));
-        if (rows !== undefined && b.is_error !== true) out.push({ kind: "text", idx, text: rows });
         const spawn = spawns.get(String(b.tool_use_id));
         if (!spawn) continue;
         const tur = r.toolUseResult && typeof r.toolUseResult === "object" ? r.toolUseResult : {};
@@ -354,16 +357,23 @@ export function answerOf(h: string, text: string): "accepted" | "disputed" | "di
  * so the spawn before it is judged.
  */
 export function criticUnavailable(events: Event[]): string | null {
-  const denied = new Set(events.filter(is("result")).filter((e) => e.status === "failed" && /^PreToolUse:Agent hook /.test(e.text)).map((e) => e.id));
+  const denied = hookDenied(events);
   const last = events.filter(is("spawn")).filter((e) => e.type === CRITIC_AGENT && !denied.has(e.id)).at(-1);
   if (!last) return null;
   const res = events.find((e): e is Of<"result"> => e.kind === "result" && e.id === last.id);
   if (res?.status === "failed" && /Agent type '[^']+' not found/.test(res.text)) return "esta sesión se abrió antes de instalar el agente `critic`; reiníciala";
+  // A run cut at its `maxTurns` is the critic's own budget, not an outage: the gate asks for a relaunch.
+  if (res?.status === "failed" && MAX_TURNS_RE.test(res.text)) return null;
   if (res?.status === "failed") return "la última ejecución del crítico falló";
   if (res && last.resolvedModel && !CRITIC_MODEL_RE.test(last.resolvedModel)) return `el crítico corrió en ${last.resolvedModel}, no en Opus`;
   return null;
 }
+/** Spawns a PreToolUse hook refused: they never ran. */
+export const hookDenied = (events: Event[]) =>
+  new Set(events.filter(is("result")).filter((e) => e.status === "failed" && /^PreToolUse:Agent hook /.test(e.text)).map((e) => e.id));
 export const CRITIC_MODEL_RE = /^claude-opus-5-5/;
+/** The result of an agent stopped at its `maxTurns`: "this agent stopped at its 80-turn limit before finishing" (CC 2.1.326, a completed result with no report), or `error_max_turns`. */
+export const MAX_TURNS_RE = /stopped at its \d+-turn limit|max[_ ]?turns/i;
 
 /** Every delivered, completed critic review, with the findings the Lead has not answered. */
 export function criticReviews(events: Event[]): Review[] {

@@ -14,6 +14,8 @@ describe("summarizeReviews", () => {
       { kind: "text", idx: 2, text: "| H1 | ✅ aceptado | fixed |\n| H2 | ❌ rechazado: evidence |\n| H4 | ❌ en disputa | a.ts:3 ya lo cubre |" },
       ...review("t2", 3, "REVIEW-ID: feature-abc\nVERDICT: PROCEED\nH1 [minor] [style] x\nHOLDS: ok", "claude-sonnet-5-5"),
       ...review("t3", 5, "REVIEW-ID: feature-abd\nVERDICT: PROCEED\nHOLDS: ok"),
+      { kind: "spawn", idx: 7, id: "t4", type: "critic", async: true },
+      { kind: "result", idx: 8, id: "t4", status: "completed", text: "NOTE: this agent stopped at its 80-turn limit before finishing." },
     ];
     expect(summarizeReviews([events])).toEqual({
       reviews: 3,
@@ -24,6 +26,7 @@ describe("summarizeReviews", () => {
       noBlockerOrMajor: 2,
       answers: { accepted: 1, disputed: 1, minorsDeclined: 1, unanswered: 2 },
       offModel: 1,
+      cut: 1,
     });
   });
 
@@ -38,6 +41,23 @@ describe("summarizeReviews", () => {
     expect(r.reviews).toBe(1);
     expect(r.answers).toEqual({ accepted: 0, disputed: 0, minorsDeclined: 0, unanswered: 1 });
   });
+
+  it("reads a plan review's rows from the plan of the last exit before the next review, as the gate does", () => {
+    // As parseEvents emits it: the call, then the rows its input carries.
+    const exit = (idx: number, plan: string): Event[] => [
+      { kind: "tool", idx, id: `x${idx}`, name: "ExitPlanMode", input: { plan } },
+      { kind: "rows", idx, lines: plan.split("\n").filter((l) => l.startsWith("| H")) },
+    ];
+    const events: Event[] = [
+      ...review("t1", 0, "REVIEW-ID: plan-abc\nVERDICT: REVISE\nH1 [major] [reuse] x\nH2 [minor] [style] y"),
+      ...exit(2, "# Plan"),
+      ...exit(3, "# Plan\n| H1 | ✅ aceptado | hecho |\n| H2 | ✅ aceptado | hecho |"),
+      ...review("t2", 4, "REVIEW-ID: plan-abd\nVERDICT: REVISE\nH1 [major] [reuse] x"),
+      ...exit(6, "# Plan\n| H1 | ✅ aceptado | hecho |"),
+    ];
+    // The second review's only row repeats the first's word for word: it answers nothing.
+    expect(summarizeReviews([events]).answers).toEqual({ accepted: 2, disputed: 0, minorsDeclined: 0, unanswered: 1 });
+  });
 });
 
 describe("criticRun", () => {
@@ -48,14 +68,16 @@ describe("criticRun", () => {
       JSON.stringify({ type: "assistant", message: { id: "m1", usage, content: [{ type: "text", text: "x" }] } }),
       JSON.stringify({ type: "assistant", message: { id: "m1", usage, content: [{ type: "server_tool_use", id: "s1", name: "advisor" }] } }),
       JSON.stringify({ type: "assistant", message: { id: "m1", usage, content: [{ type: "server_tool_use", id: "s1", name: "advisor" }] } }),
-      JSON.stringify({ type: "assistant", message: { id: "m2", usage, content: [{ type: "tool_use", name: "Read" }] } }),
+      JSON.stringify({ type: "assistant", message: { id: "m2", usage, content: [{ type: "tool_use", id: "t1", name: "Read" }] } }),
+      JSON.stringify({ type: "assistant", message: { id: "m2", usage, content: [{ type: "tool_use", id: "t1", name: "Read" }] } }),
+      JSON.stringify({ type: "assistant", message: { id: "m2", usage, content: [{ type: "tool_use", id: "t2", name: "Grep" }] } }),
       "not json",
     ];
-    expect(criticRun(lines)).toEqual({ advisorCalls: 1, fresh: 20, cacheWrite: 10, cacheRead: 200, output: 14 });
+    expect(criticRun(lines)).toEqual({ advisorCalls: 1, toolCalls: 2, fresh: 20, cacheWrite: 10, cacheRead: 200, output: 14 });
   });
 
   it("prices each token tier on its own", () => {
-    expect(runCost({ advisorCalls: 0, fresh: 1e6, cacheWrite: 1e6, cacheRead: 1e6, output: 1e6 })).toBeCloseTo(36.75);
+    expect(runCost({ advisorCalls: 0, toolCalls: 0, fresh: 1e6, cacheWrite: 1e6, cacheRead: 1e6, output: 1e6 })).toBeCloseTo(36.75);
   });
 });
 
@@ -68,14 +90,14 @@ describe("replayStops", () => {
       { kind: "text", idx: 4, text: "| H1 | ✅ aceptado | hecho |" },
       { kind: "prompt", idx: 5 },
       { kind: "prompt", idx: 6 },
-      { kind: "edit", idx: 7, path: "/r/a.ts", lines: 5 },
+      { kind: "edit", idx: 7, path: "/r/a.ts", lines: 25 },
       // A courier turn is a turn of its own; a turn that only edits working notes is not counted.
       { kind: "wake", idx: 8 },
-      { kind: "edit", idx: 9, path: "/r/a.ts", lines: 5 },
+      { kind: "edit", idx: 9, path: "/r/a.ts", lines: 25 },
       { kind: "prompt", idx: 10 },
       { kind: "edit", idx: 11, path: "/Users/x/.claude/plans/p.md", lines: 5 },
     ];
-    expect(replayStops(events)).toEqual({ turns: 3, blocks: 2, blocked: [6, 8], sizes: [5, 5] });
+    expect(replayStops(events)).toEqual({ turns: 3, blocks: 2, blocked: [6, 8], sizes: [25, 25] });
     expect(replayStops([{ kind: "prompt", idx: 0, text: "brief [critic-gate: off]" }, ...events])).toEqual({ turns: 0, blocks: 0, blocked: [], sizes: [] });
   });
 

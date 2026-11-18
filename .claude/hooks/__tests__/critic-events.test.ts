@@ -191,6 +191,20 @@ describe("bashWriteLines", () => {
   ];
   for (const cmd of reads) it(`ignores: ${cmd.split("\n")[0]}`, () => expect(bashWriteLines(cmd)).toBe(0));
 
+  it("resolves a loop variable over plain names against the directory in force", () => {
+    // A crew lead wrote its member missions in its scratchpad: the command of session d78b92db
+    // at 13:12:41 as it ran, with the home path anonymised and each heredoc body cut to one line.
+    // Before the fix this fixture counted 5 (the full command, 29); after it, the full command
+    // read from the transcript with its cwd counts 0 as well.
+    const lead = [
+      "D=/private/tmp/claude-501/-Users-x-repo/d78b92db-4f16-4336-bf57-9f6f4772f18a/scratchpad; mkdir -p $D; cd $D",
+      ...["reglas", "ia", "web", "captura", "datos"].flatMap((f) => [`cat > ${f}.md <<'EOF'`, "body", "EOF"]),
+      "for f in ia web captura datos; do cat reglas.md >> $f.md; done; wc -l *.md",
+    ].join("\n");
+    expect(bashWriteLines(lead, "", "/Users/x/repo")).toBe(0);
+    expect(bashWriteLines("cd /Users/x/repo; for f in a b; do echo x >> $f.ts; done")).toBe(5);
+  });
+
   it("resolves relative writes against the session's directory", () => {
     // An orchestrator keeps its books from inside the plan folder (real session 17159044).
     const plan = "/Users/x/repo/.claude/plans/001-x";

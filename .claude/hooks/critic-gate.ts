@@ -4,7 +4,8 @@
 // Two moments need a completed, answered review by the `critic` subagent on claude-opus-5-5:
 // - PreToolUse `ExitPlanMode`: deny until a `plan-` review counts.
 // - Stop: block the end of a turn that edited files with no `feature-` review, unless an agent is
-//   still running or the session is in plan mode. Workboard feature closes are not gated: a
+//   still running, the session is in plan mode, or the session's unreviewed edits add up to
+//   SMALL_UNREVIEWED_LINES or fewer (logged as `close skip-small`). Workboard feature closes are not gated: a
 //   settings PreToolUse hook never fired for the mod's `mcp__workboard__progress` tool.
 //
 // A review stays valid for its fixes until a new turn opens (a human prompt, or a plugin or peer
@@ -15,7 +16,7 @@
 // Each decision is one line (an opted-out session logs `optout`) in `<project>/.claude/learned/critic-gate.log`.
 import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { type CriticMode, criticUnavailable, criticReviews, type Event, gateOptedOut, is, isWorkingNote, lastMode, parseEvents, pendingAgents, PLAN_PATH, type Review, reviewMismatch, rowsProblem, turnStarts } from "./lib/critic-events";
+import { BASH_EDIT, type CriticMode, criticUnavailable, criticReviews, type Event, gateOptedOut, is, isWorkingNote, lastMode, parseEvents, pendingAgents, PLAN_PATH, type Review, reviewMismatch, rowLines, rowsProblem, turnStarts, withPlanRows } from "./lib/critic-events";
 import { readHookStdin } from "./lib/hook-stdin";
 import { learnedLog } from "./lib/paths";
 import { isHeadlessSession } from "./lib/session-kind";
@@ -26,11 +27,11 @@ const HOW = `Launch the \`critic\` agent (Agent tool, subagent_type \`critic\`, 
 // Observed, not proven: in 14 days, 3 of 3 plan exits whose only rows shared the calling message
 // were denied, and PreToolUse has no `last_assistant_message`; `main` re-reads once to cover it.
 // 28 of the 30 exits denied for missing rows in 8 days had no visible rows (thinking or a summary).
-const PLAN_ROWS = "Write the rows into the plan file (a `## Critic answers` section, with Edit or Write), then call ExitPlanMode: rows in thinking or in a summary sentence are not seen.";
+const PLAN_ROWS = "Write the rows into the plan file (a `## Critic answers` section, with any tool), then call ExitPlanMode: rows in thinking or in a summary sentence are not seen.";
 // The probe saw a visible text block reach the transcript 13 ms after its tool call started.
 const REREAD_MS = 300;
 
-export type Verdict = { allow: true; note?: string } | { allow: false; reason: string };
+export type Verdict = { allow: true; note?: string; small?: true } | { allow: false; reason: string };
 
 const reviewable = (e: Of<"edit">) => !isWorkingNote(e.path);
 type Of<K extends Event["kind"]> = Extract<Event, { kind: K }>;
@@ -38,6 +39,13 @@ type Of<K extends Event["kind"]> = Extract<Event, { kind: K }>;
 const sum = (edits: Of<"edit">[]) => edits.reduce((n, e) => n + e.lines, 0);
 
 const MAX_ROUNDS = 2;
+
+// 26 of the 101 turns the gate blocked in 14 days changed 20 lines or fewer, at about 1.70 US$ a
+// review. Counted over every edit since the last review, so a run of small turns still gets one.
+// ponytail: a small change can still be a harmful one, and a `Write` that truncates a file counts only its new length; re-run the critic audit over the skipped closes and lower this if it finds any.
+const SMALL_UNREVIEWED_LINES = 20;
+// A shell write's size is an estimate (`sed -i` over a tree counts 5 lines), so it never passes as small.
+const small = (edits: Of<"edit">[]) => (edits.every((e) => e.path !== BASH_EDIT) && sum(edits) <= SMALL_UNREVIEWED_LINES ? { small: true as const } : {});
 
 /**
  * Whether the fixes after review `r` need one more review: only after a BLOCK, and never past
@@ -51,29 +59,34 @@ function recheck(events: Event[], reviews: Review[], r: Review): "yes" | "capped
   return reviews.filter((x) => x.spawnIdx > turnStart).length < MAX_ROUNDS ? "yes" : "capped";
 }
 
-type Gap = { why: string; rows?: true; capped?: true };
+type Gap = { why: string; rows?: true; capped?: true; small?: true };
 
 /**
  * Whether the session's `target` edits are covered by its last `mode` review.
  * Returns null when covered, else the reason; `rows` when answer rows alone would cover them,
  * so missing rows are checked last and never hide a gap a new review must close; `capped` when
- * only the review cap lets the edits pass, which the caller allows with a visible note.
+ * only the review cap lets the edits pass, which the caller allows with a visible note; `small`
+ * when the only gap is unreviewed edits of SMALL_UNREVIEWED_LINES or fewer, never when findings
+ * wait for rows or a BLOCK waits for its fix review.
  */
-function coverage(events: Event[], mode: CriticMode, target: (e: Of<"edit">) => boolean): Gap | null {
+function coverage(events: Event[], mode: CriticMode, target: (e: Of<"edit">) => boolean, answers = (r: Review) => r): Gap | null {
   const edits = events.filter(is("edit")).filter(target);
   const reviews = criticReviews(events).filter((r) => r.mode === mode);
   const r = reviews.at(-1);
   if (!r && mode === "plan") return { why: "no completed `plan-` review in this session" };
-  if (!r) return edits.length ? { why: `${edits.length} edits (${sum(edits)} lines) have no critic review` } : null;
+  if (!r) return edits.length ? { why: `${edits.length} edits (${sum(edits)} lines) have no critic review`, ...small(edits) } : null;
   const mismatch = reviewMismatch(r, mode);
   if (mismatch) return { why: `the last critic review does not count: ${mismatch}` };
   const nextPrompt = turnStarts(events).find((i) => i > r.resultIdx) ?? Infinity;
   const after = edits.filter((e) => e.idx > r.spawnIdx);
   const late = after.filter((e) => e.idx > nextPrompt);
-  if (late.length) return { why: `${late.length} edits came in a later turn than the last review` };
+  if (late.length) {
+    const settled = recheck(events, reviews, r) !== "yes" && !rowsProblem(answers(r));
+    return { why: `${late.length} edits came in a later turn than the last review`, ...(settled ? small(after) : {}) };
+  }
   const again = after.length ? recheck(events, reviews, r) : "no";
   if (again === "yes") return { why: `the last review was BLOCK and ${sum(after)} lines changed after it; the fix needs one more review` };
-  const rows = rowsProblem(r);
+  const rows = rowsProblem(answers(r));
   if (rows) return { why: `the last critic review does not count: ${rows}`, rows: true };
   return again === "capped" ? { why: `the fix of a second BLOCK went unreviewed: ${MAX_ROUNDS} reviews is the cap per turn`, capped: true } : null;
 }
@@ -83,11 +96,19 @@ const ANSWER = `Answer every finding with ${ROW}`;
 const CAPPED = (why: string): Verdict => ({ allow: true, note: `Tope de revisiones: ${why}. Consulta al usuario con AskUserQuestion.` });
 const isPlanEdit = (e: Of<"edit">) => PLAN_PATH.test(e.path);
 
-export function judgePlanExit(events: Event[]): Verdict {
-  const gap = coverage(events, "plan", isPlanEdit);
+/** `plan` is the text ExitPlanMode submits: its `| H# |` rows answer the review too (`withPlanRows`). */
+export function judgePlanExit(events: Event[], plan = ""): Verdict {
+  let repeated: string[] = [];
+  const gap = coverage(events, "plan", isPlanEdit, (r) => {
+    const w = withPlanRows(r, plan, events);
+    repeated = w.repeated;
+    return w;
+  });
   if (!gap) return { allow: true };
   if (gap.capped) return CAPPED(gap.why);
-  return { allow: false, reason: `Critic gate (plan): ${gap.why}. ${gap.rows ? ANSWER : HOW} ${PLAN_ROWS}` };
+  // H# ids restart in every review, so a terse row can repeat an earlier review's word for word.
+  const stale = gap.rows && repeated.length ? ` The plan's rows for ${repeated.join(", ")} repeat rows written before this review was delivered; write this review's fix or evidence in them.` : "";
+  return { allow: false, reason: `Critic gate (plan): ${gap.why}.${stale} ${gap.rows ? ANSWER : HOW} ${PLAN_ROWS}` };
 }
 
 export function judgeStop(events: Event[], stopHookActive: boolean): Verdict {
@@ -99,6 +120,7 @@ export function judgeStop(events: Event[], stopHookActive: boolean): Verdict {
   const gap = coverage(events, "feature", reviewable);
   if (!gap) return { allow: true };
   if (gap.capped) return CAPPED(gap.why);
+  if (gap.small) return { allow: true, small: true };
   // One retry only: a second block would trap the user in a loop they did not ask for.
   if (stopHookActive) return { allow: true, note: gap.rows ? `Cierre con hallazgos sin responder (${gap.why}).` : `Cierre sin revisar: el crítico no revisó los cambios de este turno (${gap.why}).` };
   return { allow: false, reason: `Critic gate (close): ${gap.why}. ${gap.rows ? ANSWER : HOW}` };
@@ -130,20 +152,22 @@ export function decide(payload: Payload, events: Event[]): { out: string; log: s
   let v: Verdict = { allow: true };
   let kind: string | null = null;
   if (event === "PreToolUse" && payload.tool_name === "ExitPlanMode") {
-    kind = "plan";
-    v = judgePlanExit(events);
+    const plan = typeof payload.tool_input?.plan === "string" ? payload.tool_input.plan : "";
+    // `plan:rows<N>` shows in the log whether the host's payload carried the plan's rows.
+    kind = `plan:rows${rowLines(plan).length}`;
+    v = judgePlanExit(events, plan);
   } else if (event === "Stop") {
     // The final answer, which carries the answer rows, is often not in the transcript yet at Stop.
     const last = payload.last_assistant_message;
     const seen = events.filter((e) => e.kind === "text").at(-1);
     if (last && !(seen?.kind === "text" && seen.text === last)) events = [...events, { kind: "text", idx: events.length ? events.at(-1)!.idx + 1 : 0, text: last }];
     v = judgeStop(events, payload.stop_hook_active === true);
-    if (!v.allow || v.note) kind = "close";
+    if (!v.allow || v.note || v.small) kind = "close";
   }
   // Fails open with a warning: a gate the session cannot satisfy would trap it.
   const unavailable = v.allow ? null : criticUnavailable(events);
   if (unavailable) v = { allow: true, note: `Crítico no disponible, paso sin revisar: ${unavailable}.` };
-  const log = kind && `${kind} ${v.allow ? (v.note ? "warn" : "allow") : `deny ${v.reason.split(". ")[0]}`}`;
+  const log = kind && `${kind} ${v.allow ? (v.small ? "skip-small" : v.note ? "warn" : "allow") : `deny ${v.reason.split(". ")[0]}`}`;
   if (v.allow) return { out: v.note ? JSON.stringify({ systemMessage: v.note }) : "", log };
   if (event === "Stop") return { out: JSON.stringify({ decision: "block", reason: v.reason }), log };
   return { out: JSON.stringify({ hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: v.reason } }), log };

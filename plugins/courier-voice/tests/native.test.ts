@@ -34,7 +34,7 @@ test("a courier row is folded into one violet line that names its sender", async
   await w.clock.settle();
   const chat = await $.ui.mount(row(`The courier plugin sent a message:\n${delivered("m1")}`, courier));
   expect(await chat.find({ text: "Agentic OS · Revisor" })).toBeDefined();
-  expect(await chat.find({ text: " · hello m1" })).toBeDefined();
+  expect(await chat.find({ type: "Text", text: " · hello m1" })).toBeDefined();
   expect(await chat.find({ text: "ROW:" })).toBeUndefined();
 });
 
@@ -42,7 +42,8 @@ test("expanded, the box holds the whole message without the reply line; other or
   world(on);
   const open = await $.ui.mount(row(delivered("m1", "user"), courier, true));
   expect(await open.find({ text: "Agentic OS · tú" })).toBeDefined();
-  expect(await open.find({ text: "hello m1\nsecond line" })).toBeDefined();
+  // Markdown, as a reply draws it, so a link in the message opens on a click.
+  expect(await open.find({ type: "Markdown", text: "hello m1\nsecond line" })).toBeDefined();
   expect(await open.find({ text: "Reply only" })).toBeUndefined();
   for (const origin of [{ kind: "composer" }, { kind: "task-notification" }, { kind: "plugin", name: "other" }]) {
     const other = await $.ui.mount(row(delivered("m1"), origin));

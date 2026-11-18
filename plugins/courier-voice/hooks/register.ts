@@ -84,10 +84,13 @@ export const register: Register = (on) => {
     if (!voice) return next(e);
     const from = senderOf(p.text);
     if (from && from !== "user" && !names.has(from) && !looked.has(from)) void learnNames($, [from]).catch(() => {});
-    const { Box, Text } = $.ui.resolve(e);
+    const { Box, Text, Markdown } = $.ui.resolve(e);
     const title = Text({ weight: "semibold", color: "permission", wrap: "truncate-end", children: voice.title });
+    // Expanded, the body is drawn as a reply draws markdown: its links open on a click. Folded, the
+    // first line stays plain text, cut to one row.
+    const body = (text: string) => (Markdown ? Markdown({ text }) : Text({ wrap: "wrap", children: text }));
     if (p.isExpanded)
-      return Box({ flexDirection: "column", borderStyle: "round", borderColor: "permission", paddingX: 1, children: voice.body ? [title, Text({ wrap: "wrap", children: voice.body })] : [title] });
+      return Box({ flexDirection: "column", borderStyle: "round", borderColor: "permission", paddingX: 1, children: voice.body ? [title, body(voice.body)] : [title] });
     return Box({
       borderStyle: "round",
       borderColor: "permission",

@@ -22,7 +22,9 @@ prefix); every other row keeps Claude Code's drawing.
   or the reply line. The sender is the agent's name, `tú` for the user, or the id's first 8
   characters while no name is known.
 - Expanded (`isExpanded`: ctrl+o, and also a short body under the engine's «Prompt from the courier
-  plugin» label): the box holds the whole message.
+  plugin» label): the box holds the whole message, drawn with the engine's `Markdown` as a reply
+  draws its text, so its links open on a click where the terminal takes hyperlinks. Folded, the
+  first line stays plain `Text`.
 - The engine's dim «Prompt from the courier plugin» label stays above the box; it is drawn outside
   the render site.
 - Names come from `GET /api/coordination` (Agentic OS, loopback `AOS_URL` only): read at the start

@@ -75,23 +75,23 @@ Watchpoints where smaller models historically relapse in this setup; each maps t
 
 ## 4. Harness levers per model (how far this was reviewed: `harness-config/references/lookup.md` §Upstream marks)
 
-| Lever | Fable 5.1 | Opus 5.5 (daily default since 2026-09-22) | Sonnet 5.5 |
+| Lever | Fable 5.2 (`claude-fable-5-2`, the default Fable since 2.1.321) | Opus 5.5 (daily default since 2026-09-22) | Sonnet 5.5 |
 |---|---|---|---|
 | Context | 1M native | check `/model` for the active variant (not verified) | 1M; the default Sonnet since 2.1.284 |
-| Effort | `xhigh` available; `/effort` saves a default **per model** (2.1.251); `/effort s` = this session only (2.1.257) | **defaults `medium`**, thinking always on, more thinking per turn than Opus 5 at the same level (Anthropic: medium on 5.5 ≥ high on 5). In user settings only `modelSettings["claude-opus-5-5"].effortLevel` applies; the top-level `effortLevel` is ignored; Poneglyph pins `medium` there (a one-week cost experiment against `high`) | `low` to `max`; `xhigh` and `max` only where a measured gain pays for longer thinking |
-| Fast mode | none | `/fast`: same model, faster output, needs extra usage, higher per-token price; out of research preview on the API since 2026-10-15, for back-and-forth work, not long runs | none |
-| Pricing note | $10/$50 per Mtok, $0.25/Mtok cache reads (2.1.257) | $4/$20 per Mtok | $2/$10 per Mtok, cache reads $0.10/Mtok (2.1.296) |
-| Subagent default | `CLAUDE_CODE_SUBAGENT_MODEL` (cheap tier) applies to a spawn without an explicit model or agent-file model; built-in Explore and Plan ignore it and, like forks, keep the parent model (2.1.232/2.1.251; sub-agents docs) | same | same |
+| Effort | Claude Code default `medium` (model-config docs; API default `high`, effort docs); unlike Opus it takes the top-level `effortLevel` in user settings, so Poneglyph pins `medium` in `modelSettings["claude-fable-5-2"]` (Log Pose's `MAIN_MODELS`); `low` scores near Fable 5.1 at higher levels, `low` and `medium` stop early more often on agentic work (the guide's "Finish the whole task" text), and "answer directly" lines no longer stop thinking at `medium`+ (lower effort instead; Fable 5.2 prompting guide); `/effort` saves a default **per model** (2.1.251); `/effort s` = this session only (2.1.257) | **defaults `medium`**, thinking always on, more thinking per turn than Opus 5 at the same level (Anthropic: medium on 5.5 ≥ high on 5). In user settings only `modelSettings["claude-opus-5-5"].effortLevel` applies; the top-level `effortLevel` is ignored; Poneglyph pins `medium` there (a one-week cost experiment against `high`) | `low` to `max`; `xhigh` and `max` only where a measured gain pays for longer thinking |
+| Fast mode | `/fast` since 2.1.321, $16/$80 per Mtok from usage credits; stays on across sessions only if turned on while on Fable 5.2; back-and-forth work, not long runs | `/fast`: same model, faster output, needs extra usage, higher per-token price; out of research preview on the API since 2026-10-15, for back-and-forth work, not long runs | none |
+| Pricing note | $8/$40 per Mtok, $0.20/Mtok cache reads (2.1.321) | $4/$20 per Mtok | $2/$10 per Mtok, cache reads $0.10/Mtok (2.1.296) |
+| Subagent default | `CLAUDE_CODE_SUBAGENT_MODEL` (cheap tier) applies to a spawn without an explicit model or agent-file model; built-in Explore and Plan ignore it and, like forks, keep the parent model (2.1.232/2.1.251; sub-agents docs); effort: a subagent on another model ignores the session level and runs at that model's own (Haiku 5.5 defaults to `medium`), one on the session's model takes the session level (2.1.317; model-config docs) | same | same |
 
 **Task → model routing** (the criterion lives here, not in settings):
 
-- Deep review / architecture / security / escalation → **Fable 5.1 or Opus 5.5 + `/effort xhigh`** (no skill pins `effort:` in its frontmatter, because the override lasts for the rest of the turn; Log Pose raises the level per prompt and the model corrects a wrong pick with `mcp__log-pose__set`; without Log Pose the user raises it; `compare-and-decide`'s heavy tier escalates effort per invocation).
+- Deep review / architecture / security / escalation → **Fable 5.2 or Opus 5.5 + `/effort xhigh`** (no skill pins `effort:` in its frontmatter, because the override lasts for the rest of the turn; Log Pose raises the level per prompt and the model corrects a wrong pick with `mcp__log-pose__set`; without Log Pose the user raises it; `compare-and-decide`'s heavy tier escalates effort per invocation).
 - Standard feature build → Opus 5.5 at its pinned `medium` (log-pose picks the level per prompt), the current Sonnet (check `/model`) when budget matters.
 - Bulk mechanical work (sweeps, renames, formatting, doc batches) → the current Sonnet, or Opus 5.5 at `medium` (its own default).
 - A durable model or effort choice goes in `settings.global.json` / `settings.machine.json`: sync-claude rebuilds `~/.claude/settings.json` and drops what `/model` or `/effort` wrote there.
 - Massive-corpus analysis (multi-repo audits, huge logs, long-lived sessions) → **the current Sonnet** for the 1M window (re-verify its window in §4); prefer it over compacting Opus mid-task.
 - Degradation cascade on overload: `settings.global.json.fallbackModel`.
-- One-turn deep reasoning boost: the `ultrathink` keyword instead of switching effort for the whole session.
+- One-turn deep reasoning boost: the `ultrathink` keyword (runs that turn at `xhigh`, 2.1.311) instead of switching effort for the whole session.
 
 ## 5. Load & verify
 

@@ -6,13 +6,14 @@
 // (`model_auto_compact_token_limit = 800000`, xhigh) and Grok (xhigh). The policy is tiered:
 // compact at 300k by default, raise to 400k per session when a task needs it, effort `high`
 // with the stronger tier one command away. `high` was the hosts' own default until Opus 5.5,
-// which defaults to `medium` (Claude Code 2.1.280); the policy pins `high` there explicitly.
+// which defaults to `medium` (Claude Code 2.1.280); the policy pins the top-level key to `high`
+// and runs the main models (Opus 5.5, Fable 5.2) on `medium` as a cost experiment (`claudeMainEffort`).
 // The default was 200k until 2026-10-02: below it Opus 5.5 showed no measurable rise in latency
 // or tool errors, while 137 compactions in 8 days cost ~19 min/day; the Claude Code team places
 // context rot at ~300-400k on the 1M model, so 300k sits at the lower edge of that band.
 //
 //   Claude  settings.global.json → autoCompactWindow 300000 · effortLevel "high"
-//           · modelSettings["claude-opus-5-5"].effortLevel (claudeOpusEffort): in USER settings Opus 5.5
+//           · modelSettings["claude-opus-5-5"].effortLevel (claudeMainEffort): in USER settings Opus 5.5
 //           and later models ignore the top-level key (settings-reference, 2026-09-22).
 //           The settings key is validated as an INTEGER (100k-1M) with `.catch(undefined)`:
 //           the string "200k" written until 2026-09-18 was dropped silently and every
@@ -38,11 +39,11 @@ export const CONTEXT_POLICY = {
    *  characters; 400 drops 12 skills, because Codex cuts descriptions first and then skills.
    *  Names alone take ~15 tokens each, so 800 holds about 50 skills; raise it before that. */
   codexSkillTokens: 800,
-  /** Opus 5.5 main-session effort: `medium` (its own default) is a one-week cost experiment
-   *  started 2026-10-10, after Opus main sessions took 1277 of 1328 $ API-equivalent in a week
-   *  that ended at 99 % of the plan. Compare the weekly plan % on 2026-10-17; back to `high`
-   *  if quality drops. */
-  claudeOpusEffort: "medium",
+  /** Main-session effort of Opus 5.5 and Fable 5.2 (Log Pose's MAIN_MODELS). `medium`, Opus's own
+   *  default, started on 2026-10-10 as a cost experiment, after Opus main sessions took 1277 of
+   *  1328 $ API-equivalent in a week that ended at 99 % of the plan. On 2026-10-18 the user kept it
+   *  as the default, with Log Pose raising or lowering each prompt from there. */
+  claudeMainEffort: "medium",
   /** Haiku bills a prompt above 100k at 5x. A 120k window compacts Haiku sessions and subagents
    *  near 87k (window minus the output reserve and buffer; a 100k window compacted at ~65k), so
    *  the compaction request itself stays under 100k. Oversized Reads are narrowed by
@@ -59,7 +60,10 @@ export const CLAUDE_DESIRED = {
   autoCompactWindow: CONTEXT_POLICY.defaultTokens,
   effortLevel: CONTEXT_POLICY.effort,
   modelSettings: {
-    "claude-opus-5-5": { effortLevel: CONTEXT_POLICY.claudeOpusEffort },
+    "claude-opus-5-5": { effortLevel: CONTEXT_POLICY.claudeMainEffort },
+    // Unlike Opus, Fable takes the top-level key: without this entry it ran at `high`, which Log Pose
+    // reads as the user's floor (any main-model level other than `medium`).
+    "claude-fable-5-2": { effortLevel: CONTEXT_POLICY.claudeMainEffort },
     "claude-haiku-5-5": { autoCompactWindow: CONTEXT_POLICY.claudeHaikuTokens },
     "claude-sonnet-5-5": { autoCompactWindow: CONTEXT_POLICY.claudeSonnetTokens },
   },

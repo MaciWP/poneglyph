@@ -3,7 +3,7 @@ import type { On } from "claude-code";
 
 const start = { cwd: "/work/project", surface: "terminal" as const, isInteractive: true };
 const OPUS = "claude-opus-5-5";
-const AGENT = "---\nname: prompt-router\n---\nRouter body.\n\nGlossary (term: heard variants):\n(none)\n\nCatalog (name: description):\n- dev-workflow: Loop.\n- pr-review: Reviews.\n- prompt-design: Briefs.\n";
+const AGENT = "---\nname: prompt-router\n---\nRouter body.\n\nGlossary (term: heard variants):\n(none)\n\nCatalog (name: description):\n- changes-verify: Checks.\n- dev-workflow: Loop.\n- pr-review: Reviews.\n- prompt-design: Briefs.\n";
 const HARD = JSON.stringify({ fixes: [], process: { "dev-workflow": "build the mod" }, skills: [{ why: "review", name: "pr-review" }], difficulty: "hard", uncertainty: "some-doubt", continuity: "new" });
 const EASY_SAME = JSON.stringify({ fixes: [], process: {}, skills: [], difficulty: "easy", uncertainty: "clear", continuity: "same" });
 const PROMPT = "revisa la PR de esta rama y monta el mod nuevo";
@@ -11,14 +11,15 @@ const PROMPT = "revisa la PR de esta rama y monta el mod nuevo";
 // `after`: how long the call takes on the test's clock, in ms.
 type Reply = string | { isAnswered: false; reason: "aborted" | "api-error"; status?: number; error?: string; after?: number };
 
-function world(on: On, replies: Reply[] = [HARD], shell = true, settings: Record<string, unknown> = {}) {
+function world(on: On, replies: Reply[] = [HARD], shell = true, settings: Record<string, unknown> = {}, env: Record<string, string> = {}) {
   let now = Date.parse("2026-10-15T10:00:00Z");
   on("clock.now", () => ({ value: now }));
-  mock.env(on, { HOME: "/home/me" });
+  mock.env(on, { HOME: "/home/me", ...env });
   const writes = new Map<string, string>();
   const asks: { system?: unknown; prompt: unknown; model: string }[] = [];
   const efforts: unknown[] = [];
   const contexts: (readonly string[] | undefined)[] = [];
+  const texts: string[] = [];
   const toasts: unknown[] = [];
   const id = { value: "s1" };
   on("session.start", (_, e) => ({ cwd: e.cwd }));
@@ -50,6 +51,7 @@ function world(on: On, replies: Reply[] = [HARD], shell = true, settings: Record
   });
   on("prompt.submit", (_, e) => {
     contexts.push(e.context);
+    texts.push(e.text);
     return { text: e.text };
   });
   on("turn.start", (_, e) => ({ turnId: e.turnId }));
@@ -58,7 +60,7 @@ function world(on: On, replies: Reply[] = [HARD], shell = true, settings: Record
     return { turnId: e.turnId, index: e.index, answer: "", toolUses: [], stopReason: "end_turn" as const, usage: null };
   });
   on("turn.complete", (_, e) => ({ text: "" }) as never);
-  return { writes, asks, efforts, contexts, toasts, id };
+  return { writes, asks, efforts, contexts, toasts, id, texts };
 }
 
 async function step($: Engine, input: object) {
@@ -85,7 +87,7 @@ test("one call before step 0 gives the note, and every main Opus step runs at it
   const note = w.contexts.at(-1)?.at(-1) ?? "";
   expect(note).toContain("- Skill(pr-review): review");
   expect(note).toContain("- Skill(dev-workflow): build the mod");
-  expect(note).toContain("Effort: high for this prompt (hard, some doubt). Advisor gauge 3");
+  expect(note).toContain("Effort: high for this prompt (hard, some doubt). Advisor gauge 1");
   await step($, {});
   await step($, { index: 1 });
   await step($, { agentId: "a1" });
@@ -113,6 +115,28 @@ test("the user's /effort is a floor, and a max floor stays max", async ($, on) =
   await step($, { effort: "high", index: 1 });
   await step($, { effort: "max", index: 2 });
   expect(w.efforts).toEqual(["low", "high", "max"]);
+});
+
+test("a main Fable step runs at the decided level like Opus, and other models stay untouched", async ($, on) => {
+  const w = world(on, [JSON.stringify({ skills: [], difficulty: "easy", uncertainty: "clear", continuity: "new" })]);
+  await $.session.start(start);
+  await prompt($, "qué hace esta función de aquí exactamente", "t1");
+  await step($, { model: "claude-fable-5-2" });
+  await step($, { model: "claude-sonnet-5-5", index: 1 });
+  expect(w.efforts).toEqual(["low", "medium"]);
+  await complete($, "t1");
+  expect(rows(w).find((r) => r.ev === "step")).toMatchObject({ effortIn: "medium", effortOut: "low" });
+});
+
+test("a worker an orchestrator launched gets its domain skills but not dev-workflow or changes-verify", async ($, on) => {
+  const reply = JSON.stringify({ ...JSON.parse(HARD), process: { "dev-workflow": "build the mod", "changes-verify": "run it" } });
+  const w = world(on, [reply], true, {}, { AOS_PARENT_ID: "90da386d-37a8-4e7a-a4b8-d040a6dad21e" });
+  await $.session.start(start);
+  await prompt($, PROMPT, "t1");
+  const note = w.contexts.at(-1)?.at(-1) ?? "";
+  expect(note).toContain("- Skill(pr-review): review");
+  expect(note).not.toContain("dev-workflow");
+  expect(note).not.toContain("changes-verify");
 });
 
 test("continuations, short prompts and other origins reuse the decision without a call", async ($, on) => {
@@ -378,4 +402,102 @@ test("no hint once the session loaded the skill", async ($, on) => {
   await prompt($, PROMPT, "t1");
   await $.tool.call({ tool: "Skill", skill: "prompt-design" } as never);
   expect(await $.tool.call({ tool: "Agent", prompt: "x" } as never)).toMatchObject({ result: "done" });
+});
+
+test("a + prompt runs its turn at max with no call, a _ prompt makes no call, and the next prompt is classified", async ($, on) => {
+  const w = world(on, [HARD, HARD, HARD]);
+  await $.session.start(start);
+  await prompt($, "+ revisa a fondo el diseño del almacén de tableros", "t1");
+  expect(w.asks).toHaveLength(0);
+  expect(w.texts.at(-1)).toBe("revisa a fondo el diseño del almacén de tableros");
+  await step($, { turnId: "t1" });
+  expect(w.efforts).toEqual(["max"]);
+  await complete($, "t1");
+  await prompt($, "_ resume este fichero en dos frases cortas por favor", "t2");
+  expect(w.asks).toHaveLength(0);
+  expect(w.texts.at(-1)).toStartWith("_ ");
+  // No decision: the Haiku turn's step is left at the session's level.
+  await step($, { turnId: "t2", effort: "medium" });
+  expect(w.efforts.at(-1)).toBe("medium");
+  await complete($, "t2");
+  await prompt($, "<system-reminder>desktop</system-reminder>\n+ otra revisión a fondo del diseño", "t4");
+  expect(w.asks).toHaveLength(0);
+  expect(w.texts.at(-1)).toBe("<system-reminder>desktop</system-reminder>\notra revisión a fondo del diseño");
+  await complete($, "t4");
+  await prompt($, "+1 a esto, me parece bien la propuesta entera", "t5");
+  expect(w.asks).toHaveLength(1);
+  await prompt($, "++ no es una marca, es texto normal y largo", "t3");
+  expect(w.asks).toHaveLength(2);
+  expect(rows(w).filter((r) => r.ev === "submit").map((r) => r.skip ?? r.outcome)).toEqual(["max", "haiku", "max", "ok", "ok"]);
+});
+
+test("a _ counts only where use-haiku moves the turn: the raw text, so a desktop _ is classified", async ($, on) => {
+  const w = world(on, [HARD, HARD]);
+  await $.session.start(start);
+  await prompt($, "<system-reminder>desktop</system-reminder>\n_ resume este fichero en dos frases cortas por favor", "t1");
+  expect(w.asks).toHaveLength(1);
+  await complete($, "t1");
+  await prompt($, "_1 resume este fichero en dos frases cortas por favor", "t2");
+  expect(w.asks).toHaveLength(1);
+  await complete($, "t2");
+  await prompt($, "__init__ falla al importar el módulo de la configuración", "t3");
+  expect(w.asks).toHaveLength(2);
+  expect(rows(w).filter((r) => r.ev === "submit").map((r) => r.skip ?? r.outcome)).toEqual(["ok", "haiku", "ok"]);
+});
+
+test("a _ turn after a hard task keeps the session's level, not the task's", async ($, on) => {
+  const w = world(on);
+  await $.session.start(start);
+  await prompt($, PROMPT, "t1");
+  await step($, { turnId: "t1" });
+  expect(w.efforts).toEqual(["high"]);
+  await complete($, "t1");
+  await prompt($, "_ resume este fichero en dos frases cortas por favor", "t2");
+  await step($, { turnId: "t2" });
+  expect(w.efforts.at(-1)).toBe("medium");
+});
+
+// The engine's own drawing of a reply block: its text, with the bullet it was asked for.
+function drawn(on: On) {
+  on("ui.render", ($, e) => {
+    const { Text } = $.ui.resolve(e);
+    const p = e.props as { text?: string; isFirstOfReply?: boolean };
+    return Text({ children: e.component === "AssistantMessage" ? `${p.isFirstOfReply ? "BULLET " : ""}MD:${p.text}` : "other" });
+  });
+}
+const block = (text: string, isFirstOfReply = true, surface: "terminal" | "desktop" = "terminal") =>
+  ({ plugin: "log-pose", surface, component: "AssistantMessage" as const, requestId: `m-${text.length}`, viewport: { columns: 100, rows: 40, isFullscreen: true }, props: { text, isFirstOfReply, onScreen: null } }) as never;
+
+test("a Router line leaves the text and opens the block in a ROUTER box; the text below keeps its bullet", async ($, on) => {
+  drawn(on);
+  const chat = await $.ui.mount(block("Router: deep-research sí (investigación amplia).\n\nEmpiezo por el repo."));
+  expect(await chat.find({ text: "ROUTER" })).toBeDefined();
+  expect(await chat.find({ text: "deep-research sí (investigación amplia)." })).toBeDefined();
+  expect(await chat.find({ text: "⏺" })).toBeUndefined();
+  expect(await chat.find({ text: "BULLET MD:Empiezo por el repo." })).toBeDefined();
+  expect(await chat.find({ text: "Router:" })).toBeUndefined();
+});
+
+test("a block that held only the Router line is the box, with the bullet when it opens the reply", async ($, on) => {
+  drawn(on);
+  const first = await $.ui.mount(block("Router: a sí (x)"));
+  expect(await first.find({ text: "⏺" })).toBeDefined();
+  const only = await $.ui.mount(block("Router: dev-workflow no (es una lectura).", false));
+  expect(await only.find({ text: "ROUTER" })).toBeDefined();
+  expect(await only.find({ text: "MD:" })).toBeUndefined();
+  expect(await only.find({ text: "⏺" })).toBeUndefined();
+});
+
+test("text without an opening Router line is left to the engine", async ($, on) => {
+  drawn(on);
+  const chat = await $.ui.mount(block("Leo el fichero.\n\nRouter: a sí (x)"));
+  expect(await chat.find({ text: "ROUTER" })).toBeUndefined();
+  expect(await chat.find({ text: "BULLET MD:Leo el fichero." })).toBeDefined();
+});
+
+test("the desktop gets the box without the terminal's bullet gutter", async ($, on) => {
+  drawn(on);
+  const chat = await $.ui.mount(block("Router: a sí (x)\n\nSigo.", true, "desktop"));
+  expect(await chat.find({ text: "ROUTER" })).toBeDefined();
+  expect(await chat.find({ text: "⏺" })).toBeUndefined();
 });

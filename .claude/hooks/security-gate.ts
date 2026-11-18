@@ -5,8 +5,12 @@
 // it does not gate. Registered WITHOUT `async` so the systemMessage is not discarded.
 
 import { stat } from "node:fs/promises";
+import { readdirSync, statSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import { appendLog } from "./instructions-loaded";
 import { learnedLog } from "./lib/paths";
+import { enabledPluginRoots } from "./prompt-router";
 import { readHookStdin } from "./lib/hook-stdin";
 import { isHumanOrigin, readTranscriptTail, userPromptOf } from "./lib/transcript";
 
@@ -356,6 +360,21 @@ export function checkCanary(text: string | null, waiting = false): "ok" | "miss"
   return waiting ? "wait" : "miss";
 }
 
+// In Claude the robin mod checks the canary in-process, draws it in the chat and logs it, so this
+// check stands down while that mod is enabled, installed and shown to run: a log of its written in
+// the last week. A mod that never loads leaves no log, and the hook keeps the canary. Codex and
+// Grok never run this hook.
+export const MOD_CANARY = "robin";
+const MOD_LOG_FRESH_MS = 7 * 24 * 3600 * 1000;
+export function modWatchesCanary(cwd: string, config?: string, logDir = join(homedir(), ".cache", "poneglyph", MOD_CANARY), now = Date.now()): boolean {
+  try {
+    if (!enabledPluginRoots(cwd, config).some((p) => p.name === MOD_CANARY)) return false;
+    return readdirSync(logDir).some((f) => f.endsWith(".jsonl") && now - statSync(join(logDir, f)).mtimeMs < MOD_LOG_FRESH_MS);
+  } catch {
+    return false;
+  }
+}
+
 // User channel only: an additionalContext would re-open the turn just to fix a prefix.
 export function buildCanaryWarning(transcriptKb: number): { systemMessage: string } {
   return {
@@ -391,7 +410,7 @@ async function main(): Promise<void> {
 
     let canaryResponse: ReturnType<typeof buildCanaryWarning> | null = null;
     try {
-      if (payload.transcript_path) {
+      if (payload.transcript_path && !modWatchesCanary(payload.cwd ?? process.cwd())) {
         // Prefer the payload's final message: the transcript may not be flushed yet.
         const finalText =
           typeof payload.last_assistant_message === "string" ? payload.last_assistant_message : extractFinalAssistantText(text);

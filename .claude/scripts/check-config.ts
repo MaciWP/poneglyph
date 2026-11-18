@@ -208,6 +208,9 @@ export function validate(source: Source, options: { addon?: boolean; privacyTerm
       if (!kebabName(name) || name !== agent[1]) add(p, "metadata.name", "Use a matching kebab-case name of 1–64 characters (project convention).");
       else if (names.has(name)) add(p, "metadata.collision", "A skill, command and agent cannot shadow each other in this repository.");
       if (typeof fields.description !== "string" || !fields.description.trim() || chars(fields.description) > 1024) add(p, "metadata.description", "description must contain 1–1024 characters.");
+      for (const key of ["model", "effort", "permissionMode", "color"]) if (fields[key] !== undefined && typeof fields[key] !== "string") add(p, "metadata.string", `${key} must be a string.`);
+      for (const key of ["tools", "disallowedTools", "skills"]) if (fields[key] !== undefined && typeof fields[key] !== "string" && !strings(fields[key])) add(p, "metadata.tools", `${key} must be a string or string array.`);
+      if (fields.hooks !== undefined) checkHooks(fields.hooks, p);
       if (!body.trim()) add(p, "skill.body", "Instructions must not be empty.");
     }
     for (const [p, text] of files) {

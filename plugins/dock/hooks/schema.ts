@@ -6,8 +6,7 @@ export type Action =
   | { kind: "file"; label: string; path: string; line?: number }
   | { kind: "folder"; label: string; path: string }
   | { kind: "terminal"; label: string; cwd: string; harness: Harness; prompt?: string }
-  | { kind: "url"; label: string; href: string }
-  | { kind: "finder"; label: string; path: string };
+  | { kind: "url"; label: string; href: string };
 export type Panel = { title?: string; items: Action[] };
 
 export const CAPS = { items: 6 } as const;
@@ -33,8 +32,8 @@ export const INPUT_SCHEMA = {
         required: ["label", "kind"],
         properties: {
           label: str(LEN.label, "button text, a few words"),
-          kind: { enum: ["file", "folder", "terminal", "url", "finder"] },
-          path: str(LEN.path, "file, folder, finder: absolute local path"),
+          kind: { enum: ["file", "folder", "terminal", "url"] },
+          path: str(LEN.path, "file, folder: absolute local path"),
           line: { type: "integer", minimum: 1, description: "file: line to open at" },
           cwd: str(LEN.path, "terminal: absolute folder it starts in"),
           harness: { enum: HARNESSES, description: "terminal: shell (default), claude, codex or grok" },
@@ -52,7 +51,6 @@ const FIELDS: Record<Action["kind"], string[]> = {
   folder: ["label", "kind", "path"],
   terminal: ["label", "kind", "cwd", "harness", "prompt"],
   url: ["label", "kind", "href"],
-  finder: ["label", "kind", "path"],
 };
 
 type Result = { ok: true; panel: Panel } | { ok: false; error: string };
@@ -90,7 +88,7 @@ function item(v: unknown, i: number): Action {
   const at = `items[${i}]`;
   if (!isObject(v)) return fail(`${at} must be an object with label and kind`);
   const kind = v.kind;
-  if (typeof kind !== "string" || !(kind in FIELDS)) return fail(`${at}.kind must be file, folder, terminal, url or finder`);
+  if (typeof kind !== "string" || !(kind in FIELDS)) return fail(`${at}.kind must be file, folder, terminal or url`);
   only(v, `${at}.`, FIELDS[kind as Action["kind"]]);
   const label = text(v.label, `${at}.label`, LEN.label) as string;
   if (kind === "file") {
@@ -98,7 +96,7 @@ function item(v: unknown, i: number): Action {
     if (line !== undefined && (!Number.isInteger(line) || (line as number) < 1)) fail(`${at}.line must be a whole number from 1`);
     return { kind, label, path: path(v.path, `${at}.path`), ...(line === undefined ? {} : { line: line as number }) };
   }
-  if (kind === "folder" || kind === "finder") return { kind, label, path: path(v.path, `${at}.path`) };
+  if (kind === "folder") return { kind, label, path: path(v.path, `${at}.path`) };
   if (kind === "url") {
     const href = text(v.href, `${at}.href`, LEN.href) as string;
     let protocol = "";
@@ -122,7 +120,6 @@ function item(v: unknown, i: number): Action {
 export function target(a: Action): string {
   if (a.kind === "file") return `fichero ${a.path}${a.line ? `:${a.line}` : ""}`;
   if (a.kind === "folder") return `carpeta ${a.path}`;
-  if (a.kind === "finder") return `Finder ${a.path}`;
   if (a.kind === "url") return a.href;
   return `${a.harness} en ${a.cwd}${a.prompt ? ` · «${a.prompt}»` : ""}`;
 }

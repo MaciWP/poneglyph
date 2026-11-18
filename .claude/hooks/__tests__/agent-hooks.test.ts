@@ -1,11 +1,14 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test, setDefaultTimeout } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { BUDGET_LINE, SONNET_BUDGET_LINE } from "../lib/haiku-budget";
-import { agentTask, bakedSkills, modelNudge, RETRY_REASON, routerTaskInput } from "../router/agent-hooks";
+import { agentTask, bakedSkills, briefGaps, CRITIC_BRIEF, capFromEnv, criticSpawn, modelNudge, RETRY_REASON, routerTaskInput, subagentCap } from "../router/agent-hooks";
 import { ignoreLearned } from "./learned-fixture";
+import { SPAWN_TEST_TIMEOUT_MS } from "./spawn-timeout";
+
+setDefaultTimeout(SPAWN_TEST_TIMEOUT_MS);
 
 const HOOK = join(import.meta.dir, "..", "router", "agent-hooks.ts");
 const memory = [{ at: 1, prompt: "revisa la pr de esta rama y deja comentarios", skills: ["pr-review", "gone"] }];
@@ -136,5 +139,147 @@ describe("router subagent hooks", () => {
     const answer = '```json\n{"fixes": [], "skills": [{"why": "implement a", "name": "a"}, {"why": "x", "name": "b"}, {"why": "y", "name": "zz"}]}\n```';
     expect(run({ hook_event_name: "SubagentStop", agent_type: "prompt-router", agent_transcript_path: agent, last_assistant_message: answer })).toBe("");
     expect(readFileSync(logFile, "utf8")).toMatch(/via=agent session=sess-123 outcome=ok ms=\d+ skills=a fixes=0 effort=- past=1\n$/);
+  });
+});
+
+describe("criticSpawn", () => {
+  const brief = "MODE: feature\nGOAL: x\nARTEFACT: src/a.ts";
+  test("drops model and effort from a critic call and says so", () => {
+    const { input, note } = criticSpawn({ subagent_type: "critic", prompt: brief, model: "haiku", effort: "low", description: "d" });
+    expect(input).toEqual({ subagent_type: "critic", prompt: brief, description: "d" });
+    expect(note).toContain("dropped");
+  });
+  test("leaves a complete critic call alone when the session has no prompt to append", () => {
+    expect(criticSpawn({ subagent_type: "critic", prompt: brief })).toEqual({ input: null, note: null });
+    expect(criticSpawn({ subagent_type: "critic", prompt: CRITIC_BRIEF.map((b) => `${b}: ${b === "MODE" ? "plan" : "x"}`).join("\n") }, "/nonexistent.jsonl")).toEqual({ input: null, note: null });
+  });
+  test("names what the three required blocks lack", () => {
+    expect(briefGaps(brief)).toEqual([]);
+    expect(briefGaps("MODE: doubt (second round)\nGOAL (verbatim):\n«x»\nARTEFACT (working tree): a.ts")).toEqual([]);
+    expect(briefGaps("Review this change, focus on the tests.")).toHaveLength(3);
+    expect(briefGaps("MODE: plan\nGOAL: x")).toEqual(["`ARTEFACT:` with content"]);
+    expect(briefGaps("MODE: plan\nGOAL:\nARTEFACT: a.ts")).toEqual(["`GOAL:` with content"]);
+    expect(briefGaps("MODE: plan\nGOAL:\nDOD tests pass: the user's words\nARTEFACT: a.ts")).toEqual([]);
+    expect(briefGaps("MODE: plan\nGOAL:\nDOD (agreed): x\nARTEFACT: a.ts")).toEqual(["`GOAL:` with content"]);
+    expect(briefGaps("MODE: feature\nGOAL: x\nARTEFACT:\nPRIOR: feature-1a2b3c4 H1")).toEqual(["`ARTEFACT:` with content"]);
+    expect(briefGaps("MODE: finished feature review\nGOAL: x\nARTEFACT: a.ts")[0]).toContain("`MODE:`");
+    expect(briefGaps("MODE: feature-ish\nGOAL: x\nARTEFACT: a.ts")[0]).toContain("`MODE:`");
+    expect(briefGaps("MODE-extra: plan\nGOAL: x\nARTEFACT: a.ts")[0]).toContain("`MODE:`");
+  });
+  test("denies a brief with a gap, and the deny wins over the model strip", () => {
+    const { input, note, deny } = criticSpawn({ subagent_type: "critic", prompt: "MODE: plan\nGOAL: x", model: "haiku" });
+    expect(deny).toContain("`ARTEFACT:` with content");
+    expect({ input, note }).toEqual({ input: null, note: null });
+  });
+  test("appends the first user entry and the last four, each cut, and skips what no person typed", () => {
+    const { lead } = fixture();
+    const user = (content: string, extra: object = {}) => JSON.stringify({ type: "user", message: { role: "user", content }, ...extra });
+    const ask = (id: string, answers: object, prefilled = false) => [
+      JSON.stringify({ type: "assistant", message: { content: [{ type: "tool_use", id, name: "AskUserQuestion", input: prefilled ? { answers } : {} }] } }),
+      JSON.stringify({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: id, content: "answered" }] }, toolUseResult: { answers } }),
+    ];
+    writeFileSync(lead, [
+      user("<command-message>dev-workflow</command-message>\n<command-name>/dev-workflow</command-name>\n<command-args>primero</command-args>"),
+      ...ask("q0", { "¿Sigo?": "nunca llegó al usuario" }, true), ...ask("q1", { "¿Qué hago?": "reenfoca" }), user("x".repeat(1600)),
+      user("The courier plugin sent a message", { origin: { kind: "plugin", name: "courier" } }),
+      user("<task-notification>\n<tool-use-id>t1</tool-use-id>\n</task-notification>"),
+      user("resumen", { isCompactSummary: true }),
+      JSON.stringify({ type: "attachment", attachment: { type: "queued_command", commandMode: "prompt", prompt: "a mitad de turno" } }),
+      user("p5"), user("último"),
+    ].join("\n"));
+    const added = String(criticSpawn({ subagent_type: "critic", prompt: brief }, lead).input?.prompt).slice(brief.length);
+    expect(added).toStartWith("\n\nUSER-PROMPTS (appended by the harness");
+    expect(added.match(/^\[\d of 6\]/gm)).toEqual(["[1 of 6]", "[3 of 6]", "[4 of 6]", "[5 of 6]", "[6 of 6]"]);
+    expect(added).toContain("[1 of 6] /dev-workflow primero\n");
+    expect(added).toContain(`[3 of 6] ${"x".repeat(1500)} [cut]\n[4 of 6] a mitad de turno`);
+    expect(added).not.toMatch(/reenfoca|nunca llegó|courier|task-notification|resumen/);
+    const noted = JSON.stringify({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: "q2", content: "answered" }] }, toolUseResult: { answers: { "¿Umbral?": "400 €" }, annotations: { "¿Umbral?": { notes: "pero no lo descartes" } } } });
+    writeFileSync(lead, [user("primero"), ...ask("q1", { "¿Qué hago?": "reenfoca" }), noted].join("\n"));
+    expect(criticSpawn({ subagent_type: "critic", prompt: brief }, lead).input?.prompt).toEndWith("[1 of 3] primero\n[2 of 3] answer to «¿Qué hago?»: reenfoca\n[3 of 3] answer to «¿Umbral?»: 400 € (note: pero no lo descartes)");
+  });
+  test("the hook denies a free-form critic brief and appends the prompts to a valid one", () => {
+    const { run } = fixture();
+    const call = (prompt: string) => JSON.parse(run({ hook_event_name: "PreToolUse", tool_name: "Agent", tool_input: { subagent_type: "critic", prompt, model: "haiku" } })).hookSpecificOutput;
+    expect(call("Review my change")).toMatchObject({ permissionDecision: "deny", permissionDecisionReason: expect.stringContaining("`MODE:`") });
+    expect(call("Review my change").updatedInput).toBeUndefined();
+    const ok = call(brief);
+    expect(ok.permissionDecision).toBe("allow");
+    expect(ok.updatedInput).toEqual({ subagent_type: "critic", prompt: `${brief}\n\nUSER-PROMPTS (appended by the harness from the session transcript, not by the author):\n[1 of 1] implementa la parte b del plan` });
+  });
+  test("ignores other agents, and the model nudge skips the critic", () => {
+    expect(criticSpawn({ subagent_type: "Explore", prompt: "x", model: "haiku" })).toEqual({ input: null, note: null });
+    expect(modelNudge({ subagent_type: "critic", prompt: "x" }, "/nonexistent")).toBeNull();
+  });
+});
+
+describe("subagentCap", () => {
+  const J = (o: unknown) => JSON.stringify(o);
+  const spawn = (id: string, type = "Explore") => J({ type: "assistant", message: { content: [{ type: "tool_use", id, name: "Agent", input: { subagent_type: type, prompt: "x" } }] } });
+  const denied = (id: string) => J({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: id, is_error: true, content: "PreToolUse:Agent hook error: This session may start 3 subagents" }] } });
+  const setup = (lines: string[]) => {
+    const root = mkdtempSync(join(tmpdir(), "subagent-cap-"));
+    const transcript = join(root, "t.jsonl");
+    writeFileSync(transcript, lines.join("\n") + "\n");
+    return { transcript, dir: join(root, "state") };
+  };
+  const explore = { subagent_type: "Explore", prompt: "x" };
+
+  test("parallel calls none of which reached the transcript: the fourth is denied", () => {
+    const { transcript, dir } = setup([J({ type: "user", message: { content: "do it" } })]);
+    for (const id of ["a", "b", "c"]) expect(subagentCap(explore, 3, "s1", transcript, id, dir)).toBeNull();
+    expect(subagentCap(explore, 3, "s1", transcript, "d", dir)).toContain("may start 3 subagents per turn");
+    // The same call asked again is not counted twice.
+    expect(subagentCap(explore, 3, "s1", transcript, "c", dir)).toBeNull();
+  });
+
+  test("a room message opens a new turn", () => {
+    const lines = [J({ type: "user", message: { content: "do it" } }), spawn("a"), spawn("b"), spawn("c")];
+    const { transcript, dir } = setup(lines);
+    expect(subagentCap(explore, 3, "s1", transcript, "d", dir)).not.toBeNull();
+    writeFileSync(transcript, [...lines, J({ type: "user", message: { content: "<room>@ia go</room>" }, origin: { kind: "peer" } })].join("\n") + "\n");
+    expect(subagentCap(explore, 3, "s1", transcript, "d", dir)).toBeNull();
+  });
+
+  test("a spawn a hook denied, the critic and the router are not counted", () => {
+    const { transcript, dir } = setup([J({ type: "user", message: { content: "do it" } }), spawn("a"), spawn("b"), spawn("x"), denied("x"), spawn("k", "critic"), spawn("r", "prompt-router")]);
+    expect(subagentCap(explore, 3, "s1", transcript, "c", dir)).toBeNull();
+    expect(subagentCap(explore, 3, "s1", transcript, "d", dir)).not.toBeNull();
+    expect(subagentCap({ subagent_type: "critic" }, 3, "s1", transcript, "e", dir)).toBeNull();
+  });
+
+  test("a spawn the cap allowed and a later hook denied stops counting", () => {
+    const lines = [J({ type: "user", message: { content: "do it" } })];
+    const { transcript, dir } = setup(lines);
+    for (const id of ["a", "b", "c"]) expect(subagentCap(explore, 3, "s1", transcript, id, dir)).toBeNull();
+    writeFileSync(transcript, [...lines, spawn("c"), denied("c")].join("\n") + "\n");
+    expect(subagentCap(explore, 3, "s1", transcript, "d", dir)).toBeNull();
+  });
+
+  test("a session's first spawn removes cap files untouched for a day", () => {
+    const { transcript, dir } = setup([J({ type: "user", message: { content: "do it" } })]);
+    mkdirSync(dir, { recursive: true });
+    const stale = join(dir, "old.json");
+    const fresh = join(dir, "recent.json");
+    for (const f of [stale, fresh]) writeFileSync(f, "{}");
+    const twoDaysAgo = (Date.now() - 2 * 24 * 60 * 60 * 1000) / 1000;
+    utimesSync(stale, twoDaysAgo, twoDaysAgo);
+    expect(subagentCap(explore, 3, "s1", transcript, "a", dir)).toBeNull();
+    expect([existsSync(stale), existsSync(fresh)]).toEqual([false, true]);
+  });
+
+  test("capFromEnv takes a positive integer only", () => {
+    expect([capFromEnv("3"), capFromEnv(undefined), capFromEnv(""), capFromEnv("0"), capFromEnv("2.5"), capFromEnv("x")]).toEqual([3, null, null, null, null, null]);
+  });
+
+  test("the hook denies past the cap only when PONEGLYPH_SUBAGENT_CAP is set", () => {
+    const { transcript, dir } = setup([J({ type: "user", message: { content: "do it" } }), spawn("a"), spawn("b")]);
+    const session = `cap-${Date.now()}`;
+    const run = (cap: string | undefined) => spawnSync(process.execPath, [HOOK], {
+      input: JSON.stringify({ hook_event_name: "PreToolUse", tool_name: "Agent", tool_use_id: "z", session_id: session, transcript_path: transcript, tool_input: { ...explore, model: "haiku" } }),
+      // The cap file goes under the test's own temp root, not the machine's.
+      env: { ...process.env, TMPDIR: dir, PONEGLYPH_SUBAGENT_CAP: cap ?? "" }, encoding: "utf8",
+    }).stdout;
+    expect(run(undefined)).not.toContain("deny");
+    expect(JSON.parse(run("2")).hookSpecificOutput).toMatchObject({ permissionDecision: "deny" });
   });
 });

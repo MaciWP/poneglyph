@@ -11,6 +11,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { Status } from "./doctor";
 import { CONTEXT_POLICY } from "./lib/host-config";
+import { bashFamily } from "./lib/read-calls";
 import { claudeConfigDir } from "../hooks/lib/paths";
 
 export interface MsgStat { model: string; ctx: number; out: number }
@@ -20,18 +21,6 @@ export type RewriteCause = "compact" | "pause" | "other";
 export interface Rewrite { cause: RewriteCause; tokens: number }
 export interface Transcript { messages: MsgStat[]; tools: ToolStat[]; rewrites: Rewrite[] }
 const REWRITE_MIN_TOKENS = 30_000;
-
-// `cd X && git status` → "git status"; `VAR=1 cat f` → "cat"; `echo a; ls` → "echo" (the composite habit).
-export function bashFamily(command: string): string {
-  const stripped = command
-    .replace(/^\s*cd\s+(?:"[^"]*"|'[^']*'|\S+)\s*&&\s*/, "")
-    .replace(/^(?:[A-Za-z_]\w*=(?:"[^"]*"|'[^']*'|\S+)\s*(?:&&|;)?\s*)+/, "")
-    .trim();
-  const words = stripped.split(/\s+/);
-  const head = words[0] ?? "?";
-  const sub = words[1];
-  return /^(git|gh|bun|npx|npm|python|docker|codex|grok)$/.test(head) && sub && !sub.startsWith("-") ? `${head} ${sub}` : head;
-}
 
 export function parseTranscript(lines: Iterable<string>): Transcript {
   const messages: MsgStat[] = [];

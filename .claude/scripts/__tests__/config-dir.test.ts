@@ -1,8 +1,11 @@
-import { expect, it } from "bun:test";
+import { expect, it, setDefaultTimeout } from "bun:test";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { isAbsolute, join, relative, resolve } from "node:path";
 import { memoryFile } from "../../hooks/router/memory";
+import { SPAWN_TEST_TIMEOUT_MS } from "../../hooks/__tests__/spawn-timeout";
+
+setDefaultTimeout(SPAWN_TEST_TIMEOUT_MS);
 
 // `CLAUDE_CONFIG_DIR` moves the whole Claude Code config, transcripts and memory included.
 // A script that builds `~/.claude` by hand reads the wrong directory once it is set, so every

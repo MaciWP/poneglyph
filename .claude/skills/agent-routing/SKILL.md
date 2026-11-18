@@ -61,8 +61,7 @@ Route explicit consultations first:
 below do not override those routes. CLAUDE.md §Agents and skills owns authorization.
 
 **Build/write runs INLINE by default.** Default delegation parallelizes independent
-read-only units (research, exploration, review). Measured delegated builds cost
-more and scored lower than inline ones.
+read-only units (research, exploration, review).
 The three known costs of delegating work:
 
 1. **Token multiplication**: each agent re-reads context the Lead already holds.
@@ -71,7 +70,7 @@ The three known costs of delegating work:
 
 Write fan-out (≥4 independent WRITE units) is **explicit user opt-in only** (keyword "ultracode" or a direct ask), never auto-launched. This doctrine cites evidence, not fashion, revisable via retro if agent quality materially changes.
 
-**Fork and background (CC ≥2.1.232)**: `subagent_type: "fork"` inherits the full conversation and the prompt cache, so cost 3 (context loss) and most of cost 1 do not apply to a fork. Fork is therefore the primitive for a read-only fan-out that needs the session's own thread (sweeps over what was already discussed). It is NOT a fresh-context reviewer, the critic's reviewer stays `general-purpose` on purpose (its value IS the fresh context). A fork always runs on the parent's model (a model override is ignored). Every non-teammate spawn runs in the **background** by default: its result arrives as a task notification, wait for it, never predict or fabricate it. `CLAUDE_CODE_SUBAGENT_MODEL` (cheap tier, `settings.global.json` env) is only the backstop for a spawn that forgot its model; CLAUDE.md still requires an explicit model on every spawn, and a verify/judge unit still names the top tier.
+**Fork and background (CC ≥2.1.232)**: `subagent_type: "fork"` inherits the full conversation and the prompt cache, so cost 3 (context loss) and most of cost 1 do not apply to a fork. Fork is therefore the primitive for a read-only fan-out that needs the session's own thread (sweeps over what was already discussed). It is NOT a fresh-context reviewer: reviews go to the `critic` agent on purpose (its value IS the fresh context; `dev-workflow` `references/03-critic-loop.md`). A fork always runs on the parent's model (a model override is ignored). Every non-teammate spawn runs in the **background** by default: its result arrives as a task notification, wait for it, never predict or fabricate it. `CLAUDE_CODE_SUBAGENT_MODEL` (cheap tier, `settings.global.json` env) is only the backstop for a spawn that forgot its model; CLAUDE.md still requires an explicit model on every spawn, and a verify/judge unit still names the top tier.
 
 #### Model routing for delegated units
 
@@ -89,14 +88,14 @@ Three axes, large read context?, read-only?, negotiate interfaces?, diagram in `
 |---|---|---|
 | **P1** | 1 agente integrado vale si aísla **contexto grande** | Lectura pesada (barrido amplio, logs largos, web) → 1 agente integrado con modelo barato explícito; el Lead conserva su contexto (`/clear` perdería la conversación). También el **fresh-context reviewer** de `flow` (review phase). 1–2 ficheros conocidos o un grep rápido → inline. |
 | **P2** | El motivo es el **volumen** de lectura | Para leer, lo que decide es cuánto contexto ahorra al Lead, no el número de unidades. Escritura: P8. |
-| **P3** | Umbral **≥4** para fan-out orquestado | 1–4 agentes integrados de lectura → lanzarlos en el mismo mensaje. ≥4 read-only → agentes integrados en un mismo mensaje, uno por zona. Escritura: P8. |
+| **P3** | Lectura: regla de **volumen** | ≥3 ficheros, ubicación desconocida, logs o web → `Explore` con el tier barato, uno por zona, mismo mensaje. Lo que no escribe va a `Explore`, no a `general-purpose` (un tercio del contexto). ≥4 solo rige escritura (P8) y paneles (P4). |
 | **P4** | research sí, code-review NO se delega en panel | Research delegada → agentes `Explore`/`general-purpose` en paralelo, uno por zona. Code review = checks mecánicos + **1 fresh-context reviewer**; panel ≥4 SOLO para decisiones (`compare-and-decide` (heavy tier)). |
 | **P5** | Core en CLAUDE.md, detalle aquí | El núcleo operacional vive always-loaded en CLAUDE.md; este árbol es la referencia expandida. El resto enlaza aquí para el detalle, no redefine umbrales. |
 | **P6** | Fix = borrado + enlazar | Sin maquinaria de enforcement; los patrones de orquestación se **enlazan**, no se copian. |
-| **P7** | spawn-decision ≠ intra-orchestration | ≥4 gobierna la DECISIÓN de spawnear. Agentes coordinándose **dentro** de un team ya spawneado (p.ej. Four-Eyes generator→validator) no son un nuevo spawn. |
+| **P7** | spawn-decision ≠ intra-orchestration | El árbol gobierna la DECISIÓN de spawnear. Agentes coordinándose **dentro** de un team ya spawneado (p.ej. Four-Eyes generator→validator) no son un nuevo spawn. |
 | **P8** | Escritura = inline-first | Build/write inline por defecto, también con ≥5 ficheros o una cola larga (secuencial); el fan-out de escritura degrada calidad (3 costes arriba) y solo se justifica con opt-in explícito. |
 
-**Exploración**: default = Lead `Read`/`Grep` inline. `Explore` (built-in, read-only) no necesita permiso: con volumen grande, lanzarlo con el tier barato explícito (sin `model` hereda el del Lead). 1-2 files → siempre inline. Matriz: `references/04-agent-selection.md`.
+**Exploración**: regla P3, antes de leer el Lead; `Explore` sin `model` hereda el del Lead. El Lead lee él mismo los ficheros que deciden y los que edita. Matriz: `references/04-agent-selection.md`.
 
 **Lead de varias sesiones** (usa `aos message` o `aos create`): compacta 4,6 veces más por hora que un worker (0,39 frente a 0,084, 30 días a 2026-10-27). Cada ronda empieza en sesión limpia con un fichero de traspaso (decisiones, hecho con checks, reservas, pendiente, ids a informar); traspasa antes de compactar. Las lecturas de varios ficheros van a `Explore` con el tier barato.
 
@@ -111,7 +110,7 @@ Count the steps above Low across the five factors (Medium 1, High 2); never prin
 | Level | Routing | Mode |
 |---|---|---|
 | Trivial, or low (0-1 steps) | act inline, no plan | inline |
-| Medium (2-4) | `Skill(flow, "plan")` optional | inline or parallel agents (≥4) |
+| Medium (2-4) | `Skill(flow, "plan")` optional | inline; reads by volume (P3) |
 | High (5+) | `Skill(flow, "plan")` required | inline, parallel agents, or Team |
 
 > At high complexity Log Pose raises the effort; if its level is too low, correct it with `mcp__log-pose__set` (without Log Pose, suggest `/effort xhigh`).
@@ -131,7 +130,7 @@ Full Arch H template with all blocks, propagation model, skill discovery: `refer
 
 | Tool | Usage |
 |---|---|
-| Parallel `Agent` calls (≥4 independent **read-only** units, one message) | Fan-out: research sweeps / exploration / decision-review panel (`general-purpose`, or built-ins like `Explore`). Write fan-out: explicit user opt-in only (`isolation: 'worktree'` on file collision) |
+| Parallel `Agent` calls (independent **read-only** units, one per area, one message) | Fan-out: research sweeps / exploration / decision-review panel (`general-purpose`, or built-ins like `Explore`). Write fan-out: explicit user opt-in only (`isolation: 'worktree'` on file collision) |
 | `Explore` | Read-only codebase sweep (built-in); name the model explicitly (CLAUDE.md §Agents and skills) |
 | `Agent(subagent_type: "fork")` | Read-only sweep that needs the session's thread (inherits conversation + cache, parent model). Never for the fresh-context reviewer |
 | `Skill(flow, "plan")` | Plan complex tasks: Lead inline, no dedicated agent |

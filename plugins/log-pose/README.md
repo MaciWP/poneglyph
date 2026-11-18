@@ -3,7 +3,8 @@
 Native Claude Code mod that replaces Poneglyph's async `prompt-router.ts` hook on Claude. One
 Sonnet call (`low` effort, 8 s timeout) per typed prompt, before the model starts, returns the
 dictation fixes, up to three skill candidates and three labels. The labels pick the reasoning
-effort of the turn's main Opus steps and an advisor gauge. Codex and Grok keep the hook.
+effort of the turn's main steps (Opus 5.5 and Fable 5.2, `MAIN_MODELS`) and an advisor gauge.
+Codex and Grok keep the hook.
 
 ## Load
 
@@ -41,7 +42,7 @@ failed (`modFailing`). Disable the mod in the overlay and sync to return to the 
   Opus declined `analista-decisiones` for a career question 3 of 3 times, judging the name, and
   took it 3 of 3 with it. The hook writes the same line.
 - **Effort.** `MATRIX` maps difficulty × uncertainty to `low`, `medium`, `high` or `xhigh`
-  (never `max`) and a gauge 0-3, from each prompt's own labels. No cell gives `xhigh`: hard ×
+  (never `max`) and an advisor gauge 0-1 (level 1 asks for the advisor only when stuck or before a risky step; there is no unconditional ask: from 10-13 to 11-14 the model skipped 73 % of gauge-2 asks), from each prompt's own labels. No cell gives `xhigh`: hard ×
   unclear is `high`, and becomes `xhigh` only on a same-task follow-up whose last typed turn ran
   at `high` or `xhigh`, or by the override. Easy × some-doubt is `low` on a same-task follow-up
   (a check or a commit after a finished turn) and `medium` when new. The target mix is about
@@ -53,7 +54,12 @@ failed (`modFailing`). Disable the mod in the overlay and sync to return to the 
   turn keeps that turn's level and gets only dictation fixes. A session level other than
   `medium` is a floor, read from the settings until a step names it; when it overrides the
   mod's level, the note names both and one toast per session says so. The mod rewrites `effort`
-  on every main Opus step; subagents and other models are untouched.
+  on every main step of a `MAIN_MODELS` model; subagents and other models are untouched. Each
+  of those models needs `medium` in `settings.global.json` `modelSettings`, or the global level
+  reads as the user's floor.
+- **Workers.** In a session Agentic OS launched for another agent (`AOS_PARENT_ID`), the note
+  drops `dev-workflow` and `changes-verify` (`WORKER_SKIPS`): the orchestrator's brief fixes method
+  and checks. The hook fallback (`modFailing`) does not filter them.
 - **Session.** After `/clear` or a resume the process goes on under a new id with no
   `session.start`; the mod sees the new id on the next prompt and drops the old conversation's
   loaded skills, previous prompt, decision and override.
@@ -62,6 +68,14 @@ failed (`modFailing`). Disable the mod in the overlay and sync to return to the 
   `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS`).
 - **Override.** The model calls `mcp__log-pose__set` with a level, or `auto`, when the mod
   picked the wrong one; it applies from the next step of the running turn.
+- **Marks.** A prompt that starts with `+` runs its turn at `max` and loses the mark; one that
+  starts with `_` is left to the `use-haiku` mod (better-claude), which runs it on Haiku. A `+`, or
+  a `_` that use-haiku moves, makes no call and adds no note, and the next unmarked prompt is
+  classified as usual. `++` and a number after `+` (`+1`) are plain text; reminders the desktop
+  puts ahead of the text do not hide a `+`. `_` follows use-haiku's own rule (raw text, `__`
+  excluded, `_1` a mark), so Log Pose skips only the turns that mod moves: a desktop `_`, behind
+  its reminders, is classified. Typed while a turn runs, a mark
+  is ignored. A `_` turn gets no level from Log Pose.
 - **Phase hints.** The first main-loop `Agent` call of a session without `prompt-design` loaded,
   and the first `Artifact` publish without `natural-writing`, are refused once with a line naming
   the skill (`phaseHint`); the repeated call passes. A `prompt-router` launch is exempt. Hints
@@ -72,6 +86,17 @@ failed (`modFailing`). Disable the mod in the overlay and sync to return to the 
   skills used for each and, after `declined:`, the ones the main model turned down in its
   `Router:` line and did not load within two hours. A skill first called after the turn's first
   edit is not learned for that prompt.
+
+## The Router line in the chat
+
+Each voice is drawn by the mod responsible for it: the `Router:` lines Claude writes to answer
+this mod's note are the router's, so this mod draws them. The run of `Router:` lines that opens a
+reply block (outside code; a quoted `> Router:` line never matches) leaves the text and opens the block in a blue (`suggestion`)
+box titled «ROUTER», one line per candidate. The text below goes down the chain as it came, ⏺
+included, so robin, vista and the engine keep their own gutters whatever the order of the mods;
+the box takes the ⏺ only when the block held nothing but the Router lines. A `Router:` line further down stays text, so a reply is never
+reordered. `extractRouter` carries a copy of workboard's `prose()`;
+`.claude/hooks/__tests__/prose-parity.test.ts` keeps the copies equal.
 
 ## Logs
 

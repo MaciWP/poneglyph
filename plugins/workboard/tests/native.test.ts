@@ -1,6 +1,6 @@
 import { test, expect, mock } from "claude-code/testing";
 import type { On } from "claude-code";
-import { initialState, publish } from "../hooks/core.ts";
+import { INITIAL_CAP, initialState, publish, type State } from "../hooks/core.ts";
 
 const start = { cwd: "/work/project", surface: "terminal" as const, isInteractive: true };
 const pane = {
@@ -50,9 +50,30 @@ const data = {
   allRepos: [],
   bridge: { state: "offline", sessions: [], published: [] },
 };
-function world(on: On, stored?: unknown, snap: unknown = data, env: Record<string, string> = {}) {
+function world(
+  on: On,
+  stored?: unknown,
+  snap: unknown = data,
+  env: Record<string, string> = {},
+  // A store the test reads back; the engine's in-memory one otherwise.
+  store?: Map<string, unknown>,
+  // Characters of compact JSON the store refuses to pass, as Claude Code's does.
+  limit = Number.POSITIVE_INFINITY,
+) {
   const clock = mock.clock(on);
-  mock.store(on, stored ? { "session:s1": stored } : {});
+  if (!store) mock.store(on, stored ? { "session:s1": stored } : {});
+  else {
+    if (stored) store.set("session:s1", stored);
+    on("store.get", (_, e) => ({ value: store.get(e.key) }));
+    on("store.set", (_, e) => {
+      const size = JSON.stringify(Object.fromEntries([...store, [e.key, e.value]])).length;
+      if (size > limit) throw Error(`$.store.set: the store would be ${size} characters, over the ${limit} limit`);
+      store.set(e.key, e.value);
+      return { value: undefined };
+    });
+    on("store.delete", (_, e) => (store.delete(e.key), { value: undefined }));
+    on("store.keys", () => ({ value: [...store.keys()] }));
+  }
   mock.env(on, env);
   const opens: unknown[] = [];
   const prompts: string[] = [];
@@ -211,7 +232,7 @@ test("everything lives in the pane: the band passes through, history and files f
   expect(await p.find({ text: "Still working" })).toBeDefined();
 });
 
-test("ROBIN moves only when its replacement is drawn; closure and narrow placement restore it", async ($, on) => {
+test("the ROBIN line stays in the chat for the robin mod, with the pane open or closed", async ($, on) => {
   const w = world(on);
   await $.session.start(start);
   await w.clock.settle();
@@ -231,22 +252,9 @@ test("ROBIN moves only when its replacement is drawn; closure and narrow placeme
     props: { text: original, isFirstOfReply: true, onScreen: null },
   };
   const chat = await $.ui.mount(msg);
-  expect(await chat.find({ text: "ROBIN:" })).toBeDefined();
   await $.ui.mount(pane);
   await chat.redraw();
-  expect(await chat.find({ text: "ROBIN:" })).toBeUndefined();
-  w.placement(false);
-  await chat.redraw();
-  expect(await chat.find({ text: "ROBIN:" })).toBeDefined();
-  w.placement(true);
-  await $.command.run({
-    command: "workboard",
-    args: "",
-    origin: { kind: "composer" },
-    presentation: { isFullscreen: true, columns: 160 },
-  });
-  await chat.redraw();
-  expect(await chat.find({ text: "ROBIN:" })).toBeDefined();
+  expect(await chat.find({ text: "ROBIN: All done." })).toBeDefined();
 });
 
 test("a session saved with decisions by an older build loads without them", async ($, on) => {
@@ -268,24 +276,72 @@ test("a session saved with decisions by an older build loads without them", asyn
   expect(w.prompts).toHaveLength(0);
 });
 
-test("a failed panel restores ROBIN and falls back without an invalidation loop", async ($, on) => {
+test("the session start prunes the oldest boards to the byte budget, dating old boards by their last turn", async ($, on) => {
+  // The store as 0.3.10 left it: no savedAt, 120 boards of ~40 KB (4.8 MB), oldest first.
+  const store = new Map<string, unknown>();
+  for (let i = 0; i < 120; i++) store.set(`session:old${i}`, { turn: { at: 1000 + i }, initial: ["x".repeat(40_000)] });
+  const w = world(on, initialState("s1", start.cwd), data, {}, store);
+  await $.session.start(start);
+  await w.clock.settle();
+  const keys = [...store.keys()];
+  expect(keys).toContain("session:s1");
+  expect(keys).toContain("session:old119");
+  expect(keys).not.toContain("session:old0");
+  expect(keys.length).toBeGreaterThan(60);
+  expect(JSON.stringify([...store.values()]).length).toBeLessThanOrEqual(3 * 1024 * 1024);
+  expect(typeof store.get("prune:at")).toBe("number");
+});
+
+test("a prune already run today leaves the boards alone", async ($, on) => {
+  const store = new Map<string, unknown>();
+  for (let i = 0; i < 120; i++) store.set(`session:old${i}`, { turn: { at: 1000 + i }, initial: ["x".repeat(40_000)] });
+  const w = world(on, initialState("s1", start.cwd), data, {}, store);
+  store.set("prune:at", await w.clock.now());
+  await $.session.start(start);
+  await w.clock.settle();
+  expect(store.has("session:old0")).toBe(true);
+});
+
+test("a full store, already pruned today, prunes on the first failed save", async ($, on) => {
+  const store = new Map<string, unknown>();
+  for (let i = 0; i < 120; i++) store.set(`session:old${i}`, { turn: { at: 1000 + i }, initial: ["x".repeat(40_000)] });
+  const w = world(on, undefined, data, {}, store, 4_194_304);
+  store.set("prune:at", await w.clock.now());
+  await $.session.start(start);
+  await w.clock.settle();
+  expect(store.has("session:old0")).toBe(false);
+  expect(store.has("session:s1")).toBe(true);
+});
+
+test("a new board keeps at most INITIAL_CAP preexisting files", async ($, on) => {
+  const files = Array.from({ length: INITIAL_CAP + 50 }, (_, i) => ({ path: `f${i}.ts`, lines: [1], kind: "changed", staged: true, unstaged: false }));
+  const snap = { ...data, repos: data.repos.map((r: { cwd: string }) => (r.cwd === start.cwd ? { ...r, files } : r)) };
+  const store = new Map<string, unknown>();
+  const w = world(on, undefined, snap, {}, store);
+  await $.session.start(start);
+  await w.clock.settle();
+  expect((store.get("session:s1") as State | undefined)?.initial).toHaveLength(INITIAL_CAP);
+});
+
+test("a resumed board keeps at most INITIAL_CAP preexisting files", async ($, on) => {
+  const many = Array.from({ length: INITIAL_CAP + 50 }, (_, i) => `f${i}.ts`);
+  const store = new Map<string, unknown>();
+  const w = world(on, { ...initialState("s1", start.cwd), initialized: true, initial: many }, data, {}, store);
+  await $.session.start(start);
+  await w.clock.settle();
+  expect((store.get("session:s1") as State | undefined)?.initial).toHaveLength(INITIAL_CAP);
+});
+
+test("a failed panel falls back without an invalidation loop", async ($, on) => {
   const broken = {
     ...initialState("s1", start.cwd),
     agents: null,
-    robin: { text: "Keep this summary", at: 1 },
   };
   const w = world(on, broken);
   await $.session.start(start);
   await w.clock.settle();
   const p = await $.ui.mount(pane);
   expect(await p.find({ text: "Existing band" })).toBeDefined();
-  const chat = await $.ui.mount({
-    plugin: "workboard",
-    surface: "terminal",
-    component: "AssistantMessage",
-    props: { text: "ROBIN: Keep this summary", isFirstOfReply: true },
-  });
-  expect(await chat.find({ text: "ROBIN:" })).toBeDefined();
 });
 
 test("the Cambios card names a provider error and states missing coverage once", async ($, on) => {
@@ -318,6 +374,65 @@ test("the progress tool stays in the prompt instead of behind ToolSearch", async
     provider: { plugin: "other", tier: "user" },
   });
   expect(other).toEqual({ description: "Something else", isDeferred: true });
+});
+
+test("the progress call draws a box in the chat with the tasks it changed; its result folds to one dim line", async ($, on) => {
+  world(on);
+  await $.session.start(start);
+  const plan = { replace: true, tasks: [{ id: "f", title: "Rutas", state: "running" }, { id: "f1", parent: "f", title: "Leer las rutas", state: "pending" }] };
+  const call = (tool_use_id: string, update: object) => $.tool.call({ tool: "mcp__workboard__progress", tool_use_id, update } as never);
+  await call("u1", plan);
+  await call("u2", { tasks: [{ id: "f1", state: "completed" }] });
+  const use = (id: string, update: object, state: object = {}) =>
+    ({
+      plugin: "workboard",
+      surface: "terminal" as const,
+      component: "ToolUse" as const,
+      requestId: id,
+      viewport: { columns: 100, rows: 40, isFullscreen: true },
+      props: { tool_use_id: id, tool: "mcp__workboard__progress", input: { update }, isRunning: false, isErrored: false, isInterrupted: false, output: undefined, onScreen: null, ...state },
+    }) as never;
+  const first = await $.ui.mount(use("u1", plan));
+  expect((await first.find({ type: "Text", text: "Workboard · plan nuevo · 2 tareas" }))?.props).toMatchObject({ weight: "semibold", color: "#4ade80" });
+  const boxes = async (m: typeof first) => (await m.findAll({ type: "Box" })).map((b) => b.props as Record<string, unknown>);
+  expect((await boxes(first)).filter((b) => b.borderStyle === "round" && b.borderColor === "#4ade80")).toHaveLength(1);
+  // An {id, state} update takes the title from the board; a subtask is indented under its feature.
+  const step = await $.ui.mount(use("u2", { tasks: [{ id: "f1", state: "completed" }] }));
+  expect(await step.find({ type: "Text", text: "Workboard · 1 cambio" })).toBeDefined();
+  expect(await step.find({ type: "Text", text: "Leer las rutas" })).toBeDefined();
+  expect(await step.find({ type: "Text", text: "terminada" })).toBeDefined();
+  expect((await boxes(step)).filter((b) => b.paddingLeft === 2)).toHaveLength(1);
+  expect((await boxes(first)).filter((b) => b.paddingLeft === 2)).toHaveLength(1);
+  // A later plan that reuses the id never rewrites the old row: the box was frozen when it ran.
+  await call("u5", { replace: true, tasks: [{ id: "f1", title: "Escribir tests", state: "running" }] });
+  await step.redraw();
+  expect(await step.find({ type: "Text", text: "Leer las rutas" })).toBeDefined();
+  expect(await step.find({ type: "Text", text: "Escribir tests" })).toBeUndefined();
+  // A call from before this process (a resume) is drawn from its input alone.
+  const old = await $.ui.mount(use("u6", { replace: true, tasks: [], ticket: null }));
+  expect(await old.find({ type: "Text", text: "Workboard · plan vaciado" })).toBeDefined();
+  expect(await old.find({ type: "Text", text: "ticket quitado" })).toBeDefined();
+  // A refused or running call keeps the engine's row.
+  for (const [i, state] of [{ isErrored: true }, { isRunning: true }, { isInterrupted: true }].entries()) {
+    const native = await $.ui.mount(use(`u3-${i}`, { tasks: [{ id: "x", state: "completed" }] }, state));
+    expect(await native.find({ text: "Workboard · 1 cambio" })).toBeUndefined();
+  }
+  const result = await $.ui.mount({
+    plugin: "workboard",
+    surface: "terminal" as const,
+    component: "ToolResult" as const,
+    requestId: "r1",
+    props: { tool_use_id: "u2", tool: "mcp__workboard__progress", isErrored: false, output: '{"accepted":true}' },
+  } as never);
+  expect((await result.find({ type: "Text", text: "  ⎿ tablero actualizado" }))?.props).toMatchObject({ dimColor: true });
+  const desk = await $.ui.mount({
+    plugin: "workboard",
+    surface: "desktop" as const,
+    component: "ToolResult" as const,
+    requestId: "r2",
+    props: { tool_use_id: "u2", tool: "mcp__workboard__progress", isErrored: false, output: '{"accepted":true}' },
+  } as never);
+  expect(await desk.find({ type: "Text", text: /^tablero actualizado$/ })).toBeDefined();
 });
 
 // The desktop app starts the session as -p does (no surface, not interactive) and joins it

@@ -93,16 +93,14 @@ test("generic actions pass every argument as argv, and the agent script quotes t
   await perform(m.h, { kind: "folder", label: "f", path: "/r" });
   await perform(m.h, { kind: "terminal", label: "s", cwd: "/r", harness: "shell" });
   await perform(m.h, { kind: "url", label: "u", href: "https://example.com/?q=1;rm -rf" });
-  await perform(m.h, { kind: "finder", label: "f", path: "/r/a b.ts" });
   await perform(m.h, { kind: "terminal", label: "c", cwd: "/r/it's", harness: "codex", prompt: "$(whoami)" });
-  expect(m.runs.slice(0, 5)).toEqual([
+  expect(m.runs.slice(0, 4)).toEqual([
     ["open", "-na", "Visual Studio Code", "--args", "/r/a b.ts"],
     ["open", "-na", "Visual Studio Code", "--args", "/r"],
     ["open", "-a", "iTerm", "/r"],
     ["open", "https://example.com/?q=1;rm -rf"],
-    ["open", "-R", "/r/a b.ts"],
   ]);
-  const agent = m.runs[5] ?? [];
+  const agent = m.runs[4] ?? [];
   expect(agent[0]).toBe("osascript");
   expect(agent.slice(-3)).toEqual(["/r/it's", "codex", "$(whoami)"]);
   expect(agent.join(" ")).toContain("quoted form of item 1 of argv");

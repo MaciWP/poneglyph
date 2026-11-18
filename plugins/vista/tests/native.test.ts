@@ -90,8 +90,8 @@ function world(on: On) {
   });
   on("turn.start", (_, e) => ({ turnId: e.turnId }));
   on("turn.complete", (_, e) => ({ text: e.answer }));
-  // The engine's own drawing; for a reply it drops the ROBIN line the way workboard does
-  // when its pane shows it, standing in for any mod after vista.
+  // The engine's own drawing; for a reply it drops the ROBIN line the way robin does when it
+  // boxes it, standing in for any mod after vista.
   on("ui.render", ($, e) => {
     const { Text } = $.ui.resolve(e);
     if (e.component !== "AssistantMessage") return Text({ children: `Original ${e.component}` });
@@ -343,6 +343,41 @@ test("a table of prose becomes a list: an accent bar per row, the label over its
   // The bar runs the whole row: the label's line plus the two lines the long text wraps to.
   const bars = (await m.findAll({ type: "Text", text: /^▌(\n▌)*$/ })).map((t) => t.text.split("\n").length);
   expect(bars).toEqual([3, 2]);
+});
+
+test("a cell or label with a link is drawn as markdown so it opens; a long URL makes a list", async ($, on) => {
+  world(on);
+  await $.session.start(start);
+  const md = "| Fuente | Enlace |\n|---|---|\n| [Docs](https://example.com/docs) | **ver** https://example.com |\n| Local | gratis |";
+  const grid = await $.ui.mount(reply("l1", md));
+  expect(await grid.find({ type: "Markdown", text: "[Docs](https://example.com/docs)" })).toBeDefined();
+  expect(await grid.find({ type: "Markdown", text: "**ver** https://example.com" })).toBeDefined();
+  // Cells without a link stay as they were: the label semibold, the value plain text, in a grid.
+  expect((await grid.find({ type: "Text", text: "Local" }))?.props).toMatchObject({ weight: "semibold" });
+  expect(await grid.find({ type: "Text", text: "gratis" })).toBeDefined();
+  expect(await grid.find({ type: "Text", text: /^▌/ })).toBeUndefined();
+  // Measured in its raw markdown, a short text over a long URL cannot fit one line: a list.
+  const url = `https://example.com/${"x".repeat(120)}`;
+  const list = await $.ui.mount(reply("l2", `| Fuente | Enlace |\n|---|---|\n| Docs | [aquí](${url}) |`));
+  expect(await list.find({ type: "Markdown", text: `[aquí](${url})` })).toBeDefined();
+  expect((await list.findAll({ type: "Text", text: /^▌/ })).length).toBe(1);
+  // Its bar counts the link's text, as a terminal with hyperlinks draws it: label and value, 2 rows.
+  expect((await list.find({ type: "Text", text: /^▌/ }))?.text.split("\n")).toHaveLength(2);
+  // A column name with a link stays one row: Markdown wraps, so a one-row box clips it.
+  const head = await $.ui.mount(reply("l3", "| Fuente | [Enlace](https://example.com) |\n|---|---|\n| Docs | gratis |"));
+  expect(await head.find({ type: "Markdown", text: "[Enlace](https://example.com)" })).toBeDefined();
+  const clipped = (await head.findAll({ type: "Box" })).filter((b) => (b.props as { height?: number; overflow?: string }).height === 1 && (b.props as { overflow?: string }).overflow === "hidden");
+  expect(clipped).toHaveLength(1);
+});
+
+test("in a comparison the best cell with a link keeps its green check before the markdown", async ($, on) => {
+  world(on);
+  await $.session.start(start);
+  const linked = { ...compare, topics: [{ name: "Docs", rows: [{ label: "Guía", values: ["[sqlite.org](https://sqlite.org)", "postgresql.org", "duckdb.org"], best: 0 }] }] };
+  const row = await $.ui.mount(toolUse("t1", linked));
+  expect(await row.find({ type: "Markdown", text: "[sqlite.org](https://sqlite.org)" })).toBeDefined();
+  expect((await row.find({ type: "Text", text: "✓ " }))?.props).toMatchObject({ weight: "semibold", color: "success" });
+  expect(await row.find({ type: "Text", text: "postgresql.org" })).toBeDefined();
 });
 
 test("with several values each one is named at the same width, and long one-line cells still make a list", async ($, on) => {

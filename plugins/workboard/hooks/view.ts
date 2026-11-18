@@ -94,7 +94,7 @@ export type PaneModel = {
   title: string;
   working: boolean;
   cols: number;
-  robin: { text: string; at: number | null; detail: string | null; notice: string | null };
+  turn: { text: string; at: number | null; detail: string | null; notice: string | null };
   failure: string | null;
   error: string | null;
   plan: { done: number; total: number; features: PaneFeature[] };
@@ -569,16 +569,16 @@ export function paneView(base: Ui, m: PaneModel): RenderElement {
     card(
       ui,
       C.robin,
-      "ROBIN",
-      m.robin.at
-        ? Text({ dimColor: true, children: new Date(m.robin.at).toLocaleTimeString("es-ES") })
+      "ÚLTIMO TURNO",
+      m.turn.at
+        ? Text({ dimColor: true, children: new Date(m.turn.at).toLocaleTimeString("es-ES") })
         : null,
       [
-        Text({ children: m.robin.text }),
-        m.robin.detail
-          ? Text({ dimColor: true, wrap: "truncate", children: m.robin.detail })
+        Text({ children: m.turn.text }),
+        m.turn.detail
+          ? Text({ dimColor: true, wrap: "truncate", children: m.turn.detail })
           : null,
-        m.robin.notice ? Text({ color: C.decision, children: `Aviso: ${m.robin.notice}` }) : null,
+        m.turn.notice ? Text({ color: C.decision, children: `Aviso: ${m.turn.notice}` }) : null,
         m.failure
           ? Text({ color: C.decision, wrap: "truncate", children: `⚠ ${m.failure}` })
           : null,
@@ -639,6 +639,31 @@ export function paneView(base: Ui, m: PaneModel): RenderElement {
       );
 
   return Box({ flexDirection: "column", minHeight: m.dock ?? undefined, children: nodes });
+}
+
+// The progress call in the chat, boxed as the other mods box their own rows: a round border in the
+// plan's colour, a title, and one row per task the call changed (a subtask indented).
+export type ProgressRow = PaneTask & { sub: boolean };
+const PROGRESS_ROWS = 8;
+export function progressView(base: Ui, title: string, rows: ProgressRow[], ticket: string | null): RenderElement {
+  const ui: Fit = { ...base, wrap: true, stack: false };
+  const { shown, more } = capped(rows, PROGRESS_ROWS);
+  return ui.Box({
+    flexDirection: "column",
+    borderStyle: "round",
+    borderColor: C.plan,
+    paddingX: 1,
+    children: [
+      ui.Text({ weight: "semibold", color: C.plan, wrap: "truncate-end", children: title }),
+      ticket ? ui.Text({ dimColor: true, children: ticket }) : null,
+      ...shown.map((r) => {
+        const m = marked(ui, r.state);
+        const line = row(ui, m.icon, r.title, m.label(r.label));
+        return r.sub ? ui.Box({ paddingLeft: 2, children: line }) : line;
+      }),
+      more ? ui.Text({ dimColor: true, children: `… y ${more} más` }) : null,
+    ],
+  });
 }
 
 export function diffView(

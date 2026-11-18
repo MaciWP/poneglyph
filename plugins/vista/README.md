@@ -21,10 +21,16 @@ Vista also redraws three markdown blocks in the model's replies, with the same c
 
 A reply with none of them is left untouched. Code fences are never looked into, and an
 incomplete or nested block stays text. The text around a block goes back to Claude Code piece
-by piece (`next()`), so the reply keeps its bullet and a mod after vista, such as workboard
-moving ROBIN to its pane, still acts on it. A reply is redrawn only once its turn ends, so a
+by piece (`next()`), so the reply keeps its bullet and a mod after vista, such as
+robin boxing the ROBIN line, still acts on it. A reply is redrawn only once its turn ends, so a
 table being written never flickers; summaries are left alone. Cell text loses its inline marks
-(bold, italics, code), since a table cell is plain text.
+(bold, italics, code), since a table cell is plain text. A cell with a link (a markdown link, an
+autolink or a bare URL), in a GFM table or a `compare`, whether value, label or column name, keeps
+its markdown and is drawn with the engine's `Markdown`, so the link opens on a click. The winner
+keeps only its green `✓` in front: `Markdown` takes no colour or weight. A column name that
+truncates stays on one row in a clipping box. The grid-or-list choice measures the raw markdown,
+never shorter than what `Markdown` draws, even where the terminal shows each link's text then its
+URL; the list's accent bar counts only the link's text, as a terminal with hyperlinks draws it.
 
 `show` is only for what markdown cannot do: tabs, thumbnails and Copiar. Running, failed, interrupted or malformed calls keep Claude Code's own row, and the
 result row under a shown component is one dim line.

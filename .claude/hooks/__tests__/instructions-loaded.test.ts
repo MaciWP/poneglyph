@@ -1,10 +1,13 @@
-import { afterAll, describe, test, expect } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { afterAll, describe, test, expect, setDefaultTimeout } from "bun:test";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { formatLogLine, appendLog } from "../instructions-loaded";
 import { learnedLog } from "../lib/paths";
 import { ignoreLearned } from "./learned-fixture";
+import { SPAWN_TEST_TIMEOUT_MS } from "./spawn-timeout";
+
+setDefaultTimeout(SPAWN_TEST_TIMEOUT_MS);
 
 describe("post-compaction language reminder", () => {
   const script = join(import.meta.dir, "..", "instructions-loaded.ts");
@@ -92,6 +95,19 @@ describe("appendLog", () => {
     appendLog("line one", logPath);
     appendLog("line two", logPath);
     expect(readFileSync(logPath, "utf8")).toBe("line one\nline two\n");
+  });
+  test("over the cap, drops the older half and keeps the new line", () => {
+    const logPath = join(scratch, "capped.log");
+    for (let i = 1; i <= 10; i++) appendLog(`line ${i}`, logPath, 1_000);
+    appendLog("line 11", logPath, 40);
+    const lines = readFileSync(logPath, "utf8").split("\n").filter(Boolean);
+    expect(lines).toEqual(["line 7", "line 8", "line 9", "line 10", "line 11"]);
+  });
+  test("over the cap with no newline after the middle, starts over", () => {
+    const logPath = join(scratch, "one-line.log");
+    writeFileSync(logPath, "a\n" + "b".repeat(100));
+    appendLog("fresh", logPath, 10);
+    expect(readFileSync(logPath, "utf8")).toBe("fresh\n");
   });
 });
 

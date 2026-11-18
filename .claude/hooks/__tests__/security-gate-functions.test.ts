@@ -1,8 +1,11 @@
-import { describe, test, expect, afterAll } from "bun:test";
+import { describe, test, expect, afterAll, setDefaultTimeout } from "bun:test";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { unlinkSync } from "node:fs";
 import { getModifiedFiles, scanFile } from "../security-gate";
+import { SPAWN_TEST_TIMEOUT_MS } from "./spawn-timeout";
+
+setDefaultTimeout(SPAWN_TEST_TIMEOUT_MS);
 
 // Integration coverage of the security-gate functions exported in-situ.
 // Previously these were unexported → untestable by import; only the pure SECRET_PATTERN was covered.
@@ -207,5 +210,34 @@ describe("degradation canary", () => {
     expect(w.systemMessage).toContain("ROBIN:");
     expect(w.systemMessage).toContain("812 KB");
     expect(Object.keys(w)).toEqual(["systemMessage"]);
+  });
+});
+
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { modWatchesCanary } from "../security-gate";
+
+describe("modWatchesCanary", () => {
+  const root = mkdtempSync(join(tmpdir(), "sg-robin-"));
+  const config = join(root, "config");
+  const cwd = join(root, "project");
+  mkdirSync(join(config, "plugins"), { recursive: true });
+  mkdirSync(cwd, { recursive: true });
+  const install = (enabled: boolean) => {
+    writeFileSync(join(config, "settings.json"), JSON.stringify({ enabledPlugins: { "robin@poneglyph": enabled } }));
+    writeFileSync(join(config, "plugins", "installed_plugins.json"), JSON.stringify({ plugins: { "robin@poneglyph": [{ scope: "user", installPath: join(root, "robin") }] } }));
+  };
+
+  const logs = join(root, "robin-logs");
+
+  test("stands down only while the robin mod is enabled, installed and writing its log", () => {
+    expect(modWatchesCanary(cwd, config, logs)).toBe(false);
+    install(false);
+    mkdirSync(logs, { recursive: true });
+    writeFileSync(join(logs, "s1.jsonl"), "{}\n");
+    expect(modWatchesCanary(cwd, config, logs)).toBe(false);
+    install(true);
+    expect(modWatchesCanary(cwd, config, logs)).toBe(true);
+    expect(modWatchesCanary(cwd, config, logs, Date.now() + 8 * 24 * 3600 * 1000)).toBe(false);
+    expect(modWatchesCanary(cwd, config, join(root, "no-logs"))).toBe(false);
   });
 });

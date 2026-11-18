@@ -7,7 +7,8 @@
 //
 // A Stop block would force a full extra model turn, so nothing here blocks:
 //   PostToolUse (mid-turn, rides the next request): router note unanswered · last visible note in
-//     English · Poneglyph config edited without `harness-config` loaded.
+//     English · Poneglyph config edited without `harness-config` loaded · six read-only calls in a
+//     row with no `Explore` launched (1,125 such runs in 30 days, 44 M characters read by the Lead).
 //   UserPromptSubmit (next turn): the previous turn closed on a decision asked as plain text.
 // Each reminder fires once per turn (config: once per session). One line per reminder in
 // `<project>/.claude/learned/turn-nudges.log` is both the log and the marker. Claude only:
@@ -19,8 +20,9 @@ import { appendLog } from "./instructions-loaded";
 import { learnedLog } from "./lib/paths";
 import { readHookStdin } from "./lib/hook-stdin";
 import { noteRun } from "./lib/run-log";
+import { launchesExplore, nextReadStreak, READ_STREAK } from "../scripts/lib/read-calls";
 
-export type NudgeKind = "router" | "english" | "config" | "question";
+export type NudgeKind = "router" | "english" | "config" | "question" | "reads";
 
 export interface TurnState {
   key: string; // prompt timestamp, the per-turn marker
@@ -29,6 +31,8 @@ export interface TurnState {
   routerAnswered: boolean;
   lastText: string | null;
   asks: number;
+  reads: number; // current run of consecutive read-only calls
+  explores: number; // `Explore` agents launched this turn
 }
 
 export interface TailState {
@@ -51,6 +55,7 @@ export function noteMatches(note: string, prompt: string): boolean {
 export function readTail(jsonl: string): TailState {
   const turns: TurnState[] = [];
   const skills = new Set<string>();
+  const counted = new Set<string>(); // streamed records repeat a tool_use block
   for (const line of jsonl.split("\n")) {
     let e: any;
     try {
@@ -61,7 +66,7 @@ export function readTail(jsonl: string): TailState {
     if (e?.isSidechain) continue;
     const prompt = userPromptOf(e) ?? queuedPromptOf(e);
     if (prompt !== null && !/^\s*<task-notification>/.test(prompt)) {
-      turns.push({ key: String(e.timestamp ?? turns.length), prompt, routerNote: false, routerAnswered: false, lastText: null, asks: 0 });
+      turns.push({ key: String(e.timestamp ?? turns.length), prompt, routerNote: false, routerAnswered: false, lastText: null, asks: 0, reads: 0, explores: 0 });
       continue;
     }
     const turn = turns.at(-1);
@@ -75,6 +80,11 @@ export function readTail(jsonl: string): TailState {
       if (b?.type === "tool_use" && b.name === "Skill" && typeof b.input?.skill === "string") skills.add(b.input.skill);
       if (!turn) continue;
       if (b?.type === "tool_use" && b.name === "AskUserQuestion") turn.asks++;
+      if (b?.type === "tool_use" && typeof b.name === "string" && !(b.id && counted.has(b.id))) {
+        if (b.id) counted.add(b.id);
+        if (launchesExplore(b.name, b.input)) turn.explores++;
+        turn.reads = nextReadStreak(turn.reads, b.name, b.input);
+      }
       if (b?.type === "text" && typeof b.text === "string" && b.text.trim()) {
         turn.lastText = b.text;
         if (b.text.includes("Router:")) turn.routerAnswered = true; // as skill-usage.ts reads it, bold included
@@ -113,6 +123,7 @@ export const NUDGE_TEXT: Record<NudgeKind, string> = {
   english: "The last visible note was written in English; the house style keeps every visible text in es-ES, progress notes included.",
   config: "This edits Poneglyph configuration and `harness-config` is not loaded in this session; the doctrine loads it before any skill, rule, hook, setting or style change.",
   question: "The previous answer ended on a decision asked as plain text; the house style asks decisions through AskUserQuestion with the recommended option first.",
+  reads: `This turn has made ${READ_STREAK} or more read-only calls in a row in the main session and launched no \`Explore\`; the doctrine sends reads of three or more files, an unknown place, logs or the web to \`Explore\` on the cheapest tier, one per area.`,
 };
 
 function alreadyNudged(log: string, session: string, kind: NudgeKind, key: string): boolean {
@@ -146,6 +157,7 @@ export function dueNudges({ event, tail, toolName, filePath, prompt }: NudgeInpu
   if (["Edit", "Write", "MultiEdit"].includes(toolName ?? "") && isConfigPath(filePath) && ![...tail.skills].some((s) => s.endsWith("harness-config"))) {
     out.push({ kind: "config", key: turn.key });
   }
+  if (turn.reads >= READ_STREAK && turn.explores === 0) out.push({ kind: "reads", key: turn.key });
   return out;
 }
 

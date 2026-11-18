@@ -1,9 +1,12 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, setDefaultTimeout } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { alreadyNoted, buildNote, commandPaths, findDesignFiles, isUiFile, noteOnce } from "../design-file-hint";
 import { ignoreLearned } from "./learned-fixture";
+import { SPAWN_TEST_TIMEOUT_MS } from "./spawn-timeout";
+
+setDefaultTimeout(SPAWN_TEST_TIMEOUT_MS);
 
 // Each test builds its own temp project with the named design files.
 function project(files: string[]): string {
@@ -73,6 +76,22 @@ describe("design-file-hint: pure parts", () => {
     expect(logLines(dir)[0]).toMatch(/^\S+ m-1 none -$/);
     expect(noteOnce({ cwd: dir, session: "m-1", paths: ["web/Button.vue"] })).toBeNull();
     expect(logLines(dir)).toHaveLength(1);
+  });
+
+  it("a UI file outside the project spends no note", () => {
+    const dir = project([]);
+    expect(noteOnce({ cwd: dir, session: "o-1", paths: [join(tmpdir(), "report.html"), "../other/a.css"] })).toBeNull();
+    expect(existsSync(logOf(dir))).toBe(false);
+    expect(noteOnce({ cwd: dir, session: "o-1", paths: [join(dir, "web", "a.css")] })).toContain("DESIGN_SYSTEM.md");
+    expect(noteOnce({ cwd: dir, session: "o-2", paths: ["..theme.css"] })).toContain("DESIGN_SYSTEM.md");
+  });
+
+  it("a shell path resolves from the directory the agent moved into", () => {
+    const dir = project([]);
+    const sub = join(dir, "web", "sub");
+    mkdirSync(sub, { recursive: true });
+    const payload = JSON.stringify({ session_id: "c-1", cwd: sub, tool_name: "Bash", tool_input: { command: "sed -i '' s/a/b/ ../../ui/a.css" } });
+    expect(JSON.parse(run(payload, dir).out).hookSpecificOutput.additionalContext).toContain("DESIGN_SYSTEM.md");
   });
 
   // 041 review round 1: 2 of 5 live runs edited UI files with `sed -i` / a python heredoc.

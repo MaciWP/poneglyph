@@ -42,6 +42,11 @@ export const plain = (s: string) =>
     .replace(/(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])/g, "$1")
     .replace(/`([^`]+)`/g, "$1");
 
+// A markdown link, an autolink or a bare URL. A table cell that holds one keeps its markdown: the
+// table draws it with the engine's Markdown, so the link opens on a click.
+export const LINK = /\[[^\]]*\]\([^)\s]+\)|<https?:\/\/[^>\s]+>|https?:\/\/\S/;
+const cell = (s: string) => (LINK.test(s) ? s : plain(s));
+
 export function parse(md: string): Block[] {
   const lines = md.split("\n");
   const blocks: Block[] = [];
@@ -73,11 +78,11 @@ export function parse(md: string): Block[] {
       let j = i + 2;
       for (; j < lines.length && (lines[j] ?? "").includes("|") && (lines[j] ?? "").trim(); j++) {
         const row = cells(lines[j] ?? "");
-        rows.push(head.map((_, k) => plain(row[k] ?? "")));
+        rows.push(head.map((_, k) => cell(row[k] ?? "")));
       }
       if (rows.length) {
         flush();
-        blocks.push({ kind: "table", head: head.map(plain), rows });
+        blocks.push({ kind: "table", head: head.map(cell), rows });
         i = j - 1;
         continue;
       }

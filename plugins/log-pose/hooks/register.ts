@@ -1,17 +1,16 @@
-import type { EngineInterface, Register } from "claude-code";
+import type { EngineInterface, Register, RenderElement } from "claude-code";
 import {
   type Decision, type Effort, type LastTurn, LEVELS, type Outcome, type Reply, type StepUsage,
-  appendCapped, buildNote, cacheBroke, classifierPrompt, decide, effortNote, extraCatalog, extraGlossary, floorOf, formatPast,
-  isContinuation, learnedPath, logLine, mergeGlossaries, parseAgentFile, parseMemory, parseReply, pastFor, PHASE_SKILLS, phaseHint, purposeOf, routable, settingsEffort, typedText, skillFrontmatter, skillsInHistory, withFloor,
+  appendCapped, buildNote, extractRouter, cacheBroke, classifierPrompt, decide, effortNote, extraCatalog, extraGlossary, floorOf, formatPast,
+  isContinuation, learnedPath, markOf, unmarked, logLine, MAIN_MODELS, WORKER_SKIPS, mergeGlossaries, parseAgentFile, parseMemory, parseReply, pastFor, PHASE_SKILLS, phaseHint, purposeOf, routable, settingsEffort, typedText, skillFrontmatter, skillsInHistory, withFloor,
 } from "./core.ts";
 
 // One Sonnet call per typed prompt, before step 0: dictation fixes, skill candidates, effort and
-// advisor gauge, in one note. Opus 5.5 main-loop steps then run at that effort.
+// advisor gauge, in one note. Main-loop steps of a MAIN_MODELS model then run at that effort.
 // Sonnet at low effort, not Haiku: on the held-out router eval (2026-10-15) Haiku without
 // thinking trailed the hook by ~7 hits of 64; Haiku at medium matched it at p95 5.3 s; Sonnet
 // beat it by 3-6 with the same false positives at p95 2.9 s, about 0.0035 $ a prompt.
 
-const OPUS = "claude-opus-5-5";
 const TOOL = "mcp__log-pose__set";
 const MODEL = "sonnet";
 const TIMEOUT_MS = 8000;
@@ -52,6 +51,7 @@ let pending: Decision | null = null;
 const decisions = new Map<string, Decision>();
 let mainTurn = "";
 let mode: "rewrite" | "steer" = "rewrite";
+let worker = false;
 let breaks = 0;
 let last: Step | null = null;
 let rewrote = false;
@@ -244,7 +244,7 @@ async function bindProject($: EngineInterface, dir: string, root: string) {
   extra = await projectSkills($, cwd);
 }
 
-const isMain = (e: { agentId?: string; model: string; effort?: unknown }) => !e.agentId && e.model === OPUS && typeof e.effort === "string";
+const isMain = (e: { agentId?: string; model: string; effort?: unknown }) => !e.agentId && MAIN_MODELS.includes(e.model) && typeof e.effort === "string";
 
 export const register: Register = (on) => {
   on("session.start", async ($, e, next) => {
@@ -258,8 +258,9 @@ export const register: Register = (on) => {
     for (const name of skillsInHistory(await $.session.messages().catch(() => []))) loaded.add(name);
     // Without the per-message effort beta a rewrite would reset the cache: steer with words instead.
     if (await $.env.get("CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS")) mode = "steer";
+    worker = !!(await $.env.get("AOS_PARENT_ID"));
     // The first prompt's floor, before a step names the session's level.
-    sessionEffort = settingsEffort(await $.settings.read().catch(() => ({})), OPUS);
+    sessionEffort = settingsEffort(await $.settings.read().catch(() => ({})), MAIN_MODELS[0]!);
     // A session without built-in tools (`--tools ""`) refuses it; routing still works without the override tool.
     await $.tool.register({ name: "set", description: DESCRIPTION, inputSchema: INPUT_SCHEMA }).catch(() => {});
     // `prompt`: whether the agent file still has the sections the mod's prompt is built from.
@@ -351,6 +352,18 @@ export const register: Register = (on) => {
       await record($, { ev: "other", origin, effort: pending?.effort ?? null });
       return next(e);
     }
+    const mark = mid ? null : markOf(e.text);
+    if (mark) {
+      // The turn alone: the next unmarked prompt is classified again from the kept decision. A Haiku
+      // turn gets no decision, so its steps keep the session's level whatever the mods' order.
+      pending = mark === "+" ? { effort: "max", task: "max", gauge: current()?.gauge ?? 1, labels: null, override: "max" } : null;
+      await record($, { ev: "submit", origin, call: false, skip: mark === "+" ? "max" : "haiku", effort: pending?.effort ?? null, mid });
+      if (mark === "_") return next(e);
+      const stripped = unmarked(e.text);
+      previous = routable(stripped) ?? previous;
+      // Steer mode writes no level per step, so a word asks for the depth instead.
+      return next({ ...e, text: stripped, ...(mode === "steer" ? { context: [...(e.context ?? []), "Please think hard before responding."] } : {}) });
+    }
     const typed = typedText(e.text);
     const text = routable(typed);
     if (!text || isContinuation(typed)) {
@@ -381,7 +394,7 @@ export const register: Register = (on) => {
       try { await $.ui.toast(`log-pose: the session runs at ${floor}, a floor over every level log-pose picks; /effort medium hands the level back.`); } catch { /* no UI */ }
     }
     const steer = mode === "steer" && shown ? (shown.effort === "low" ? " Answer directly without deliberating." : shown.effort === "medium" ? "" : " Please think hard before responding.") : "";
-    const skills = mid ? [] : r.reply?.skills ?? [];
+    const skills = mid ? [] : (r.reply?.skills ?? []).filter((s) => !(worker && WORKER_SKIPS.includes(s.name)));
     const note = buildNote({ fixes: r.reply?.fixes ?? [], skills, labels: null }, text, pending && !mid ? effortNote(pending, override?.reason, floor) + steer : "", purposes);
     await record($, { ev: "submit", origin, call: true, outcome: r.outcome, ms: r.ms, labels: r.reply?.labels ?? null, skills: skills.map((s) => s.name), fixes: r.reply?.fixes ?? [], effort: decision?.effort ?? null, floor, gauge: decision?.gauge ?? null, override: override?.effort ?? null, mode, mid, read: r.read ?? null, write: r.write ?? null, why: r.why ?? null });
     await routerLog($, { session, outcome: r.outcome, ms: r.ms, skills: skills.map((s) => s.name), fixes: r.reply?.fixes.length ?? 0, effort: decision?.effort ?? "-", floor: floor ?? "-", past: r.past, input: r.input, output: r.output, read: r.read, write: r.write });
@@ -442,5 +455,34 @@ export const register: Register = (on) => {
     await record($, { ev: "complete", turnId: e.turnId, agent: e.agentId ?? null, reason: e.reason, aborted: e.isAborted });
     await flush($);
     return r;
+  });
+
+  // The `Router:` lines Claude writes to answer this mod's note are the router's voice, not the
+  // session's: they leave the text and open the block in a blue box. A summary block that starts
+  // with them gets the same.
+  on("ui.render", { component: "AssistantMessage" }, async ($, e, next) => {
+    const p = e.props;
+    const found = e.viewport ? extractRouter(p.text) : null;
+    if (!found) return next(e);
+    const { Box, Text } = $.ui.resolve(e);
+    const box = Box({
+      flexDirection: "column",
+      borderStyle: "round",
+      borderColor: "suggestion",
+      paddingX: 1,
+      children: [Text({ weight: "semibold", color: "suggestion", children: "ROUTER" }), ...found.lines.map((l) => Text({ wrap: "wrap", children: l }))],
+    });
+    // The terminal draws the reply's ⏺ in a 2-cell gutter. The text below goes down the chain as
+    // it came, bullet included, so robin, vista and the engine keep their own gutters whatever the
+    // order of the mods; the box sits above in an empty gutter, and takes the ⏺ only when the block
+    // held nothing but the Router lines.
+    const bullet = !found.body && p.isFirstOfReply ? "⏺" : "";
+    const placed =
+      e.surface === "terminal"
+        ? Box({ children: [Box({ width: 2, flexShrink: 0, children: Text({ children: bullet }) }), Box({ flexGrow: 1, flexShrink: 1, children: box })] })
+        : box;
+    if (!found.body) return placed;
+    const text = (await next({ ...e, props: { ...p, text: found.body } })) as RenderElement;
+    return Box({ flexDirection: "column", rowGap: 1, children: [placed, text] });
   });
 };

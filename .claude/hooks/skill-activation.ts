@@ -10,7 +10,7 @@
  *   - a `/flow-lifecycle` line on feature-shaped prompts (a command, not a skill)
  *   - a shape-only model/effort hint (bulk or quick prompts)
  *   - the `<prompt-router-pending>` line, so the main model starts without waiting
- *   - a `/clear` proposal line once the session's context passes CLEAR_HINT_TOKENS
+ *   - a `/clear` proposal line once per 100k band after the session's context passes CLEAR_HINT_TOKENS
  *
  * Non-human payloads (task notifications, system reminders) and slash commands are
  * skipped, EXCEPT `/goal <task>`: its argument is real work.
@@ -118,16 +118,61 @@ function clearHintLine(context: number): string {
 }
 
 // Claude only: reads the Claude JSONL transcript, so host adapters never call it.
-export function clearHint(raw: string): { line: string; context: number } | null {
+export function clearHint(raw: string): { line: string; context: number; session: string; transcript: string } | null {
   try {
     const payload = JSON.parse(raw) as PromptPayload;
     const prompt = typeof payload.prompt === "string" ? payload.prompt.trimStart() : "";
     if (!prompt || isNonHumanPayload(prompt) || prompt.startsWith("/") || typeof payload.transcript_path !== "string") return null;
     const last = lastRequest(tail(payload.transcript_path));
-    return last && last.context >= CLEAR_HINT_TOKENS ? { line: clearHintLine(last.context), context: last.context } : null;
+    const session = String(payload.session_id ?? "").slice(0, 8);
+    return last && last.context >= CLEAR_HINT_TOKENS
+      ? { line: clearHintLine(last.context), context: last.context, session, transcript: payload.transcript_path }
+      : null;
   } catch {
     return null;
   }
+}
+
+// The hint is conditional, so the first prompt past 100k, almost always a continuation, would
+// use up a once-per-session hint before unrelated work arrives at 150-250k. One per 100k band
+// instead: 1,138 hints in 61 sessions were followed at most 5.4 % of the time. The log line
+// `<ts> <session8> <context>` is the record and the marker; its band is context / CLEAR_HINT_BAND.
+// Only the session's last line counts, and a compaction after it re-arms the hint: the context it
+// judged is gone, whatever band the session grows back into. A log trim past 1 MB can drop a live
+// session's line and repeat one hint.
+export const CLEAR_HINT_BAND = 100_000;
+
+// Whether the transcript holds a compaction later than `since` (an ISO time, as the log writes it).
+// ponytail: reads the whole transcript on each in-band prompt, 214 ms on the largest (132 MB);
+// read backwards in chunks if the hook's latency shows in long sessions.
+function compactedSince(transcript: string, since: string): boolean {
+  try {
+    const text = readFileSync(transcript, "utf8");
+    const at = text.lastIndexOf('"subtype":"compact_boundary"');
+    if (at < 0) return false;
+    const end = text.indexOf("\n", at);
+    const line = text.slice(text.lastIndexOf("\n", at) + 1, end < 0 ? undefined : end);
+    const ts = (JSON.parse(line) as { timestamp?: unknown }).timestamp;
+    return typeof ts === "string" && ts > since;
+  } catch {
+    return false;
+  }
+}
+
+export function clearHintOnce(raw: string, logPath: string): string | null {
+  const clear = clearHint(raw);
+  if (!clear || !clear.session) return clear?.line ?? null;
+  const band = Math.floor(clear.context / CLEAR_HINT_BAND);
+  let logText = "";
+  try {
+    logText = readFileSync(logPath, "utf8");
+  } catch { /* missing log: nothing hinted yet */ }
+  const last = logText.split("\n").filter((l) => l.split(" ")[1] === clear.session).at(-1)?.split(" ");
+  if (last && Math.floor(Number(last[2]) / CLEAR_HINT_BAND) === band && !compactedSince(clear.transcript, last[0] ?? "")) return null;
+  try {
+    appendLog(`${new Date().toISOString()} ${clear.session} ${clear.context}`, logPath);
+  } catch { /* best-effort, the hint still goes out */ }
+  return clear.line;
 }
 
 export interface HintAnalysis {
@@ -178,14 +223,8 @@ if (import.meta.main) {
     const routed = router.routablePrompt(raw) !== null &&
       !router.modRoutes(projectRoot(payload0.cwd), claudeConfigDir(), typeof payload0.session_id === "string" ? payload0.session_id : "");
     const pending = routed ? router.ROUTER_PENDING_LINE : "";
-    const clear = clearHint(raw);
-    if (clear) {
-      const payload = JSON.parse(raw) as PromptPayload;
-      try {
-        appendLog(`${new Date().toISOString()} ${String(payload.session_id ?? "").slice(0, 8)} ${clear.context}`, learnedLog(payload.cwd, "clear-hint.log"));
-      } catch { /* best-effort */ }
-    }
-    const out = [analysis.injection, pending, clear?.line ?? ""].filter(Boolean).join("\n");
+    const clear = clearHintOnce(raw, learnedLog(payload0.cwd, "clear-hint.log"));
+    const out = [analysis.injection, pending, clear ?? ""].filter(Boolean).join("\n");
     if (out) process.stdout.write(out + "\n");
   } catch {
     // best-effort, never block the prompt

@@ -137,6 +137,16 @@
             "timeout": 5
           }
         ]
+      },
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun \"$HOME/.claude/hooks/critic-gate.ts\"",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
@@ -215,6 +225,11 @@
             "type": "command",
             "command": "bun \"$HOME/.claude/hooks/security-gate.ts\"",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bun \"$HOME/.claude/hooks/critic-gate.ts\"",
+            "timeout": 10
           }
         ]
       }
@@ -242,6 +257,9 @@
   "effortLevel": "high",
   "modelSettings": {
     "claude-opus-5-5": {
+      "effortLevel": "medium"
+    },
+    "claude-fable-5-2": {
       "effortLevel": "medium"
     },
     "claude-haiku-5-5": {

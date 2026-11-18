@@ -1,0 +1,6 @@
+{
+  "name": "courier-voice",
+  "version": "0.1.3",
+  "description": "Draws the Agentic OS messages courier delivers as a violet box naming the sender. Claude Code runs no hook of courier's on the rows courier submits, so this mod draws them.",
+  "author": { "name": "Oriol Macias" }
+}

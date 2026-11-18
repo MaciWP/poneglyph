@@ -1,10 +1,13 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test, setDefaultTimeout } from "bun:test";
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ignoreLearned } from "./learned-fixture";
 import { agentTranscript, lastRequest, narrowNote, narrowRead, pendingTokens, readEstimate, readReason } from "../haiku-context-brake";
+import { SPAWN_TEST_TIMEOUT_MS } from "./spawn-timeout";
+
+setDefaultTimeout(SPAWN_TEST_TIMEOUT_MS);
 
 const HOOK = join(import.meta.dir, "..", "haiku-context-brake.ts");
 

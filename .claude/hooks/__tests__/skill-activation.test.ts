@@ -1,8 +1,8 @@
 import { describe, test, expect } from "bun:test";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { isNonHumanPayload, detectFeatureShape, analyzePayload, foldText, clearHint, CLEAR_HINT_TOKENS } from "../skill-activation";
+import { isNonHumanPayload, detectFeatureShape, analyzePayload, foldText, clearHint, clearHintOnce, CLEAR_HINT_TOKENS } from "../skill-activation";
 import { formatLogLine } from "../instructions-loaded";
 
 const hint = (prompt: string) => analyzePayload(JSON.stringify({ prompt }));
@@ -163,5 +163,43 @@ describe("/clear proposal once the session context passes CLEAR_HINT_TOKENS", ()
     expect(hint("<task-notification>done</task-notification>", 200_000)).toBeNull();
     expect(clearHint(JSON.stringify({ prompt: "revisa esto", transcript_path: "/nonexistent/lead.jsonl" }))).toBeNull();
     expect(clearHint("not json")).toBeNull();
+  });
+
+  test("fires once per session and 100k band: a continuation prompt does not use up the next band", () => {
+    const log = join(mkdtempSync(join(tmpdir(), "clear-hint-log-")), "clear-hint.log");
+    const once = (session: string, context: number) =>
+      clearHintOnce(JSON.stringify({ prompt: "ahora revisa el módulo de facturas", session_id: session, transcript_path: transcript(context) }), log);
+    expect(once("aaaaaaaa-1", 120_000)).toContain("~120k tokens");
+    expect(once("aaaaaaaa-1", 180_000)).toBeNull();
+    expect(once("bbbbbbbb-2", 150_000)).toContain("/clear");
+    expect(once("aaaaaaaa-1", 210_000)).toContain("~210k tokens");
+    expect(once("aaaaaaaa-1", 90_000)).toBeNull();
+    // A band other than the session's last line's hints again (a lower one only follows a compaction).
+    expect(once("aaaaaaaa-1", 130_000)).toContain("~130k tokens");
+    expect(once("aaaaaaaa-1", 140_000)).toBeNull();
+    expect(readFileSync(log, "utf8").trim().split("\n")).toHaveLength(4);
+  });
+
+  test("a compaction inside the same band re-arms the hint", () => {
+    const log = join(mkdtempSync(join(tmpdir(), "clear-hint-log-")), "clear-hint.log");
+    const once = (file: string) => clearHintOnce(JSON.stringify({ prompt: "ahora revisa el módulo de facturas", session_id: "cccccccc-3", transcript_path: file }), log);
+    const file = transcript(120_000);
+    expect(once(file)).toContain("~120k tokens");
+    expect(once(transcript(160_000))).toBeNull();
+    Bun.sleepSync(5);
+    // /compact at 160k, then the context grows back into band 1.
+    const compacted = transcript(120_000);
+    writeFileSync(compacted, JSON.stringify({ type: "system", subtype: "compact_boundary", timestamp: new Date().toISOString() }) + "\n" + readFileSync(compacted, "utf8"));
+    Bun.sleepSync(5);
+    expect(once(compacted)).toContain("~120k tokens");
+    expect(once(compacted)).toBeNull();
+  });
+
+  test("without a session id it hints on every prompt and writes no shared marker", () => {
+    const log = join(mkdtempSync(join(tmpdir(), "clear-hint-log-")), "clear-hint.log");
+    const raw = JSON.stringify({ prompt: "ahora revisa el módulo de facturas", transcript_path: transcript(150_000) });
+    expect(clearHintOnce(raw, log)).toContain("/clear");
+    expect(clearHintOnce(raw, log)).toContain("/clear");
+    expect(() => readFileSync(log, "utf8")).toThrow();
   });
 });

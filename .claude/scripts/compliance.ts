@@ -11,7 +11,9 @@ import { join } from "node:path";
 import { bannedOpeners, cardSeparators, esEsDetect, stripCode, stripFenced } from "../evals/graders";
 import { humanPrompt, windowStart } from "./skill-usage";
 import { collectTranscripts } from "./usage-profile";
+import { nextReadStreak, READ_STREAK } from "./lib/read-calls";
 import type { Status } from "./doctor";
+import { CRITIC_AGENT } from "../hooks/lib/critic-events";
 import { claudeConfigDir } from "../hooks/lib/paths";
 
 export interface ComplianceTurn {
@@ -25,6 +27,7 @@ export interface ComplianceTurn {
   asks: { questions?: unknown[] }[];
   spawns: { model?: string; type?: string }[];
   reviewed: boolean | null; // a check command ran after the last code edit; null without code edits
+  readStreak: number; // longest run of consecutive read-only calls
   sessionSkills: Set<string>; // skills loaded so far in the session, this turn included
 }
 
@@ -39,6 +42,7 @@ export function parseComplianceTurns(lines: Iterable<string>): ComplianceTurn[] 
   const sessionSkills = new Set<string>();
   const seen = new Set<string>(); // streamed records repeat content blocks
   let cur: ComplianceTurn | null = null;
+  let streak = 0;
   for (const line of lines) {
     let r: any;
     try { r = JSON.parse(line); } catch { continue; }
@@ -46,7 +50,8 @@ export function parseComplianceTurns(lines: Iterable<string>): ComplianceTurn[] 
     const prompt = humanPrompt(r);
     if (prompt !== null) {
       if (cur) turns.push(cur);
-      cur = { at: r.timestamp ? Date.parse(r.timestamp) : undefined, model: "", texts: [], bash: [], edits: [], errors: [], asks: [], spawns: [], reviewed: null, sessionSkills: new Set(sessionSkills) }; // snapshot: a later load must not excuse this turn
+      streak = 0;
+      cur = { at: r.timestamp ? Date.parse(r.timestamp) : undefined, model: "", texts: [], bash: [], edits: [], errors: [], asks: [], spawns: [], reviewed: null, readStreak: 0, sessionSkills: new Set(sessionSkills) }; // snapshot: a later load must not excuse this turn
       continue;
     }
     if (!cur) continue;
@@ -63,8 +68,9 @@ export function parseComplianceTurns(lines: Iterable<string>): ComplianceTurn[] 
       if (b.type === "text" && b.text?.trim()) cur.texts.push(b.text);
       if (b.type !== "tool_use") continue;
       const i = b.input ?? {};
-      if (b.name === "Agent" || b.name === "Task") cur.spawns.push({ model: i.model, type: i.subagent_type });
-      if (b.name === "AskUserQuestion") cur.asks.push(i);
+      streak = nextReadStreak(streak, b.name, i);
+      if (streak > cur.readStreak) cur.readStreak = streak;
+      if (b.name === "Agent" || b.name === "Task") cur.spawns.push({ model: i.model, type: i.subagent_type });      if (b.name === "AskUserQuestion") cur.asks.push(i);
       if (b.name === "Skill" && typeof i.skill === "string") { sessionSkills.add(i.skill); cur.sessionSkills.add(i.skill); }
       if (b.name === "Bash") {
         cur.bash.push(String(i.command ?? ""));
@@ -104,8 +110,10 @@ export const RULES: Rule[] = [
     const c = t.bash.filter((x) => /git commit/.test(x));
     return c.length ? !c.some((x) => /Co-Authored-By: Claude|Generated with \[?Claude/i.test(x)) : null;
   } },
-  { id: "C-MODEL", source: "CLAUDE.md", rule: "model named on every spawn", check: (t) => (t.spawns.length ? t.spawns.every((s) => !!s.model || s.type === "fork") : null) },
+  // A fork inherits by design; the critic runs on its agent file's model, and a call model would override it.
+  { id: "C-MODEL", source: "CLAUDE.md", rule: "model named on every spawn", check: (t) => (t.spawns.length ? t.spawns.every((s) => !!s.model || s.type === "fork" || s.type === CRITIC_AGENT) : null) },
   { id: "C-HCONFIG", source: "CLAUDE.md", rule: "harness-config loaded for config edits", check: (t) => (t.edits.some((e) => CONFIG.test(e)) ? [...t.sessionSkills].some((s) => s.endsWith("harness-config")) : null) },
+  { id: "C-READS", source: "CLAUDE.md", rule: "a run of 6+ reads has an Explore", check: (t) => (t.readStreak >= READ_STREAK ? t.spawns.some((s) => s.type === "Explore") : null) },
   { id: "S-ESES", source: "style", rule: "final answer in es-ES", check: (t) => esEsDetect(final(t)).pass },
   { id: "S-ESES-MID", source: "style", rule: "progress notes in es-ES", check: (t) => (mids(t).length ? mids(t).every((x) => esEsDetect(x).pass) : null) },
   { id: "S-FICHERO", source: "style", rule: "«fichero», never «archivo»", check: (t) => !/\barchivos?\b/i.test(t.texts.map(stripCode).join(" ")) },

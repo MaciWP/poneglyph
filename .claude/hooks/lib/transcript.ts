@@ -46,6 +46,28 @@ export const isHumanOrigin = (event: unknown): boolean => {
   return kind === undefined || kind === "human";
 };
 
+// A reader of the answers a person gave through AskUserQuestion: feed it the records in order and
+// it returns each tool_result's `[question, answer, note]`, [] for any other record; the note is
+// what the user typed beside the option, or "". The tool's input accepts `answers` too: a call
+// that carried its own never reached the user.
+export function questionAnswers(): (event: unknown) => Array<[question: string, answer: string, note: string]> {
+  const prefilled = new Set<string>();
+  return (event) => {
+    const r = event as { type?: string; isSidechain?: boolean; message?: { content?: unknown }; toolUseResult?: { answers?: unknown; annotations?: Record<string, { notes?: unknown }> } };
+    if (r?.isSidechain || !Array.isArray(r?.message?.content)) return [];
+    const blocks = r.message.content as Array<{ type?: string; id?: string; name?: string; tool_use_id?: string; input?: { answers?: unknown } }>;
+    if (r.type === "assistant") {
+      for (const b of blocks) if (b?.type === "tool_use" && b.name === "AskUserQuestion" && b.input?.answers && Object.keys(b.input.answers).length) prefilled.add(b.id ?? "");
+      return [];
+    }
+    const given = r.toolUseResult?.answers;
+    const call = blocks.find((b) => b?.type === "tool_result")?.tool_use_id ?? "";
+    if (!given || typeof given !== "object" || prefilled.has(call)) return [];
+    const note = (question: string) => { const typed = r.toolUseResult?.annotations?.[question]?.notes; return typeof typed === "string" ? typed : ""; };
+    return Object.entries(given).filter((pair): pair is [string, string] => typeof pair[1] === "string").map(([question, answer]) => [question, answer, note(question)]);
+  };
+}
+
 // The router note an attachment carries, or null. The prompt-router hook's note is an async hook
 // response; the log-pose mod's rides the prompt as a `prompt.submit` context block.
 export function routerNoteOf(event: unknown): string | null {

@@ -21,6 +21,20 @@ test("a GFM table becomes rows of plain cells, with the text around it kept", ()
   expect(hasBlocks(parse("| a | b |\n|---|---|"))).toBe(false);
 });
 
+test("a cell with a link keeps its markdown for the engine to draw; the others lose their marks", () => {
+  const md = "| **Fuente** | [Docs](https://example.com) |\n|---|---|\n| **local** | **ver** <https://a.dev> |\n| `x` | https://b.dev/p |";
+  expect(parse(md)).toEqual([
+    {
+      kind: "table",
+      head: ["Fuente", "[Docs](https://example.com)"],
+      rows: [
+        ["local", "**ver** <https://a.dev>"],
+        ["x", "https://b.dev/p"],
+      ],
+    },
+  ]);
+});
+
 test("callouts keep their body as markdown and need one", () => {
   expect(parse("> [!WARNING]\n> Haz copia de `data/`.\n> Luego arranca.")).toEqual([
     { kind: "callout", type: "warning", text: "Haz copia de `data/`.\nLuego arranca." },

@@ -1,9 +1,12 @@
-import { afterEach, describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it, setDefaultTimeout } from "bun:test";
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { check, frontmatter, privacyMatches, readSource, render, validate, withoutGitEnv, type Source } from "../check-config";
+import { SPAWN_TEST_TIMEOUT_MS } from "../../hooks/__tests__/spawn-timeout";
+
+setDefaultTimeout(SPAWN_TEST_TIMEOUT_MS);
 
 const contract = "## Definition of Done\nReturn the requested finding with source evidence.\n\n## Quality Bar\nPrefer accurate findings over finding counts.\n";
 const skill = (name = "sample", description = "A valid task-specific description.", extra = "", body = contract) => `---\nname: ${name}\ndescription: ${JSON.stringify(description)}\n${extra}---\n${body}\n`;
@@ -195,6 +198,16 @@ describe("three-host agent definition files (AC20)", () => {
   it("T2.6 agent names collide with skills on every host (A4)", () => {
     expect(errors(source({ ".claude/agents/sample.md": claudeAgent("sample") }))).toContain("metadata.collision");
     expect(errors(source({ ".codex/agents/other.toml": codexAgent({ ...validCodex, name: "sample" }) }))).toContain("metadata.collision");
+  });
+
+  it("checks a Claude agent's hooks and typed fields like a skill's", () => {
+    const hook = (command: string) => `hooks:\n  PreToolUse:\n    - matcher: Bash\n      hooks:\n        - type: command\n          command: ${JSON.stringify(command)}\n`;
+    expect(errors(source({ ".claude/agents/reviewer.md": claudeAgent("reviewer", "Reviews diffs.", hook('bun "$HOME/.claude/hooks/missing-guard.ts"')) }))).toContain("hooks.path");
+    expect(errors(source({ ".claude/agents/reviewer.md": claudeAgent("reviewer", "Reviews diffs.", "hooks: nope\n") }))).toContain("hooks.shape");
+    expect(errors(source({ ".claude/agents/reviewer.md": claudeAgent("reviewer", "Reviews diffs.", "model: 5\n") }))).toContain("metadata.string");
+    expect(errors(source({ ".claude/agents/reviewer.md": claudeAgent("reviewer", "Reviews diffs.", "tools: {a: 1}\n") }))).toContain("metadata.tools");
+    const ok = { ".claude/hooks/guard.ts": "export {};\n", ".claude/agents/reviewer.md": claudeAgent("reviewer", "Reviews diffs.", `model: claude-opus-5-5\neffort: medium\ntools: Read, Grep\n${hook('bun "$HOME/.claude/hooks/guard.ts"')}`) };
+    expect(errors(source(ok))).toEqual([]);
   });
 
   it("T2.7 Codex TOML required fields (A2/A3)", () => {

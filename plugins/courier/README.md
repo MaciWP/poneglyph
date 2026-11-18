@@ -9,6 +9,9 @@ and enables it with `"courier@poneglyph": true` under `enabledPlugins` in
 `.claude/settings.machine.json`; after the sync, `claude plugin install courier@poneglyph`.
 A session loads it at start, so sessions already open keep the held paste.
 
+Claude Code runs none of courier's hooks on the rows courier submits, so
+[courier-voice](../courier-voice) draws them in the chat.
+
 ## How it works
 
 - Starts one background loop per process on `session.start` (interactive sessions) and `session.attach` (desktop).

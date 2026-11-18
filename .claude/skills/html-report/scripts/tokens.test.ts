@@ -41,8 +41,10 @@ const V2 = {
 };
 
 // The only light tokens allowed to move from v2, and only darker (AC3 as amended).
-const MOVABLE = ["accent", "accent-2", "link", "good", "mid", "warn", "bad", "blocker", "major", "minor", "nit", "ok"];
-const SURFACE_INK = ["bg", "surface", "surface-2", "line", "line-strong", "ink", "ink-2", "ink-3"];
+const MOVABLE = ["accent", "accent-2", "link", "good", "mid", "warn", "bad", "blocker", "major", "minor", "nit", "ok", "line-strong"];
+// Dark tokens retuned for contrast on dark grounds: they may only get lighter than v2.
+const DARK_LIGHTER = ["line-strong", "good", "ok"];
+const SURFACE_INK = ["bg", "surface", "surface-2", "line", "ink", "ink-2", "ink-3"];
 const TEXT = ["ink", "ink-2", "ink-3", "accent", "accent-2", "link", "good", "mid", "warn", "bad", "blocker", "major", "minor", "nit", "ok"];
 const GROUNDS = ["bg", "surface", "surface-2"];
 const SEVERITIES = ["blocker", "major", "minor", "nit", "ok"];
@@ -58,12 +60,16 @@ const luminance = (hex: string): number => {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 };
 
-test("T1.1: v2 surfaces, lines, ink and every dark value are kept", () => {
+test("T1.1: v2 surfaces, lines, ink and every other dark value are kept", () => {
   const p = parseTokens(css());
   for (const k of SURFACE_INK) expect(p.light[k], `light ${k}`).toBe(V2.light[k]);
   for (const [k, v] of Object.entries(V2.dark)) {
-    expect(p.dark[k], `dark ${k}`).toBe(v);
-    expect(p.darkMedia[k], `darkMedia ${k}`).toBe(v);
+    expect(p.darkMedia[k], `darkMedia ${k}`).toBe(p.dark[k]);
+    if (DARK_LIGHTER.includes(k)) {
+      expect(luminance(p.dark[k]), `dark ${k} must not be darker than v2`).toBeGreaterThanOrEqual(luminance(v));
+    } else {
+      expect(p.dark[k], `dark ${k}`).toBe(v);
+    }
   }
   // Non-movable light tokens equal v2; movable ones only get darker.
   for (const [k, v] of Object.entries(V2.light)) {
@@ -87,6 +93,18 @@ test("T1.2: every text token reaches AA on every ground, both schemes", () => {
         const r = contrast(scheme[t], scheme[g]);
         if (r < 4.5) fails.push(`${name}/${t}/${g}=${r.toFixed(2)}`);
       }
+    }
+  }
+  expect(fails.join(", ")).toBe("");
+});
+
+test("T1.2b: line-strong outlines controls at 3:1 on every ground, both schemes", () => {
+  const p = parseTokens(css());
+  const fails: string[] = [];
+  for (const [name, scheme] of [["light", p.light], ["dark", p.dark]] as const) {
+    for (const g of GROUNDS) {
+      const r = contrast(scheme["line-strong"], scheme[g]);
+      if (r < 3) fails.push(`${name}/line-strong/${g}=${r.toFixed(2)}`);
     }
   }
   expect(fails.join(", ")).toBe("");

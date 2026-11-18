@@ -68,7 +68,7 @@ describe("the repo carries the same policy for every host (single source)", () =
     expect(s.effortLevel).toBe(CLAUDE_DESIRED.effortLevel);
     // Opus 5.5+ ignore the top-level key in user settings; their effort and Haiku's window are per model.
     expect(s.modelSettings).toEqual(CLAUDE_DESIRED.modelSettings);
-    expect(s.modelSettings["claude-opus-5-5"].effortLevel).toBe(CONTEXT_POLICY.claudeOpusEffort);
+    expect(s.modelSettings["claude-opus-5-5"].effortLevel).toBe(CONTEXT_POLICY.claudeMainEffort);
     expect(s.modelSettings["claude-haiku-5-5"].autoCompactWindow).toBe(CONTEXT_POLICY.claudeHaikuTokens);
     expect(CLAUDE_DESIRED.autoCompactWindow).toBe(CONTEXT_POLICY.defaultTokens);
   });

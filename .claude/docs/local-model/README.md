@@ -3,9 +3,9 @@
 Measured evidence for the free local co-worker. The **live launchers stay outside this
 repo** (`D:\llama.cpp\serve-qwen.cmd`, `D:\llama.cpp\claude-local.cmd`) because they are
 Windows batch files with absolute `D:\` paths and this tree is multi-OS. The `.snapshot`
-files here are a dated copy for disaster recovery. `sync-claude` links each `docs/`
-entry, this folder included, so they do travel to `~/.claude/docs/` on every machine, but they are a snapshot,
-never the live launcher: if `D:\llama.cpp\serve-qwen.cmd` changes, this copy goes stale
+files here are a dated copy for disaster recovery. `sync-claude` leaves this folder out of
+`~/.claude/docs/` (`PROJECT_ONLY_DOCS`): it describes one machine, so it stays reachable only at
+its repo path. They are a snapshot, never the live launcher: if `D:\llama.cpp\serve-qwen.cmd` changes, this copy goes stale
 silently.
 
 | | Value |

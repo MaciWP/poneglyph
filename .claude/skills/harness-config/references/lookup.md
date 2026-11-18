@@ -43,9 +43,9 @@ row only after the user reviews that source; other docs point here instead of ke
 
 | Source | Location | Reviewed up to | Evidence |
 |---|---|---|---|
-| `claude-api` | https://platform.claude.com/docs/en/release-notes/overview.md | 2026-10-23 | Notes up to 2026-10-15 read; `model-uplift-playbook.md` §4 |
-| `prompting` | https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/ (`.md` pages) | 2026-10-23 | Opus 5 and 5.5 read in full; Haiku 5.5, Sonnet 5 and 5.5, Opus 4.8, Fable 5 and 5.1, best practices searched by topic only |
-| `claude-code` | https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md | 2.1.302 | `model-uplift-playbook.md` §4 |
-| `blogs` | https://claude.dev/rss.xml · https://www.anthropic.com/engineering | 2026-10-23 | Posts to 2026-10-15; code review, agent automations and eval design read, the rest by title |
-| `codex` | https://learn.chatgpt.com/docs/changelog | 0.163.0 | Changelog to 2026-10-15; installed 0.160.1 |
+| `claude-api` | https://platform.claude.com/docs/en/release-notes/overview.md | 2026-11-10 | Notes up to 2026-11-09 read (Fable 5.2 and Mythos 5.2 launch); `model-uplift-playbook.md` §4 |
+| `prompting` | https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/ (`.md` pages) | 2026-11-10 | Fable 5.2 read in full; Opus, Sonnet and Haiku 5.5 searched by topic only |
+| `claude-code` | https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md | 2.1.322 | `model-uplift-playbook.md` §4; rejected: `blockWritesOutsideWorkingDirectories` (memory and plans live outside the cwd) and `CLAUDE_CODE_SUBAGENT_EFFORT` (no gain since 2.1.317: Haiku already runs `medium`; same-model precedence undocumented). Read by a summarising agent plus a keyword pass (mod, hook, permission, effort); mod-API names checked against `plugins/`, no API break; 2.1.318 moves `prompt.submit` context into the user turn (vista, workboard, log-pose), call rates not re-measured. Deferred: `denyInsteadOfPrompting` for factory sessions (precondition in plan 045 F3) |
+| `blogs` | https://claude.dev/rss.xml · https://www.anthropic.com/engineering | 2026-11-10 | Posts to 2026-11-09, by feed summary only (model choice, multi-agent safety, agent memory) |
+| `codex` | https://learn.chatgpt.com/docs/changelog | 0.167.0 | Changelog to 2026-11-06; installed 0.160.1, update deferred to the user; PR lists of 0.164 to 0.166 read by keyword only |
 | `grok` | `~/.grok/docs/user-guide/` (ships with the CLI) | 1.0.46 | Docs of 2026-10-16 searched by topic only |

@@ -1,6 +1,9 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, setDefaultTimeout } from "bun:test";
 import { basename } from "node:path";
 import { BIG_FILE_BYTES, buildOutput, headed, shapeCommand } from "../bash-output-shaper";
+import { SPAWN_TEST_TIMEOUT_MS } from "./spawn-timeout";
+
+setDefaultTimeout(SPAWN_TEST_TIMEOUT_MS);
 
 // Sizes by basename so the fixture is path-separator agnostic (Windows suite).
 const sizes: Record<string, number> = { "plan.md": 28_000, "README.md": 5_000, "big.log": BIG_FILE_BYTES + 1, "small.txt": 10 };
@@ -108,6 +111,19 @@ describe("bash-output-shaper: hook output shapes", () => {
     expect(out.hookSpecificOutput.hookEventName).toBe("PreToolUse");
     expect(out.hookSpecificOutput.permissionDecision).toBe("allow");
     expect(out.hookSpecificOutput.updatedInput).toEqual({ command: "git log --oneline -n 30", description: "d", timeout: 5 });
+  });
+  it("under Code Mode never rewrites, and still denies", () => {
+    expect(buildOutput({ action: "rewrite", command: "git log --oneline -n 30" }, { command: "git log" }, true)).toBeNull();
+    expect(JSON.parse(buildOutput({ action: "deny", reason: "why" }, { command: "cat plan.md" }, true)!).hookSpecificOutput.permissionDecision).toBe("deny");
+  });
+  it("reads Code Mode from the environment", () => {
+    const run = (env: Record<string, string>) =>
+      Bun.spawnSync(["bun", `${import.meta.dir}/../bash-output-shaper.ts`], {
+        stdin: new TextEncoder().encode(JSON.stringify({ tool_name: "Bash", tool_input: { command: "git log" }, cwd: "/tmp" })),
+        env: { ...process.env, ...env },
+      }).stdout.toString();
+    expect(run({ CLAUDE_CODE_EXPERIMENTAL_CODE_MODE: "0" })).toContain("updatedInput");
+    expect(run({ CLAUDE_CODE_EXPERIMENTAL_CODE_MODE: "1" })).toBe("");
   });
 });
 

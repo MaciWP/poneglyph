@@ -26,7 +26,7 @@ import { dirname, resolve } from "node:path";
 import { factoryGrant, type Grant } from "./factory-grant";
 import { foldText } from "./language";
 import { learnedLog } from "./paths";
-import { isHumanOrigin, readTranscriptTail, userPromptOf } from "./transcript";
+import { isHumanOrigin, questionAnswers, readTranscriptTail, userPromptOf } from "./transcript";
 
 export type RemoteAction = "push" | "push-force" | "pr-create" | "pr-merge";
 
@@ -816,21 +816,11 @@ export function extractTurn(jsonl: string, promptId: string): Turn | null {
       const texts = (a.message.content as Array<{ type?: string; text?: unknown }>).filter((b) => b?.type === "text" && typeof b.text === "string");
       if (texts.length) previousAssistantText = texts[texts.length - 1].text as string;
     }
-    // The tool's input accepts `answers` too: a call that carried its own never reached the user.
-    const answers: string[] = [];
-    const prefilled = new Set<string>();
-    for (const later of events.slice(i + 1)) {
-      const r = later as { type?: string; promptId?: string; isSidechain?: boolean; message?: { content?: unknown }; toolUseResult?: { answers?: unknown } };
-      if (r?.isSidechain || !Array.isArray(r?.message?.content)) continue;
-      const blocks = r.message.content as Array<{ type?: string; id?: string; name?: string; tool_use_id?: string; input?: { answers?: unknown } }>;
-      if (r.type === "assistant") {
-        for (const b of blocks) if (b?.type === "tool_use" && b.name === "AskUserQuestion" && b.input?.answers && Object.keys(b.input.answers).length) prefilled.add(b.id ?? "");
-        continue;
-      }
-      const given = r.promptId === promptId ? r.toolUseResult?.answers : undefined;
-      const call = blocks.find((b) => b?.type === "tool_result")?.tool_use_id ?? "";
-      if (given && typeof given === "object" && !prefilled.has(call)) answers.push(...Object.values(given).filter((v): v is string => typeof v === "string"));
-    }
+    const answered = questionAnswers();
+    const answers = events.slice(i + 1).flatMap((later) => {
+      const given = answered(later).map(([, answer]) => answer);
+      return (later as { promptId?: string })?.promptId === promptId ? given : [];
+    });
     return answers.length ? { prompt, previousAssistantText, answers } : { prompt, previousAssistantText };
   }
   return null;

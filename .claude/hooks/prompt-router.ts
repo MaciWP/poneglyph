@@ -31,6 +31,7 @@ import { join, sep } from "node:path";
 import { readHookStdin } from "./lib/hook-stdin";
 import { foldText } from "./lib/language";
 import { claudeConfigDir, learnedLog, projectRoot } from "./lib/paths";
+import { isHeadlessSession } from "./lib/session-kind";
 import { appendLog } from "./instructions-loaded";
 import { frontmatter } from "../scripts/lib/skill-metadata";
 import { isNonHumanPayload, skillOverrides } from "./skill-activation";
@@ -57,9 +58,8 @@ export function routablePrompt(raw: string, env: Record<string, string | undefin
   // ponytail: POSIX only, process-group kill (`kill(-pid)`) does not exist on Windows, so
   // the timeout could not stop the child; port with `taskkill /T` when a Windows machine runs it.
   if (platform === "win32") return null;
-  // Headless runs (`claude -p`, SDK, Agentic OS consultations) have nobody to help.
-  // Both variables are undocumented; if they change, `-p` teardown still kills the hook.
-  if (env.CLAUDE_CODE_SESSION_ATTENDED === "0" || env.CLAUDE_CODE_ENTRYPOINT?.startsWith("sdk")) return null;
+  // Headless runs have nobody to help; if the variables change, `-p` teardown still kills the hook.
+  if (isHeadlessSession(env)) return null;
   let prompt: unknown;
   try { prompt = (JSON.parse(raw) as { prompt?: unknown }).prompt; } catch { return null; }
   if (typeof prompt !== "string" || isNonHumanPayload(prompt)) return null;

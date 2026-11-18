@@ -151,27 +151,31 @@ const SEVERITY_USAGE: Record<string, string> = {
   nit: "a stylistic remark",
   ok: "a passed check",
 };
+const GROUNDS = "bg, surface and surface-2";
+// Pairs told apart by hue more than lightness: each needs a word or glyph.
+const HUE_PAIR: Record<string, string> = { good: "bad", bad: "good", ok: "blocker", blocker: "ok" };
+const needsLabel = (n: string) => ` Always with a word or glyph: under 3:1 from ${HUE_PAIR[n]} in lightness.`;
 const COLOR_USAGE: Record<string, string> = {
   bg: "Page background.",
-  surface: "Cards and panels on the page background.",
-  "surface-2": "Nested or raised surfaces: table headers, code blocks, wells.",
+  surface: "Cards and panels on bg.",
+  "surface-2": "Nested surfaces: table headers, code blocks, wells.",
   line: "Default borders and dividers.",
   "line-soft": "Hairlines inside a card.",
-  "line-strong": "Emphasised borders and control outlines.",
-  ink: "Primary text.",
-  "ink-2": "Secondary text.",
-  "ink-3": "Tertiary text: captions, metadata.",
-  accent: "Brand accent: links-as-actions, key figures, focus.",
-  "accent-2": "Stronger accent for text on light grounds and hover states.",
+  "line-strong": `Control outlines and emphasised borders; 3:1 on ${GROUNDS}.`,
+  ink: `Primary text on ${GROUNDS}.`,
+  "ink-2": `Secondary text on ${GROUNDS}.`,
+  "ink-3": `Captions and metadata on ${GROUNDS}.`,
+  accent: `Actions, key figures and focus, on ${GROUNDS}.`,
+  "accent-2": `Hover state of accent and accent text that needs more weight, on ${GROUNDS}.`,
   "accent-bg": "Tint behind accent text and selected rows.",
   "accent-bd": "Border of an accent-tinted surface.",
-  link: "Inline links, and the text and mark of an info callout.",
+  link: `Inline links on ${GROUNDS}, and the text and mark of an info callout on info-bg.`,
   "info-bg": "Tint behind an info callout.",
   "info-bd": "Border of an info callout.",
-  good: "Score tag: a good number.",
-  mid: "Score tag: a middling number.",
-  warn: "Score tag: a number to watch.",
-  bad: "Score tag: a bad number.",
+  good: "Score: a good number." + needsLabel("good"),
+  mid: "Score: a middling number.",
+  warn: "Score: a number to watch.",
+  bad: "Score: a bad number." + needsLabel("bad"),
   track: "Empty track of meters and bars.",
 };
 const SCALE_USAGE: Record<string, string> = {
@@ -193,7 +197,7 @@ function colorUsage(name: string): string {
   const m = name.match(/^(blocker|major|minor|nit|ok)(-bg|-bd)?$/);
   if (!m) return "Poneglyph palette color.";
   const what = SEVERITY_USAGE[m[1]];
-  return m[2] === "-bg" ? `Tint behind a ${m[1]} tag: ${what}.` : m[2] === "-bd" ? `Border of a ${m[1]} tag: ${what}.` : `Severity tag text and mark for ${what}.`;
+  return m[2] === "-bg" ? `Tint behind the ${m[1]} tag.` : m[2] === "-bd" ? `Border of the ${m[1]} tag.` : `Severity tag text and mark for ${what}, on ${m[1]}-bg, ${GROUNDS}.${HUE_PAIR[m[1]] ? needsLabel(m[1]) : ""}`;
 }
 
 const listOf = (rec: Record<string, string>, prefix: string, usage: (n: string) => string) =>
@@ -233,28 +237,38 @@ function designTokens(p: ParsedTokens) {
 }
 
 function designReadme(): string {
-  return `# Poneglyph
+  return `The design system behind Poneglyph's HTML outputs: reports, dashboards, glance pages, decision pages and inline SVG diagrams. It pairs cool-neutral surfaces with a deep-teal accent and sets serif headings over a sans body, in a light and a dark theme.
 
-The design system behind Poneglyph's HTML outputs: reports, dashboards, glance pages, decision pages and inline SVG diagrams. Cool-neutral surfaces, deep-teal accent, serif headings over a sans body, light and dark themes.
+Values come from \`${REPO_SOURCE}\` in the Poneglyph repo. This copy is republished by hand after that file changes, so it can lag behind; when the two disagree, the repo file is right.
 
-## Source of truth
+## Color
 
-The file \`${REPO_SOURCE}\` in the Poneglyph repo is the source of truth. This Artifact is a published copy of it: when the file changes, the copy is republished by hand, so a value here can lag behind the repo. When they disagree, the repo file wins.
+Every color token has a light and a dark value. Reports follow the system preference; dashboards, glance and decision pages open in dark. Print always uses the light values.
 
-## Visual foundations
+- Lay the page on \`bg\`, put cards on \`surface\` and nest a third level on \`surface-2\`.
+- Draw borders with \`line\`, hairlines inside a card with \`line-soft\`, and control outlines with \`line-strong\`, which reaches 3:1 on all three grounds.
+- Set text in \`ink\`, \`ink-2\` or \`ink-3\`, from most to least emphasis. Every text token, status colors included, reaches 4.5:1 (WCAG AA) on \`bg\`, \`surface\` and \`surface-2\` in both themes.
+- Use \`accent\` for what the reader should act on or read first, \`accent-2\` for its hover, and \`accent-bg\` with \`accent-bd\` for surfaces tinted in it.
+- Use \`link\` for inline links. An info callout sets \`link\` on \`info-bg\` with an \`info-bd\` border.
+- Never hard-code a hex value: the token keeps both themes right.
 
-- **Themes.** Every color token carries a light and a dark value. Reports follow the system preference; dashboards, glance and decision pages start dark. Print always uses the light values.
-- **Surfaces.** \`bg\` is the page, \`surface\` a card on it, \`surface-2\` a nested surface. Borders use \`line\`, \`line-soft\` and \`line-strong\`.
-- **Text.** \`ink\`, \`ink-2\` and \`ink-3\` step down in emphasis. Every text token reaches WCAG AA 4.5:1 on \`bg\`, \`surface\` and \`surface-2\` in both themes; light accent and status colors are darkened only as far as AA requires.
-- **Accent.** \`accent\` marks what to act on or read first; \`accent-bg\` and \`accent-bd\` tint its surfaces.
-- **Type.** Newsreader (serif) for headings, Geist (sans) for body, Geist Mono for code; all Google-hosted. The \`t-*\` scale runs from caption to a fluid hero title, paired with three line heights.
-- **Space and shape.** Eight spacing steps (\`space-1\` to \`space-8\`) and four radii (\`radius-sm\` to \`radius-full\`). Two shadows, \`shadow\` and \`shadow-hover\`, each with a light and a dark value.
+## Status
 
-## Usage rules
+Findings and numbers have separate scales; do not swap one for the other.
 
-- Two status scales, never interchangeable. **Severity** (\`blocker\`, \`major\`, \`minor\`, \`nit\`, \`ok\`, each with \`-bg\` and \`-bd\`) tags findings. **Score** (\`bad\`, \`warn\`, \`mid\`, \`good\`) tags numbers.
-- Never hard-code a hex value; use the token so both themes stay correct.
-- Never pair a status color with a ground it was not measured on: text tokens are measured on \`bg\`, \`surface\` and \`surface-2\`, and each severity on its own \`-bg\` tint.
+- Tag a finding by severity: \`blocker\`, \`major\`, \`minor\`, \`nit\` or \`ok\`. Each has a \`-bg\` tint and a \`-bd\` border, and its text reaches 4.5:1 on its own tint.
+- Tag a number by score: \`bad\`, \`warn\`, \`mid\` or \`good\`.
+- Always pair a status color with a word or glyph. \`good\` and \`bad\`, like \`ok\` and \`blocker\`, are less than 3:1 apart in lightness, so a reader who cannot tell red from green needs the label.
+- Put a status color only on a ground it was measured on: \`bg\`, \`surface\`, \`surface-2\` or its own \`-bg\` tint.
+
+## Type
+
+Headings use Newsreader (serif), body text Geist (sans) and code Geist Mono, all from Google Fonts. The \`t-*\` scale runs from \`t-xs\` for captions to \`t-3xl\`, a fluid hero title, with three line heights: \`lh-tight\`, \`lh-snug\` and \`lh-normal\`.
+
+## Space and shape
+
+- Space with the eight steps \`space-1\` to \`space-8\` and round corners with \`radius-sm\`, \`radius-md\`, \`radius-lg\` or \`radius-full\`.
+- Rest cards on \`shadow\` and raise them on hover with \`shadow-hover\`; both have a light and a dark value.
 - Layout width is not a token; each template sets its own.
 `;
 }

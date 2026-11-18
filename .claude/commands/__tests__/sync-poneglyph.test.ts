@@ -1,9 +1,12 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, setDefaultTimeout } from "bun:test";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import type { DetectedHost } from "../../scripts/lib/hosts";
 import { formatDetection, planRuns, selectHosts, type SyncFlags } from "../sync-poneglyph";
+import { SPAWN_TEST_TIMEOUT_MS } from "../../hooks/__tests__/spawn-timeout";
+
+setDefaultTimeout(SPAWN_TEST_TIMEOUT_MS);
 
 const ROOT = path.resolve("/repo");
 const host = (name: DetectedHost["name"], installed: boolean, targets = [`/home/u/.${name}`]): DetectedHost =>

@@ -1,5 +1,8 @@
-import { expect, test } from "bun:test";
+import { expect, setDefaultTimeout, test } from "bun:test";
 import { runEvalProcess } from "../process";
+import { SPAWN_TEST_TIMEOUT_MS } from "../../hooks/__tests__/spawn-timeout";
+
+setDefaultTimeout(SPAWN_TEST_TIMEOUT_MS);
 
 test("drains stderr and preserves a nonzero exit after partial output", async () => {
   const result = await runEvalProcess([process.execPath, "-e", 'console.log("partial"); process.stderr.write("x".repeat(100000)); process.exitCode=7;']);

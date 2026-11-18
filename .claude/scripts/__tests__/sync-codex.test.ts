@@ -1,9 +1,12 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, setDefaultTimeout } from "bun:test";
 import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, readlinkSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { parse as parseToml } from "smol-toml";
 import { buildCodexLinks, codexBudgetVerdict, CODEX_DOC_BUDGET, generatedContent, linkMethodFor, linkStatus, coreSkillNames, removeStaleSkillLinks, staleSkillLinks, staleWrappers } from "../sync-codex.ts";
+import { SPAWN_TEST_TIMEOUT_MS } from "../../hooks/__tests__/spawn-timeout";
+
+setDefaultTimeout(SPAWN_TEST_TIMEOUT_MS);
 
 // A deleted core skill leaves its junction in every Codex profile (2026-09-17: the six flow
 // skills left twelve). The sync must prune only links that point into OUR skills directory.

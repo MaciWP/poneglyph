@@ -1,9 +1,12 @@
-import {describe,test,expect} from 'bun:test';
+import {describe,test,expect,setDefaultTimeout} from 'bun:test';
 import {mkdirSync,mkdtempSync,readdirSync,writeFileSync,realpathSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {delimiter,join} from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {withoutGitEnv} from '../check-config';
+import {SPAWN_TEST_TIMEOUT_MS} from '../../hooks/__tests__/spawn-timeout';
+
+setDefaultTimeout(SPAWN_TEST_TIMEOUT_MS);
 
 test('test Git operations cannot replace the committing worktree index',()=>{
  const owner=realpathSync(mkdtempSync(join(tmpdir(),'poneglyph-hook-owner-')));

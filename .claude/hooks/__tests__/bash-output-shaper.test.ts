@@ -1,6 +1,9 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, setDefaultTimeout } from "bun:test";
 import { basename } from "node:path";
 import { BIG_FILE_BYTES, buildOutput, headed, shapeCommand } from "../bash-output-shaper";
+import { SPAWN_TEST_TIMEOUT_MS } from "./spawn-timeout";
+
+setDefaultTimeout(SPAWN_TEST_TIMEOUT_MS);
 
 // Sizes by basename so the fixture is path-separator agnostic (Windows suite).
 const sizes: Record<string, number> = { "plan.md": 28_000, "README.md": 5_000, "big.log": BIG_FILE_BYTES + 1, "small.txt": 10 };

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, setDefaultTimeout } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -6,6 +6,9 @@ import { handleNativeHook, patchPaths } from "../native-hook";
 import { routerNoteFile } from "../prompt-router";
 import { analyzePayload } from "../skill-activation";
 import { ignoreLearned } from "./learned-fixture";
+import { SPAWN_TEST_TIMEOUT_MS } from "./spawn-timeout";
+
+setDefaultTimeout(SPAWN_TEST_TIMEOUT_MS);
 
 describe("native hook contracts", () => {
   it("applies one command decision through Codex and Grok payloads", async () => {

@@ -1,9 +1,12 @@
-import { afterEach, describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it, setDefaultTimeout } from "bun:test";
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { check, frontmatter, privacyMatches, readSource, render, validate, withoutGitEnv, type Source } from "../check-config";
+import { SPAWN_TEST_TIMEOUT_MS } from "../../hooks/__tests__/spawn-timeout";
+
+setDefaultTimeout(SPAWN_TEST_TIMEOUT_MS);
 
 const contract = "## Definition of Done\nReturn the requested finding with source evidence.\n\n## Quality Bar\nPrefer accurate findings over finding counts.\n";
 const skill = (name = "sample", description = "A valid task-specific description.", extra = "", body = contract) => `---\nname: ${name}\ndescription: ${JSON.stringify(description)}\n${extra}---\n${body}\n`;

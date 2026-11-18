@@ -1,8 +1,11 @@
-import { describe, test, expect, afterAll } from "bun:test";
+import { describe, test, expect, afterAll, setDefaultTimeout } from "bun:test";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { unlinkSync } from "node:fs";
 import { getModifiedFiles, scanFile } from "../security-gate";
+import { SPAWN_TEST_TIMEOUT_MS } from "./spawn-timeout";
+
+setDefaultTimeout(SPAWN_TEST_TIMEOUT_MS);
 
 // Integration coverage of the security-gate functions exported in-situ.
 // Previously these were unexported → untestable by import; only the pure SECRET_PATTERN was covered.

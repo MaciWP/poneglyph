@@ -1,5 +1,8 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, setDefaultTimeout } from "bun:test";
 import { buildDenial, judgeCriticCommand, splitWords } from "../critic-bash-guard";
+import { SPAWN_TEST_TIMEOUT_MS } from "./spawn-timeout";
+
+setDefaultTimeout(SPAWN_TEST_TIMEOUT_MS);
 
 describe("critic-bash-guard: judgeCriticCommand", () => {
   const allowed = [

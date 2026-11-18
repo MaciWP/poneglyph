@@ -1,7 +1,10 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, setDefaultTimeout } from "bun:test";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { SPAWN_TEST_TIMEOUT_MS } from "../../hooks/__tests__/spawn-timeout";
+
+setDefaultTimeout(SPAWN_TEST_TIMEOUT_MS);
 
 // Commandment IX says the system does not rot, but nothing enforced it: a component could
 // be deleted and its name survive in live prose for weeks, telling the agent to read a file

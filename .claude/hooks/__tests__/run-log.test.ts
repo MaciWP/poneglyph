@@ -1,9 +1,12 @@
-import { afterAll, describe, expect, test } from "bun:test";
+import { afterAll, describe, expect, test, setDefaultTimeout } from "bun:test";
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { instructionName } from "../instructions-loaded";
 import { outcomeOf, runContext, runLogDir } from "../lib/run-log";
+import { SPAWN_TEST_TIMEOUT_MS } from "./spawn-timeout";
+
+setDefaultTimeout(SPAWN_TEST_TIMEOUT_MS);
 
 const HOOKS = join(import.meta.dir, "..");
 const dir = mkdtempSync(join(tmpdir(), "poneglyph-run-log-"));

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, setDefaultTimeout } from "bun:test";
 import { copyFileSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -6,6 +6,9 @@ import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import type { Grant } from "../lib/factory-grant";
 import { authorized, extractTurn, type FactoryItem, factoryReading, factoryVerdict, gateVerdict, type Git, judge, remoteActions, type RemoteAction, type Turn } from "../lib/remote-git";
+import { SPAWN_TEST_TIMEOUT_MS } from "./spawn-timeout";
+
+setDefaultTimeout(SPAWN_TEST_TIMEOUT_MS);
 
 const turn = (prompt: string, previousAssistantText = ""): Turn => ({ prompt, previousAssistantText });
 
